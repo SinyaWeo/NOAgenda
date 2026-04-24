@@ -1,0 +1,5 @@
+{
+  "greeting": "Ahoj",
+  "farewell": "Sbohem",
+  "error.unauthorized": "Nemáte oprávnění k této akci."
+}

@@ -1,0 +1,5 @@
+{
+  "greeting": "Hello",
+  "farewell": "Goodbye",
+  "error.unauthorized": "You are not authorized to perform this action."
+}
