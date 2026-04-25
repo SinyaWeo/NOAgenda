@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./start-all.sh [db|backend|frontend|all]
+# Usage: ./start-all.sh [start|stop|test]
 # Default is 'all' if no argument is provided.
 
 set -e
@@ -13,7 +13,7 @@ APP_FRONTEND_DIR="$(dirname "$0")/app/frontend"
 # Helper to start DB container
 start_db() {
   echo "Starting database container..."
-  (./start-db.sh)
+  (docker compose -f "$DOCKER_DIR/docker-compose.yml" up -d)
 }
 
 # Helper to start backend
@@ -43,7 +43,7 @@ stop_frontend() {
 # Helper to stop DB container
 stop_db() {
   echo "Stopping database container..."
-  (./stop-db.sh)
+  (docker compose -f "$DOCKER_DIR/docker-compose.yml" down)
 }
 
 # Helper to run tests
@@ -54,15 +54,6 @@ run_tests() {
 
 # Main logic
 case "${1:-all}" in
-  db)
-    start_db
-    ;;
-  be)
-    start_backend
-    ;;
-  fe)
-    start_frontend
-    ;;
   start)
     start_db
     start_backend
@@ -77,7 +68,7 @@ case "${1:-all}" in
     run_tests
     ;;
   *)
-    echo "Usage: $0 [db|be|fe|start|stop|test]"
+    echo "Usage: $0 [start|stop|test]"
     exit 1
     ;;
 esac
