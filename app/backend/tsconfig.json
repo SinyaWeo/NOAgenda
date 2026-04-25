@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "nodenext",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -10,9 +10,10 @@
     "sourceMap": true,
     "incremental": true,
     "strict": true,
-    "baseUrl": ".",
+    "rootDir": "./src",
+    "outDir": "dist",
     "paths": {
-      "@common/*": ["src/common/*"]
+      "@common/*": ["./src/common/*"]
     }
   },
   "include": ["src/**/*"],
