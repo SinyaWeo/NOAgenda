@@ -1,11 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne } from 'typeorm';
 import { Project } from '../project/project.entity';
+import { BaseEntity } from '@common/base.entity';
 
 @Entity('tasks')
-export class Task {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
+export class Task extends BaseEntity {
   @Column()
   title!: string;
 
@@ -14,10 +12,4 @@ export class Task {
 
   @ManyToOne(() => Project, { nullable: false })
   project!: Project;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

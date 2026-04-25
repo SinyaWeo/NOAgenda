@@ -1,19 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '@common/base.entity';
 
 @Entity('teams')
-export class Team {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
+export class Team extends BaseEntity {
   @Column({ unique: true })
   name!: string;
 
   @Column({ nullable: true })
   description?: string;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

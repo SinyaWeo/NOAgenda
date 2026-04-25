@@ -1,10 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '@common/base.entity';
 
 @Entity()
-export class Plugin {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
+export class Plugin extends BaseEntity {
   @Column()
   name!: string;
 

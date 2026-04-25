@@ -1,10 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column } from 'typeorm';
+import { BaseEntity } from '@common/base.entity';
 
 @Entity('users')
-export class User {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
+export class User extends BaseEntity {
   @Column({ unique: true })
   username!: string;
 
@@ -16,10 +14,4 @@ export class User {
 
   @Column({ default: false })
   isEmailConfirmed!: boolean;
-
-  @CreateDateColumn()
-  createdAt!: Date;
-
-  @UpdateDateColumn()
-  updatedAt!: Date;
 }

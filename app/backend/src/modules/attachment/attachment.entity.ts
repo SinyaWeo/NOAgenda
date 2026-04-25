@@ -1,12 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne } from 'typeorm';
 import { Task } from '../task/task.entity';
 import { User } from '../user/user.entity';
+import { BaseEntity } from '@common/base.entity';
 
 @Entity('attachments')
-export class Attachment {
-  @PrimaryGeneratedColumn()
-  id!: number;
-
+export class Attachment extends BaseEntity {
   @Column()
   filename!: string;
 
@@ -18,7 +16,4 @@ export class Attachment {
 
   @ManyToOne(() => User, { nullable: false })
   uploader!: User;
-
-  @CreateDateColumn()
-  createdAt!: Date;
 }
