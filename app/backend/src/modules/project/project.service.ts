@@ -22,4 +22,13 @@ export class ProjectService {
     const newProject = this.projectRepository.create(project);
     return this.projectRepository.save(newProject);
   }
+
+  async update(id: number, data: Partial<Project>): Promise<Project | null> {
+    await this.projectRepository.update(id, data);
+    return this.findById(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.projectRepository.delete(id);
+  }
 }

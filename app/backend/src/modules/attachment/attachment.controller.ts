@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UploadedFile, UseInterceptors, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UploadedFile, UseInterceptors, UseGuards, NotFoundException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AttachmentService } from './attachment.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -16,8 +16,10 @@ export class AttachmentController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number): Promise<Attachment | null> {
-    return this.attachmentService.findById(id);
+  async findById(@Param('id') id: number): Promise<Attachment> {
+    const attachment = await this.attachmentService.findById(id);
+    if (!attachment) throw new NotFoundException();
+    return attachment;
   }
 
   @Post('upload')
@@ -32,11 +34,16 @@ export class AttachmentController {
     }),
   }))
   async upload(@UploadedFile() file: Express.Multer.File, @Body() body: any): Promise<Attachment> {
-    // You should validate and resolve task/uploader relations here
     return this.attachmentService.create({
       filename: file.originalname,
       path: file.path,
       ...body,
     });
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async remove(@Param('id') id: number): Promise<void> {
+    return this.attachmentService.remove(id);
   }
 }

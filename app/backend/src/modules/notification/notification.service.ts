@@ -22,4 +22,17 @@ export class NotificationService {
     const newNotification = this.notificationRepository.create(notification);
     return this.notificationRepository.save(newNotification);
   }
+
+  async markAsRead(id: number): Promise<Notification | null> {
+    await this.notificationRepository.update(id, { read: true });
+    return this.findById(id);
+  }
+
+  async markAllAsRead(userId: number): Promise<void> {
+    await this.notificationRepository.update({ user: { id: userId }, read: false }, { read: true });
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.notificationRepository.delete(id);
+  }
 }

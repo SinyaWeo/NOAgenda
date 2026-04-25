@@ -22,4 +22,13 @@ export class CommentService {
     const newComment = this.commentRepository.create(comment);
     return this.commentRepository.save(newComment);
   }
+
+  async update(id: number, data: Partial<Comment>): Promise<Comment | null> {
+    await this.commentRepository.update(id, data);
+    return this.findById(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.commentRepository.delete(id);
+  }
 }

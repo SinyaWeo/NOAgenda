@@ -22,4 +22,8 @@ export class AttachmentService {
     const newAttachment = this.attachmentRepository.create(attachment);
     return this.attachmentRepository.save(newAttachment);
   }
+
+  async remove(id: number): Promise<void> {
+    await this.attachmentRepository.delete(id);
+  }
 }

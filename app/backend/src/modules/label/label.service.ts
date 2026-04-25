@@ -22,4 +22,13 @@ export class LabelService {
     const newLabel = this.labelRepository.create(label);
     return this.labelRepository.save(newLabel);
   }
+
+  async update(id: number, data: Partial<Label>): Promise<Label | null> {
+    await this.labelRepository.update(id, data);
+    return this.findById(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.labelRepository.delete(id);
+  }
 }

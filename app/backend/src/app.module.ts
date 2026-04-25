@@ -14,6 +14,14 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { AttachmentModule } from './modules/attachment/attachment.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
 import { PluginModule } from './modules/plugin/plugin.module';
+import { TaskAssigneeModule } from './modules/task-assignee/task-assignee.module';
+import { TaskLabelModule } from './modules/task-label/task-label.module';
+import { TaskRelationModule } from './modules/task-relation/task-relation.module';
+import { ProjectUserModule } from './modules/project-user/project-user.module';
+import { ProjectTeamModule } from './modules/project-team/project-team.module';
+import { ProjectViewModule } from './modules/project-view/project-view.module';
+import { TaskReminderModule } from './modules/task-reminder/task-reminder.module';
+import { FavoriteModule } from './modules/favorite/favorite.module';
 import { AppI18nModule } from './i18n/i18n.module';
 
 @Module({
@@ -42,6 +50,14 @@ import { AppI18nModule } from './i18n/i18n.module';
     AttachmentModule,
     WebhookModule,
     PluginModule,
+    TaskAssigneeModule,
+    TaskLabelModule,
+    TaskRelationModule,
+    ProjectUserModule,
+    ProjectTeamModule,
+    ProjectViewModule,
+    TaskReminderModule,
+    FavoriteModule,
   ],
   controllers: [AppController],
 })

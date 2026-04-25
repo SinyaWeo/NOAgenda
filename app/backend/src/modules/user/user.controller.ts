@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
@@ -15,8 +15,10 @@ export class UserController {
 
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
-  async findById(@Param('id') id: number): Promise<User | null> {
-    return this.userService.findById(id);
+  async findById(@Param('id') id: number): Promise<User> {
+    const user = await this.userService.findById(id);
+    if (!user) throw new NotFoundException();
+    return user;
   }
 
   @Post()
@@ -27,5 +29,19 @@ export class UserController {
       console.error('User registration error:', err);
       throw err;
     }
+  }
+
+  @Put(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async update(@Param('id') id: number, @Body() body: Partial<User>): Promise<User> {
+    const user = await this.userService.update(id, body);
+    if (!user) throw new NotFoundException();
+    return user;
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard('jwt'))
+  async remove(@Param('id') id: number): Promise<void> {
+    return this.userService.remove(id);
   }
 }

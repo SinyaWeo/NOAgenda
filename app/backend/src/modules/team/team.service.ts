@@ -22,4 +22,13 @@ export class TeamService {
     const newTeam = this.teamRepository.create(team);
     return this.teamRepository.save(newTeam);
   }
+
+  async update(id: number, data: Partial<Team>): Promise<Team | null> {
+    await this.teamRepository.update(id, data);
+    return this.findById(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.teamRepository.delete(id);
+  }
 }

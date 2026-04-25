@@ -34,4 +34,16 @@ export class UserService {
     const newUser = this.userRepository.create(user);
     return this.userRepository.save(newUser);
   }
+
+  async update(id: number, data: Partial<User>): Promise<User | null> {
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
+    await this.userRepository.update(id, data);
+    return this.findById(id);
+  }
+
+  async remove(id: number): Promise<void> {
+    await this.userRepository.delete(id);
+  }
 }
