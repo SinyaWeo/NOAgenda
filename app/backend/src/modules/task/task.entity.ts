@@ -40,6 +40,21 @@ export class Task extends BaseEntity {
   @Column({ nullable: true, type: 'int' })
   repeatAfter?: number;
 
+  @Column({ nullable: true, type: 'datetime' })
+  startDate?: Date;
+
+  @Column({ nullable: true, type: 'int', default: 0 })
+  percentDone?: number;
+
+  @Column({ nullable: true, type: 'int' })
+  parentTaskId?: number;
+
+  @Column({ nullable: true, type: 'int' })
+  createdBy?: number;
+
+  @Column({ nullable: true, type: 'int' })
+  bucketId?: number;
+
   @ManyToOne(() => Project, { nullable: false })
   project!: Project;
 }

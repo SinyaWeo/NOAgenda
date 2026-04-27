@@ -17,4 +17,12 @@ export class Webhook extends BaseEntity {
 
   @Column({ type: 'json', nullable: true })
   config?: Record<string, any>;
+
+  /** Scoping: set when this webhook belongs to a project */
+  @Column({ nullable: true, type: 'int' })
+  projectId?: number;
+
+  /** Scoping: set for user-level (global) webhooks */
+  @Column({ nullable: true, type: 'int' })
+  userId?: number;
 }

@@ -13,9 +13,11 @@ import { PasswordResetToken } from './password-reset-token.entity';
     UserModule,
     PassportModule,
     TypeOrmModule.forFeature([PasswordResetToken]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'changeme',
-      signOptions: { expiresIn: '1d' },
+    JwtModule.registerAsync({
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET,
+        signOptions: { expiresIn: '1d' },
+      }),
     }),
   ],
   providers: [AuthService, JwtStrategy],

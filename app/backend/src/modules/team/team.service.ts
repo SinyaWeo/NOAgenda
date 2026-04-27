@@ -10,8 +10,13 @@ export class TeamService {
     private readonly teamRepository: Repository<Team>,
   ) {}
 
-  async findAll(): Promise<Team[]> {
-    return this.teamRepository.find();
+  async findAll(userId: number): Promise<Team[]> {
+    // Return teams the user owns or is a member of
+    return this.teamRepository
+      .createQueryBuilder('team')
+      .leftJoin('team_members', 'tm', 'tm.teamId = team.id AND tm.userId = :userId', { userId })
+      .where('(team.ownerId = :userId OR tm.userId = :userId)', { userId })
+      .getMany();
   }
 
   async findById(id: number): Promise<Team | null> {

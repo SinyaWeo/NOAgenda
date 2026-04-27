@@ -10,12 +10,20 @@ export class TeamMemberService {
     private readonly teamMemberRepository: Repository<TeamMember>,
   ) {}
 
-  async findAll(): Promise<TeamMember[]> {
-    return this.teamMemberRepository.find({ relations: ['user', 'team'] });
+  async findAll(teamId?: number): Promise<TeamMember[]> {
+    const where = teamId ? { team: { id: teamId } } : {};
+    return this.teamMemberRepository.find({ where, relations: ['user', 'team'] });
   }
 
-  async add(user: any, team: any): Promise<TeamMember> {
-    const newMember = this.teamMemberRepository.create({ user, team });
+  async findById(id: number): Promise<TeamMember | null> {
+    return this.teamMemberRepository.findOne({ where: { id }, relations: ['team', 'user'] });
+  }
+
+  async add(userId: number, teamId: number): Promise<TeamMember> {
+    const newMember = this.teamMemberRepository.create({
+      user: { id: userId } as any,
+      team: { id: teamId } as any,
+    });
     return this.teamMemberRepository.save(newMember);
   }
 

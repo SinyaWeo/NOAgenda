@@ -10,8 +10,9 @@ export class AttachmentService {
     private readonly attachmentRepository: Repository<Attachment>,
   ) {}
 
-  async findAll(): Promise<Attachment[]> {
-    return this.attachmentRepository.find({ relations: ['task', 'uploader'] });
+  async findAll(taskId?: number): Promise<Attachment[]> {
+    const where = taskId ? { task: { id: taskId } } : {};
+    return this.attachmentRepository.find({ where, relations: ['task', 'uploader'], order: { createdAt: 'DESC' } });
   }
 
   async findById(id: number): Promise<Attachment | null> {

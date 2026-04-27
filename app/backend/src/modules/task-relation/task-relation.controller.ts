@@ -1,14 +1,22 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TaskRelationService } from './task-relation.service';
+import { TaskService } from '../task/task.service';
 import { TaskRelation, RelationKind } from './task-relation.entity';
 
 @Controller('tasks/:taskId/relations')
 export class TaskRelationController {
-  constructor(private readonly taskRelationService: TaskRelationService) {}
+  constructor(
+    private readonly taskRelationService: TaskRelationService,
+    private readonly taskService: TaskService,
+  ) {}
 
   @Get()
-  async findAll(@Param('taskId') taskId: number): Promise<TaskRelation[]> {
+  @UseGuards(AuthGuard('jwt'))
+  async findAll(@Param('taskId') taskId: number, @Request() req: any): Promise<TaskRelation[]> {
+    const task = await this.taskService.findById(taskId);
+    if (!task) throw new NotFoundException();
+    if (task.createdBy !== undefined && task.createdBy !== req.user.userId) throw new ForbiddenException();
     return this.taskRelationService.findByTask(taskId);
   }
 
@@ -17,7 +25,11 @@ export class TaskRelationController {
   async create(
     @Param('taskId') taskId: number,
     @Body() body: { relatedTaskId: number; kind: RelationKind },
+    @Request() req: any,
   ): Promise<TaskRelation> {
+    const task = await this.taskService.findById(taskId);
+    if (!task) throw new NotFoundException();
+    if (task.createdBy !== undefined && task.createdBy !== req.user.userId) throw new ForbiddenException();
     return this.taskRelationService.create(taskId, body.relatedTaskId, body.kind);
   }
 
@@ -27,7 +39,11 @@ export class TaskRelationController {
     @Param('taskId') taskId: number,
     @Param('relatedTaskId') relatedTaskId: number,
     @Param('kind') kind: RelationKind,
+    @Request() req: any,
   ): Promise<void> {
+    const task = await this.taskService.findById(taskId);
+    if (!task) throw new NotFoundException();
+    if (task.createdBy !== undefined && task.createdBy !== req.user.userId) throw new ForbiddenException();
     return this.taskRelationService.remove(taskId, relatedTaskId, kind);
   }
 }

@@ -14,4 +14,31 @@ export class User extends BaseEntity {
 
   @Column({ default: false })
   isEmailConfirmed!: boolean;
+
+  @Column({ nullable: true, length: 255 })
+  name?: string;
+
+  @Column({ nullable: true, length: 10, default: 'en' })
+  language?: string;
+
+  @Column({ nullable: true, length: 64, default: 'UTC' })
+  timezone?: string;
+
+  @Column({ nullable: true, length: 20, default: 'light' })
+  theme?: string;
+
+  @Column({ nullable: true, type: 'tinyint', default: 1 })
+  weekStart?: number;
+
+  @Column({ nullable: true, type: 'int' })
+  defaultProjectId?: number;
+
+  @Column({ nullable: true, length: 512 })
+  avatarUrl?: string;
+
+  @Column({ default: false })
+  isDeletionRequested!: boolean;
+
+  @Column({ nullable: true, type: 'datetime' })
+  deletionScheduledAt?: Date;
 }

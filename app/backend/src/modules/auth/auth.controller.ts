@@ -1,14 +1,20 @@
 import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
+import { LoginDto } from './dto/login.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
+@UseGuards(ThrottlerGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: { username: string; password: string }) {
+  async login(@Body() body: LoginDto) {
     return this.authService.login(body.username, body.password);
   }
 
@@ -28,14 +34,17 @@ export class AuthController {
   }
 
   @Post('password/token')
-  @HttpCode(HttpStatus.OK)
-  async requestPasswordReset(@Body() body: { email: string }) {
-    return this.authService.requestPasswordReset(body.email);
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async requestPasswordReset(@Body() body: RequestPasswordResetDto) {
+    // Always responds 204 to avoid email enumeration; token delivered via email in production.
+    await this.authService.requestPasswordReset(body.email);
   }
 
   @Post('password/reset')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.NO_CONTENT)
-  async resetPassword(@Body() body: { token: string; password: string }) {
+  async resetPassword(@Body() body: ResetPasswordDto) {
     return this.authService.resetPassword(body.token, body.password);
   }
 }

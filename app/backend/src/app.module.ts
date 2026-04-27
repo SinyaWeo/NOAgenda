@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -22,11 +23,18 @@ import { ProjectTeamModule } from './modules/project-team/project-team.module';
 import { ProjectViewModule } from './modules/project-view/project-view.module';
 import { TaskReminderModule } from './modules/task-reminder/task-reminder.module';
 import { FavoriteModule } from './modules/favorite/favorite.module';
+import { SavedFilterModule } from './modules/saved-filter/saved-filter.module';
+import { SubscriptionModule } from './modules/subscription/subscription.module';
+import { ReactionModule } from './modules/reaction/reaction.module';
+import { ApiTokenModule } from './modules/api-token/api-token.module';
+import { SessionModule } from './modules/session/session.module';
+import { KanbanBucketModule } from './modules/kanban-bucket/kanban-bucket.module';
 import { AppI18nModule } from './i18n/i18n.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
     AppI18nModule,
     TypeOrmModule.forRoot({
       type: 'mariadb',
@@ -58,6 +66,12 @@ import { AppI18nModule } from './i18n/i18n.module';
     ProjectViewModule,
     TaskReminderModule,
     FavoriteModule,
+    SavedFilterModule,
+    SubscriptionModule,
+    ReactionModule,
+    ApiTokenModule,
+    SessionModule,
+    KanbanBucketModule,
   ],
   controllers: [AppController],
 })

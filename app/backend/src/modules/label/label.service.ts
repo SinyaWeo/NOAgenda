@@ -10,7 +10,10 @@ export class LabelService {
     private readonly labelRepository: Repository<Label>,
   ) {}
 
-  async findAll(): Promise<Label[]> {
+  async findAll(userId?: number): Promise<Label[]> {
+    if (userId !== undefined) {
+      return this.labelRepository.find({ where: { createdBy: userId } as any });
+    }
     return this.labelRepository.find();
   }
 

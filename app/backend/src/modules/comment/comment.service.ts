@@ -10,8 +10,9 @@ export class CommentService {
     private readonly commentRepository: Repository<Comment>,
   ) {}
 
-  async findAll(): Promise<Comment[]> {
-    return this.commentRepository.find({ relations: ['task', 'author'] });
+  async findAll(taskId?: number): Promise<Comment[]> {
+    const where = taskId ? { task: { id: taskId } } : {};
+    return this.commentRepository.find({ where, relations: ['task', 'author'] });
   }
 
   async findById(id: number): Promise<Comment | null> {

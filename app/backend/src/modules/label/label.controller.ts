@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { LabelService } from './label.service';
 import { Label } from './label.entity';
 import { AuthGuard } from '@nestjs/passport';
@@ -8,11 +8,13 @@ export class LabelController {
   constructor(private readonly labelService: LabelService) {}
 
   @Get()
-  async findAll(): Promise<Label[]> {
-    return this.labelService.findAll();
+  @UseGuards(AuthGuard('jwt'))
+  async findAll(@Request() req: any): Promise<Label[]> {
+    return this.labelService.findAll(req.user.userId);
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
@@ -21,21 +23,29 @@ export class LabelController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() body: Partial<Label>): Promise<Label> {
-    return this.labelService.create(body);
+  async create(@Body() body: Partial<Label>, @Request() req: any): Promise<Label> {
+    return this.labelService.create({ ...body, createdBy: req.user.userId });
   }
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: number, @Body() body: Partial<Label>): Promise<Label> {
-    const label = await this.labelService.update(id, body);
+  async update(@Param('id') id: number, @Body() body: Partial<Label>, @Request() req: any): Promise<Label> {
+    const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
-    return label;
+    if (label.createdBy !== undefined && label.createdBy !== req.user.userId) throw new ForbiddenException();
+    // Prevent mass-assignment of ownership/identity fields
+    const { id: _id, createdBy: _cb, ...safeBody } = body as any;
+    const updated = await this.labelService.update(id, safeBody);
+    if (!updated) throw new NotFoundException();
+    return updated;
   }
 
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
-  async remove(@Param('id') id: number): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+    const label = await this.labelService.findById(id);
+    if (!label) throw new NotFoundException();
+    if (label.createdBy !== undefined && label.createdBy !== req.user.userId) throw new ForbiddenException();
     return this.labelService.remove(id);
   }
 }

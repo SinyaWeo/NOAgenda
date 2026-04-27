@@ -8,4 +8,7 @@ export class Team extends BaseEntity {
 
   @Column({ nullable: true })
   description?: string;
+
+  @Column({ nullable: true, type: 'int' })
+  ownerId?: number;
 }

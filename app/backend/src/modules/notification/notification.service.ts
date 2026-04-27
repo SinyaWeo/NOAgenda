@@ -10,8 +10,12 @@ export class NotificationService {
     private readonly notificationRepository: Repository<Notification>,
   ) {}
 
-  async findAll(): Promise<Notification[]> {
-    return this.notificationRepository.find({ relations: ['user'] });
+  async findAll(userId: number): Promise<Notification[]> {
+    return this.notificationRepository.find({
+      where: { user: { id: userId } },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findById(id: number): Promise<Notification | null> {

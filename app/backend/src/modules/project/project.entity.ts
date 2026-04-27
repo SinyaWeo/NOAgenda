@@ -8,4 +8,10 @@ export class Project extends BaseEntity {
 
   @Column({ nullable: true })
   description?: string;
+
+  @Column({ default: false })
+  isArchived!: boolean;
+
+  @Column({ nullable: true, type: 'int' })
+  ownerId?: number;
 }

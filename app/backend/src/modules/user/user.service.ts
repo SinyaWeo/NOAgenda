@@ -19,12 +19,18 @@ export class UserService {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async findAll(): Promise<User[]> {
-    return this.userRepository.find();
+  async findAll(): Promise<Omit<User, 'password'>[]> {
+    // Only expose public fields — email and internal flags are not needed for member autocomplete
+    return this.userRepository.find({ select: ['id', 'username', 'name', 'avatarUrl', 'createdAt'] as any });
   }
 
   async findById(id: number): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
+  }
+
+  async findByIdSafe(id: number): Promise<Omit<User, 'password'> | null> {
+    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'username', 'name', 'avatarUrl', 'createdAt'] as any });
+    return user;
   }
 
   async create(user: Partial<User>): Promise<User> {

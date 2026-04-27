@@ -18,8 +18,8 @@ export class ProjectViewService {
     return this.repo.findOne({ where: { id }, relations: ['project'] });
   }
 
-  async create(projectId: number, title: string, type: ViewType = ViewType.LIST): Promise<ProjectView> {
-    const view = this.repo.create({ project: { id: projectId } as any, title, type });
+  async create(projectId: number, title: string, viewType: ViewType = ViewType.LIST): Promise<ProjectView> {
+    const view = this.repo.create({ project: { id: projectId } as any, title, viewType });
     return this.repo.save(view);
   }
 

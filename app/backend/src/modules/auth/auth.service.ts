@@ -44,12 +44,10 @@ export class AuthService {
     };
   }
 
-  async requestPasswordReset(email: string): Promise<{ reset_token: string }> {
+  async requestPasswordReset(email: string): Promise<void> {
     const user = await this.userService.findByEmail(email);
-    // Always return success to avoid email enumeration
-    if (!user) {
-      return { reset_token: '' };
-    }
+    // Always succeed to avoid email enumeration
+    if (!user) return;
     // Remove any existing token for this user
     await this.resetTokenRepository.delete({ user: { id: user.id } });
 
@@ -57,8 +55,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     const resetToken = this.resetTokenRepository.create({ token, user, expiresAt });
     await this.resetTokenRepository.save(resetToken);
-    // In production, send via email. Here we return it directly.
-    return { reset_token: token };
+    // TODO: send token via email in production; do NOT return it in the response.
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

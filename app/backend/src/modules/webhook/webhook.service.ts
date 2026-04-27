@@ -10,8 +10,11 @@ export class WebhookService {
     private readonly webhookRepository: Repository<Webhook>,
   ) {}
 
-  async findAll(): Promise<Webhook[]> {
-    return this.webhookRepository.find();
+  async findAll(filter?: { projectId?: number; userId?: number }): Promise<Webhook[]> {
+    const where: Record<string, any> = {};
+    if (filter?.projectId !== undefined) where.projectId = filter.projectId;
+    if (filter?.userId !== undefined) where.userId = filter.userId;
+    return this.webhookRepository.find({ where, order: { createdAt: 'DESC' } });
   }
 
   async findById(id: number): Promise<Webhook | null> {

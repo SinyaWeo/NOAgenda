@@ -5,6 +5,8 @@ import { Project } from '../project/project.entity';
 export enum ViewType {
   LIST = 'list',
   KANBAN = 'kanban',
+  TABLE = 'table',
+  GANTT = 'gantt',
   TIMELINE = 'timeline',
 }
 
@@ -14,7 +16,7 @@ export class ProjectView extends BaseEntity {
   title!: string;
 
   @Column({ type: 'enum', enum: ViewType, default: ViewType.LIST })
-  type!: ViewType;
+  viewType!: ViewType;
 
   @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: false })
   project!: Project;
