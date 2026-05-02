@@ -50,74 +50,56 @@
     }
 </script>
 
-<div style="max-width:760px">
-    <h1 style="margin-bottom:0.4rem">Archive Project</h1>
-    <p style="margin:0 0 1.25rem;color:#64748b">
-        Manage whether this project appears in your active project list.
-    </p>
+<div class="page-header">
+    <a href="/projects/{$page.params.id}/edit" class="back-link"
+        ><span class="icon icon-sm">arrow_back</span></a
+    >
+    <h1 class="page-title">Archive Project</h1>
+</div>
+<p class="text-muted mb-4">
+    Manage whether this project appears in your active project list.
+</p>
 
-    {#if $loading}
-        <p>Loading…</p>
-    {:else if $error}
-        <p
-            style="color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:0.6rem 1rem"
-        >
-            {$error}
-        </p>
-    {:else if $project}
-        <section
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.04)"
-        >
-            {#if $success}
-                <p
-                    style="margin:0 0 1rem;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:0.55rem 0.8rem"
-                >
+{#if $loading}
+    <p class="text-muted">Loading…</p>
+{:else if $error}
+    <div class="alert alert-error">{$error}</div>
+{:else if $project}
+    <div class="card">
+        <div class="card-body">
+            {#if $success}<div class="alert alert-success mb-4">
                     {$success}
-                </p>
-            {/if}
-
-            <p style="margin:0 0 0.8rem">
-                Project: <strong>{$project.name}</strong>
-            </p>
-            <p style="margin:0 0 1rem;color:#64748b">
-                Status:
-                <strong
-                    style="color:{$project.isArchived ? '#b45309' : '#15803d'}"
+                </div>{/if}
+            <p class="mb-2">Project: <strong>{$project.name}</strong></p>
+            <p class="mb-4">
+                Status: <strong
+                    class={$project.isArchived ? 'text-danger' : 'text-success'}
+                    >{$project.isArchived ? 'Archived' : 'Active'}</strong
                 >
-                    {$project.isArchived ? 'Archived' : 'Active'}
-                </strong>
             </p>
-
             {#if $project.isArchived}
-                <p style="margin:0 0 1rem;color:#64748b">
+                <p class="text-muted mb-4">
                     This project is hidden from the main list and can be
                     restored at any time.
                 </p>
                 <button
                     onclick={toggleArchive}
                     disabled={$saving}
-                    style="background:#6366f1;color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:6px;cursor:pointer"
+                    class="btn btn-primary"
+                    >{$saving ? 'Restoring…' : 'Restore Project'}</button
                 >
-                    {$saving ? 'Restoring…' : 'Restore Project'}
-                </button>
             {:else}
-                <p style="margin:0 0 1rem;color:#64748b">
+                <p class="text-muted mb-4">
                     Archiving will hide this project from active listings while
                     preserving its data.
                 </p>
                 <button
                     onclick={toggleArchive}
                     disabled={$saving}
-                    style="background:#f59e0b;color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:6px;cursor:pointer"
+                    class="btn btn-secondary"
+                    >{$saving ? 'Archiving…' : 'Archive Project'}</button
                 >
-                    {$saving ? 'Archiving…' : 'Archive Project'}
-                </button>
             {/if}
-        </section>
-
-        <p style="margin-top:1rem">
-            <a href="/projects/{$project.id}/edit">← Back to project settings</a
-            >
-        </p>
-    {/if}
-</div>
+        </div>
+    </div>
+{/if}

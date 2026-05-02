@@ -166,8 +166,9 @@
 	<div class="shell">
 		<!-- Sidebar (Phase 5: collapsible) -->
 		<nav
-			class="sidebar"
-			style="width: {$sidebarCollapsed ? '56px' : '220px'}"
+			class="sidebar {$sidebarCollapsed
+				? 'sidebar-collapsed'
+				: 'sidebar-expanded'}"
 		>
 			<!-- Brand + toggle button -->
 			<div class="sidebar-brand">
@@ -181,7 +182,10 @@
 						? 'Expand sidebar'
 						: 'Collapse sidebar'}
 				>
-					{$sidebarCollapsed ? '→' : '←'}
+					{#if $sidebarCollapsed}<span class="icon icon-sm"
+							>chevron_right</span
+						>{:else}<span class="icon icon-sm">chevron_left</span
+						>{/if}
 				</button>
 			</div>
 
@@ -193,7 +197,7 @@
 						class="nav-link"
 						class:active={isActive('/dashboard')}
 					>
-						<span class="nav-icon">🏠</span>
+						<span class="nav-icon icon">home</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>Dashboard</span
 							>{/if}
@@ -205,7 +209,7 @@
 						class="nav-link"
 						class:active={isActive('/projects')}
 					>
-						<span class="nav-icon">📋</span>
+						<span class="nav-icon icon">folder</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>Projects</span
 							>{/if}
@@ -217,7 +221,7 @@
 						class="nav-link"
 						class:active={isActive('/tasks')}
 					>
-						<span class="nav-icon">✅</span>
+						<span class="nav-icon icon">task_alt</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>Tasks</span
 							>{/if}
@@ -229,7 +233,7 @@
 						class="nav-link"
 						class:active={isActive('/upcoming')}
 					>
-						<span class="nav-icon">📅</span>
+						<span class="nav-icon icon">event</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>Upcoming</span
 							>{/if}
@@ -241,7 +245,7 @@
 						class="nav-link"
 						class:active={isActive('/teams')}
 					>
-						<span class="nav-icon">👥</span>
+						<span class="nav-icon icon">group</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>Teams</span
 							>{/if}
@@ -253,7 +257,7 @@
 						class="nav-link"
 						class:active={isActive('/labels')}
 					>
-						<span class="nav-icon">🏷️</span>
+						<span class="nav-icon icon">label</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>Labels</span
 							>{/if}
@@ -265,7 +269,7 @@
 						class="nav-link"
 						class:active={isActive('/filters')}
 					>
-						<span class="nav-icon">🔍</span>
+						<span class="nav-icon icon">filter_list</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>Saved Filters</span
 							>{/if}
@@ -278,7 +282,7 @@
 						class="nav-link"
 						class:active={isActive('/about')}
 					>
-						<span class="nav-icon">ℹ️</span>
+						<span class="nav-icon icon">info</span>
 						{#if !$sidebarCollapsed}<span class="nav-label"
 								>About</span
 							>{/if}
@@ -315,7 +319,10 @@
 										class="search-item"
 										onclick={() => showSearch.set(false)}
 									>
-										✅ {t.title}
+										<span class="icon icon-sm"
+											>task_alt</span
+										>
+										{t.title}
 									</a>
 								{/each}
 							{/if}
@@ -329,7 +336,8 @@
 										class="search-item"
 										onclick={() => showSearch.set(false)}
 									>
-										📋 {p.name}
+										<span class="icon icon-sm">folder</span>
+										{p.name}
 									</a>
 								{/each}
 							{/if}
@@ -358,14 +366,16 @@
 									class="dropdown-item"
 									onclick={() => showQuickAdd.set(false)}
 								>
-									✅ New Task
+									<span class="icon icon-sm">task_alt</span> New
+									Task
 								</a>
 								<a
 									href="/projects/new"
 									class="dropdown-item"
 									onclick={() => showQuickAdd.set(false)}
 								>
-									📋 New Project
+									<span class="icon icon-sm">folder</span> New
+									Project
 								</a>
 							</div>
 						{/if}
@@ -377,7 +387,9 @@
 						title="Toggle theme"
 						onclick={toggleTheme}
 					>
-						{($user.theme ?? 'light') === 'light' ? '🌙' : '☀️'}
+						{#if ($user.theme ?? 'light') === 'light'}<span
+								class="icon">dark_mode</span
+							>{:else}<span class="icon">light_mode</span>{/if}
 					</button>
 
 					<!-- Notification bell (existing) -->
@@ -473,7 +485,7 @@
 									class="dropdown-item"
 									onclick={() => showUserMenu.set(false)}
 								>
-									👤 Profile
+									<span class="icon icon-sm">person</span> Profile
 								</a>
 								{#if $userTeams.length > 0}
 									<a
@@ -481,7 +493,7 @@
 										class="dropdown-item"
 										onclick={() => showUserMenu.set(false)}
 									>
-										👥 Teams
+										<span class="icon icon-sm">group</span> Teams
 									</a>
 								{/if}
 								<a
@@ -489,7 +501,7 @@
 									class="dropdown-item"
 									onclick={() => showUserMenu.set(false)}
 								>
-									⚙️ Settings
+									<span class="icon icon-sm">settings</span> Settings
 								</a>
 								<hr class="dropdown-divider" />
 								<button
@@ -511,436 +523,3 @@
 {:else}
 	{@render children?.()}
 {/if}
-
-<style>
-	/* ── CSS custom properties (light/dark theme) ── */
-	:global(:root),
-	:global([data-theme='light']) {
-		--na-surface: #ffffff;
-		--na-bg: #f8fafc;
-		--na-border: #e2e8f0;
-		--na-text: #1e293b;
-		--na-text-muted: #64748b;
-		--na-sidebar-bg: #1e293b;
-		--na-sidebar-text: #cbd5e1;
-		--na-sidebar-active: #60a5fa;
-		--na-primary: #6366f1;
-		--na-hover-bg: #f1f5f9;
-	}
-	:global([data-theme='dark']) {
-		--na-surface: #1e293b;
-		--na-bg: #0f172a;
-		--na-border: #334155;
-		--na-text: #e2e8f0;
-		--na-text-muted: #94a3b8;
-		--na-sidebar-bg: #020617;
-		--na-sidebar-text: #94a3b8;
-		--na-sidebar-active: #93c5fd;
-		--na-primary: #818cf8;
-		--na-hover-bg: #1e293b;
-	}
-
-	/* ── Shell ── */
-	.shell {
-		display: flex;
-		min-height: 100vh;
-		background: var(--na-bg);
-	}
-
-	/* ── Sidebar ── */
-	.sidebar {
-		background: var(--na-sidebar-bg);
-		color: var(--na-sidebar-text);
-		flex-shrink: 0;
-		overflow: hidden;
-		transition: width 0.2s ease;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.sidebar-brand {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 0 0.75rem;
-		height: 52px;
-		flex-shrink: 0;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-	}
-
-	.brand-name {
-		color: #fff;
-		font-weight: 700;
-		font-size: 1.05rem;
-		text-decoration: none;
-		white-space: nowrap;
-		overflow: hidden;
-		flex: 1;
-	}
-
-	.collapse-btn {
-		background: none;
-		border: none;
-		color: var(--na-sidebar-text);
-		cursor: pointer;
-		font-size: 0.85rem;
-		padding: 4px 6px;
-		border-radius: 4px;
-		flex-shrink: 0;
-		opacity: 0.7;
-	}
-	.collapse-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
-		opacity: 1;
-	}
-
-	.nav-list {
-		list-style: none;
-		padding: 0.5rem 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-		flex: 1;
-	}
-
-	.nav-spacer {
-		flex: 1;
-	}
-
-	.nav-link {
-		display: flex;
-		align-items: center;
-		gap: 0.65rem;
-		padding: 0.45rem 0.75rem;
-		color: var(--na-sidebar-text);
-		text-decoration: none;
-		border-radius: 4px;
-		white-space: nowrap;
-		overflow: hidden;
-		font-size: 0.875rem;
-		margin: 0 0.25rem;
-		transition: background 0.1s;
-	}
-	.nav-link:hover {
-		background: rgba(255, 255, 255, 0.08);
-	}
-	.nav-link.active {
-		color: var(--na-sidebar-active);
-		background: rgba(255, 255, 255, 0.06);
-	}
-
-	.nav-icon {
-		font-size: 1rem;
-		flex-shrink: 0;
-		width: 20px;
-		text-align: center;
-	}
-
-	/* ── Main area ── */
-	.main {
-		flex: 1;
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		background: var(--na-bg);
-	}
-
-	/* ── Top bar ── */
-	.topbar {
-		background: var(--na-surface);
-		border-bottom: 1px solid var(--na-border);
-		padding: 0.4rem 1.25rem;
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		flex-shrink: 0;
-		height: 52px;
-	}
-
-	/* ── Search ── */
-	.search-wrap {
-		position: relative;
-		flex: 1;
-		max-width: 380px;
-	}
-
-	.search-input {
-		width: 100%;
-		padding: 0.35rem 0.85rem;
-		border: 1px solid var(--na-border);
-		border-radius: 20px;
-		font-size: 0.875rem;
-		outline: none;
-		background: var(--na-bg);
-		color: var(--na-text);
-		transition: border-color 0.15s;
-	}
-	.search-input:focus {
-		border-color: var(--na-primary);
-	}
-
-	.search-dropdown {
-		position: absolute;
-		top: calc(100% + 4px);
-		left: 0;
-		right: 0;
-		background: var(--na-surface);
-		border: 1px solid var(--na-border);
-		border-radius: 8px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-		z-index: 300;
-		max-height: 320px;
-		overflow-y: auto;
-	}
-
-	.search-section-header {
-		padding: 0.4rem 0.85rem 0.2rem;
-		font-size: 0.7rem;
-		font-weight: 600;
-		color: var(--na-text-muted);
-		text-transform: uppercase;
-		letter-spacing: 0.06em;
-	}
-
-	.search-item {
-		display: block;
-		padding: 0.45rem 0.85rem;
-		color: var(--na-text);
-		text-decoration: none;
-		font-size: 0.875rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-	.search-item:hover {
-		background: var(--na-hover-bg);
-	}
-
-	/* ── Header action group ── */
-	.header-actions {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		margin-left: auto;
-	}
-
-	/* ── Shared relative wrapper for dropdowns ── */
-	.rel-wrap {
-		position: relative;
-	}
-
-	/* ── Icon buttons ── */
-	.icon-btn {
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 6px 8px;
-		border-radius: 6px;
-		font-size: 1.05rem;
-		position: relative;
-		color: var(--na-text-muted);
-		line-height: 1;
-	}
-	.icon-btn:hover {
-		background: var(--na-hover-bg);
-	}
-
-	.notif-btn {
-		font-size: 1.1rem;
-	}
-
-	/* ── Quick-add round button ── */
-	.quick-add-btn {
-		width: 30px;
-		height: 30px;
-		border-radius: 50%;
-		background: var(--na-primary);
-		color: #fff;
-		border: none;
-		cursor: pointer;
-		font-size: 1.25rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		line-height: 1;
-		transition: opacity 0.15s;
-	}
-	.quick-add-btn:hover {
-		opacity: 0.85;
-	}
-
-	/* ── Notification badge ── */
-	.badge {
-		position: absolute;
-		top: 2px;
-		right: 2px;
-		background: #ef4444;
-		color: #fff;
-		border-radius: 50%;
-		font-size: 0.6rem;
-		width: 14px;
-		height: 14px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	/* ── Shared dropdown panel ── */
-	.dropdown {
-		position: absolute;
-		right: 0;
-		top: calc(100% + 6px);
-		background: var(--na-surface);
-		border: 1px solid var(--na-border);
-		border-radius: 8px;
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
-		z-index: 200;
-		min-width: 170px;
-	}
-
-	/* ── Dropdown items ── */
-	.dropdown-item {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		color: var(--na-text);
-		text-decoration: none;
-		font-size: 0.875rem;
-		background: none;
-		border: none;
-		cursor: pointer;
-		width: 100%;
-		text-align: left;
-		transition: background 0.1s;
-	}
-	.dropdown-item:hover {
-		background: var(--na-hover-bg);
-	}
-	.dropdown-item.danger {
-		color: #ef4444;
-	}
-	.dropdown-item.danger:hover {
-		background: #fff1f2;
-	}
-
-	.dropdown-divider {
-		border: none;
-		border-top: 1px solid var(--na-border);
-		margin: 0.25rem 0;
-	}
-
-	/* ── Notification panel ── */
-	.notif-panel {
-		width: 320px;
-		max-height: 420px;
-		overflow-y: auto;
-	}
-
-	.notif-header {
-		padding: 0.5rem 1rem;
-		border-bottom: 1px solid var(--na-border);
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		color: var(--na-text);
-	}
-
-	.mark-read-btn {
-		font-size: 0.8rem;
-		color: var(--na-primary);
-		background: none;
-		border: none;
-		cursor: pointer;
-	}
-
-	.notif-empty {
-		padding: 1rem;
-		color: var(--na-text-muted);
-		margin: 0;
-		font-size: 0.875rem;
-	}
-
-	.notif-item {
-		padding: 0.6rem 1rem;
-		border-bottom: 1px solid var(--na-border);
-	}
-	.notif-item.unread {
-		background: #f0f9ff;
-	}
-
-	.notif-msg {
-		margin: 0;
-		font-size: 0.875rem;
-		color: var(--na-text);
-	}
-
-	.notif-time {
-		color: var(--na-text-muted);
-		font-size: 0.75rem;
-	}
-
-	/* ── User menu ── */
-	.user-menu {
-		min-width: 200px;
-	}
-
-	.user-menu-info {
-		padding: 0.6rem 1rem;
-		display: flex;
-		flex-direction: column;
-		gap: 1px;
-	}
-
-	.user-menu-name {
-		font-size: 0.875rem;
-		font-weight: 600;
-		color: var(--na-text);
-	}
-
-	.user-menu-username {
-		font-size: 0.78rem;
-		color: var(--na-text-muted);
-	}
-
-	/* ── Avatar button ── */
-	.avatar-btn {
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 0;
-		display: flex;
-		align-items: center;
-		border-radius: 50%;
-	}
-
-	.avatar-img {
-		width: 34px;
-		height: 34px;
-		border-radius: 50%;
-		object-fit: cover;
-	}
-
-	.avatar-initials {
-		width: 34px;
-		height: 34px;
-		border-radius: 50%;
-		background: var(--na-primary);
-		color: #fff;
-		font-size: 0.8rem;
-		font-weight: 700;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		user-select: none;
-	}
-
-	/* ── Page content ── */
-	.content {
-		flex: 1;
-		padding: 1.5rem;
-		overflow: auto;
-		color: var(--na-text);
-	}
-</style>

@@ -84,122 +84,97 @@
     }
 </script>
 
-<div style="max-width:920px">
-    <h1 style="margin-bottom:0.4rem">Webhooks</h1>
-    <p style="color:#64748b;margin:0 0 1.25rem">
-        Receive HTTP POST callbacks when selected events happen.
-    </p>
-
-    {#if $error}
-        <p
-            style="color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:0.6rem 1rem"
-        >
-            {$error}
-        </p>
-    {/if}
-    {#if $success}
-        <p
-            style="color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:0.6rem 1rem"
-        >
-            {$success}
-        </p>
-    {/if}
-
-    <section
-        style="border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;margin-bottom:1.5rem;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.04)"
+<div class="page-header">
+    <a href="/user/settings" class="back-link"
+        ><span class="icon icon-sm">arrow_back</span></a
     >
-        <h2 style="margin:0 0 1rem">Add Webhook</h2>
-        <form
-            onsubmit={onCreateSubmit}
-            style="display:flex;flex-direction:column;gap:0.75rem;max-width:560px"
-        >
-            <label
-                for="webhook-url"
-                style="font-size:0.85rem;font-weight:500;color:#475569"
-                >URL <span style="color:#ef4444">*</span></label
-            >
-            <input
-                id="webhook-url"
-                type="url"
-                bind:value={newUrl}
-                placeholder="https://example.com/hook"
-                required
-                style="width:100%;padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px"
-            />
+    <h1 class="page-title">Webhooks</h1>
+</div>
+<p class="text-muted mb-4">
+    Receive HTTP POST callbacks when selected events happen.
+</p>
 
-            <label
-                for="webhook-event"
-                style="font-size:0.85rem;font-weight:500;color:#475569"
-                >Event</label
-            >
-            <select
-                id="webhook-event"
-                bind:value={newEvent}
-                style="width:100%;padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px"
-            >
-                {#each EVENT_OPTIONS as ev}<option value={ev}>{ev}</option
-                    >{/each}
-            </select>
+{#if $error}<div class="alert alert-error">{$error}</div>{/if}
+{#if $success}<div class="alert alert-success">{$success}</div>{/if}
 
-            <label
-                for="webhook-secret"
-                style="font-size:0.85rem;font-weight:500;color:#475569"
-                >Secret (optional)</label
-            >
-            <input
-                id="webhook-secret"
-                type="text"
-                bind:value={newSecret}
-                placeholder="HMAC signing secret"
-                style="width:100%;padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px"
-            />
-
+<div class="card mb-4">
+    <div class="card-header"><h2 class="card-title">Add Webhook</h2></div>
+    <div class="card-body">
+        <form onsubmit={onCreateSubmit}>
+            <div class="form-group">
+                <label for="webhook-url" class="form-label"
+                    >URL <span class="text-danger">*</span></label
+                >
+                <input
+                    id="webhook-url"
+                    type="url"
+                    bind:value={newUrl}
+                    placeholder="https://example.com/hook"
+                    required
+                    class="form-input"
+                />
+            </div>
+            <div class="form-group">
+                <label for="webhook-event" class="form-label">Event</label>
+                <select
+                    id="webhook-event"
+                    bind:value={newEvent}
+                    class="form-select"
+                >
+                    {#each EVENT_OPTIONS as ev}<option value={ev}>{ev}</option
+                        >{/each}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="webhook-secret" class="form-label"
+                    >Secret <span class="text-xs text-muted">(optional)</span
+                    ></label
+                >
+                <input
+                    id="webhook-secret"
+                    type="text"
+                    bind:value={newSecret}
+                    placeholder="HMAC signing secret"
+                    class="form-input"
+                />
+            </div>
             <button
                 type="submit"
                 disabled={$saving || !newUrl.trim()}
-                style="background:#6366f1;color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:6px;cursor:pointer;align-self:flex-start"
+                class="btn btn-primary"
             >
                 {$saving ? 'Creating…' : 'Create Webhook'}
             </button>
         </form>
-    </section>
-
-    {#if $loading}
-        <p>Loading…</p>
-    {:else if $webhooks.length === 0}
-        <p style="color:#64748b">No webhooks configured yet.</p>
-    {:else}
-        <div style="display:flex;flex-direction:column;gap:0.75rem">
-            {#each $webhooks as wh}
-                <article
-                    style="border:1px solid #e2e8f0;border-radius:8px;padding:1rem;background:#fff;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem"
-                >
-                    <div>
-                        <p
-                            style="margin:0;font-weight:500;word-break:break-all"
-                        >
-                            {wh.url}
-                        </p>
-                        <p
-                            style="margin:0.25rem 0 0;font-size:0.85rem;color:#64748b"
-                        >
-                            Event: <strong>{wh.event}</strong> · {wh.active
-                                ? 'Active'
-                                : 'Inactive'}
-                        </p>
-                    </div>
-                    <button
-                        onclick={() => remove(wh.id)}
-                        style="color:#ef4444;background:#fff;border:1px solid #fecaca;border-radius:6px;padding:0.4rem 0.75rem;cursor:pointer;flex-shrink:0"
-                    >
-                        Delete
-                    </button>
-                </article>
-            {/each}
-        </div>
-    {/if}
-
-    <p style="margin-top:1.5rem">
-        <a href="/user/settings">← Back to settings</a>
-    </p>
+    </div>
 </div>
+
+{#if $loading}
+    <p>Loading…</p>
+{:else if $webhooks.length === 0}
+    <div class="empty-state">
+        <span class="icon">webhook</span>
+        <p>No webhooks configured yet.</p>
+    </div>
+{:else}
+    <div class="list card">
+        {#each $webhooks as wh}
+            <div class="list-item">
+                <div class="list-item-body">
+                    <p class="font-medium mb-0" style="word-break:break-all">
+                        {wh.url}
+                    </p>
+                    <p class="text-sm text-muted mb-0">
+                        Event: <strong>{wh.event}</strong> · {wh.active
+                            ? 'Active'
+                            : 'Inactive'}
+                    </p>
+                </div>
+                <button
+                    onclick={() => remove(wh.id)}
+                    class="btn btn-sm btn-danger">Delete</button
+                >
+            </div>
+        {/each}
+    </div>
+{/if}

@@ -64,330 +64,120 @@
 </script>
 
 {#if $loading}
-    <p style="color:#64748b">Loading…</p>
+	<p class="text-muted">Loading…</p>
 {:else if $error}
-    <div
-        style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:0.75rem 1rem;border-radius:6px;font-size:0.875rem"
-    >
-        {$error}
-    </div>
+	<div class="alert alert-error">{$error}</div>
 {:else if $view}
-    <!-- Header -->
-    <div
-        style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem"
-    >
-        <div style="display:flex;align-items:center;gap:0.75rem">
-            <a
-                href="/projects/{$page.params.id}"
-                style="color:#6b7280;text-decoration:none;font-size:1.2rem"
-                >&#8592;</a
-            >
-            <h1
-                style="font-size:1.25rem;font-weight:700;color:#1e293b;margin:0"
-            >
-                {$view.title}
-            </h1>
-            <span
-                style="font-size:0.8rem;background:#e0e7ff;color:#4f46e5;border-radius:4px;padding:2px 8px;font-weight:500"
-                >{$view.viewType}</span
-            >
-        </div>
-        <a
-            href="/projects/{$page.params.id}/settings/views"
-            style="font-size:0.8rem;color:#94a3b8;text-decoration:none"
-            >Manage views</a
-        >
-    </div>
+	<div class="page-header">
+		<a href="/projects/{$page.params.id}" class="back-link"><span class="icon icon-sm">arrow_back</span></a>
+		<div>
+			<h1 class="page-title">{$view.title} <span class="tag" style="font-size:0.8rem">{$view.viewType}</span></h1>
+		</div>
+		<div class="page-actions">
+			<a href="/projects/{$page.params.id}/settings/views" class="btn btn-ghost btn-sm">Manage views</a>
+		</div>
+	</div>
 
-    {#if $view.viewType === 'list'}
-        <!-- List View -->
-        {#if $tasks.length}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"
-            >
-                {#each $tasks as task, i}
-                    <div
-                        style="display:grid;grid-template-columns:1fr auto auto auto;gap:0.75rem;align-items:center;padding:0.75rem 1rem;{i >
-                        0
-                            ? 'border-top:1px solid #f1f5f9'
-                            : ''}"
-                    >
-                        <a
-                            href="/tasks/{task.id}"
-                            style="font-size:0.9rem;font-weight:500;color:#1e293b;text-decoration:none"
-                            >{task.title}</a
-                        >
-                        <span
-                            style="font-size:0.78rem;background:{task.status ===
-                            'done'
-                                ? '#dcfce7'
-                                : task.status === 'in_progress'
-                                  ? '#dbeafe'
-                                  : '#f1f5f9'};color:{task.status === 'done'
-                                ? '#166534'
-                                : task.status === 'in_progress'
-                                  ? '#1d4ed8'
-                                  : '#64748b'};border-radius:4px;padding:2px 7px;white-space:nowrap"
-                            >{task.status ?? 'open'}</span
-                        >
-                        <span
-                            style="font-size:0.78rem;color:{task.dueDate &&
-                            new Date(task.dueDate) < new Date() &&
-                            task.status !== 'done'
-                                ? '#ef4444'
-                                : '#94a3b8'}"
-                        >
-                            {task.dueDate
-                                ? new Date(task.dueDate).toLocaleDateString()
-                                : ''}
-                        </span>
-                        <span style="font-size:0.78rem;color:#94a3b8"
-                            >{['', 'Low', 'Med', 'High', 'Urgent', 'Now'][
-                                task.priority
-                            ] ?? ''}</span
-                        >
-                    </div>
-                {/each}
-            </div>
-        {:else}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:2.5rem;text-align:center"
-            >
-                <p style="color:#94a3b8;margin:0">
-                    No tasks in this project yet.
-                </p>
-            </div>
-        {/if}
-    {:else if $view.viewType === 'kanban'}
-        <!-- Kanban View -->
-        {#if $buckets.length}
-            <div
-                style="display:flex;gap:1rem;overflow-x:auto;padding-bottom:0.5rem"
-            >
-                {#each $buckets as bucket}
-                    <div
-                        style="min-width:260px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:0.9rem;flex-shrink:0"
-                    >
-                        <h3
-                            style="font-size:0.9rem;font-weight:600;color:#374151;margin:0 0 0.75rem;text-transform:uppercase;letter-spacing:0.04em"
-                        >
-                            {bucket.title}
-                        </h3>
-                        {#each $tasks.filter((t: any) => t.bucketId === bucket.id) as task}
-                            <div
-                                style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:0.6rem 0.75rem;margin-bottom:0.5rem;box-shadow:0 1px 2px rgba(0,0,0,0.05)"
-                            >
-                                <a
-                                    href="/tasks/{task.id}"
-                                    style="display:block;font-size:0.875rem;font-weight:500;color:#1e293b;text-decoration:none"
-                                >
-                                    {task.title}
-                                </a>
-                                {#if task.dueDate}<div
-                                        style="font-size:0.75rem;color:#94a3b8;margin-top:0.2rem"
-                                    >
-                                        {new Date(
-                                            task.dueDate,
-                                        ).toLocaleDateString()}
-                                    </div>{/if}
-                                <select
-                                    value={task.bucketId}
-                                    onchange={(e) =>
-                                        moveTaskToBucket(
-                                            task.id,
-                                            Number(
-                                                (e.target as HTMLSelectElement)
-                                                    .value,
-                                            ),
-                                        )}
-                                    style="margin-top:0.4rem;font-size:0.75rem;border:1px solid #e2e8f0;border-radius:4px;padding:1px 4px;color:#64748b;width:100%"
-                                >
-                                    {#each $buckets as b}
-                                        <option value={b.id}>{b.title}</option>
-                                    {/each}
-                                </select>
-                            </div>
-                        {/each}
-                        {#if !$tasks.filter((t: any) => t.bucketId === bucket.id).length}
-                            <p
-                                style="font-size:0.8rem;color:#94a3b8;margin:0;text-align:center;padding:0.5rem"
-                            >
-                                Empty
-                            </p>
-                        {/if}
-                    </div>
-                {/each}
-            </div>
-        {:else}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:2rem;text-align:center"
-            >
-                <p style="color:#94a3b8;margin:0">
-                    No buckets configured for this kanban view.
-                </p>
-            </div>
-        {/if}
-    {:else if $view.viewType === 'table'}
-        <!-- Table View -->
-        {#if $tasks.length}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:auto"
-            >
-                <table
-                    style="width:100%;border-collapse:collapse;font-size:0.875rem"
-                >
-                    <thead>
-                        <tr
-                            style="background:#f8fafc;border-bottom:1px solid #e2e8f0"
-                        >
-                            <th
-                                style="padding:0.65rem 1rem;text-align:left;font-weight:600;color:#374151;font-size:0.8rem"
-                                >#</th
-                            >
-                            <th
-                                style="padding:0.65rem 1rem;text-align:left;font-weight:600;color:#374151;font-size:0.8rem"
-                                >Title</th
-                            >
-                            <th
-                                style="padding:0.65rem 1rem;text-align:left;font-weight:600;color:#374151;font-size:0.8rem"
-                                >Status</th
-                            >
-                            <th
-                                style="padding:0.65rem 1rem;text-align:left;font-weight:600;color:#374151;font-size:0.8rem"
-                                >Priority</th
-                            >
-                            <th
-                                style="padding:0.65rem 1rem;text-align:left;font-weight:600;color:#374151;font-size:0.8rem"
-                                >Due Date</th
-                            >
-                            <th
-                                style="padding:0.65rem 1rem;text-align:left;font-weight:600;color:#374151;font-size:0.8rem"
-                                >Created</th
-                            >
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {#each $tasks as task, i}
-                            <tr
-                                style="border-top:{i > 0
-                                    ? '1px solid #f1f5f9'
-                                    : 'none'}"
-                            >
-                                <td style="padding:0.6rem 1rem;color:#94a3b8"
-                                    >{task.id}</td
-                                >
-                                <td style="padding:0.6rem 1rem"
-                                    ><a
-                                        href="/tasks/{task.id}"
-                                        style="color:#1e293b;text-decoration:none;font-weight:500"
-                                        >{task.title}</a
-                                    ></td
-                                >
-                                <td style="padding:0.6rem 1rem;color:#64748b"
-                                    >{task.status ?? '—'}</td
-                                >
-                                <td style="padding:0.6rem 1rem;color:#64748b"
-                                    >{[
-                                        '—',
-                                        'Low',
-                                        'Med',
-                                        'High',
-                                        'Urgent',
-                                        'Now',
-                                    ][task.priority] ?? '—'}</td
-                                >
-                                <td
-                                    style="padding:0.6rem 1rem;color:{task.dueDate &&
-                                    new Date(task.dueDate) < new Date() &&
-                                    task.status !== 'done'
-                                        ? '#ef4444'
-                                        : '#64748b'}"
-                                    >{task.dueDate
-                                        ? new Date(
-                                              task.dueDate,
-                                          ).toLocaleDateString()
-                                        : '—'}</td
-                                >
-                                <td style="padding:0.6rem 1rem;color:#94a3b8"
-                                    >{task.createdAt
-                                        ? new Date(
-                                              task.createdAt,
-                                          ).toLocaleDateString()
-                                        : '—'}</td
-                                >
-                            </tr>
-                        {/each}
-                    </tbody>
-                </table>
-            </div>
-        {:else}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:2.5rem;text-align:center"
-            >
-                <p style="color:#94a3b8;margin:0">No tasks to display.</p>
-            </div>
-        {/if}
-    {:else if $view.viewType === 'gantt'}
-        <!-- Gantt View (timeline) -->
-        {#if $tasks.filter((t: any) => t.dueDate).length}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden"
-            >
-                {#each $tasks
-                    .filter((t: any) => t.dueDate)
-                    .sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) as task, i}
-                    <div
-                        style="display:flex;align-items:center;gap:1rem;padding:0.75rem 1rem;{i >
-                        0
-                            ? 'border-top:1px solid #f1f5f9'
-                            : ''}"
-                    >
-                        <div
-                            style="width:28px;height:28px;border-radius:50%;background:{new Date(
-                                task.dueDate,
-                            ) < new Date() && task.status !== 'done'
-                                ? '#fef2f2'
-                                : '#f0fdf4'};border:1px solid {new Date(
-                                task.dueDate,
-                            ) < new Date() && task.status !== 'done'
-                                ? '#fca5a5'
-                                : '#86efac'};flex-shrink:0"
-                        ></div>
-                        <a
-                            href="/tasks/{task.id}"
-                            style="flex:1;font-size:0.875rem;font-weight:500;color:#1e293b;text-decoration:none"
-                            >{task.title}</a
-                        >
-                        <span
-                            style="font-size:0.8rem;color:{new Date(
-                                task.dueDate,
-                            ) < new Date() && task.status !== 'done'
-                                ? '#ef4444'
-                                : '#64748b'};white-space:nowrap"
-                            >{new Date(task.dueDate).toLocaleDateString()}</span
-                        >
-                        <span
-                            style="font-size:0.78rem;background:{task.status ===
-                            'done'
-                                ? '#dcfce7'
-                                : '#f1f5f9'};color:{task.status === 'done'
-                                ? '#166534'
-                                : '#64748b'};border-radius:4px;padding:2px 6px"
-                            >{task.status ?? 'open'}</span
-                        >
-                    </div>
-                {/each}
-            </div>
-        {:else}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:2rem;text-align:center"
-            >
-                <p style="color:#94a3b8;margin:0">
-                    No tasks with due dates to display on the timeline.
-                </p>
-            </div>
-        {/if}
-    {:else}
-        <p style="color:#64748b">Unknown view type: {$view.viewType}</p>
-    {/if}
+	{#if $view.viewType === 'list'}
+		{#if $tasks.length}
+			<div class="list card">
+				{#each $tasks as task}
+					<div class="list-item">
+						<div class="list-item-body">
+							<a href="/tasks/{task.id}" class="font-medium">{task.title}</a>
+						</div>
+						<span class="status-badge" data-status={task.status}>{task.status ?? 'open'}</span>
+						{#if task.dueDate}
+							<span class="text-xs {new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-danger' : 'text-muted'}">{new Date(task.dueDate).toLocaleDateString()}</span>
+						{/if}
+						<span class="priority-badge" data-priority={task.priority ?? 0}>{['', 'Low', 'Med', 'High', 'Urgent', 'Now'][task.priority] ?? ''}</span>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="empty-state"><span class="icon">task_alt</span><p>No tasks in this project yet.</p></div>
+		{/if}
+
+	{:else if $view.viewType === 'kanban'}
+		{#if $buckets.length}
+			<div class="flex-center gap-3" style="align-items:flex-start;overflow-x:auto;padding-bottom:0.5rem">
+				{#each $buckets as bucket}
+					<div class="card" style="min-width:260px;flex-shrink:0">
+						<div class="card-header"><h3 class="card-title" style="text-transform:uppercase;font-size:0.85rem;letter-spacing:0.04em">{bucket.title}</h3></div>
+						<div class="card-body">
+							{#each $tasks.filter((t: any) => t.bucketId === bucket.id) as task}
+								<div class="card mb-2">
+									<div class="card-body" style="padding:0.6rem 0.75rem">
+										<a href="/tasks/{task.id}" class="font-medium text-sm" style="display:block">{task.title}</a>
+										{#if task.dueDate}<div class="text-xs text-muted">{new Date(task.dueDate).toLocaleDateString()}</div>{/if}
+										<select value={task.bucketId} onchange={(e) => moveTaskToBucket(task.id, Number((e.target as HTMLSelectElement).value))} class="form-select" style="margin-top:0.4rem;font-size:0.75rem;padding:2px 4px">
+											{#each $buckets as b}<option value={b.id}>{b.title}</option>{/each}
+										</select>
+									</div>
+								</div>
+							{/each}
+							{#if !$tasks.filter((t: any) => t.bucketId === bucket.id).length}
+								<p class="text-xs text-muted text-center mb-0">Empty</p>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="empty-state"><span class="icon">view_kanban</span><p>No buckets configured for this kanban view.</p></div>
+		{/if}
+
+	{:else if $view.viewType === 'table'}
+		{#if $tasks.length}
+			<div class="card" style="overflow:auto">
+				<table style="width:100%;border-collapse:collapse;font-size:0.875rem">
+					<thead>
+						<tr style="background:var(--na-surface-alt,#f8fafc);border-bottom:1px solid var(--na-border,#e2e8f0)">
+							<th style="padding:0.65rem 1rem;text-align:left;font-weight:600;font-size:0.8rem">#</th>
+							<th style="padding:0.65rem 1rem;text-align:left;font-weight:600;font-size:0.8rem">Title</th>
+							<th style="padding:0.65rem 1rem;text-align:left;font-weight:600;font-size:0.8rem">Status</th>
+							<th style="padding:0.65rem 1rem;text-align:left;font-weight:600;font-size:0.8rem">Priority</th>
+							<th style="padding:0.65rem 1rem;text-align:left;font-weight:600;font-size:0.8rem">Due Date</th>
+							<th style="padding:0.65rem 1rem;text-align:left;font-weight:600;font-size:0.8rem">Created</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each $tasks as task, i}
+							<tr style="border-top:{i > 0 ? '1px solid var(--na-border,#f1f5f9)' : 'none'}">
+								<td style="padding:0.6rem 1rem" class="text-muted">{task.id}</td>
+								<td style="padding:0.6rem 1rem"><a href="/tasks/{task.id}" class="font-medium" style="text-decoration:none;color:inherit">{task.title}</a></td>
+								<td style="padding:0.6rem 1rem"><span class="status-badge" data-status={task.status}>{task.status ?? '—'}</span></td>
+								<td style="padding:0.6rem 1rem" class="text-muted">{['—', 'Low', 'Med', 'High', 'Urgent', 'Now'][task.priority] ?? '—'}</td>
+								<td style="padding:0.6rem 1rem" class="{task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-danger' : 'text-muted'}">{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : '—'}</td>
+								<td style="padding:0.6rem 1rem" class="text-muted">{task.createdAt ? new Date(task.createdAt).toLocaleDateString() : '—'}</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{:else}
+			<div class="empty-state"><span class="icon">table_chart</span><p>No tasks to display.</p></div>
+		{/if}
+
+	{:else if $view.viewType === 'gantt'}
+		{#if $tasks.filter((t: any) => t.dueDate).length}
+			<div class="list card">
+				{#each $tasks.filter((t: any) => t.dueDate).sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) as task}
+					<div class="list-item">
+						<span class="status-dot" data-status={new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'overdue' : task.status}></span>
+						<div class="list-item-body">
+							<a href="/tasks/{task.id}" class="font-medium">{task.title}</a>
+						</div>
+						<span class="text-sm {new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-danger' : 'text-muted'}" style="white-space:nowrap">{new Date(task.dueDate).toLocaleDateString()}</span>
+						<span class="status-badge" data-status={task.status}>{task.status ?? 'open'}</span>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="empty-state"><span class="icon">calendar_month</span><p>No tasks with due dates to display on the timeline.</p></div>
+		{/if}
+
+	{:else}
+		<p class="text-muted">Unknown view type: {$view.viewType}</p>
+	{/if}
 {/if}

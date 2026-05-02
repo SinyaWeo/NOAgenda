@@ -23,57 +23,28 @@
 	}
 </script>
 
-<div
-	style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f1f5f9;padding:1rem"
->
-	<div
-		style="background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:2.5rem;width:100%;max-width:400px"
-	>
+<div class="auth-page">
+	<div class="auth-card">
 		<div style="text-align:center;margin-bottom:2rem">
-			<div
-				style="font-size:1.8rem;font-weight:700;color:#1e293b;margin-bottom:0.25rem"
-			>
-				NOAgenda
-			</div>
-			<h1 style="font-size:1.2rem;font-weight:600;color:#475569;margin:0">
-				Reset your password
-			</h1>
+			<div class="auth-title">NOAgenda</div>
+			<p class="auth-subtitle">Reset your password</p>
 		</div>
 		{#if $error}
-			<div
-				style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1.25rem;font-size:0.875rem"
-			>
-				{$error}
-			</div>
+			<div class="alert alert-error">{$error}</div>
 		{/if}
 		{#if $success}
-			<div
-				style="background:#f0fdf4;border:1px solid #86efac;color:#166534;padding:1rem;border-radius:6px;text-align:center"
-			>
-				<p style="margin:0 0 0.5rem;font-weight:600">
-					Check your email
-				</p>
-				<p style="margin:0;font-size:0.875rem">
+			<div class="alert alert-success">
+				<p class="font-bold mb-2">Check your email</p>
+				<p class="text-sm">
 					If an account exists for that address, we've sent reset
 					instructions.
 				</p>
 			</div>
-			<p style="text-align:center;margin-top:1.5rem;font-size:0.875rem">
-				<a
-					href="/login"
-					style="color:#6366f1;text-decoration:none;font-weight:500"
-					>Back to Sign in</a
-				>
-			</p>
+			<div class="auth-footer"><a href="/login">Back to Sign in</a></div>
 		{:else}
-			<form
-				onsubmit={handleRequest}
-				style="display:flex;flex-direction:column;gap:1rem"
-			>
-				<div>
-					<label
-						for="reset-email"
-						style="display:block;font-size:0.875rem;font-weight:500;color:#374151;margin-bottom:0.3rem"
+			<form onsubmit={handleRequest}>
+				<div class="form-group">
+					<label for="reset-email" class="form-label"
 						>Email address</label
 					>
 					<input
@@ -81,26 +52,21 @@
 						type="email"
 						bind:value={$email}
 						required
-						style="width:100%;padding:0.6rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.95rem;box-sizing:border-box"
+						class="form-input"
 					/>
 				</div>
 				<button
 					type="submit"
 					disabled={$loading}
-					style="background:#6366f1;color:#fff;padding:0.65rem 1rem;border:none;border-radius:6px;font-size:0.95rem;font-weight:500;cursor:{$loading
-						? 'not-allowed'
-						: 'pointer'};opacity:{$loading ? 0.7 : 1}"
+					class="btn btn-primary"
+					style="width:100%"
 				>
 					{$loading ? 'Sending…' : 'Send reset link'}
 				</button>
 			</form>
-			<p
-				style="text-align:center;margin-top:1.5rem;font-size:0.875rem;margin-bottom:0"
-			>
-				<a href="/login" style="color:#94a3b8;text-decoration:none"
-					>&larr; Back to Sign in</a
-				>
-			</p>
+			<div class="auth-footer">
+				<a href="/login" class="text-muted">&larr; Back to Sign in</a>
+			</div>
 		{/if}
 	</div>
 </div>

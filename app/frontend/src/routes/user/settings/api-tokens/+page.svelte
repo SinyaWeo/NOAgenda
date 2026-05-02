@@ -62,135 +62,88 @@
     });
 </script>
 
-<div style="max-width:700px">
-    <div
-        style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem"
+<div class="page-header">
+    <a href="/user/settings" class="back-link"
+        ><span class="icon icon-sm">arrow_back</span></a
     >
-        <a
-            href="/user/settings"
-            style="color:#6b7280;text-decoration:none;font-size:1.2rem"
-            >&#8592;</a
-        >
-        <h1 style="font-size:1.25rem;font-weight:700;color:#1e293b;margin:0">
-            API Tokens
-        </h1>
+    <h1 class="page-title">API Tokens</h1>
+</div>
+
+{#if $error}<div class="alert alert-error">{$error}</div>{/if}
+
+{#if createdToken}
+    <div class="alert alert-success">
+        <p class="font-bold mb-2">
+            Token created — copy it now, it won't be shown again:
+        </p>
+        <code class="token-value">{createdToken}</code>
     </div>
+{/if}
 
-    {#if $error}
-        <div
-            style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1rem;font-size:0.875rem"
-        >
-            {$error}
-        </div>
-    {/if}
-
-    {#if createdToken}
-        <div
-            style="background:#f0fdf4;border:1px solid #86efac;border-radius:8px;padding:1rem;margin-bottom:1.25rem"
-        >
-            <p
-                style="margin:0 0 0.5rem;font-size:0.875rem;font-weight:600;color:#166534"
-            >
-                Token created — copy it now, it won't be shown again:
-            </p>
-            <code
-                style="display:block;padding:0.5rem 0.75rem;background:#dcfce7;border-radius:5px;font-size:0.85rem;word-break:break-all;color:#15803d"
-                >{createdToken}</code
-            >
-        </div>
-    {/if}
-
-    <div
-        style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.5rem;margin-bottom:1.5rem"
-    >
-        <h2
-            style="font-size:0.95rem;font-weight:600;color:#374151;margin:0 0 1rem"
-        >
-            Create New Token
-        </h2>
-        <form
-            onsubmit={createToken}
-            style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end"
-        >
-            <div style="flex:1;min-width:180px">
-                <label
-                    for="token-name"
-                    style="display:block;font-size:0.8rem;font-weight:500;color:#374151;margin-bottom:0.25rem"
-                    >Token Name</label
-                >
+<div class="card mb-4">
+    <div class="card-header"><h2 class="card-title">Create New Token</h2></div>
+    <div class="card-body">
+        <form onsubmit={createToken} class="inline-form">
+            <div class="form-group" style="flex:1;min-width:180px">
+                <label for="token-name" class="form-label">Token Name</label>
                 <input
                     id="token-name"
                     type="text"
                     bind:value={newTokenName}
                     placeholder="e.g. CI/CD token"
                     required
-                    style="width:100%;padding:0.55rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.9rem;box-sizing:border-box"
+                    class="form-input"
                 />
             </div>
-            <div>
-                <label
-                    for="token-expiry"
-                    style="display:block;font-size:0.8rem;font-weight:500;color:#374151;margin-bottom:0.25rem"
-                    >Expiry <span style="color:#9ca3af">(optional)</span></label
+            <div class="form-group">
+                <label for="token-expiry" class="form-label"
+                    >Expiry <span class="text-xs text-muted">(optional)</span
+                    ></label
                 >
                 <input
                     id="token-expiry"
                     type="date"
                     bind:value={newTokenExpiry}
-                    style="padding:0.55rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.9rem"
+                    class="form-input"
                 />
             </div>
             <button
                 type="submit"
-                style="padding:0.55rem 1.1rem;background:#6366f1;color:#fff;border:none;border-radius:6px;font-size:0.9rem;font-weight:500;cursor:pointer"
-                >Create</button
+                class="btn btn-primary"
+                style="align-self:flex-end">Create</button
             >
         </form>
     </div>
-
-    {#if $loading}
-        <p style="color:#64748b">Loading…</p>
-    {:else if $tokens.length}
-        <div style="display:flex;flex-direction:column;gap:0.6rem">
-            {#each $tokens as token}
-                <div
-                    style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:0.9rem 1rem;display:flex;justify-content:space-between;align-items:center;gap:1rem"
-                >
-                    <div>
-                        <div
-                            style="font-size:0.9rem;font-weight:600;color:#1e293b"
-                        >
-                            {token.name}
-                        </div>
-                        <div
-                            style="font-size:0.8rem;color:#64748b;margin-top:0.1rem"
-                        >
-                            Created {new Date(
-                                token.createdAt,
-                            ).toLocaleDateString()}
-                            &middot; Expires {token.expiresAt
-                                ? new Date(token.expiresAt).toLocaleDateString()
-                                : 'Never'}
-                            {#if token.lastUsedAt}&middot; Last used {new Date(
-                                    token.lastUsedAt,
-                                ).toLocaleDateString()}{/if}
-                        </div>
-                    </div>
-                    <button
-                        onclick={() => deleteToken(token.id)}
-                        style="flex-shrink:0;padding:0.35rem 0.75rem;background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;border-radius:5px;cursor:pointer;font-size:0.8rem;font-weight:500"
-                        >Delete</button
-                    >
-                </div>
-            {/each}
-        </div>
-    {:else}
-        <div
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:2rem;text-align:center"
-        >
-            <p style="color:#94a3b8;margin:0">
-                No API tokens yet. Create one above to get started.
-            </p>
-        </div>
-    {/if}
 </div>
+
+{#if $loading}
+    <p class="text-muted">Loading…</p>
+{:else if $tokens.length}
+    <div class="list card">
+        {#each $tokens as token}
+            <div class="list-item">
+                <div class="list-item-body">
+                    <div class="font-bold">{token.name}</div>
+                    <div class="text-xs text-muted">
+                        Created {new Date(token.createdAt).toLocaleDateString()}
+                        &middot; Expires {token.expiresAt
+                            ? new Date(token.expiresAt).toLocaleDateString()
+                            : 'Never'}
+                        {#if token.lastUsedAt}&middot; Last used {new Date(
+                                token.lastUsedAt,
+                            ).toLocaleDateString()}{/if}
+                    </div>
+                </div>
+                <button
+                    onclick={() => deleteToken(token.id)}
+                    class="btn btn-sm btn-danger">Delete</button
+                >
+            </div>
+        {/each}
+    </div>
+{:else}
+    <div class="empty-state">
+        <span class="icon">key</span>
+        <p>No API tokens yet. Create one above to get started.</p>
+    </div>
+{/if}

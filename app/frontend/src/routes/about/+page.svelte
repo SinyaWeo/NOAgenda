@@ -15,46 +15,32 @@
     });
 </script>
 
-<div style="max-width:760px">
-    <h1 style="margin-bottom:0.4rem">About NOAgenda</h1>
-    <p style="margin:0 0 1.25rem;color:#64748b">
+<div class="about-page">
+    <h1>About NOAgenda</h1>
+    <p class="text-muted mb-6">
         A project-focused task manager built with NestJS and SvelteKit.
     </p>
 
     {#if $error}
-        <p
-            style="color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:0.6rem 1rem"
-        >
-            {$error}
-        </p>
+        <div class="alert alert-error">{$error}</div>
     {:else if $info}
-        <section
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.04)"
-        >
-            <dl
-                style="display:grid;grid-template-columns:180px 1fr;gap:0.65rem 1rem;margin:0"
-            >
-                <dt style="margin:0;color:#64748b">Name</dt>
-                <dd style="margin:0;color:#1e293b;font-weight:500">
-                    {$info.name ?? 'NOAgenda'}
-                </dd>
+        <div class="card">
+            <div class="card-body">
+                <dl class="info-dl">
+                    <dt class="info-dt">Name</dt>
+                    <dd class="info-dd">{$info.name ?? 'NOAgenda'}</dd>
 
-                <dt style="margin:0;color:#64748b">Version</dt>
-                <dd style="margin:0;color:#1e293b;font-weight:500">
-                    {$info.version ?? '—'}
-                </dd>
+                    <dt class="info-dt">Version</dt>
+                    <dd class="info-dd">{$info.version ?? '—'}</dd>
 
-                <dt style="margin:0;color:#64748b">Built at</dt>
-                <dd style="margin:0;color:#1e293b">{$info.builtAt ?? '—'}</dd>
+                    <dt class="info-dt">Built at</dt>
+                    <dd class="info-dd">{$info.builtAt ?? '—'}</dd>
 
-                <dt style="margin:0;color:#64748b">Commit</dt>
-                <dd
-                    style="margin:0;color:#1e293b;font-family:'JetBrains Mono',monospace;font-size:0.9rem"
-                >
-                    {$info.commit ?? '—'}
-                </dd>
-            </dl>
-        </section>
+                    <dt class="info-dt">Commit</dt>
+                    <dd class="info-dd info-dd-mono">{$info.commit ?? '—'}</dd>
+                </dl>
+            </div>
+        </div>
     {:else}
         <p>Loading…</p>
     {/if}

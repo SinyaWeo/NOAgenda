@@ -91,102 +91,88 @@
     });
 </script>
 
-<h1 style="margin-bottom:1.25rem">Saved Filters</h1>
-{#if $error}<p style="color:red">{$error}</p>{/if}
+<div class="page-header">
+    <h1 class="page-title">Saved Filters</h1>
+</div>
+{#if $error}<div class="alert alert-error">{$error}</div>{/if}
 
-<form
-    onsubmit={create}
-    style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap;background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:0.875rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,0.04)"
->
-    <input
-        type="text"
-        bind:value={newName}
-        placeholder="Filter name"
-        required
-        style="flex:1;min-width:200px;padding:0.4rem 0.75rem;border:1px solid #e2e8f0;border-radius:4px"
-    />
-    <input
-        type="text"
-        bind:value={newDescription}
-        placeholder="Description (optional)"
-        style="flex:2;min-width:200px;padding:0.4rem 0.75rem;border:1px solid #e2e8f0;border-radius:4px"
-    />
-    <button
-        type="submit"
-        style="background:#6366f1;color:#fff;border:none;padding:0.4rem 1rem;border-radius:4px;cursor:pointer"
-        >+ Save Filter</button
-    >
+<form onsubmit={create} class="card mb-4">
+    <div class="card-body inline-form">
+        <input
+            type="text"
+            bind:value={newName}
+            placeholder="Filter name"
+            required
+            class="form-input"
+        />
+        <input
+            type="text"
+            bind:value={newDescription}
+            placeholder="Description (optional)"
+            class="form-input"
+        />
+        <button type="submit" class="btn btn-primary">+ Save Filter</button>
+    </div>
 </form>
 
 {#if $loading}
     <p>Loading…</p>
 {:else if $filters.length === 0}
-    <div style="text-align:center;padding:3rem;color:#64748b">
-        <p style="margin:0">No saved filters yet. Create one above.</p>
+    <div class="empty-state">
+        <span class="icon">filter_list</span>
+        <p>No saved filters yet. Create one above.</p>
     </div>
 {:else}
-    <div style="display:flex;flex-direction:column;gap:0.5rem">
+    <div class="list card">
         {#each $filters as filter}
-            <div
-                style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:0.875rem 1rem;box-shadow:0 1px 2px rgba(0,0,0,0.03)"
-            >
+            <div class="list-item">
                 {#if editingId === filter.id}
                     <form
                         onsubmit={(e) => {
                             e.preventDefault();
                             saveEdit(filter.id);
                         }}
-                        style="display:flex;gap:0.5rem;flex-wrap:wrap"
+                        class="inline-form"
+                        style="width:100%"
                     >
                         <input
                             type="text"
                             bind:value={editName}
                             required
-                            style="flex:1;padding:0.3rem 0.6rem;border:1px solid #e2e8f0;border-radius:4px"
+                            class="form-input"
                         />
                         <input
                             type="text"
                             bind:value={editDescription}
-                            style="flex:2;padding:0.3rem 0.6rem;border:1px solid #e2e8f0;border-radius:4px"
+                            class="form-input"
                         />
-                        <button
-                            type="submit"
-                            style="background:#6366f1;color:#fff;border:none;padding:0.3rem 0.75rem;border-radius:4px;cursor:pointer"
+                        <button type="submit" class="btn btn-primary btn-sm"
                             >Save</button
                         >
                         <button
                             type="button"
                             onclick={() => (editingId = null)}
-                            style="background:#f1f5f9;border:none;padding:0.3rem 0.75rem;border-radius:4px;cursor:pointer;color:#475569"
-                            >Cancel</button
+                            class="btn btn-secondary btn-sm">Cancel</button
                         >
                     </form>
                 {:else}
-                    <div
-                        style="display:flex;justify-content:space-between;align-items:center"
-                    >
-                        <div>
-                            <strong style="color:#1e293b">{filter.name}</strong>
-                            {#if filter.description}
-                                <p
-                                    style="margin:0.2rem 0 0;color:#64748b;font-size:0.85rem"
-                                >
-                                    {filter.description}
-                                </p>
-                            {/if}
-                        </div>
-                        <div style="display:flex;gap:0.5rem">
-                            <button
-                                onclick={() => startEdit(filter)}
-                                style="background:#f1f5f9;border:none;padding:0.3rem 0.75rem;border-radius:4px;cursor:pointer;color:#475569;font-size:0.85rem"
-                                >Edit</button
+                    <div class="list-item-body">
+                        <strong>{filter.name}</strong>
+                        {#if filter.description}<p
+                                class="text-sm text-muted mb-0"
                             >
-                            <button
-                                onclick={() => deleteFilter(filter.id)}
-                                style="background:none;border:1px solid #fecaca;color:#ef4444;padding:0.3rem 0.75rem;border-radius:4px;cursor:pointer;font-size:0.85rem"
-                                >Delete</button
-                            >
-                        </div>
+                                {filter.description}
+                            </p>{/if}
+                    </div>
+                    <div class="list-item-actions">
+                        <button
+                            onclick={() => startEdit(filter)}
+                            class="btn btn-secondary btn-sm">Edit</button
+                        >
+                        <button
+                            onclick={() => deleteFilter(filter.id)}
+                            class="btn btn-danger btn-sm">Delete</button
+                        >
                     </div>
                 {/if}
             </div>

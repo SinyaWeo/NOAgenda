@@ -42,45 +42,34 @@
     }
 </script>
 
-<div style="max-width:760px">
-    <h1 style="margin-bottom:0.4rem">Duplicate Project</h1>
-    <p style="margin:0 0 1.25rem;color:#64748b">
-        Create a new project from this one without affecting the original.
-    </p>
+<div class="page-header">
+    <a href="/projects/{$page.params.id}/edit" class="back-link"
+        ><span class="icon icon-sm">arrow_back</span></a
+    >
+    <h1 class="page-title">Duplicate Project</h1>
+</div>
+<p class="text-muted mb-4">
+    Create a new project from this one without affecting the original.
+</p>
 
-    {#if $loading}
-        <p>Loading…</p>
-    {:else if $error}
-        <p
-            style="color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:0.6rem 1rem"
-        >
-            {$error}
-        </p>
-    {:else if $project}
-        <section
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,0.04)"
-        >
-            <p style="margin:0 0 0.9rem">
-                Source project: <strong>{$project.name}</strong>
-            </p>
-            <p
-                style="margin:0 0 1rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:0.55rem 0.8rem"
-            >
+{#if $loading}
+    <p class="text-muted">Loading…</p>
+{:else if $error}
+    <div class="alert alert-error">{$error}</div>
+{:else if $project}
+    <div class="card">
+        <div class="card-body">
+            <p class="mb-2">Source project: <strong>{$project.name}</strong></p>
+            <div class="alert alert-warning mb-4">
                 The duplicate will use the same name with a "(copy)" suffix.
                 Tasks are not duplicated.
-            </p>
+            </div>
             <button
                 onclick={duplicate}
                 disabled={$saving}
-                style="background:#6366f1;color:#fff;border:none;padding:0.55rem 1.25rem;border-radius:6px;cursor:pointer"
+                class="btn btn-primary"
+                >{$saving ? 'Duplicating…' : 'Duplicate Project'}</button
             >
-                {$saving ? 'Duplicating…' : 'Duplicate Project'}
-            </button>
-        </section>
-
-        <p style="margin-top:1rem">
-            <a href="/projects/{$project.id}/edit">← Back to project settings</a
-            >
-        </p>
-    {/if}
-</div>
+        </div>
+    </div>
+{/if}

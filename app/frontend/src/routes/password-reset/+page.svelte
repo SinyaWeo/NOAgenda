@@ -36,76 +36,48 @@
 	}
 </script>
 
-<div
-	style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f1f5f9;padding:1rem"
->
-	<div
-		style="background:#fff;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,0.08);padding:2.5rem;width:100%;max-width:400px"
-	>
+<div class="auth-page">
+	<div class="auth-card">
 		<div style="text-align:center;margin-bottom:2rem">
-			<div
-				style="font-size:1.8rem;font-weight:700;color:#1e293b;margin-bottom:0.25rem"
-			>
-				NOAgenda
-			</div>
-			<h1 style="font-size:1.2rem;font-weight:600;color:#475569;margin:0">
-				Set a new password
-			</h1>
+			<div class="auth-title">NOAgenda</div>
+			<p class="auth-subtitle">Set a new password</p>
 		</div>
 		{#if $error}
-			<div
-				style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1.25rem;font-size:0.875rem"
-			>
-				{$error}
-			</div>
+			<div class="alert alert-error">{$error}</div>
 		{/if}
 		{#if $success}
-			<div
-				style="background:#f0fdf4;border:1px solid #86efac;color:#166534;padding:1rem;border-radius:6px;text-align:center"
-			>
-				<p style="margin:0 0 0.5rem;font-weight:600">
-					Password reset successful
-				</p>
-				<p style="margin:0;font-size:0.875rem">
-					Redirecting to sign in…
-				</p>
+			<div class="alert alert-success">
+				<p class="font-bold mb-2">Password reset successful</p>
+				<p class="text-sm">Redirecting to sign in…</p>
 			</div>
 		{:else}
-			<form
-				onsubmit={handleReset}
-				style="display:flex;flex-direction:column;gap:1rem"
-			>
-				<div>
-					<label
-						for="new-password"
-						style="display:block;font-size:0.875rem;font-weight:500;color:#374151;margin-bottom:0.3rem"
-						>New Password <span
-							style="font-size:0.8rem;color:#9ca3af"
+			<form onsubmit={handleReset}>
+				<div class="form-group">
+					<label for="new-password" class="form-label"
+						>New Password <span class="text-xs text-muted"
 							>(min 8 characters)</span
 						></label
 					>
-					<div style="display:flex;gap:0.5rem">
+					<div class="input-with-action">
 						<input
 							id="new-password"
 							type={showPassword ? 'text' : 'password'}
 							bind:value={$password}
 							required
 							minlength={8}
-							style="flex:1;padding:0.6rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.95rem"
+							class="form-input"
 						/>
 						<button
 							type="button"
 							onclick={() => (showPassword = !showPassword)}
-							style="padding:0.5rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:0.8rem;color:#6b7280;white-space:nowrap"
+							class="btn-show-hide"
 						>
 							{showPassword ? 'Hide' : 'Show'}
 						</button>
 					</div>
 				</div>
-				<div>
-					<label
-						for="confirm-password"
-						style="display:block;font-size:0.875rem;font-weight:500;color:#374151;margin-bottom:0.3rem"
+				<div class="form-group">
+					<label for="confirm-password" class="form-label"
 						>Confirm Password</label
 					>
 					<input
@@ -113,15 +85,14 @@
 						type="password"
 						bind:value={$confirm}
 						required
-						style="width:100%;padding:0.6rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.95rem;box-sizing:border-box"
+						class="form-input"
 					/>
 				</div>
 				<button
 					type="submit"
 					disabled={$loading}
-					style="background:#6366f1;color:#fff;padding:0.65rem 1rem;border:none;border-radius:6px;font-size:0.95rem;font-weight:500;cursor:{$loading
-						? 'not-allowed'
-						: 'pointer'};opacity:{$loading ? 0.7 : 1}"
+					class="btn btn-primary"
+					style="width:100%"
 				>
 					{$loading ? 'Resetting…' : 'Reset Password'}
 				</button>

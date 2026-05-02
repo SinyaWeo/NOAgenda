@@ -33,48 +33,26 @@
     }
 </script>
 
-<div style="max-width:520px">
-    <div
-        style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem"
+<div class="page-header">
+    <a href="/user/settings" class="back-link"
+        ><span class="icon icon-sm">arrow_back</span></a
     >
-        <a
-            href="/user/settings"
-            style="color:#6b7280;text-decoration:none;font-size:1.2rem"
-            >&#8592;</a
-        >
-        <h1 style="font-size:1.25rem;font-weight:700;color:#1e293b;margin:0">
-            Data Export
-        </h1>
-    </div>
+    <h1 class="page-title">Data Export</h1>
+</div>
 
-    {#if $error}
-        <div
-            style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1rem;font-size:0.875rem"
-        >
-            {$error}
-        </div>
-    {/if}
-    {#if $success}
-        <div
-            style="background:#f0fdf4;border:1px solid #86efac;color:#166534;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1rem;font-size:0.875rem"
-        >
-            {$success}
-        </div>
-    {/if}
+{#if $error}<div class="alert alert-error">{$error}</div>{/if}
+{#if $success}<div class="alert alert-success">{$success}</div>{/if}
 
-    <div
-        style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.5rem"
-    >
-        <p style="margin:0 0 1.25rem;font-size:0.875rem;color:#64748b">
+<div class="card">
+    <div class="card-body">
+        <p class="text-sm text-muted mb-4">
             Request a complete copy of all your data. You'll receive an email
             with a download link when the export is ready.
         </p>
         <button
             onclick={requestExport}
             disabled={$loading}
-            style="background:#6366f1;color:#fff;padding:0.6rem 1.25rem;border:none;border-radius:6px;font-size:0.9rem;font-weight:500;cursor:{$loading
-                ? 'not-allowed'
-                : 'pointer'};opacity:{$loading ? 0.7 : 1}"
+            class="btn btn-primary"
         >
             {$loading ? 'Requesting…' : 'Request Data Export'}
         </button>

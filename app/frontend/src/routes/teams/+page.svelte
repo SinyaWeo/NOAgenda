@@ -25,72 +25,65 @@
 	});
 </script>
 
-<div
-	style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem"
->
-	<h1 style="margin:0">Teams</h1>
-	<a
-		href="/teams/new"
-		style="background:#6366f1;color:#fff;padding:0.4rem 1rem;border-radius:6px;text-decoration:none;font-size:0.9rem"
-		>+ New Team</a
-	>
+<div class="page-header">
+	<h1 class="page-title">Teams</h1>
+	<div class="page-actions">
+		<a href="/teams/new" class="btn btn-primary"
+			><span class="icon icon-sm">add</span> New Team</a
+		>
+	</div>
 </div>
 
 {#if $loading}
 	<p>Loading teams...</p>
 {:else if $error}
-	<p style="color: red">{$error}</p>
+	<div class="alert alert-error">{$error}</div>
 {:else if $teams.length}
-	<div
-		style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem"
-	>
+	<div class="settings-grid">
 		{#each $teams as team}
-			<div
-				style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:0.75rem"
-			>
-				<div>
-					<a
-						href="/teams/{team.id}"
-						style="font-size:1.05rem;font-weight:600;color:#1e293b;text-decoration:none"
-						>{team.name}</a
-					>
-					{#if team.description}
-						<p
-							style="margin:0.25rem 0 0;color:#64748b;font-size:0.85rem"
-						>
-							{team.description}
-						</p>
-					{/if}
-				</div>
-				{#if team.members?.length != null}
-					<span style="font-size:0.8rem;color:#94a3b8"
-						>{team.members.length} member{team.members.length === 1
-							? ''
-							: 's'}</span
-					>
-				{/if}
+			<div class="card">
 				<div
-					style="display:flex;gap:0.75rem;margin-top:auto;padding-top:0.5rem;border-top:1px solid #f1f5f9"
+					class="card-body"
+					style="display:flex;flex-direction:column;gap:0.75rem"
 				>
-					<a
-						href="/teams/{team.id}"
-						style="font-size:0.85rem;color:#6366f1">View</a
+					<div>
+						<a href="/teams/{team.id}" class="font-bold"
+							>{team.name}</a
+						>
+						{#if team.description}
+							<p class="text-sm text-muted mb-0">
+								{team.description}
+							</p>
+						{/if}
+					</div>
+					{#if team.members?.length != null}
+						<span class="text-xs text-muted"
+							>{team.members.length} member{team.members
+								.length === 1
+								? ''
+								: 's'}</span
+						>
+					{/if}
+					<div
+						class="page-actions mt-auto"
+						style="border-top:1px solid var(--na-border);padding-top:0.5rem"
 					>
-					<a
-						href="/teams/{team.id}/edit"
-						style="font-size:0.85rem;color:#64748b">Edit</a
-					>
+						<a href="/teams/{team.id}" class="btn btn-ghost btn-sm"
+							>View</a
+						>
+						<a
+							href="/teams/{team.id}/edit"
+							class="btn btn-ghost btn-sm">Edit</a
+						>
+					</div>
 				</div>
 			</div>
 		{/each}
 	</div>
 {:else}
-	<div style="text-align:center;padding:3rem;color:#64748b">
-		<p style="margin:0;font-size:1.1rem">No teams yet.</p>
-		<a
-			href="/teams/new"
-			style="display:inline-block;margin-top:0.75rem;background:#6366f1;color:#fff;padding:0.4rem 1rem;border-radius:6px;text-decoration:none;font-size:0.9rem"
-			>Create a team</a
-		>
+	<div class="empty-state">
+		<span class="icon">group</span>
+		<p>No teams yet.</p>
+		<a href="/teams/new" class="btn btn-primary">Create a team</a>
 	</div>
 {/if}

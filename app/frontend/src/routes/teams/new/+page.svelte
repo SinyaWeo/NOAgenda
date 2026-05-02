@@ -35,66 +35,52 @@
     }
 </script>
 
-<div style="max-width:560px">
-    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
-        <a
-            href="/teams"
-            style="color:#64748b;text-decoration:none;font-size:1.25rem">←</a
-        >
-        <h1 style="margin:0">New Team</h1>
-    </div>
-
-    {#if $error}<p
-            style="color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:0.6rem 1rem;margin-bottom:1rem"
-        >
-            {$error}
-        </p>{/if}
-
-    <form
-        onsubmit={handleSubmit}
-        style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:1rem"
+<div class="page-header">
+    <a href="/teams" class="back-link"
+        ><span class="icon icon-sm">arrow_back</span></a
     >
-        <div style="display:flex;flex-direction:column;gap:0.3rem">
-            <label
-                for="team-name"
-                style="font-size:0.85rem;font-weight:500;color:#475569"
-                >Name <span style="color:#ef4444">*</span></label
+    <h1 class="page-title">New Team</h1>
+</div>
+
+{#if $error}<div class="alert alert-error">{$error}</div>{/if}
+
+<div class="card">
+    <div class="card-body">
+        <form onsubmit={handleSubmit}>
+            <div class="form-group">
+                <label for="team-name" class="form-label"
+                    >Name <span class="text-danger">*</span></label
+                >
+                <input
+                    id="team-name"
+                    type="text"
+                    bind:value={$name}
+                    required
+                    class="form-input"
+                />
+            </div>
+            <div class="form-group">
+                <label for="team-desc" class="form-label">Description</label>
+                <textarea
+                    id="team-desc"
+                    bind:value={$description}
+                    rows={3}
+                    class="form-textarea"
+                ></textarea>
+            </div>
+            <div
+                class="page-actions"
+                style="border-top:1px solid var(--na-border);padding-top:0.75rem"
             >
-            <input
-                id="team-name"
-                type="text"
-                bind:value={$name}
-                required
-                style="padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.95rem"
-            />
-        </div>
-        <div style="display:flex;flex-direction:column;gap:0.3rem">
-            <label
-                for="team-desc"
-                style="font-size:0.85rem;font-weight:500;color:#475569"
-                >Description</label
-            >
-            <textarea
-                id="team-desc"
-                bind:value={$description}
-                rows={3}
-                style="padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.95rem;resize:vertical"
-            ></textarea>
-        </div>
-        <div
-            style="display:flex;gap:0.75rem;justify-content:flex-end;padding-top:0.5rem;border-top:1px solid #f1f5f9"
-        >
-            <a
-                href="/teams"
-                style="padding:0.5rem 1rem;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#475569;font-size:0.9rem"
-                >Cancel</a
-            >
-            <button
-                type="submit"
-                disabled={$loading}
-                style="background:#6366f1;color:#fff;border:none;padding:0.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:0.9rem"
-                >{$loading ? 'Creating…' : 'Create Team'}</button
-            >
-        </div>
-    </form>
+                <button
+                    type="submit"
+                    disabled={$loading}
+                    class="btn btn-primary"
+                >
+                    {$loading ? 'Creating…' : 'Create Team'}
+                </button>
+                <a href="/teams" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
 </div>

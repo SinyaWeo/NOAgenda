@@ -102,185 +102,145 @@
 </script>
 
 {#if $loading}
-    <p style="color:#64748b">Loading…</p>
+    <p class="text-muted">Loading…</p>
 {:else}
-    <div style="max-width:560px">
-        <div
-            style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem"
-        >
-            <a
-                href="/teams/{$page.params.id}"
-                style="color:#6b7280;text-decoration:none;font-size:1.2rem"
-                >&#8592;</a
-            >
-            <h1
-                style="font-size:1.25rem;font-weight:700;color:#1e293b;margin:0"
-            >
-                Edit Team
-            </h1>
+    <div class="page">
+        <div class="page-header">
+            <a href="/teams/{$page.params.id}" class="back-link">
+                <span class="icon icon-sm">arrow_back</span>
+            </a>
+            <h1 class="page-title">Edit Team</h1>
         </div>
 
         {#if $error}
-            <div
-                style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:0.75rem 1rem;border-radius:6px;margin-bottom:1rem;font-size:0.875rem"
-            >
-                {$error}
-            </div>
+            <div class="alert alert-error">{$error}</div>
         {/if}
 
-        <div
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.5rem;margin-bottom:1.5rem"
-        >
-            <form
-                onsubmit={handleSave}
-                style="display:flex;flex-direction:column;gap:1.1rem"
-            >
-                <div>
-                    <label
-                        for="team-name"
-                        style="display:block;font-size:0.875rem;font-weight:500;color:#374151;margin-bottom:0.3rem"
-                        >Name <span style="color:#ef4444">*</span></label
-                    >
-                    <input
-                        id="team-name"
-                        type="text"
-                        bind:value={$name}
-                        required
-                        style="width:100%;padding:0.6rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.95rem;box-sizing:border-box"
-                    />
-                </div>
-                <div>
-                    <label
-                        for="team-desc"
-                        style="display:block;font-size:0.875rem;font-weight:500;color:#374151;margin-bottom:0.3rem"
-                        >Description</label
-                    >
-                    <textarea
-                        id="team-desc"
-                        bind:value={$description}
-                        rows={3}
-                        style="width:100%;padding:0.6rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.95rem;box-sizing:border-box;resize:vertical"
-                    ></textarea>
-                </div>
-                <div
-                    style="display:flex;gap:0.75rem;padding-top:0.5rem;border-top:1px solid #f1f5f9"
-                >
-                    <button
-                        type="submit"
-                        disabled={$saving}
-                        style="background:#6366f1;color:#fff;padding:0.6rem 1.25rem;border:none;border-radius:6px;font-size:0.9rem;font-weight:500;cursor:{$saving
-                            ? 'not-allowed'
-                            : 'pointer'};opacity:{$saving ? 0.7 : 1}"
-                    >
-                        {$saving ? 'Saving…' : 'Save Changes'}
-                    </button>
-                    <a
-                        href="/teams/{$page.params.id}"
-                        style="padding:0.6rem 1.25rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.9rem;color:#374151;text-decoration:none;background:#fff"
-                        >Cancel</a
-                    >
-                </div>
-            </form>
-        </div>
-
-        <div
-            style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.5rem;margin-bottom:1.5rem"
-        >
-            <h2
-                style="font-size:1rem;font-weight:600;color:#1e293b;margin:0 0 1rem"
-            >
-                Members
-            </h2>
-            <form
-                onsubmit={(e) => {
-                    e.preventDefault();
-                    addMember();
-                }}
-                style="display:flex;gap:0.5rem;margin-bottom:1rem"
-            >
-                {#if $allUsers.length}
-                    <select
-                        bind:value={newMemberUserId}
-                        style="flex:1;padding:0.6rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.9rem"
-                    >
-                        <option value="">Select user…</option>
-                        {#each $allUsers as u}
-                            <option value={String(u.id)}
-                                >{u.name ||
-                                    u.username ||
-                                    `User #${u.id}`}</option
-                            >
-                        {/each}
-                    </select>
-                {:else}
-                    <input
-                        type="number"
-                        bind:value={newMemberUserId}
-                        placeholder="User ID"
-                        min="1"
-                        style="flex:1;padding:0.6rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.9rem"
-                    />
-                {/if}
-                <button
-                    type="submit"
-                    style="padding:0.6rem 1rem;background:#6366f1;color:#fff;border:none;border-radius:6px;font-size:0.9rem;cursor:pointer"
-                    >Add</button
-                >
-            </form>
-            {#if $members.length}
-                <ul
-                    style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.5rem"
-                >
-                    {#each $members as member}
-                        <li
-                            style="display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0.75rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px"
+        <div class="card mb-6">
+            <div class="card-body">
+                <form onsubmit={handleSave}>
+                    <div class="form-group">
+                        <label for="team-name" class="form-label"
+                            >Name <span class="text-danger">*</span></label
                         >
-                            <span style="font-size:0.9rem;color:#374151"
-                                >{member.user
-                                    ? member.user.name ||
-                                      member.user.username ||
-                                      `User #${member.user.id}`
-                                    : `Member #${member.id}`}</span
-                            >
-                            <button
-                                onclick={() => removeMember(member.id)}
-                                style="padding:0.3rem 0.7rem;background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;border-radius:5px;cursor:pointer;font-size:0.8rem"
-                                >Remove</button
-                            >
-                        </li>
-                    {/each}
-                </ul>
-            {:else}
-                <p style="color:#94a3b8;font-size:0.9rem;margin:0">
-                    No members yet.
-                </p>
-            {/if}
+                        <input
+                            id="team-name"
+                            type="text"
+                            bind:value={$name}
+                            required
+                            class="form-input"
+                        />
+                    </div>
+                    <div class="form-group">
+                        <label for="team-desc" class="form-label"
+                            >Description</label
+                        >
+                        <textarea
+                            id="team-desc"
+                            bind:value={$description}
+                            rows={3}
+                            class="form-textarea"
+                        ></textarea>
+                    </div>
+                    <div
+                        class="page-actions"
+                        style="border-top:1px solid var(--na-border);padding-top:0.75rem"
+                    >
+                        <button
+                            type="submit"
+                            disabled={$saving}
+                            class="btn btn-primary"
+                        >
+                            {$saving ? 'Saving…' : 'Save Changes'}
+                        </button>
+                        <a
+                            href="/teams/{$page.params.id}"
+                            class="btn btn-secondary">Cancel</a
+                        >
+                    </div>
+                </form>
+            </div>
         </div>
 
-        <div
-            style="background:#fff;border:1px solid #fca5a5;border-radius:10px;padding:1.5rem"
-        >
-            <h2
-                style="font-size:1rem;font-weight:600;color:#b91c1c;margin:0 0 0.75rem"
-            >
-                Danger Zone
+        <div class="card mb-6">
+            <div class="card-header">
+                <h2 class="card-title">Members</h2>
+            </div>
+            <div class="card-body">
+                <form
+                    onsubmit={(e) => {
+                        e.preventDefault();
+                        addMember();
+                    }}
+                    class="inline-form mb-4"
+                >
+                    {#if $allUsers.length}
+                        <select
+                            bind:value={newMemberUserId}
+                            class="form-select"
+                        >
+                            <option value="">Select user…</option>
+                            {#each $allUsers as u}
+                                <option value={String(u.id)}
+                                    >{u.name ||
+                                        u.username ||
+                                        `User #${u.id}`}</option
+                                >
+                            {/each}
+                        </select>
+                    {:else}
+                        <input
+                            type="number"
+                            bind:value={newMemberUserId}
+                            placeholder="User ID"
+                            min="1"
+                            class="form-input"
+                        />
+                    {/if}
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+                {#if $members.length}
+                    <ul class="list">
+                        {#each $members as member}
+                            <li class="list-item">
+                                <span class="list-item-body text-sm">
+                                    {member.user
+                                        ? member.user.name ||
+                                          member.user.username ||
+                                          `User #${member.user.id}`
+                                        : `Member #${member.id}`}
+                                </span>
+                                <div class="list-item-actions">
+                                    <button
+                                        onclick={() => removeMember(member.id)}
+                                        class="btn btn-sm btn-danger"
+                                        >Remove</button
+                                    >
+                                </div>
+                            </li>
+                        {/each}
+                    </ul>
+                {:else}
+                    <p class="text-muted text-sm mb-0">No members yet.</p>
+                {/if}
+            </div>
+        </div>
+
+        <div class="danger-zone">
+            <h2 class="danger-zone-title">
+                <span class="icon icon-sm">warning</span> Danger Zone
             </h2>
             <div
-                style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem;border:1px solid #fca5a5;border-radius:6px;background:#fef2f2"
+                class="list-item"
+                style="border:1px solid var(--na-danger-border);border-radius:var(--na-radius);background:var(--na-danger-bg)"
             >
-                <div>
-                    <div
-                        style="font-size:0.875rem;font-weight:500;color:#b91c1c"
-                    >
-                        Delete Team
-                    </div>
-                    <div style="font-size:0.8rem;color:#f87171">
+                <div class="list-item-body">
+                    <div class="text-sm font-bold text-danger">Delete Team</div>
+                    <div class="text-xs text-danger">
                         Permanently removes this team and all its members
                     </div>
                 </div>
-                <button
-                    onclick={handleDelete}
-                    style="padding:0.4rem 0.9rem;border:1px solid #f87171;border-radius:6px;color:#fff;background:#ef4444;cursor:pointer;font-size:0.85rem;font-weight:500"
+                <button onclick={handleDelete} class="btn btn-sm btn-danger"
                     >Delete</button
                 >
             </div>

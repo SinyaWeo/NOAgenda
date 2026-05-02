@@ -59,72 +59,76 @@
 	}
 </script>
 
-<h1>Projects</h1>
-<a
-	href="/projects/new"
-	style="background:#6366f1;color:#fff;padding:0.4rem 1rem;border-radius:4px;text-decoration:none;display:inline-block;margin-bottom:1.5rem"
-	>+ New Project</a
->
+<div class="page-header">
+	<h1 class="page-title">Projects</h1>
+	<div class="page-actions">
+		<a href="/projects/new" class="btn btn-primary"
+			><span class="icon icon-sm">add</span> New Project</a
+		>
+	</div>
+</div>
 
 {#if $loading}
-	<p>Loading projects...</p>
+	<p class="text-muted">Loading projects...</p>
 {:else if $error}
-	<p style="color: red">{$error}</p>
+	<div class="alert alert-error">{$error}</div>
 {:else if $projects.length}
-	<div
-		style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem"
-	>
+	<div class="project-grid">
 		{#each $projects as project}
-			<div
-				style="border:1px solid #e2e8f0;border-radius:8px;padding:1.25rem;background:#fff;display:flex;flex-direction:column;gap:0.75rem;box-shadow:0 1px 4px rgba(0,0,0,0.04)"
-			>
+			<div class="project-card">
 				<div
-					style="display:flex;justify-content:space-between;align-items:flex-start"
+					class="flex-center"
+					style="justify-content:space-between;align-items:flex-start"
 				>
 					<div style="flex:1;min-width:0">
 						<a
 							href="/projects/{project.id}"
-							style="font-size:1.05rem;font-weight:600;color:#1e293b;text-decoration:none"
+							class="font-bold truncate"
+							style="display:block;text-decoration:none;color:inherit"
 							>{project.name ?? project.title}</a
 						>
 						{#if project.description}
-							<p
-								style="margin:0.25rem 0 0;color:#64748b;font-size:0.85rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical"
-							>
+							<p class="text-sm text-muted mb-0">
 								{project.description}
 							</p>
 						{/if}
 					</div>
 					<button
 						onclick={() => toggleFavorite(project.id)}
-						style="background:none;border:none;cursor:pointer;font-size:1.1rem;padding:0;flex-shrink:0;margin-left:0.5rem"
+						class="btn btn-ghost btn-icon"
 						title={$favorites.has(project.id)
 							? 'Remove from favorites'
 							: 'Add to favorites'}
-						>{$favorites.has(project.id) ? '★' : '☆'}</button
 					>
+						<span class="icon icon-sm"
+							>{$favorites.has(project.id)
+								? 'star'
+								: 'star_border'}</span
+						>
+					</button>
 				</div>
 				{#if project.isArchived}
-					<span
-						style="font-size:0.75rem;background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:12px;align-self:flex-start"
-						>Archived</span
-					>
+					<span class="tag">Archived</span>
 				{/if}
 				<div
-					style="display:flex;gap:0.75rem;margin-top:auto;padding-top:0.5rem;border-top:1px solid #f1f5f9"
+					class="flex-center gap-3"
+					style="margin-top:auto;padding-top:0.5rem;border-top:1px solid var(--na-border,#f1f5f9)"
 				>
 					<a
 						href="/projects/{project.id}"
-						style="font-size:0.85rem;color:#6366f1">Open</a
+						class="text-sm text-primary">Open</a
 					>
 					<a
 						href="/projects/{project.id}/edit"
-						style="font-size:0.85rem;color:#64748b">Settings</a
+						class="text-sm text-muted">Settings</a
 					>
 				</div>
 			</div>
 		{/each}
 	</div>
 {:else}
-	<p>No projects found. <a href="/projects/new">Create a project.</a></p>
+	<div class="empty-state">
+		<span class="icon">folder_open</span>
+		<p>No projects yet. <a href="/projects/new">Create a project.</a></p>
+	</div>
 {/if}

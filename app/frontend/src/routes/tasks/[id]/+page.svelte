@@ -235,108 +235,93 @@
 </script>
 
 {#if $loading}
-	<p style="color:#64748b">Loading…</p>
+	<p class="text-muted">Loading…</p>
 {:else if $error}
-	<div
-		style="background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;padding:0.75rem 1rem;border-radius:6px;font-size:0.875rem"
-	>
-		{$error}
-	</div>
+	<div class="alert alert-error">{$error}</div>
 {:else if $task}
-	<div style="max-width:800px">
-		<!-- Header -->
-		<div
-			style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1.25rem;flex-wrap:wrap"
+	<div class="page-header">
+		<a href="/projects/{$task.project?.id ?? ''}" class="back-link"
+			><span class="icon icon-sm">arrow_back</span></a
 		>
-			<div>
-				<a
-					href="/projects/{$task.project?.id ?? ''}"
-					style="font-size:0.8rem;color:#94a3b8;text-decoration:none"
-					>← Project</a
-				>
-				<h1
-					style="font-size:1.4rem;font-weight:700;color:#1e293b;margin:0.25rem 0 0"
-				>
-					{$task.title}
-				</h1>
-			</div>
-			<a
-				href="/tasks/{$task.id}/edit"
-				style="padding:0.5rem 1rem;border:1px solid #d1d5db;border-radius:6px;color:#374151;text-decoration:none;font-size:0.875rem;background:#fff;white-space:nowrap"
+		<h1 class="page-title">{$task.title}</h1>
+		<div class="page-actions">
+			<a href="/tasks/{$task.id}/edit" class="btn btn-secondary"
 				>Edit Task</a
 			>
 		</div>
+	</div>
 
-		<!-- Main info card -->
-		<div
-			style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;margin-bottom:1.25rem"
-		>
+	<div class="card mb-4">
+		<div class="card-body">
 			{#if $task.description}
-				<p
-					style="margin:0 0 1rem;color:#374151;font-size:0.95rem;white-space:pre-wrap"
-				>
+				<p class="text-sm mb-4" style="white-space:pre-wrap">
 					{$task.description}
 				</p>
 			{/if}
 
-			<div
-				style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1rem"
-			>
-				<div>
-					<div
-						style="font-size:0.75rem;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
+			<div class="form-row mb-4">
+				<div class="form-group mb-0">
+					<label
+						for="task-status"
+						class="form-label"
+						style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
+						>Status</label
 					>
-						Status
-					</div>
 					<select
+						id="task-status"
 						value={$task.status ?? 'open'}
 						onchange={(e) =>
 							updateStatus((e.target as HTMLSelectElement).value)}
-						style="padding:0.4rem 0.6rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.875rem;background:#fff;width:100%"
+						class="form-select"
 					>
 						<option value="open">Open</option>
 						<option value="in_progress">In Progress</option>
 						<option value="done">Done</option>
 					</select>
 				</div>
-				<div>
-					<div
-						style="font-size:0.75rem;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
+				<div class="form-group mb-0">
+					<span
+						class="form-label"
+						style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
+						>Priority</span
 					>
-						Priority
-					</div>
-					<div style="font-size:0.875rem;color:#374151">
-						{#if $task.priority !== undefined && $task.priority !== null}
-							{['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'][
-								$task.priority
-							] ?? $task.priority}
-						{:else}—{/if}
+					<div class="text-sm">
+						{$task.priority !== undefined && $task.priority !== null
+							? ([
+									'—',
+									'Low',
+									'Medium',
+									'High',
+									'Urgent',
+									'Do Now',
+								][$task.priority] ?? $task.priority)
+							: '—'}
 					</div>
 				</div>
 				{#if $task.startDate}
-					<div>
-						<div
-							style="font-size:0.75rem;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
+					<div class="form-group mb-0">
+						<span
+							class="form-label"
+							style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
+							>Start Date</span
 						>
-							Start Date
-						</div>
-						<div style="font-size:0.875rem;color:#374151">
+						<div class="text-sm">
 							{new Date($task.startDate).toLocaleDateString()}
 						</div>
 					</div>
 				{/if}
 				{#if $task.dueDate}
-					<div>
-						<div
-							style="font-size:0.75rem;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
+					<div class="form-group mb-0">
+						<span
+							class="form-label"
+							style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
+							>Due Date</span
 						>
-							Due Date
-						</div>
 						<div
-							style="font-size:0.875rem;{new Date($task.dueDate) <
+							class="text-sm {new Date($task.dueDate) <
 								new Date() && $task.status !== 'done'
-								? 'color:#ef4444;font-weight:500'
-								: 'color:#374151'}"
+								? 'text-danger font-bold'
+								: ''}"
 						>
 							{new Date($task.dueDate).toLocaleDateString()}
 						</div>
@@ -344,13 +329,14 @@
 				{/if}
 			</div>
 
-			<!-- Progress -->
-			<div style="margin-bottom:1rem">
+			<div class="mb-4">
 				<div
-					style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem"
+					class="flex-center"
+					style="justify-content:space-between;margin-bottom:0.4rem"
 				>
 					<span
-						style="font-size:0.75rem;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em"
+						class="form-label mb-0"
+						style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
 						>Progress</span
 					>
 					<select
@@ -359,63 +345,62 @@
 							updatePercentDone(
 								Number((e.target as HTMLSelectElement).value),
 							)}
-						style="padding:2px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:0.8rem;background:#fff"
+						class="form-select"
+						style="width:auto;padding:2px 6px;font-size:0.8rem"
 					>
 						{#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p}<option
 								value={p}>{p}%</option
 							>{/each}
 					</select>
 				</div>
-				<div style="background:#e2e8f0;border-radius:4px;height:8px">
+				<div
+					style="background:var(--na-border,#e2e8f0);border-radius:4px;height:8px"
+				>
 					<div
-						style="background:#6366f1;height:8px;border-radius:4px;width:{$task.percentDone ??
+						style="background:var(--na-primary,#6366f1);height:8px;border-radius:4px;width:{$task.percentDone ??
 							0}%;transition:width 0.3s"
 					></div>
 				</div>
 			</div>
 
-			<!-- Defer due date -->
 			{#if $task.dueDate}
-				<div
-					style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap"
-				>
-					<span style="font-size:0.8rem;color:#94a3b8"
-						>Defer due date:</span
-					>
+				<div class="flex-center gap-2 flex-wrap">
+					<span class="text-xs text-muted">Defer due date:</span>
 					<button
 						onclick={() => deferDueDate(1)}
-						style="padding:0.2rem 0.6rem;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;font-size:0.8rem;color:#475569"
-						>+1 day</button
+						class="btn btn-ghost btn-sm">+1 day</button
 					>
 					<button
 						onclick={() => deferDueDate(3)}
-						style="padding:0.2rem 0.6rem;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;font-size:0.8rem;color:#475569"
-						>+3 days</button
+						class="btn btn-ghost btn-sm">+3 days</button
 					>
 					<button
 						onclick={() => deferDueDate(7)}
-						style="padding:0.2rem 0.6rem;border:1px solid #e2e8f0;border-radius:4px;cursor:pointer;background:#f8fafc;font-size:0.8rem;color:#475569"
-						>+1 week</button
+						class="btn btn-ghost btn-sm">+1 week</button
 					>
 				</div>
 			{/if}
 
-			<!-- Labels & Assignees -->
 			{#if $taskLabels.length || $assignees.length}
 				<div
-					style="margin-top:1rem;padding-top:1rem;border-top:1px solid #f1f5f9;display:flex;flex-wrap:wrap;gap:1rem"
+					class="flex-center flex-wrap gap-4 mt-4"
+					style="padding-top:1rem;border-top:1px solid var(--na-border,#f1f5f9)"
 				>
 					{#if $taskLabels.length}
 						<div>
 							<span
-								style="font-size:0.75rem;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.3rem"
+								class="text-xs text-muted"
+								style="display:block;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
 								>Labels</span
 							>
-							<div style="display:flex;flex-wrap:wrap;gap:0.3rem">
+							<div class="flex-center gap-1 flex-wrap">
 								{#each $taskLabels as tl}
 									<span
-										style="background:{tl.label?.color ??
-											'#6366f1'};color:#fff;border-radius:4px;padding:2px 8px;font-size:0.8rem"
+										class="color-dot"
+										style="--dot-color:{tl.label?.color ??
+											'#6366f1'}"
+									></span>
+									<span class="tag text-xs"
 										>{tl.label?.title ?? tl.labelId}</span
 									>
 								{/each}
@@ -425,10 +410,11 @@
 					{#if $assignees.length}
 						<div>
 							<span
-								style="font-size:0.75rem;font-weight:500;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:0.3rem"
+								class="text-xs text-muted"
+								style="display:block;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
 								>Assignees</span
 							>
-							<div style="font-size:0.875rem;color:#374151">
+							<div class="text-sm">
 								{$assignees
 									.map(
 										(a: any) =>
@@ -442,132 +428,101 @@
 				</div>
 			{/if}
 		</div>
+	</div>
 
-		<!-- Subtasks -->
-		<div
-			style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;margin-bottom:1rem"
-		>
-			<h2
-				style="font-size:1rem;font-weight:600;color:#1e293b;margin:0 0 0.75rem"
-			>
-				Subtasks
-			</h2>
+	<div class="card mb-4">
+		<div class="card-header"><h2 class="card-title">Subtasks</h2></div>
+		<div class="card-body">
 			{#if $subtasks.length}
-				<div
-					style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.75rem"
-				>
+				<div class="list mb-3">
 					{#each $subtasks as sub}
-						<div
-							style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;background:#f8fafc;border-radius:5px"
-						>
-							<a
-								href="/tasks/{sub.id}"
-								style="flex:1;font-size:0.875rem;color:#1e293b;text-decoration:none"
-								>{sub.title}</a
-							>
-							<span style="font-size:0.75rem;color:#94a3b8"
+						<div class="list-item">
+							<div class="list-item-body">
+								<a
+									href="/tasks/{sub.id}"
+									class="text-sm font-medium">{sub.title}</a
+								>
+							</div>
+							<span
+								class="status-badge"
+								data-status={sub.status ?? 'open'}
 								>{sub.status ?? 'open'}</span
 							>
 						</div>
 					{/each}
 				</div>
 			{:else}
-				<p style="color:#94a3b8;font-size:0.875rem;margin:0 0 0.75rem">
-					No subtasks.
-				</p>
+				<p class="text-muted text-sm mb-3">No subtasks.</p>
 			{/if}
-			<form onsubmit={addSubtask} style="display:flex;gap:0.5rem">
+			<form onsubmit={addSubtask} class="inline-form">
 				<input
 					type="text"
 					bind:value={newSubtaskTitle}
 					placeholder="Add subtask…"
-					style="flex:1;padding:0.45rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.875rem"
+					class="form-input"
+					style="flex:1"
 				/>
-				<button
-					type="submit"
-					style="padding:0.45rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.875rem"
-					>Add</button
+				<button type="submit" class="btn btn-primary btn-sm">Add</button
 				>
 			</form>
 		</div>
+	</div>
 
-		<!-- Reminders -->
-		<div
-			style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;margin-bottom:1rem"
-		>
-			<h2
-				style="font-size:1rem;font-weight:600;color:#1e293b;margin:0 0 0.75rem"
-			>
-				Reminders
-			</h2>
+	<div class="card mb-4">
+		<div class="card-header"><h2 class="card-title">Reminders</h2></div>
+		<div class="card-body">
 			{#if $reminders.length}
-				<div
-					style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.75rem"
-				>
+				<div class="list mb-3">
 					{#each $reminders as rem}
-						<div
-							style="display:flex;align-items:center;justify-content:space-between;padding:0.4rem 0.6rem;background:#f8fafc;border-radius:5px"
-						>
-							<span style="font-size:0.875rem;color:#374151"
-								>{new Date(
-									rem.reminderDate,
-								).toLocaleString()}</span
-							>
+						<div class="list-item">
+							<div class="list-item-body text-sm">
+								{new Date(rem.reminderDate).toLocaleString()}
+							</div>
 							<button
 								onclick={() => deleteReminder(rem.id)}
-								style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1rem;padding:0"
-								title="Delete">✕</button
+								class="btn btn-ghost btn-sm btn-icon"
+								title="Delete"
+								><span class="icon icon-sm">close</span></button
 							>
 						</div>
 					{/each}
 				</div>
 			{:else}
-				<p style="color:#94a3b8;font-size:0.875rem;margin:0 0 0.75rem">
-					No reminders.
-				</p>
+				<p class="text-muted text-sm mb-3">No reminders.</p>
 			{/if}
-			<div style="display:flex;gap:0.5rem">
+			<div class="inline-form">
 				<input
 					type="datetime-local"
 					bind:value={newReminderDate}
-					style="flex:1;padding:0.45rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.875rem"
+					class="form-input"
+					style="flex:1"
 				/>
-				<button
-					onclick={addReminder}
-					style="padding:0.45rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.875rem"
+				<button onclick={addReminder} class="btn btn-primary btn-sm"
 					>Add</button
 				>
 			</div>
 		</div>
+	</div>
 
-		<!-- Relations -->
-		<div
-			style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;margin-bottom:1rem"
-		>
-			<h2
-				style="font-size:1rem;font-weight:600;color:#1e293b;margin:0 0 0.75rem"
-			>
-				Related Tasks
-			</h2>
+	<div class="card mb-4">
+		<div class="card-header"><h2 class="card-title">Related Tasks</h2></div>
+		<div class="card-body">
 			{#if $relations.length}
-				<div
-					style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.75rem"
-				>
+				<div class="list mb-3">
 					{#each $relations as rel}
-						<div
-							style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;background:#f8fafc;border-radius:5px"
-						>
-							<span
-								style="font-size:0.75rem;background:#e0e7ff;color:#4f46e5;border-radius:3px;padding:1px 6px"
+						<div class="list-item">
+							<span class="tag text-xs"
 								>{rel.kind.replace(/_/g, ' ')}</span
 							>
-							<a
-								href="/tasks/{rel.relatedTask?.id ??
-									rel.relatedTaskId}"
-								style="flex:1;font-size:0.875rem;color:#1e293b;text-decoration:none"
-								>{rel.relatedTask?.title ??
-									`Task #${rel.relatedTaskId}`}</a
-							>
+							<div class="list-item-body">
+								<a
+									href="/tasks/{rel.relatedTask?.id ??
+										rel.relatedTaskId}"
+									class="text-sm font-medium"
+									>{rel.relatedTask?.title ??
+										`Task #${rel.relatedTaskId}`}</a
+								>
+							</div>
 							<button
 								onclick={() =>
 									deleteRelation(
@@ -575,113 +530,88 @@
 										rel.relatedTask?.id ??
 											rel.relatedTaskId,
 									)}
-								style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:1rem;padding:0"
-								>✕</button
+								class="btn btn-ghost btn-sm btn-icon"
+								><span class="icon icon-sm">close</span></button
 							>
 						</div>
 					{/each}
 				</div>
 			{:else}
-				<p style="color:#94a3b8;font-size:0.875rem;margin:0 0 0.75rem">
-					No relations.
-				</p>
+				<p class="text-muted text-sm mb-3">No relations.</p>
 			{/if}
-			<div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+			<div class="inline-form flex-wrap">
 				<input
 					type="number"
 					bind:value={newRelatedTaskId}
 					placeholder="Task ID"
-					style="width:100px;padding:0.45rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.875rem"
+					class="form-input"
+					style="width:100px"
 				/>
-				<select
-					bind:value={newRelationKind}
-					style="padding:0.45rem 0.7rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.875rem;background:#fff"
-				>
+				<select bind:value={newRelationKind} class="form-select">
 					{#each RELATION_KINDS as k}<option value={k}
 							>{k.replace(/_/g, ' ')}</option
 						>{/each}
 				</select>
-				<button
-					onclick={addRelation}
-					style="padding:0.45rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:0.875rem"
+				<button onclick={addRelation} class="btn btn-primary btn-sm"
 					>Add</button
 				>
 			</div>
 		</div>
+	</div>
 
-		<!-- Attachments -->
-		<div
-			style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem;margin-bottom:1rem"
-		>
-			<h2
-				style="font-size:1rem;font-weight:600;color:#1e293b;margin:0 0 0.75rem"
-			>
-				Attachments
-			</h2>
+	<div class="card mb-4">
+		<div class="card-header"><h2 class="card-title">Attachments</h2></div>
+		<div class="card-body">
 			{#if $attachments.length}
-				<div
-					style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.75rem"
-				>
+				<div class="list mb-3">
 					{#each $attachments as att}
-						<div
-							style="display:flex;align-items:center;padding:0.4rem 0.6rem;background:#f8fafc;border-radius:5px"
-						>
-							<a
-								href="{API_BASE}/attachments/{att.id}/download"
-								target="_blank"
-								style="font-size:0.875rem;color:#6366f1;text-decoration:none"
-								>📎 {att.filename}</a
-							>
+						<div class="list-item">
+							<span class="icon icon-sm">attach_file</span>
+							<div class="list-item-body">
+								<a
+									href="{API_BASE}/attachments/{att.id}/download"
+									target="_blank"
+									class="text-sm text-primary"
+									>{att.filename}</a
+								>
+							</div>
 						</div>
 					{/each}
 				</div>
 			{:else}
-				<p style="color:#94a3b8;font-size:0.875rem;margin:0 0 0.75rem">
-					No attachments.
-				</p>
+				<p class="text-muted text-sm mb-3">No attachments.</p>
 			{/if}
-			<label
-				style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.45rem 0.9rem;background:#f8fafc;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;font-size:0.875rem;color:#374151"
-			>
-				+ Upload file
+			<label class="btn btn-secondary btn-sm">
+				<span class="icon icon-sm">upload</span> Upload file
 				<input
 					type="file"
 					onchange={uploadAttachment}
-					style="display:none"
+					class="sr-only"
 				/>
 			</label>
 		</div>
+	</div>
 
-		<!-- Comments -->
-		<div
-			style="background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:1.25rem"
-		>
-			<h2
-				style="font-size:1rem;font-weight:600;color:#1e293b;margin:0 0 0.75rem"
-			>
-				Comments
-			</h2>
+	<div class="card">
+		<div class="card-header"><h2 class="card-title">Comments</h2></div>
+		<div class="card-body">
 			{#if $comments.length}
-				<div
-					style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1rem"
-				>
+				<div class="list mb-4">
 					{#each $comments as comment}
 						<div
-							style="padding:0.75rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px"
+							class="list-item"
+							style="flex-direction:column;align-items:stretch"
 						>
 							<div
-								style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.3rem"
+								class="flex-center"
+								style="justify-content:space-between;margin-bottom:0.3rem"
 							>
-								<span
-									style="font-size:0.8rem;font-weight:500;color:#6366f1"
+								<span class="text-sm font-bold text-primary"
 									>{comment.author?.username ??
 										'Unknown'}</span
 								>
-								<div
-									style="display:flex;align-items:center;gap:0.5rem"
-								>
-									<span
-										style="font-size:0.75rem;color:#94a3b8"
+								<div class="flex-center gap-2">
+									<span class="text-xs text-muted"
 										>{new Date(
 											comment.createdAt,
 										).toLocaleString()}</span
@@ -689,13 +619,14 @@
 									<button
 										onclick={() =>
 											deleteComment(comment.id)}
-										style="background:none;border:none;cursor:pointer;color:#94a3b8;font-size:0.8rem;padding:0"
+										class="btn btn-ghost btn-sm"
 										>Delete</button
 									>
 								</div>
 							</div>
 							<p
-								style="margin:0;font-size:0.875rem;color:#374151;white-space:pre-wrap"
+								class="text-sm mb-0"
+								style="white-space:pre-wrap"
 							>
 								{comment.content}
 							</p>
@@ -703,29 +634,24 @@
 					{/each}
 				</div>
 			{:else}
-				<p style="color:#94a3b8;font-size:0.875rem;margin:0 0 0.75rem">
-					No comments yet.
-				</p>
+				<p class="text-muted text-sm mb-4">No comments yet.</p>
 			{/if}
-			<form onsubmit={postComment} style="display:flex;gap:0.5rem">
+			<form onsubmit={postComment} class="inline-form">
 				<input
 					type="text"
 					bind:value={newComment}
 					placeholder="Add a comment…"
-					style="flex:1;padding:0.5rem 0.75rem;border:1px solid #d1d5db;border-radius:6px;font-size:0.875rem"
+					class="form-input"
+					style="flex:1"
 				/>
 				<button
 					type="submit"
 					disabled={addingComment}
-					style="padding:0.5rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:6px;cursor:{addingComment
-						? 'not-allowed'
-						: 'pointer'};opacity:{addingComment
-						? 0.7
-						: 1};font-size:0.875rem">Post</button
+					class="btn btn-primary btn-sm">Post</button
 				>
 			</form>
 		</div>
 	</div>
 {:else}
-	<p style="color:#64748b">Task not found.</p>
+	<p class="text-muted">Task not found.</p>
 {/if}

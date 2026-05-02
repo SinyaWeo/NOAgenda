@@ -54,120 +54,88 @@
   }
 </script>
 
-<div style="max-width:600px">
-  <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem">
-    <a
-      href={$projectId ? `/projects/${$projectId}` : '/tasks'}
-      style="color:#64748b;text-decoration:none;font-size:1.25rem">←</a
-    >
-    <h1 style="margin:0">Create Task</h1>
-  </div>
-
-  {#if $error}<p
-      style="color:#ef4444;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:0.6rem 1rem;margin-bottom:1rem"
-    >
-      {$error}
-    </p>{/if}
-
-  <form
-    onsubmit={handleCreate}
-    style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.04);display:flex;flex-direction:column;gap:1rem"
+<div class="page-header">
+  <a href={$projectId ? `/projects/${$projectId}` : '/tasks'} class="back-link"
+    ><span class="icon icon-sm">arrow_back</span></a
   >
-    <div style="display:flex;flex-direction:column;gap:0.3rem">
-      <label
-        for="task-title"
-        style="font-size:0.85rem;font-weight:500;color:#475569"
-        >Title <span style="color:#ef4444">*</span></label
-      >
-      <input
-        id="task-title"
-        type="text"
-        bind:value={$title}
-        required
-        style="padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.95rem"
-      />
-    </div>
-    <div style="display:flex;flex-direction:column;gap:0.3rem">
-      <label
-        for="task-desc"
-        style="font-size:0.85rem;font-weight:500;color:#475569"
-        >Description</label
-      >
-      <textarea
-        id="task-desc"
-        bind:value={$description}
-        rows={3}
-        style="padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.95rem;resize:vertical"
-      ></textarea>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
-      <div style="display:flex;flex-direction:column;gap:0.3rem">
-        <label
-          for="task-due"
-          style="font-size:0.85rem;font-weight:500;color:#475569"
-          >Due Date</label
+  <h1 class="page-title">Create Task</h1>
+</div>
+
+{#if $error}<div class="alert alert-error">{$error}</div>{/if}
+
+<div class="card">
+  <div class="card-body">
+    <form onsubmit={handleCreate}>
+      <div class="form-group">
+        <label for="task-title" class="form-label"
+          >Title <span class="text-danger">*</span></label
         >
         <input
-          id="task-due"
-          type="date"
-          bind:value={$dueDate}
-          style="padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.95rem"
+          id="task-title"
+          type="text"
+          bind:value={$title}
+          required
+          class="form-input"
         />
       </div>
-      <div style="display:flex;flex-direction:column;gap:0.3rem">
-        <label
-          for="task-priority"
-          style="font-size:0.85rem;font-weight:500;color:#475569"
-          >Priority</label
-        >
-        <select
-          id="task-priority"
-          bind:value={$priority}
-          style="padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.95rem"
-        >
-          <option value={0}>— Unset</option>
-          <option value={1}>Low</option>
-          <option value={2}>Medium</option>
-          <option value={3}>High</option>
-          <option value={4}>Urgent</option>
-          <option value={5}>Do Now</option>
-        </select>
+      <div class="form-group">
+        <label for="task-desc" class="form-label">Description</label>
+        <textarea
+          id="task-desc"
+          bind:value={$description}
+          rows={3}
+          class="form-textarea"
+        ></textarea>
       </div>
-    </div>
-    {#if !$projectId}
-      <div style="display:flex;flex-direction:column;gap:0.3rem">
-        <label
-          for="task-project"
-          style="font-size:0.85rem;font-weight:500;color:#475569"
-          >Project <span style="color:#ef4444">*</span></label
-        >
-        <select
-          id="task-project"
-          bind:value={$projectId}
-          required
-          style="padding:0.5rem 0.75rem;border:1px solid #e2e8f0;border-radius:6px;font-size:0.95rem"
-        >
-          <option value={undefined}>Select a project…</option>
-          {#each $projects as p}
-            <option value={p.id}>{p.name ?? p.title}</option>
-          {/each}
-        </select>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="task-due" class="form-label">Due Date</label>
+          <input
+            id="task-due"
+            type="date"
+            bind:value={$dueDate}
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="task-priority" class="form-label">Priority</label>
+          <select id="task-priority" bind:value={$priority} class="form-select">
+            <option value={0}>— Unset</option>
+            <option value={1}>Low</option>
+            <option value={2}>Medium</option>
+            <option value={3}>High</option>
+            <option value={4}>Urgent</option>
+            <option value={5}>Do Now</option>
+          </select>
+        </div>
       </div>
-    {/if}
-    <div
-      style="display:flex;gap:0.75rem;justify-content:flex-end;padding-top:0.5rem;border-top:1px solid #f1f5f9"
-    >
-      <a
-        href={$projectId ? `/projects/${$projectId}` : '/tasks'}
-        style="padding:0.5rem 1rem;border:1px solid #e2e8f0;border-radius:6px;text-decoration:none;color:#475569;font-size:0.9rem"
-        >Cancel</a
-      >
-      <button
-        type="submit"
-        disabled={$loading}
-        style="background:#6366f1;color:#fff;border:none;padding:0.5rem 1.25rem;border-radius:6px;cursor:pointer;font-size:0.9rem"
-        >{$loading ? 'Creating…' : 'Create Task'}</button
-      >
-    </div>
-  </form>
+      {#if !$projectId}
+        <div class="form-group">
+          <label for="task-project" class="form-label"
+            >Project <span class="text-danger">*</span></label
+          >
+          <select
+            id="task-project"
+            bind:value={$projectId}
+            required
+            class="form-select"
+          >
+            <option value={undefined}>Select a project…</option>
+            {#each $projects as p}
+              <option value={p.id}>{p.name ?? p.title}</option>
+            {/each}
+          </select>
+        </div>
+      {/if}
+      <div class="page-actions">
+        <a
+          href={$projectId ? `/projects/${$projectId}` : '/tasks'}
+          class="btn btn-secondary">Cancel</a
+        >
+        <button type="submit" disabled={$loading} class="btn btn-primary"
+          >{$loading ? 'Creating…' : 'Create Task'}</button
+        >
+      </div>
+    </form>
+  </div>
 </div>
