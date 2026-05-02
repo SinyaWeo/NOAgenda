@@ -30,6 +30,7 @@ import { ApiTokenModule } from './modules/api-token/api-token.module';
 import { SessionModule } from './modules/session/session.module';
 import { KanbanBucketModule } from './modules/kanban-bucket/kanban-bucket.module';
 import { AppI18nModule } from './i18n/i18n.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { AppI18nModule } from './i18n/i18n.module';
     ApiTokenModule,
     SessionModule,
     KanbanBucketModule,
+    SearchModule,
   ],
   controllers: [AppController],
 })

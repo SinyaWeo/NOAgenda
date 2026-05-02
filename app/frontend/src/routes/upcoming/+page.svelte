@@ -9,8 +9,8 @@
     const loading = writable(true);
     const error = writable('');
 
-    let showOverdue = false;
-    let daysAhead = 7;
+    let showOverdue = $state(false);
+    let daysAhead = $state(7);
 
     const STATUS_COLORS: Record<string, string> = {
         open: '#6366f1',

@@ -85,7 +85,9 @@
         >
             {#if $avatarUrl}
                 <img
-                    src={$avatarUrl}
+                    src={$avatarUrl.startsWith('http')
+                        ? $avatarUrl
+                        : `${API_BASE}${$avatarUrl}`}
                     alt="Current avatar"
                     style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0"
                 />

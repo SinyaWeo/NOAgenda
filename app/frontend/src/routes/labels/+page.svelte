@@ -15,14 +15,14 @@
     const error = writable('');
 
     // Create form
-    let newTitle = '';
-    let newColor = '#6366f1';
-    let creating = false;
+    let newTitle = $state('');
+    let newColor = $state('#6366f1');
+    let creating = $state(false);
 
     // Edit state
-    let editId: number | null = null;
-    let editTitle = '';
-    let editColor = '';
+    let editId = $state<number | null>(null);
+    let editTitle = $state('');
+    let editColor = $state('');
 
     async function loadLabels() {
         const all = await apiGetAuth<any[]>('/labels');

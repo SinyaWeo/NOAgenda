@@ -11,9 +11,9 @@
 	const overdueTasks = writable<any[]>([]);
 	const loading = writable(true);
 
-	let quickTitle = '';
-	let quickProjectId = '';
-	let addingTask = false;
+	let quickTitle = $state('');
+	let quickProjectId = $state('');
+	let addingTask = $state(false);
 
 	const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
 	const STATUS_COLORS: Record<string, string> = {

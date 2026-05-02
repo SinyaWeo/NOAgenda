@@ -21,11 +21,11 @@
     const loading = writable(true);
     const error = writable('');
 
-    let editingId: number | null = null;
-    let newName = '';
-    let newDescription = '';
-    let editName = '';
-    let editDescription = '';
+    let editingId = $state<number | null>(null);
+    let newName = $state('');
+    let newDescription = $state('');
+    let editName = $state('');
+    let editDescription = $state('');
 
     async function load() {
         filters.set(await apiGetAuth<Filter[]>('/filters'));
