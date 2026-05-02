@@ -4,6 +4,13 @@
 	import { getCurrentUser } from '$lib/auth';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
+	import { Alert, Badge, Button, Card } from 'flowbite-svelte';
+	import {
+		FolderOutline,
+		PlusOutline,
+		StarOutline,
+		StarSolid,
+	} from 'flowbite-svelte-icons';
 
 	const projects = writable<any[]>([]);
 	const favorites = writable<Set<number>>(new Set());
@@ -53,82 +60,79 @@
 				});
 				favorites.update((s) => new Set([...s, projectId]));
 			}
-		} catch (_) {
-			/* non-critical */
-		}
+		} catch (_) {}
 	}
 </script>
 
-<div class="page-header">
-	<h1 class="page-title">Projects</h1>
-	<div class="page-actions">
-		<a href="/projects/new" class="btn btn-primary"
-			><span class="icon icon-sm">add</span> New Project</a
-		>
-	</div>
+<div class="flex items-center justify-between mb-6">
+	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
+		Projects
+	</h1>
+	<Button href="/projects/new"
+		><PlusOutline class="w-4 h-4 mr-1" />New Project</Button
+	>
 </div>
 
 {#if $loading}
-	<p class="text-muted">Loading projects...</p>
+	<p class="text-gray-400">Loading projects...</p>
 {:else if $error}
-	<div class="alert alert-error">{$error}</div>
+	<Alert color="red">{$error}</Alert>
 {:else if $projects.length}
-	<div class="project-grid">
+	<div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
 		{#each $projects as project}
-			<div class="project-card">
-				<div
-					class="flex-center"
-					style="justify-content:space-between;align-items:flex-start"
-				>
-					<div style="flex:1;min-width:0">
+			<Card class="flex flex-col gap-2">
+				<div class="flex items-start gap-2">
+					<div class="flex-1 min-w-0">
 						<a
 							href="/projects/{project.id}"
-							class="font-bold truncate"
-							style="display:block;text-decoration:none;color:inherit"
+							class="font-bold text-gray-900 dark:text-white hover:underline block truncate"
 							>{project.name ?? project.title}</a
 						>
-						{#if project.description}
-							<p class="text-sm text-muted mb-0">
+						{#if project.description}<p
+								class="text-sm text-gray-500 dark:text-gray-400 m-0 truncate"
+							>
 								{project.description}
-							</p>
-						{/if}
+							</p>{/if}
 					</div>
 					<button
 						onclick={() => toggleFavorite(project.id)}
-						class="btn btn-ghost btn-icon"
+						class="p-1 text-gray-400 hover:text-amber-400 transition-colors shrink-0"
 						title={$favorites.has(project.id)
 							? 'Remove from favorites'
 							: 'Add to favorites'}
 					>
-						<span class="icon icon-sm"
-							>{$favorites.has(project.id)
-								? 'star'
-								: 'star_border'}</span
-						>
+						{#if $favorites.has(project.id)}<StarSolid
+								class="w-4 h-4 text-amber-400"
+							/>{:else}<StarOutline class="w-4 h-4" />{/if}
 					</button>
 				</div>
-				{#if project.isArchived}
-					<span class="tag">Archived</span>
-				{/if}
+				{#if project.isArchived}<Badge color="gray">Archived</Badge
+					>{/if}
 				<div
-					class="flex-center gap-3"
-					style="margin-top:auto;padding-top:0.5rem;border-top:1px solid var(--na-border,#f1f5f9)"
+					class="flex items-center gap-3 mt-auto pt-2 border-t border-gray-100 dark:border-gray-700"
 				>
 					<a
 						href="/projects/{project.id}"
-						class="text-sm text-primary">Open</a
+						class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
+						>Open</a
 					>
 					<a
 						href="/projects/{project.id}/edit"
-						class="text-sm text-muted">Settings</a
+						class="text-sm text-gray-400 no-underline hover:underline"
+						>Settings</a
 					>
 				</div>
-			</div>
+			</Card>
 		{/each}
 	</div>
 {:else}
-	<div class="empty-state">
-		<span class="icon">folder_open</span>
-		<p>No projects yet. <a href="/projects/new">Create a project.</a></p>
+	<div class="text-center py-12 text-gray-400">
+		<FolderOutline class="w-12 h-12 mx-auto mb-3" />
+		<p>
+			No projects yet. <a
+				href="/projects/new"
+				class="text-primary-600 hover:underline">Create a project.</a
+			>
+		</p>
 	</div>
 {/if}

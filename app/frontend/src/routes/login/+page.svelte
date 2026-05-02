@@ -2,12 +2,14 @@
   import { writable } from 'svelte/store';
   import { apiFetch, setToken } from '$lib/api';
   import { goto } from '$app/navigation';
+  import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
+  import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 
   const username = writable('');
   const password = writable('');
   const error = writable('');
   const loading = writable(false);
-  let showPassword = false;
+  let showPassword = $state(false);
 
   async function handleLogin(event: Event) {
     event.preventDefault();
@@ -34,59 +36,39 @@
   }
 </script>
 
-<div class="auth-page">
-  <div class="auth-card">
-    <div style="text-align:center;margin-bottom:2rem">
-      <div class="auth-title">NOAgenda</div>
-      <p class="auth-subtitle">Sign in to your account</p>
+<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+  <Card class="w-full max-w-md">
+    <div class="text-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">NOAgenda</h1>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to your account</p>
     </div>
+
     {#if $error}
-      <div class="alert alert-error">{$error}</div>
+      <Alert color="red" class="mb-4">{$error}</Alert>
     {/if}
-    <form onsubmit={handleLogin} class="form-group" style="gap:1rem">
-      <div class="form-group">
-        <label for="login-username" class="form-label">Username</label>
-        <input
-          id="login-username"
-          type="text"
-          bind:value={$username}
-          required
-          class="form-input"
-        />
+
+    <form onsubmit={handleLogin} class="flex flex-col gap-4">
+      <div>
+        <Label for="login-username" class="mb-1">Username</Label>
+        <Input id="login-username" type="text" bind:value={$username} required />
       </div>
-      <div class="form-group">
-        <label for="login-password" class="form-label">Password</label>
-        <div class="input-with-action">
-          <input
-            id="login-password"
-            type={showPassword ? 'text' : 'password'}
-            bind:value={$password}
-            required
-            class="form-input"
-          />
-          <button
-            type="button"
-            onclick={() => (showPassword = !showPassword)}
-            class="btn-show-hide"
-          >
-            {showPassword ? 'Hide' : 'Show'}
-          </button>
+      <div>
+        <Label for="login-password" class="mb-1">Password</Label>
+        <div class="flex gap-2">
+          <Input id="login-password" type={showPassword ? 'text' : 'password'} bind:value={$password} required class="flex-1" />
+          <Button type="button" color="light" onclick={() => (showPassword = !showPassword)} class="shrink-0 px-3">
+            {#if showPassword}<EyeSlashOutline class="w-4 h-4" />{:else}<EyeOutline class="w-4 h-4" />{/if}
+          </Button>
         </div>
       </div>
-      <button
-        type="submit"
-        disabled={$loading}
-        class="btn btn-primary"
-        style="width:100%"
-      >
-        {$loading ? 'Signing in…' : 'Sign in'}
-      </button>
+      <Button type="submit" disabled={$loading} class="w-full mt-1">{$loading ? 'Signing in…' : 'Sign in'}</Button>
     </form>
-    <div class="auth-footer">
-      <p class="mb-2">
-        Don't have an account? <a href="/register">Register</a>
-      </p>
-      <a href="/get-password-reset" class="text-muted">Forgot password?</a>
-    </div>
-  </div>
+
+    <p class="text-sm text-center text-gray-500 mt-4">
+      Don't have an account? <a href="/register" class="text-primary-600 dark:text-primary-400 hover:underline">Register</a>
+    </p>
+    <p class="text-sm text-center mt-1">
+      <a href="/get-password-reset" class="text-gray-400 hover:underline text-xs">Forgot password?</a>
+    </p>
+  </Card>
 </div>

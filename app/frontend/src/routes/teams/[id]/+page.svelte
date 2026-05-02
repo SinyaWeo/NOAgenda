@@ -1,104 +1,56 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
-	import { apiGetAuth } from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
-	import { writable } from 'svelte/store';
-	import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { apiGetAuth } from '$lib/api';
+  import { getCurrentUser } from '$lib/auth';
+  import { writable } from 'svelte/store';
+  import { goto } from '$app/navigation';
+  import { Alert, Button, Card } from 'flowbite-svelte';
 
-	const team = writable<any>(null);
-	const members = writable<any[]>([]);
-	const usersById = writable<
-		Record<number, { username?: string; name?: string }>
-	>({});
-	const loading = writable(true);
-	const error = writable('');
+  const team = writable<any>(null);
+  const members = writable<any[]>([]);
+  const loading = writable(true);
+  const error = writable('');
 
-	onMount(async () => {
-		const me = await getCurrentUser();
-		if (!me) {
-			goto('/login');
-			return;
-		}
-		const id = $page.params.id;
-		try {
-			const [t, m, users] = await Promise.all([
-				apiGetAuth<any>(`/teams/${id}`),
-				apiGetAuth<any[]>(`/team-members?teamId=${id}`),
-				apiGetAuth<any[]>('/users'),
-			]);
-			team.set(t);
-			members.set(m);
-			usersById.set(
-				Object.fromEntries(
-					users.map((u: any) => [
-						u.id,
-						{ username: u.username, name: u.name },
-					]),
-				),
-			);
-		} catch (e: any) {
-			error.set(e.message);
-		} finally {
-			loading.set(false);
-		}
-	});
-
-	function displayName(userId: number): string {
-		const user = $usersById[userId];
-		if (!user) return `User #${userId}`;
-		if (user.name && user.name.trim()) return user.name;
-		if (user.username && user.username.trim()) return user.username;
-		return `User #${userId}`;
-	}
+  onMount(async () => {
+    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const id = $page.params.id;
+    try {
+      const [t, m] = await Promise.all([apiGetAuth<any>(`/teams/${id}`), apiGetAuth<any[]>(`/team-members?teamId=${id}`)]);
+      team.set(t); members.set(m);
+    } catch (e: any) { error.set(e.message); } finally { loading.set(false); }
+  });
 </script>
 
 {#if $loading}
-	<p>Loading...</p>
+  <p class="text-gray-400">Loading...</p>
 {:else if $error}
-	<div class="alert alert-error">{$error}</div>
+  <Alert color="red">{$error}</Alert>
 {:else if $team}
-	<div class="page">
-		<div class="page-header">
-			<a href="/teams" class="back-link"
-				><span class="icon icon-sm">arrow_back</span></a
-			>
-			<h1 class="page-title">{$team.name}</h1>
-			<div class="page-actions">
-				<a href="/teams/{$team.id}/edit" class="btn btn-secondary"
-					>Edit Team</a
-				>
-			</div>
-		</div>
-		{#if $team.description}
-			<p class="text-muted mb-4">{$team.description}</p>
-		{/if}
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-3">
+      <a href="/teams" class="text-gray-400 hover:text-gray-600">← Back</a>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">{$team.name}</h1>
+    </div>
+    <Button href="/teams/{$team.id}/edit" color="light" size="sm">Edit Team</Button>
+  </div>
+  {#if $team.description}<p class="text-gray-500 mb-4">{$team.description}</p>{/if}
 
-		<div class="card">
-			<div class="card-header"><h2 class="card-title">Members</h2></div>
-			<div class="card-body">
-				{#if $members.length}
-					<ul class="list">
-						{#each $members as member}
-							<li class="list-item">
-								<span class="list-item-body">
-									{#if member.user}
-										{member.user.name ||
-											member.user.username ||
-											`User #${member.user.id}`}
-									{:else}
-										{displayName(member.userId)}
-									{/if}
-								</span>
-							</li>
-						{/each}
-					</ul>
-				{:else}
-					<p class="text-muted mb-0">No members yet.</p>
-				{/if}
-			</div>
-		</div>
-	</div>
+  <Card>
+    <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Members</h2>
+    {#if $members.length}
+      {#each $members as member, i}
+        <div class="flex items-center gap-3 py-2 {i < $members.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}">
+          <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-sm font-bold text-primary-700 dark:text-primary-300 shrink-0">
+            {(member.user?.name ?? member.user?.username ?? 'U')[0].toUpperCase()}
+          </div>
+          <span class="text-sm text-gray-800 dark:text-gray-200">{member.user?.name || member.user?.username || `User #${member.userId}`}</span>
+        </div>
+      {/each}
+    {:else}
+      <p class="text-sm text-gray-400">No members yet.</p>
+    {/if}
+  </Card>
 {:else}
-	<p>Team not found.</p>
+  <p class="text-gray-400">Team not found.</p>
 {/if}

@@ -1,82 +1,49 @@
 <script lang="ts">
-    import { writable } from 'svelte/store';
-    import { apiPostAuth } from '$lib/api';
-    import { getCurrentUser } from '$lib/auth';
-    import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
+  import { writable } from 'svelte/store';
+  import { apiPostAuth } from '$lib/api';
+  import { getCurrentUser } from '$lib/auth';
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
 
-    const name = writable('');
-    const description = writable('');
-    const error = writable('');
-    const loading = writable(false);
+  const name = writable('');
+  const description = writable('');
+  const error = writable('');
+  const loading = writable(false);
 
-    onMount(async () => {
-        const me = await getCurrentUser();
-        if (!me) {
-            goto('/login');
-        }
-    });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/login'); });
 
-    async function handleSubmit(e: Event) {
-        e.preventDefault();
-        loading.set(true);
-        error.set('');
-        try {
-            const project = await apiPostAuth<any>('/projects', {
-                name: $name,
-                description: $description,
-            });
-            goto(`/projects/${project.id}`);
-        } catch (err: any) {
-            error.set(err.message ?? 'Failed to create project');
-        } finally {
-            loading.set(false);
-        }
-    }
+  async function handleSubmit(e: Event) {
+    e.preventDefault();
+    loading.set(true);
+    error.set('');
+    try {
+      const project = await apiPostAuth<any>('/projects', { name: $name, description: $description });
+      goto(`/projects/${project.id}`);
+    } catch (err: any) { error.set(err.message ?? 'Failed to create project'); } finally { loading.set(false); }
+  }
 </script>
 
-<div class="page-header">
-    <a href="/projects" class="back-link"
-        ><span class="icon icon-sm">arrow_back</span></a
-    >
-    <h1 class="page-title">New Project</h1>
+<div class="flex items-center gap-3 mb-6">
+  <a href="/projects" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">← Back</a>
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">New Project</h1>
 </div>
 
-{#if $error}<div class="alert alert-error">{$error}</div>{/if}
+{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
-<div class="card">
-    <div class="card-body">
-        <form onsubmit={handleSubmit}>
-            <div class="form-group">
-                <label for="proj-name" class="form-label"
-                    >Name <span class="text-danger">*</span></label
-                >
-                <input
-                    id="proj-name"
-                    type="text"
-                    bind:value={$name}
-                    required
-                    class="form-input"
-                />
-            </div>
-            <div class="form-group">
-                <label for="proj-desc" class="form-label">Description</label>
-                <textarea
-                    id="proj-desc"
-                    bind:value={$description}
-                    rows={4}
-                    class="form-textarea"
-                ></textarea>
-            </div>
-            <div class="page-actions">
-                <a href="/projects" class="btn btn-secondary">Cancel</a>
-                <button
-                    type="submit"
-                    disabled={$loading}
-                    class="btn btn-primary"
-                    >{$loading ? 'Creating…' : 'Create Project'}</button
-                >
-            </div>
-        </form>
+<Card class="max-w-xl">
+  <form onsubmit={handleSubmit} class="flex flex-col gap-4">
+    <div>
+      <Label for="proj-name" class="mb-1">Name <span class="text-red-500">*</span></Label>
+      <Input id="proj-name" type="text" bind:value={$name} required />
     </div>
-</div>
+    <div>
+      <Label for="proj-desc" class="mb-1">Description</Label>
+      <Textarea id="proj-desc" bind:value={$description} rows={4} />
+    </div>
+    <div class="flex gap-2">
+      <Button type="submit" disabled={$loading}>{$loading ? 'Creating…' : 'Create Project'}</Button>
+      <Button href="/projects" color="light">Cancel</Button>
+    </div>
+  </form>
+</Card>

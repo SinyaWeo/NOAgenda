@@ -2,90 +2,113 @@
 	import { onMount } from 'svelte';
 	import { getCurrentUser } from '$lib/auth';
 	import { goto } from '$app/navigation';
-
-	// User settings index page — links to all settings sub-pages.
+	import {
+		UserCircleOutline,
+		CogOutline,
+		LockOutline,
+		EnvelopeOutline,
+		ApiKeyOutline,
+		DesktopPcOutline,
+		LinkOutline,
+		ArrowDownToBracketOutline,
+		TrashBinOutline,
+	} from 'flowbite-svelte-icons';
 
 	onMount(async () => {
 		const me = await getCurrentUser();
-		if (!me) {
-			goto('/login');
-		}
+		if (!me) goto('/login');
 	});
 
 	const sections = [
 		{
 			href: '/user/settings/general',
-			icon: 'person',
+			icon: UserCircleOutline,
 			label: 'General',
 			desc: 'Name, language, and preferences',
 		},
 		{
 			href: '/user/settings/avatar',
-			icon: 'image',
+			icon: CogOutline,
 			label: 'Avatar',
 			desc: 'Change your profile picture',
 		},
 		{
 			href: '/user/settings/email-update',
-			icon: 'mail',
+			icon: EnvelopeOutline,
 			label: 'Email',
 			desc: 'Update your email address',
 		},
 		{
 			href: '/user/settings/password-update',
-			icon: 'lock',
+			icon: LockOutline,
 			label: 'Password',
 			desc: 'Change your password',
 		},
 		{
 			href: '/user/settings/api-tokens',
-			icon: 'key',
+			icon: ApiKeyOutline,
 			label: 'API Tokens',
 			desc: 'Manage personal access tokens',
 		},
 		{
 			href: '/user/settings/sessions',
-			icon: 'devices',
+			icon: DesktopPcOutline,
 			label: 'Active Sessions',
 			desc: 'View and revoke sessions',
 		},
 		{
 			href: '/user/settings/webhooks',
-			icon: 'webhook',
+			icon: LinkOutline,
 			label: 'Webhooks',
 			desc: 'Configure outgoing webhooks',
 		},
 		{
 			href: '/user/settings/data-export',
-			icon: 'download',
+			icon: ArrowDownToBracketOutline,
 			label: 'Data Export',
 			desc: 'Download your data',
 		},
 		{
 			href: '/user/settings/deletion',
-			icon: 'delete_forever',
+			icon: TrashBinOutline,
 			label: 'Account Deletion',
 			desc: 'Permanently delete your account',
 			danger: true,
 		},
-	];
+	] satisfies {
+		href: string;
+		icon: any;
+		label: string;
+		desc: string;
+		danger?: true;
+	}[];
 </script>
 
-<div class="page-header">
-	<h1 class="page-title">Settings</h1>
-</div>
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Settings</h1>
 
-<div class="settings-grid">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 	{#each sections as s}
-		<a href={s.href} class="settings-card" class:danger={s.danger}>
-			<span class="settings-card-icon icon" class:text-danger={s.danger}
-				>{s.icon}</span
-			>
+		<a
+			href={s.href}
+			class="flex items-center gap-3 p-4 rounded-lg border {s.danger
+				? 'border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20'
+				: 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'} transition-colors"
+		>
+			<svelte:component
+				this={s.icon}
+				class="w-6 h-6 shrink-0 {s.danger
+					? 'text-red-600'
+					: 'text-primary-600'}"
+			/>
 			<div>
-				<p class="settings-card-title" class:text-danger={s.danger}>
+				<p
+					class="font-semibold text-sm m-0 {s.danger
+						? 'text-red-600'
+						: 'text-gray-900 dark:text-white'}"
+				>
 					{s.label}
 				</p>
-				<p class="settings-card-desc">{s.desc}</p>
+				<p class="text-xs text-gray-500 m-0">{s.desc}</p>
 			</div>
 		</a>
 	{/each}

@@ -12,6 +12,16 @@
 	import { getCurrentUser } from '$lib/auth';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
+	import {
+		Alert,
+		Button,
+		Card,
+		Input,
+		Progressbar,
+		Select,
+		Textarea,
+	} from 'flowbite-svelte';
+	import { PaperClipOutline } from 'flowbite-svelte-icons';
 
 	const task = writable<any>(null);
 	const comments = writable<any[]>([]);
@@ -24,12 +34,12 @@
 	const loading = writable(true);
 	const error = writable('');
 
-	let newComment = '';
-	let addingComment = false;
-	let newReminderDate = '';
-	let newRelatedTaskId = '';
-	let newRelationKind = 'related';
-	let newSubtaskTitle = '';
+	let newComment = $state('');
+	let addingComment = $state(false);
+	let newReminderDate = $state('');
+	let newRelatedTaskId = $state('');
+	let newRelationKind = $state('related');
+	let newSubtaskTitle = $state('');
 
 	const RELATION_KINDS = [
 		'related',
@@ -39,6 +49,7 @@
 		'duplicate_of',
 		'duplicated_by',
 	];
+	const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
 
 	async function loadTask(id: string) {
 		const [t, c, a, l, att, rem, rel, sub] = await Promise.all([
@@ -61,6 +72,21 @@
 		subtasks.set(sub);
 	}
 
+	onMount(async () => {
+		const me = await getCurrentUser();
+		if (!me) {
+			goto('/login');
+			return;
+		}
+		try {
+			await loadTask($page.params.id ?? '');
+		} catch (e: any) {
+			error.set(e.message);
+		} finally {
+			loading.set(false);
+		}
+	});
+
 	async function addReminder() {
 		const id = $page.params.id;
 		if (!newReminderDate) return;
@@ -74,7 +100,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function deleteReminder(reminderId: number) {
 		const id = $page.params.id;
 		try {
@@ -84,7 +109,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function addRelation() {
 		const id = $page.params.id;
 		if (!newRelatedTaskId) return;
@@ -99,7 +123,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function deleteRelation(kind: string, relatedTaskId: number) {
 		const id = $page.params.id;
 		try {
@@ -111,7 +134,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function addSubtask(e: SubmitEvent) {
 		e.preventDefault();
 		const id = $page.params.id;
@@ -129,7 +151,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function updatePercentDone(value: number) {
 		const id = $page.params.id;
 		try {
@@ -141,7 +162,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function updateStatus(status: string) {
 		const id = $page.params.id;
 		try {
@@ -151,7 +171,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function deferDueDate(days: number) {
 		const id = $page.params.id;
 		const t = $task;
@@ -166,7 +185,6 @@
 			error.set(e.message);
 		}
 	}
-
 	async function postComment(e: SubmitEvent) {
 		e.preventDefault();
 		const id = $page.params.id;
@@ -185,17 +203,16 @@
 			addingComment = false;
 		}
 	}
-
 	async function deleteComment(commentId: number) {
 		try {
 			await apiDeleteAuth(`/comments/${commentId}`);
-			const id = $page.params.id;
-			comments.set(await apiGetAuth<any[]>(`/comments?taskId=${id}`));
+			comments.set(
+				await apiGetAuth<any[]>(`/comments?taskId=${$page.params.id}`),
+			);
 		} catch (e: any) {
 			error.set(e.message);
 		}
 	}
-
 	async function uploadAttachment(e: Event) {
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
@@ -212,446 +229,414 @@
 			headers,
 			body: fd,
 		});
-		const fresh = await apiGetAuth<any[]>(`/attachments?taskId=${id}`);
-		attachments.set(fresh);
+		attachments.set(await apiGetAuth<any[]>(`/attachments?taskId=${id}`));
 		input.value = '';
 	}
-
-	onMount(async () => {
-		const me = await getCurrentUser();
-		if (!me) {
-			goto('/login');
-			return;
-		}
-		const id = $page.params.id ?? '';
-		try {
-			await loadTask(id);
-		} catch (e: any) {
-			error.set(e.message);
-		} finally {
-			loading.set(false);
-		}
-	});
 </script>
 
 {#if $loading}
-	<p class="text-muted">Loading…</p>
+	<p class="text-gray-400">Loading…</p>
 {:else if $error}
-	<div class="alert alert-error">{$error}</div>
+	<Alert color="red">{$error}</Alert>
 {:else if $task}
-	<div class="page-header">
-		<a href="/projects/{$task.project?.id ?? ''}" class="back-link"
-			><span class="icon icon-sm">arrow_back</span></a
-		>
-		<h1 class="page-title">{$task.title}</h1>
-		<div class="page-actions">
-			<a href="/tasks/{$task.id}/edit" class="btn btn-secondary"
-				>Edit Task</a
+	<div class="flex items-start justify-between gap-4 mb-4">
+		<div class="flex items-center gap-3">
+			<a
+				href="/projects/{$task.project?.id ?? ''}"
+				class="text-gray-400 hover:text-gray-600">← Back</a
 			>
+			<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
+				{$task.title}
+			</h1>
 		</div>
+		<Button href="/tasks/{$task.id}/edit" color="light" size="sm"
+			>Edit Task</Button
+		>
 	</div>
 
-	<div class="card mb-4">
-		<div class="card-body">
-			{#if $task.description}
-				<p class="text-sm mb-4" style="white-space:pre-wrap">
-					{$task.description}
+	<Card class="mb-4">
+		{#if $task.description}<p
+				class="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300 mb-4"
+			>
+				{$task.description}
+			</p>{/if}
+
+		<div class="grid grid-cols-2 gap-4 mb-4 sm:grid-cols-4">
+			<div>
+				<p
+					class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1"
+				>
+					Status
 				</p>
+				<Select
+					value={$task.status ?? 'open'}
+					onchange={(e) =>
+						updateStatus((e.target as HTMLSelectElement).value)}
+					class="w-full"
+				>
+					<option value="open">Open</option><option
+						value="in_progress">In Progress</option
+					><option value="done">Done</option>
+				</Select>
+			</div>
+			<div>
+				<p
+					class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1"
+				>
+					Priority
+				</p>
+				<p
+					class="text-sm text-gray-900 dark:text-white"
+					data-priority={$task.priority}
+				>
+					{PRIORITY_LABELS[$task.priority] ?? '—'}
+				</p>
+			</div>
+			{#if $task.startDate}
+				<div>
+					<p
+						class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1"
+					>
+						Start Date
+					</p>
+					<p class="text-sm text-gray-900 dark:text-white">
+						{new Date($task.startDate).toLocaleDateString()}
+					</p>
+				</div>
 			{/if}
-
-			<div class="form-row mb-4">
-				<div class="form-group mb-0">
-					<label
-						for="task-status"
-						class="form-label"
-						style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
-						>Status</label
-					>
-					<select
-						id="task-status"
-						value={$task.status ?? 'open'}
-						onchange={(e) =>
-							updateStatus((e.target as HTMLSelectElement).value)}
-						class="form-select"
-					>
-						<option value="open">Open</option>
-						<option value="in_progress">In Progress</option>
-						<option value="done">Done</option>
-					</select>
-				</div>
-				<div class="form-group mb-0">
-					<span
-						class="form-label"
-						style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
-						>Priority</span
-					>
-					<div class="text-sm">
-						{$task.priority !== undefined && $task.priority !== null
-							? ([
-									'—',
-									'Low',
-									'Medium',
-									'High',
-									'Urgent',
-									'Do Now',
-								][$task.priority] ?? $task.priority)
-							: '—'}
-					</div>
-				</div>
-				{#if $task.startDate}
-					<div class="form-group mb-0">
-						<span
-							class="form-label"
-							style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
-							>Start Date</span
-						>
-						<div class="text-sm">
-							{new Date($task.startDate).toLocaleDateString()}
-						</div>
-					</div>
-				{/if}
-				{#if $task.dueDate}
-					<div class="form-group mb-0">
-						<span
-							class="form-label"
-							style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
-							>Due Date</span
-						>
-						<div
-							class="text-sm {new Date($task.dueDate) <
-								new Date() && $task.status !== 'done'
-								? 'text-danger font-bold'
-								: ''}"
-						>
-							{new Date($task.dueDate).toLocaleDateString()}
-						</div>
-					</div>
-				{/if}
-			</div>
-
-			<div class="mb-4">
-				<div
-					class="flex-center"
-					style="justify-content:space-between;margin-bottom:0.4rem"
-				>
-					<span
-						class="form-label mb-0"
-						style="text-transform:uppercase;font-size:0.75rem;letter-spacing:0.05em"
-						>Progress</span
-					>
-					<select
-						value={$task.percentDone ?? 0}
-						onchange={(e) =>
-							updatePercentDone(
-								Number((e.target as HTMLSelectElement).value),
-							)}
-						class="form-select"
-						style="width:auto;padding:2px 6px;font-size:0.8rem"
-					>
-						{#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p}<option
-								value={p}>{p}%</option
-							>{/each}
-					</select>
-				</div>
-				<div
-					style="background:var(--na-border,#e2e8f0);border-radius:4px;height:8px"
-				>
-					<div
-						style="background:var(--na-primary,#6366f1);height:8px;border-radius:4px;width:{$task.percentDone ??
-							0}%;transition:width 0.3s"
-					></div>
-				</div>
-			</div>
-
 			{#if $task.dueDate}
-				<div class="flex-center gap-2 flex-wrap">
-					<span class="text-xs text-muted">Defer due date:</span>
-					<button
-						onclick={() => deferDueDate(1)}
-						class="btn btn-ghost btn-sm">+1 day</button
+				<div>
+					<p
+						class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1"
 					>
-					<button
-						onclick={() => deferDueDate(3)}
-						class="btn btn-ghost btn-sm">+3 days</button
+						Due Date
+					</p>
+					<p
+						class="text-sm {new Date($task.dueDate) < new Date() &&
+						$task.status !== 'done'
+							? 'text-red-600 font-bold'
+							: 'text-gray-900 dark:text-white'}"
 					>
-					<button
-						onclick={() => deferDueDate(7)}
-						class="btn btn-ghost btn-sm">+1 week</button
-					>
-				</div>
-			{/if}
-
-			{#if $taskLabels.length || $assignees.length}
-				<div
-					class="flex-center flex-wrap gap-4 mt-4"
-					style="padding-top:1rem;border-top:1px solid var(--na-border,#f1f5f9)"
-				>
-					{#if $taskLabels.length}
-						<div>
-							<span
-								class="text-xs text-muted"
-								style="display:block;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
-								>Labels</span
-							>
-							<div class="flex-center gap-1 flex-wrap">
-								{#each $taskLabels as tl}
-									<span
-										class="color-dot"
-										style="--dot-color:{tl.label?.color ??
-											'#6366f1'}"
-									></span>
-									<span class="tag text-xs"
-										>{tl.label?.title ?? tl.labelId}</span
-									>
-								{/each}
-							</div>
-						</div>
-					{/if}
-					{#if $assignees.length}
-						<div>
-							<span
-								class="text-xs text-muted"
-								style="display:block;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem"
-								>Assignees</span
-							>
-							<div class="text-sm">
-								{$assignees
-									.map(
-										(a: any) =>
-											a.user?.username ??
-											`User #${a.userId}`,
-									)
-									.join(', ')}
-							</div>
-						</div>
-					{/if}
+						{new Date($task.dueDate).toLocaleDateString()}
+					</p>
 				</div>
 			{/if}
 		</div>
-	</div>
 
-	<div class="card mb-4">
-		<div class="card-header"><h2 class="card-title">Subtasks</h2></div>
-		<div class="card-body">
-			{#if $subtasks.length}
-				<div class="list mb-3">
-					{#each $subtasks as sub}
-						<div class="list-item">
-							<div class="list-item-body">
-								<a
-									href="/tasks/{sub.id}"
-									class="text-sm font-medium">{sub.title}</a
-								>
-							</div>
-							<span
-								class="status-badge"
-								data-status={sub.status ?? 'open'}
-								>{sub.status ?? 'open'}</span
-							>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="text-muted text-sm mb-3">No subtasks.</p>
-			{/if}
-			<form onsubmit={addSubtask} class="inline-form">
-				<input
-					type="text"
-					bind:value={newSubtaskTitle}
-					placeholder="Add subtask…"
-					class="form-input"
-					style="flex:1"
-				/>
-				<button type="submit" class="btn btn-primary btn-sm">Add</button
+		<div class="mb-4">
+			<div class="flex items-center justify-between mb-2">
+				<p
+					class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0"
 				>
-			</form>
-		</div>
-	</div>
-
-	<div class="card mb-4">
-		<div class="card-header"><h2 class="card-title">Reminders</h2></div>
-		<div class="card-body">
-			{#if $reminders.length}
-				<div class="list mb-3">
-					{#each $reminders as rem}
-						<div class="list-item">
-							<div class="list-item-body text-sm">
-								{new Date(rem.reminderDate).toLocaleString()}
-							</div>
-							<button
-								onclick={() => deleteReminder(rem.id)}
-								class="btn btn-ghost btn-sm btn-icon"
-								title="Delete"
-								><span class="icon icon-sm">close</span></button
-							>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="text-muted text-sm mb-3">No reminders.</p>
-			{/if}
-			<div class="inline-form">
-				<input
-					type="datetime-local"
-					bind:value={newReminderDate}
-					class="form-input"
-					style="flex:1"
-				/>
-				<button onclick={addReminder} class="btn btn-primary btn-sm"
-					>Add</button
+					Progress
+				</p>
+				<Select
+					value={$task.percentDone ?? 0}
+					onchange={(e) =>
+						updatePercentDone(
+							Number((e.target as HTMLSelectElement).value),
+						)}
+					class="w-auto"
 				>
-			</div>
-		</div>
-	</div>
-
-	<div class="card mb-4">
-		<div class="card-header"><h2 class="card-title">Related Tasks</h2></div>
-		<div class="card-body">
-			{#if $relations.length}
-				<div class="list mb-3">
-					{#each $relations as rel}
-						<div class="list-item">
-							<span class="tag text-xs"
-								>{rel.kind.replace(/_/g, ' ')}</span
-							>
-							<div class="list-item-body">
-								<a
-									href="/tasks/{rel.relatedTask?.id ??
-										rel.relatedTaskId}"
-									class="text-sm font-medium"
-									>{rel.relatedTask?.title ??
-										`Task #${rel.relatedTaskId}`}</a
-								>
-							</div>
-							<button
-								onclick={() =>
-									deleteRelation(
-										rel.kind,
-										rel.relatedTask?.id ??
-											rel.relatedTaskId,
-									)}
-								class="btn btn-ghost btn-sm btn-icon"
-								><span class="icon icon-sm">close</span></button
-							>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="text-muted text-sm mb-3">No relations.</p>
-			{/if}
-			<div class="inline-form flex-wrap">
-				<input
-					type="number"
-					bind:value={newRelatedTaskId}
-					placeholder="Task ID"
-					class="form-input"
-					style="width:100px"
-				/>
-				<select bind:value={newRelationKind} class="form-select">
-					{#each RELATION_KINDS as k}<option value={k}
-							>{k.replace(/_/g, ' ')}</option
+					{#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p}<option
+							value={p}>{p}%</option
 						>{/each}
-				</select>
-				<button onclick={addRelation} class="btn btn-primary btn-sm"
-					>Add</button
+				</Select>
+			</div>
+			<Progressbar progress={$task.percentDone ?? 0} />
+		</div>
+
+		{#if $task.dueDate}
+			<div class="flex items-center gap-2 flex-wrap">
+				<span class="text-xs text-gray-400">Defer due date:</span>
+				<Button size="xs" color="light" onclick={() => deferDueDate(1)}
+					>+1 day</Button
+				>
+				<Button size="xs" color="light" onclick={() => deferDueDate(3)}
+					>+3 days</Button
+				>
+				<Button size="xs" color="light" onclick={() => deferDueDate(7)}
+					>+1 week</Button
 				>
 			</div>
-		</div>
-	</div>
+		{/if}
 
-	<div class="card mb-4">
-		<div class="card-header"><h2 class="card-title">Attachments</h2></div>
-		<div class="card-body">
-			{#if $attachments.length}
-				<div class="list mb-3">
-					{#each $attachments as att}
-						<div class="list-item">
-							<span class="icon icon-sm">attach_file</span>
-							<div class="list-item-body">
-								<a
-									href="{API_BASE}/attachments/{att.id}/download"
-									target="_blank"
-									class="text-sm text-primary"
-									>{att.filename}</a
-								>
-							</div>
-						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="text-muted text-sm mb-3">No attachments.</p>
-			{/if}
-			<label class="btn btn-secondary btn-sm">
-				<span class="icon icon-sm">upload</span> Upload file
-				<input
-					type="file"
-					onchange={uploadAttachment}
-					class="sr-only"
-				/>
-			</label>
-		</div>
-	</div>
-
-	<div class="card">
-		<div class="card-header"><h2 class="card-title">Comments</h2></div>
-		<div class="card-body">
-			{#if $comments.length}
-				<div class="list mb-4">
-					{#each $comments as comment}
-						<div
-							class="list-item"
-							style="flex-direction:column;align-items:stretch"
+		{#if $taskLabels.length || $assignees.length}
+			<div
+				class="flex gap-6 flex-wrap mt-4 pt-4 border-t border-gray-100 dark:border-gray-700"
+			>
+				{#if $taskLabels.length}
+					<div>
+						<p
+							class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1"
 						>
-							<div
-								class="flex-center"
-								style="justify-content:space-between;margin-bottom:0.3rem"
-							>
-								<span class="text-sm font-bold text-primary"
-									>{comment.author?.username ??
-										'Unknown'}</span
+							Labels
+						</p>
+						<div class="flex items-center gap-1.5 flex-wrap">
+							{#each $taskLabels as tl}
+								<span
+									class="color-dot"
+									style="--dot-color:{tl.label?.color ??
+										'#6366f1'}"
+								></span>
+								<span
+									class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+									>{tl.label?.title ?? tl.labelId}</span
 								>
-								<div class="flex-center gap-2">
-									<span class="text-xs text-muted"
-										>{new Date(
-											comment.createdAt,
-										).toLocaleString()}</span
-									>
-									<button
-										onclick={() =>
-											deleteComment(comment.id)}
-										class="btn btn-ghost btn-sm"
-										>Delete</button
-									>
-								</div>
-							</div>
-							<p
-								class="text-sm mb-0"
-								style="white-space:pre-wrap"
-							>
-								{comment.content}
-							</p>
+							{/each}
 						</div>
-					{/each}
-				</div>
-			{:else}
-				<p class="text-muted text-sm mb-4">No comments yet.</p>
-			{/if}
-			<form onsubmit={postComment} class="inline-form">
-				<input
-					type="text"
-					bind:value={newComment}
-					placeholder="Add a comment…"
-					class="form-input"
-					style="flex:1"
-				/>
-				<button
-					type="submit"
-					disabled={addingComment}
-					class="btn btn-primary btn-sm">Post</button
-				>
-			</form>
+					</div>
+				{/if}
+				{#if $assignees.length}
+					<div>
+						<p
+							class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1"
+						>
+							Assignees
+						</p>
+						<p class="text-sm text-gray-700 dark:text-gray-300 m-0">
+							{$assignees
+								.map(
+									(a: any) =>
+										a.user?.username ?? `User #${a.userId}`,
+								)
+								.join(', ')}
+						</p>
+					</div>
+				{/if}
+			</div>
+		{/if}
+	</Card>
+
+	<!-- Subtasks -->
+	<Card class="mb-4">
+		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+			Subtasks
+		</h2>
+		{#if $subtasks.length}
+			<div class="mb-3">
+				{#each $subtasks as sub, i}
+					<div
+						class="flex items-center gap-3 py-2 {i <
+						$subtasks.length - 1
+							? 'border-b border-gray-100 dark:border-gray-700'
+							: ''}"
+					>
+						<a
+							href="/tasks/{sub.id}"
+							class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline"
+							>{sub.title}</a
+						>
+						<span
+							class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
+							data-status={sub.status ?? 'open'}
+							>{sub.status ?? 'open'}</span
+						>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-sm text-gray-400 mb-3">No subtasks.</p>
+		{/if}
+		<form onsubmit={addSubtask} class="flex gap-2">
+			<Input
+				type="text"
+				bind:value={newSubtaskTitle}
+				placeholder="Add subtask…"
+				class="flex-1"
+			/>
+			<Button type="submit" size="sm">Add</Button>
+		</form>
+	</Card>
+
+	<!-- Reminders -->
+	<Card class="mb-4">
+		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+			Reminders
+		</h2>
+		{#if $reminders.length}
+			<div class="mb-3">
+				{#each $reminders as rem, i}
+					<div
+						class="flex items-center gap-3 py-2 {i <
+						$reminders.length - 1
+							? 'border-b border-gray-100 dark:border-gray-700'
+							: ''}"
+					>
+						<span
+							class="flex-1 text-sm text-gray-700 dark:text-gray-300"
+							>{new Date(rem.reminderDate).toLocaleString()}</span
+						>
+						<Button
+							size="xs"
+							color="light"
+							onclick={() => deleteReminder(rem.id)}>✕</Button
+						>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-sm text-gray-400 mb-3">No reminders.</p>
+		{/if}
+		<div class="flex gap-2">
+			<Input
+				type="datetime-local"
+				bind:value={newReminderDate}
+				class="flex-1"
+			/>
+			<Button size="sm" onclick={addReminder}>Add</Button>
 		</div>
-	</div>
+	</Card>
+
+	<!-- Related Tasks -->
+	<Card class="mb-4">
+		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+			Related Tasks
+		</h2>
+		{#if $relations.length}
+			<div class="mb-3">
+				{#each $relations as rel, i}
+					<div
+						class="flex items-center gap-3 py-2 {i <
+						$relations.length - 1
+							? 'border-b border-gray-100 dark:border-gray-700'
+							: ''}"
+					>
+						<span
+							class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 shrink-0"
+							>{rel.kind.replace(/_/g, ' ')}</span
+						>
+						<a
+							href="/tasks/{rel.relatedTask?.id ??
+								rel.relatedTaskId}"
+							class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline"
+							>{rel.relatedTask?.title ??
+								`Task #${rel.relatedTaskId}`}</a
+						>
+						<Button
+							size="xs"
+							color="light"
+							onclick={() =>
+								deleteRelation(
+									rel.kind,
+									rel.relatedTask?.id ?? rel.relatedTaskId,
+								)}>✕</Button
+						>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-sm text-gray-400 mb-3">No relations.</p>
+		{/if}
+		<div class="flex gap-2 flex-wrap">
+			<Input
+				type="number"
+				bind:value={newRelatedTaskId}
+				placeholder="Task ID"
+				class="w-28"
+			/>
+			<Select bind:value={newRelationKind} class="w-auto">
+				{#each RELATION_KINDS as k}<option value={k}
+						>{k.replace(/_/g, ' ')}</option
+					>{/each}
+			</Select>
+			<Button size="sm" onclick={addRelation}>Add</Button>
+		</div>
+	</Card>
+
+	<!-- Attachments -->
+	<Card class="mb-4">
+		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+			Attachments
+		</h2>
+		{#if $attachments.length}
+			<div class="mb-3">
+				{#each $attachments as att, i}
+					<div
+						class="flex items-center gap-2 py-2 {i <
+						$attachments.length - 1
+							? 'border-b border-gray-100 dark:border-gray-700'
+							: ''}"
+					>
+						<PaperClipOutline
+							class="w-4 h-4 text-gray-400 shrink-0"
+						/>
+						<a
+							href="{API_BASE}/attachments/{att.id}/download"
+							target="_blank"
+							class="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+							>{att.filename}</a
+						>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-sm text-gray-400 mb-3">No attachments.</p>
+		{/if}
+		<label
+			class="inline-flex items-center gap-2 cursor-pointer px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+		>
+			Upload file
+			<input type="file" onchange={uploadAttachment} class="sr-only" />
+		</label>
+	</Card>
+
+	<!-- Comments -->
+	<Card>
+		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+			Comments
+		</h2>
+		{#if $comments.length}
+			<div class="mb-4">
+				{#each $comments as comment, i}
+					<div
+						class="flex flex-col gap-1 py-3 {i <
+						$comments.length - 1
+							? 'border-b border-gray-100 dark:border-gray-700'
+							: ''}"
+					>
+						<div class="flex items-center justify-between">
+							<span
+								class="text-sm font-bold text-primary-600 dark:text-primary-400"
+								>{comment.author?.username ?? 'Unknown'}</span
+							>
+							<div class="flex items-center gap-2">
+								<span class="text-xs text-gray-400"
+									>{new Date(
+										comment.createdAt,
+									).toLocaleString()}</span
+								>
+								<Button
+									size="xs"
+									color="light"
+									onclick={() => deleteComment(comment.id)}
+									>Delete</Button
+								>
+							</div>
+						</div>
+						<p
+							class="text-sm text-gray-700 dark:text-gray-300 m-0 whitespace-pre-wrap"
+						>
+							{comment.content}
+						</p>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<p class="text-sm text-gray-400 mb-4">No comments yet.</p>
+		{/if}
+		<form onsubmit={postComment} class="flex gap-2">
+			<Input
+				type="text"
+				bind:value={newComment}
+				placeholder="Add a comment…"
+				class="flex-1"
+			/>
+			<Button type="submit" size="sm" disabled={addingComment}
+				>Post</Button
+			>
+		</form>
+	</Card>
 {:else}
-	<p class="text-muted">Task not found.</p>
+	<p class="text-gray-400">Task not found.</p>
 {/if}

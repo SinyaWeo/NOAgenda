@@ -1,86 +1,44 @@
 <script lang="ts">
-    import { writable } from 'svelte/store';
-    import { apiPostAuth } from '$lib/api';
-    import { getCurrentUser } from '$lib/auth';
-    import { goto } from '$app/navigation';
-    import { onMount } from 'svelte';
+  import { writable } from 'svelte/store';
+  import { apiPostAuth } from '$lib/api';
+  import { getCurrentUser } from '$lib/auth';
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
 
-    const name = writable('');
-    const description = writable('');
-    const error = writable('');
-    const loading = writable(false);
+  const name = writable('');
+  const description = writable('');
+  const error = writable('');
+  const loading = writable(false);
 
-    onMount(async () => {
-        const me = await getCurrentUser();
-        if (!me) {
-            goto('/login');
-        }
-    });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/login'); });
 
-    async function handleSubmit(e: Event) {
-        e.preventDefault();
-        loading.set(true);
-        error.set('');
-        try {
-            const team = await apiPostAuth<any>('/teams', {
-                name: $name,
-                description: $description,
-            });
-            goto(`/teams/${team.id}`);
-        } catch (err: any) {
-            error.set(err.message ?? 'Failed to create team');
-        } finally {
-            loading.set(false);
-        }
-    }
+  async function handleSubmit(e: Event) {
+    e.preventDefault(); loading.set(true); error.set('');
+    try { const team = await apiPostAuth<any>('/teams', { name: $name, description: $description }); goto(`/teams/${team.id}`); }
+    catch (err: any) { error.set(err.message ?? 'Failed to create team'); } finally { loading.set(false); }
+  }
 </script>
 
-<div class="page-header">
-    <a href="/teams" class="back-link"
-        ><span class="icon icon-sm">arrow_back</span></a
-    >
-    <h1 class="page-title">New Team</h1>
+<div class="flex items-center gap-3 mb-6">
+  <a href="/teams" class="text-gray-400 hover:text-gray-600">← Back</a>
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">New Team</h1>
 </div>
+{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
-{#if $error}<div class="alert alert-error">{$error}</div>{/if}
-
-<div class="card">
-    <div class="card-body">
-        <form onsubmit={handleSubmit}>
-            <div class="form-group">
-                <label for="team-name" class="form-label"
-                    >Name <span class="text-danger">*</span></label
-                >
-                <input
-                    id="team-name"
-                    type="text"
-                    bind:value={$name}
-                    required
-                    class="form-input"
-                />
-            </div>
-            <div class="form-group">
-                <label for="team-desc" class="form-label">Description</label>
-                <textarea
-                    id="team-desc"
-                    bind:value={$description}
-                    rows={3}
-                    class="form-textarea"
-                ></textarea>
-            </div>
-            <div
-                class="page-actions"
-                style="border-top:1px solid var(--na-border);padding-top:0.75rem"
-            >
-                <button
-                    type="submit"
-                    disabled={$loading}
-                    class="btn btn-primary"
-                >
-                    {$loading ? 'Creating…' : 'Create Team'}
-                </button>
-                <a href="/teams" class="btn btn-secondary">Cancel</a>
-            </div>
-        </form>
+<Card class="max-w-xl">
+  <form onsubmit={handleSubmit} class="flex flex-col gap-4">
+    <div>
+      <Label for="team-name" class="mb-1">Name <span class="text-red-500">*</span></Label>
+      <Input id="team-name" type="text" bind:value={$name} required />
     </div>
-</div>
+    <div>
+      <Label for="team-desc" class="mb-1">Description</Label>
+      <Textarea id="team-desc" bind:value={$description} rows={3} />
+    </div>
+    <div class="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+      <Button type="submit" disabled={$loading}>{$loading ? 'Creating…' : 'Create Team'}</Button>
+      <Button href="/teams" color="light">Cancel</Button>
+    </div>
+  </form>
+</Card>

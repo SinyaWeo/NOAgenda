@@ -1,89 +1,55 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { apiGetAuth } from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
-	import { writable } from 'svelte/store';
-	import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { apiGetAuth } from '$lib/api';
+  import { getCurrentUser } from '$lib/auth';
+  import { writable } from 'svelte/store';
+  import { goto } from '$app/navigation';
+  import { Alert, Button, Card } from 'flowbite-svelte';
+  import { UsersGroupOutline, PlusOutline } from 'flowbite-svelte-icons';
 
-	const teams = writable<any[]>([]);
-	const loading = writable(true);
-	const error = writable('');
+  const teams = writable<any[]>([]);
+  const loading = writable(true);
+  const error = writable('');
 
-	onMount(async () => {
-		const me = await getCurrentUser();
-		if (!me) {
-			goto('/login');
-			return;
-		}
-		try {
-			teams.set(await apiGetAuth<any[]>('/teams'));
-		} catch (e: any) {
-			error.set(e.message);
-		} finally {
-			loading.set(false);
-		}
-	});
+  onMount(async () => {
+    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    try { teams.set(await apiGetAuth<any[]>('/teams')); }
+    catch (e: any) { error.set(e.message); } finally { loading.set(false); }
+  });
 </script>
 
-<div class="page-header">
-	<h1 class="page-title">Teams</h1>
-	<div class="page-actions">
-		<a href="/teams/new" class="btn btn-primary"
-			><span class="icon icon-sm">add</span> New Team</a
-		>
-	</div>
+<div class="flex items-center justify-between mb-4">
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">Teams</h1>
+  <Button href="/teams/new"><PlusOutline class="w-4 h-4 mr-1" />New Team</Button>
 </div>
 
 {#if $loading}
-	<p>Loading teams...</p>
+  <p class="text-gray-400">Loading teams...</p>
 {:else if $error}
-	<div class="alert alert-error">{$error}</div>
+  <Alert color="red">{$error}</Alert>
 {:else if $teams.length}
-	<div class="settings-grid">
-		{#each $teams as team}
-			<div class="card">
-				<div
-					class="card-body"
-					style="display:flex;flex-direction:column;gap:0.75rem"
-				>
-					<div>
-						<a href="/teams/{team.id}" class="font-bold"
-							>{team.name}</a
-						>
-						{#if team.description}
-							<p class="text-sm text-muted mb-0">
-								{team.description}
-							</p>
-						{/if}
-					</div>
-					{#if team.members?.length != null}
-						<span class="text-xs text-muted"
-							>{team.members.length} member{team.members
-								.length === 1
-								? ''
-								: 's'}</span
-						>
-					{/if}
-					<div
-						class="page-actions mt-auto"
-						style="border-top:1px solid var(--na-border);padding-top:0.5rem"
-					>
-						<a href="/teams/{team.id}" class="btn btn-ghost btn-sm"
-							>View</a
-						>
-						<a
-							href="/teams/{team.id}/edit"
-							class="btn btn-ghost btn-sm">Edit</a
-						>
-					</div>
-				</div>
-			</div>
-		{/each}
-	</div>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {#each $teams as team}
+      <Card>
+        <div class="flex flex-col gap-3 h-full">
+          <div>
+            <a href="/teams/{team.id}" class="font-bold text-gray-900 dark:text-white hover:underline">{team.name}</a>
+            {#if team.description}<p class="text-sm text-gray-500 mt-1 mb-0">{team.description}</p>{/if}
+          </div>
+          {#if team.members?.length != null}
+            <span class="text-xs text-gray-400">{team.members.length} member{team.members.length === 1 ? '' : 's'}</span>
+          {/if}
+          <div class="flex gap-2 mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
+            <Button href="/teams/{team.id}" color="light" size="sm">View</Button>
+            <Button href="/teams/{team.id}/edit" color="light" size="sm">Edit</Button>
+          </div>
+        </div>
+      </Card>
+    {/each}
+  </div>
 {:else}
-	<div class="empty-state">
-		<span class="icon">group</span>
-		<p>No teams yet.</p>
-		<a href="/teams/new" class="btn btn-primary">Create a team</a>
-	</div>
+  <div class="text-center py-12 text-gray-400">
+    <UsersGroupOutline class="w-12 h-12 mx-auto mb-3" />
+    <p>No teams yet. <a href="/teams/new" class="text-primary-600 hover:underline">Create a team.</a></p>
+  </div>
 {/if}

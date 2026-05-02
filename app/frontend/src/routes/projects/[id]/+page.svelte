@@ -1,233 +1,128 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
-	import { apiGetAuth, apiPostAuth, apiPutAuth } from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
-	import { writable, derived } from 'svelte/store';
-	import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { apiGetAuth, apiPostAuth, apiPutAuth } from '$lib/api';
+  import { getCurrentUser } from '$lib/auth';
+  import { writable, derived } from 'svelte/store';
+  import { goto } from '$app/navigation';
+  import { Alert, Badge, Button, Card, Input, Select } from 'flowbite-svelte';
+  import { CheckCircleOutline, CogOutline } from 'flowbite-svelte-icons';
 
-	const project = writable<any>(null);
-	const tasks = writable<any[]>([]);
-	const views = writable<any[]>([]);
-	const loading = writable(true);
-	const error = writable('');
+  const project = writable<any>(null);
+  const tasks = writable<any[]>([]);
+  const views = writable<any[]>([]);
+  const loading = writable(true);
+  const error = writable('');
+  let newTaskTitle = $state('');
+  let addingTask = $state(false);
+  const filterStatus = writable('');
+  const filterPriority = writable('');
 
-	let newTaskTitle = '';
-	let addingTask = false;
-	const filterStatus = writable('');
-	const filterPriority = writable('');
+  const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
 
-	const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
-	const STATUS_COLORS: Record<string, string> = {
-		open: '#6366f1',
-		in_progress: '#f59e0b',
-		done: '#22c55e',
-	};
+  const filteredTasks = derived([tasks, filterStatus, filterPriority], ([$tasks, $status, $priority]) =>
+    $tasks.filter((t: any) => {
+      if ($status && t.status !== $status) return false;
+      if ($priority && String(t.priority ?? 0) !== $priority) return false;
+      return true;
+    })
+  );
 
-	const filteredTasks = derived(
-		[tasks, filterStatus, filterPriority],
-		([$tasks, $status, $priority]) => {
-			return $tasks.filter((t: any) => {
-				if ($status && t.status !== $status) return false;
-				if ($priority && String(t.priority ?? 0) !== $priority)
-					return false;
-				return true;
-			});
-		},
-	);
+  onMount(async () => {
+    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const id = $page.params.id;
+    try {
+      const [p, t, v] = await Promise.all([apiGetAuth<any>(`/projects/${id}`), apiGetAuth<any[]>(`/tasks?projectId=${id}`), apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => [])]);
+      project.set(p); tasks.set(t); views.set(v);
+    } catch (e: any) { error.set(e.message); } finally { loading.set(false); }
+  });
 
-	onMount(async () => {
-		const me = await getCurrentUser();
-		if (!me) {
-			goto('/login');
-			return;
-		}
-		const id = $page.params.id;
-		try {
-			const [p, t, v] = await Promise.all([
-				apiGetAuth<any>(`/projects/${id}`),
-				apiGetAuth<any[]>(`/tasks?projectId=${id}`),
-				apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => []),
-			]);
-			project.set(p);
-			tasks.set(t);
-			views.set(v);
-		} catch (e: any) {
-			error.set(e.message);
-		} finally {
-			loading.set(false);
-		}
-	});
+  async function quickAdd(e: SubmitEvent) {
+    e.preventDefault();
+    if (!newTaskTitle.trim() || addingTask) return;
+    addingTask = true;
+    const id = $page.params.id;
+    try {
+      await apiPostAuth('/tasks', { title: newTaskTitle, project: { id: Number(id) } });
+      newTaskTitle = '';
+      tasks.set(await apiGetAuth<any[]>(`/tasks?projectId=${id}`));
+    } catch (e: any) { error.set(e.message); } finally { addingTask = false; }
+  }
 
-	async function quickAdd(e: SubmitEvent) {
-		e.preventDefault();
-		if (!newTaskTitle.trim() || addingTask) return;
-		addingTask = true;
-		const id = $page.params.id;
-		try {
-			await apiPostAuth('/tasks', {
-				title: newTaskTitle,
-				project: { id: Number(id) },
-			});
-			newTaskTitle = '';
-			tasks.set(await apiGetAuth<any[]>(`/tasks?projectId=${id}`));
-		} catch (e: any) {
-			error.set(e.message);
-		} finally {
-			addingTask = false;
-		}
-	}
-
-	async function toggleStatus(taskId: number, current: string) {
-		const next =
-			current === 'open'
-				? 'in_progress'
-				: current === 'in_progress'
-					? 'done'
-					: 'open';
-		try {
-			const updated = await apiPutAuth<any>(`/tasks/${taskId}`, {
-				status: next,
-			});
-			tasks.update((list) =>
-				list.map((t) => (t.id === taskId ? updated : t)),
-			);
-		} catch (e: any) {
-			error.set(e.message);
-		}
-	}
+  async function toggleStatus(taskId: number, current: string) {
+    const next = current === 'open' ? 'in_progress' : current === 'in_progress' ? 'done' : 'open';
+    try {
+      const updated = await apiPutAuth<any>(`/tasks/${taskId}`, { status: next });
+      tasks.update((list) => list.map((t) => (t.id === taskId ? updated : t)));
+    } catch (e: any) { error.set(e.message); }
+  }
 </script>
 
 {#if $loading}
-	<p class="text-muted">Loading...</p>
+  <p class="text-gray-400">Loading...</p>
 {:else if $error}
-	<div class="alert alert-error">{$error}</div>
+  <Alert color="red">{$error}</Alert>
 {:else if $project}
-	<div class="page-header">
-		<div>
-			<h1 class="page-title">{$project.name ?? $project.title}</h1>
-			{#if $project.description}<p class="text-muted mb-0">
-					{$project.description}
-				</p>{/if}
-		</div>
-		<div class="page-actions">
-			<a href="/projects/{$project.id}/edit" class="btn btn-secondary"
-				><span class="icon icon-sm">settings</span> Settings</a
-			>
-		</div>
-	</div>
+  <div class="flex items-start justify-between gap-4 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">{$project.name ?? $project.title}</h1>
+      {#if $project.description}<p class="text-gray-500 dark:text-gray-400 m-0">{$project.description}</p>{/if}
+    </div>
+    <Button href="/projects/{$project.id}/edit" color="light" size="sm"><CogOutline class="w-4 h-4 mr-1" />Settings</Button>
+  </div>
 
-	{#if $views.length}
-		<nav class="flex-center gap-2 mb-4" style="flex-wrap:wrap">
-			{#each $views as v}
-				<a href="/projects/{$project.id}/{v.id}" class="tag"
-					>{v.title}</a
-				>
-			{/each}
-		</nav>
-	{/if}
+  {#if $views.length}
+    <nav class="flex gap-2 mb-4 flex-wrap">
+      {#each $views as v}
+        <a href="/projects/{$project.id}/{v.id}" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 no-underline hover:bg-primary-200">{v.title}</a>
+      {/each}
+    </nav>
+  {/if}
 
-	<form onsubmit={quickAdd} class="inline-form mb-4">
-		<input
-			type="text"
-			bind:value={newTaskTitle}
-			placeholder="Add a task…"
-			class="form-input"
-		/>
-		<button
-			type="submit"
-			disabled={addingTask || !newTaskTitle.trim()}
-			class="btn btn-primary"
-			>{addingTask ? 'Adding…' : 'Add Task'}</button
-		>
-	</form>
+  <form onsubmit={quickAdd} class="flex gap-2 mb-4">
+    <Input type="text" bind:value={newTaskTitle} placeholder="Add a task…" class="flex-1" />
+    <Button type="submit" disabled={addingTask || !newTaskTitle.trim()}>{addingTask ? 'Adding…' : 'Add Task'}</Button>
+  </form>
 
-	<div class="filter-controls mb-4">
-		<select bind:value={$filterStatus} class="form-select">
-			<option value="">All statuses</option>
-			<option value="open">Open</option>
-			<option value="in_progress">In Progress</option>
-			<option value="done">Done</option>
-		</select>
-		<select bind:value={$filterPriority} class="form-select">
-			<option value="">All priorities</option>
-			<option value="1">Low</option>
-			<option value="2">Medium</option>
-			<option value="3">High</option>
-			<option value="4">Urgent</option>
-			<option value="5">Do Now</option>
-		</select>
-		{#if $filterStatus || $filterPriority}
-			<button
-				onclick={() => {
-					filterStatus.set('');
-					filterPriority.set('');
-				}}
-				class="btn btn-ghost btn-sm"
-			>
-				<span class="icon icon-sm">close</span> Clear
-			</button>
-		{/if}
-		<span class="text-xs text-muted" style="margin-left:auto"
-			>{$filteredTasks.length} / {$tasks.length} tasks</span
-		>
-	</div>
+  <div class="flex items-center gap-3 mb-4 flex-wrap">
+    <Select bind:value={$filterStatus} class="w-auto">
+      <option value="">All statuses</option>
+      <option value="open">Open</option>
+      <option value="in_progress">In Progress</option>
+      <option value="done">Done</option>
+    </Select>
+    <Select bind:value={$filterPriority} class="w-auto">
+      <option value="">All priorities</option>
+      <option value="1">Low</option><option value="2">Medium</option><option value="3">High</option><option value="4">Urgent</option><option value="5">Do Now</option>
+    </Select>
+    {#if $filterStatus || $filterPriority}
+      <Button size="sm" color="light" onclick={() => { filterStatus.set(''); filterPriority.set(''); }}>Clear</Button>
+    {/if}
+    <span class="text-xs text-gray-400 ml-auto">{$filteredTasks.length} / {$tasks.length} tasks</span>
+  </div>
 
-	{#if $tasks.length === 0}
-		<div class="empty-state">
-			<span class="icon">task_alt</span>
-			<p>
-				No tasks yet. Add one above or <a
-					href="/tasks/create?projectId={$project.id}"
-					>create with more options</a
-				>.
-			</p>
-		</div>
-	{:else if $filteredTasks.length === 0}
-		<p class="text-muted">No tasks match the current filters.</p>
-	{:else}
-		<div class="list">
-			{#each $filteredTasks as task}
-				<div class="task-row">
-					<button
-						onclick={() => toggleStatus(task.id, task.status)}
-						class="btn btn-ghost btn-icon"
-						title="Cycle status: {task.status}"
-					>
-						<span class="status-dot" data-status={task.status}
-						></span>
-					</button>
-					<a
-						href="/tasks/{task.id}"
-						class="truncate font-medium"
-						style="flex:1;text-decoration:{task.status === 'done'
-							? 'line-through'
-							: 'none'}">{task.title}</a
-					>
-					{#if task.priority}
-						<span
-							class="priority-badge"
-							data-priority={task.priority}
-							>{PRIORITY_LABELS[task.priority] ??
-								task.priority}</span
-						>
-					{/if}
-					{#if task.dueDate}
-						<span
-							class="text-xs {new Date(task.dueDate) <
-								new Date() && task.status !== 'done'
-								? 'text-danger'
-								: 'text-muted'}"
-							>{new Date(task.dueDate).toLocaleDateString()}</span
-						>
-					{/if}
-					<span class="status-badge" data-status={task.status}
-						>{task.status?.replace('_', ' ') ?? 'open'}</span
-					>
-				</div>
-			{/each}
-		</div>
-	{/if}
+  {#if $tasks.length === 0}
+    <div class="text-center py-12 text-gray-400">
+      <CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />
+      <p>No tasks yet. Add one above or <a href="/tasks/create?projectId={$project.id}" class="text-primary-600 hover:underline">create with more options</a>.</p>
+    </div>
+  {:else if $filteredTasks.length === 0}
+    <p class="text-gray-400">No tasks match the current filters.</p>
+  {:else}
+    <Card class="p-0 overflow-hidden">
+      {#each $filteredTasks as task, i}
+        <div class="flex items-center gap-2.5 px-4 py-3 {i < $filteredTasks.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}">
+          <button onclick={() => toggleStatus(task.id, task.status)} class="shrink-0 p-0.5 text-gray-400 hover:text-primary-500 transition-colors" title="Cycle status">
+            <span class="w-3 h-3 rounded-full block" data-status={task.status}></span>
+          </button>
+          <a href="/tasks/{task.id}" class="flex-1 truncate font-medium text-gray-800 dark:text-gray-200 hover:underline {task.status === 'done' ? 'line-through text-gray-400' : ''}">{task.title}</a>
+          {#if task.priority}<span class="text-xs shrink-0" data-priority={task.priority}>{PRIORITY_LABELS[task.priority] ?? task.priority}</span>{/if}
+          {#if task.dueDate}<span class="text-xs shrink-0 {new Date(task.dueDate) < new Date() && task.status !== 'done' ? 'text-red-500' : 'text-gray-400'}">{new Date(task.dueDate).toLocaleDateString()}</span>{/if}
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0" data-status={task.status}>{task.status?.replace('_', ' ') ?? 'open'}</span>
+        </div>
+      {/each}
+    </Card>
+  {/if}
 {:else}
-	<p>Project not found.</p>
+  <p>Project not found.</p>
 {/if}
