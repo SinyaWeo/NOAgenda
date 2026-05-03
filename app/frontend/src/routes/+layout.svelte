@@ -524,23 +524,31 @@
 								>@{$user.username}</span
 							>
 						</DropdownHeader>
-						<DropdownItem href="/user/profile">
+						<DropdownItem
+							href="/user/profile"
+							class="flex items-center"
+						>
 							<UserCircleOutline class="w-4 h-4 mr-2" />Profile
 						</DropdownItem>
 						{#if $userTeams.length > 0}
-							<DropdownItem href="/teams">
+							<DropdownItem
+								href="/teams"
+								class="flex items-center"
+							>
 								<UsersGroupOutline class="w-4 h-4 mr-2" />Teams
 							</DropdownItem>
 						{/if}
-						<DropdownItem href="/user/settings">
+						<DropdownItem
+							href="/user/settings"
+							class="flex items-center"
+						>
 							<CogOutline class="w-4 h-4 mr-2" />Settings
 						</DropdownItem>
 						<DropdownDivider />
 						<DropdownItem
 							onclick={logout}
-							class="text-red-600 dark:text-red-400"
-						>
-							<ArrowRightToBracketOutline
+							class="flex items-center text-red-600 dark:text-red-400"
+							><ArrowRightToBracketOutline
 								class="w-4 h-4 mr-2"
 							/>Logout
 						</DropdownItem>

@@ -12,7 +12,7 @@
 @source "../../../node_modules/flowbite-svelte/dist";
 @source "../../../node_modules/flowbite-svelte-icons/dist";
 
-/* ─── Custom primary colour (indigo) ─── */
+/* ─── Custom primary color (indigo) ─── */
 @theme {
   --color-primary-50:  #eef2ff;
   --color-primary-100: #e0e7ff;
