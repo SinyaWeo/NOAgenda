@@ -274,6 +274,72 @@
 				</li>
 				<li>
 					<a
+						href="/mindmap"
+						class="nav-link"
+						class:active={isActive('/mindmap')}
+					>
+						<span class="nav-icon">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								class="w-5 h-5"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<circle
+									cx="12"
+									cy="12"
+									r="2"
+									fill="currentColor"
+								></circle>
+								<circle cx="4" cy="6" r="2" fill="currentColor"
+								></circle>
+								<circle cx="20" cy="6" r="2" fill="currentColor"
+								></circle>
+								<circle cx="4" cy="18" r="2" fill="currentColor"
+								></circle>
+								<circle
+									cx="20"
+									cy="18"
+									r="2"
+									fill="currentColor"
+								></circle>
+								<line
+									x1="12"
+									y1="10"
+									x2="4"
+									y2="8"
+									stroke="currentColor"
+								></line>
+								<line
+									x1="12"
+									y1="10"
+									x2="20"
+									y2="8"
+									stroke="currentColor"
+								></line>
+								<line
+									x1="12"
+									y1="14"
+									x2="4"
+									y2="16"
+									stroke="currentColor"
+								></line>
+								<line
+									x1="12"
+									y1="14"
+									x2="20"
+									y2="16"
+									stroke="currentColor"
+								></line>
+							</svg>
+						</span>
+						{#if !$sidebarCollapsed}<span>MindMap</span>{/if}
+					</a>
+				</li>
+				<li>
+					<a
 						href="/teams"
 						class="nav-link"
 						class:active={isActive('/teams')}

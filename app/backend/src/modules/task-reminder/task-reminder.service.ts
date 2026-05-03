@@ -11,11 +11,11 @@ export class TaskReminderService {
   ) {}
 
   async findByTask(taskId: number): Promise<TaskReminder[]> {
-    return this.repo.find({ where: { task: { id: taskId } }, relations: ['task'] });
+    return this.repo.find({ where: { node: { id: taskId } }, relations: ['node'] });
   }
 
   async create(taskId: number, reminderDate: Date): Promise<TaskReminder> {
-    const reminder = this.repo.create({ task: { id: taskId } as any, reminderDate });
+    const reminder = this.repo.create({ node: { id: taskId } as any, reminderDate });
     return this.repo.save(reminder);
   }
 

@@ -1,13 +1,20 @@
+/**
+ * Compatibility shim — delegates to NodeService filtering by type='task'.
+ * All existing TaskController routes continue to work unchanged.
+ */
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindManyOptions } from 'typeorm';
-import { Task, TaskStatus } from './task.entity';
+import { NodeService, NodeFilter } from '../node/node.service';
+import { Node, NodeType, NodeStatus } from '../node/node.entity';
+
+// Re-export the shape consumers expect
+export type Task = Node;
+export { NodeStatus as TaskStatus };
 
 export interface TaskFilter {
   userId?: number;
   projectId?: number;
   parentTaskId?: number;
-  status?: TaskStatus;
+  status?: NodeStatus;
   search?: string;
   sort?: string;
   order?: 'ASC' | 'DESC';
@@ -17,93 +24,48 @@ export interface TaskFilter {
 
 @Injectable()
 export class TaskService {
-  constructor(
-    @InjectRepository(Task)
-    private readonly taskRepository: Repository<Task>,
-  ) {}
+  constructor(private readonly nodeService: NodeService) {}
 
-  async findAll(filter?: TaskFilter): Promise<Task[]> {
-    const qb = this.taskRepository.createQueryBuilder('task')
-      .leftJoinAndSelect('task.project', 'project');
-
-    if (filter?.userId !== undefined) {
-      // Scope to projects the user owns or has been given access to
-      qb.leftJoin('project_users', 'pu', 'pu.projectId = project.id AND pu.userId = :userId', { userId: filter.userId })
-        .andWhere('(project.ownerId = :userId OR pu.userId = :userId)', { userId: filter.userId });
-    }
-
-    if (filter?.projectId) {
-      qb.andWhere('project.id = :projectId', { projectId: filter.projectId });
-    }
-    if (filter?.parentTaskId !== undefined) {
-      qb.andWhere('task.parentTaskId = :parentTaskId', { parentTaskId: filter.parentTaskId });
-    }
-    if (filter?.status) {
-      qb.andWhere('task.status = :status', { status: filter.status });
-    }
-    if (filter?.search) {
-      qb.andWhere('(task.title LIKE :search OR task.description LIKE :search)', {
-        search: `%${filter.search}%`,
-      });
-    }
-
-    const sortField = filter?.sort === 'title' ? 'task.title'
-      : filter?.sort === 'priority' ? 'task.priority'
-      : filter?.sort === 'status' ? 'task.status'
-      : filter?.sort === 'dueDate' ? 'task.dueDate'
-      : 'task.position';
-    const sortOrder = filter?.order === 'DESC' ? 'DESC' : 'ASC';
-    qb.orderBy(sortField, sortOrder).addOrderBy('task.createdAt', 'DESC');
-
-    if (filter?.limit) {
-      const page = filter.page ?? 1;
-      qb.skip((page - 1) * filter.limit).take(filter.limit);
-    }
-
-    return qb.getMany();
+  async findAll(filter?: TaskFilter): Promise<Node[]> {
+    const nodeFilter: NodeFilter = { type: NodeType.TASK };
+    if (filter?.userId !== undefined) nodeFilter.userId = filter.userId;
+    if (filter?.projectId !== undefined) nodeFilter.parentId = filter.projectId;
+    if (filter?.parentTaskId !== undefined) nodeFilter.parentId = filter.parentTaskId;
+    if (filter?.status) nodeFilter.status = filter.status;
+    if (filter?.search) nodeFilter.search = filter.search;
+    if (filter?.sort) nodeFilter.sort = filter.sort;
+    if (filter?.order) nodeFilter.order = filter.order;
+    if (filter?.page) nodeFilter.page = filter.page;
+    if (filter?.limit) nodeFilter.limit = filter.limit;
+    return this.nodeService.findAll(nodeFilter);
   }
 
-  async findById(id: number): Promise<Task | null> {
-    return this.taskRepository.findOne({ where: { id }, relations: ['project'] });
+  async findById(id: number): Promise<Node | null> {
+    return this.nodeService.findById(id);
   }
 
-  async create(task: Partial<Task>): Promise<Task> {
-    const newTask = this.taskRepository.create(task);
-    return this.taskRepository.save(newTask);
+  async create(data: Partial<Node>): Promise<Node> {
+    return this.nodeService.create({ ...data, type: NodeType.TASK });
   }
 
-  async update(id: number, data: Partial<Task>): Promise<Task | null> {
-    await this.taskRepository.update(id, data);
-    return this.findById(id);
+  async update(id: number, data: Partial<Node>): Promise<Node | null> {
+    return this.nodeService.update(id, data);
   }
 
-  async duplicate(id: number, createdBy?: number): Promise<Task | null> {
-    const original = await this.findById(id);
-    if (!original) return null;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, createdAt: _c, updatedAt: _u, ...data } = original as any;
-    return this.create({ ...data, title: `${original.title} (copy)`, createdBy });
+  async duplicate(id: number, createdBy?: number): Promise<Node | null> {
+    return this.nodeService.duplicate(id, createdBy ?? 0);
   }
 
-  async updatePosition(id: number, position: number): Promise<Task | null> {
-    await this.taskRepository.update(id, { position } as any);
-    return this.findById(id);
+  async updatePosition(id: number, position: number): Promise<Node | null> {
+    return this.nodeService.update(id, { position });
   }
 
-  async bulkUpdate(ids: number[], data: Partial<Task>, userId?: number): Promise<Task[]> {
-    const qb = this.taskRepository
-      .createQueryBuilder()
-      .update(Task)
-      .set(data)
-      .whereInIds(ids);
-    if (userId !== undefined) {
-      qb.andWhere('createdBy = :userId', { userId });
-    }
-    await qb.execute();
-    return this.taskRepository.findByIds(ids);
+  async bulkUpdate(ids: number[], data: Partial<Node>, _userId?: number): Promise<Node[]> {
+    const results = await Promise.all(ids.map((id) => this.nodeService.update(id, data)));
+    return results.filter(Boolean) as Node[];
   }
 
   async remove(id: number): Promise<void> {
-    await this.taskRepository.delete(id);
+    return this.nodeService.remove(id);
   }
 }

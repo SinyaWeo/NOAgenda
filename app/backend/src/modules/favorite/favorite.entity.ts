@@ -1,7 +1,6 @@
 import { Entity, Column, ManyToOne } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
 import { User } from '../user/user.entity';
-import { Project } from '../project/project.entity';
 
 export enum FavoriteEntityType {
   PROJECT = 'project',

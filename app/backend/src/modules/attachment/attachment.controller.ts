@@ -91,7 +91,7 @@ export class AttachmentController {
     return this.attachmentService.create({
       filename: file.originalname,
       path: resolve(file.path),
-      task: body.taskId ? { id: Number(body.taskId) } as any : undefined,
+      node: body.taskId ? { id: Number(body.taskId) } as any : undefined,
       uploader: { id: req.user.userId } as any,
     });
   }

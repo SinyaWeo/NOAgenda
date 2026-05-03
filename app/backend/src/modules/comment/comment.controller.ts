@@ -32,7 +32,7 @@ export class CommentController {
   ): Promise<Comment> {
     return this.commentService.create({
       content: body.content,
-      task: { id: body.taskId } as any,
+      node: { id: body.taskId } as any,
       author: { id: req.user.userId } as any,
     });
   }
@@ -44,7 +44,7 @@ export class CommentController {
     if (!comment) throw new NotFoundException();
     if (comment.author?.id !== req.user.userId) throw new ForbiddenException();
     // Only allow updating the content field
-    const { id: _id, author: _a, task: _t, ...safeBody } = body as any;
+    const { id: _id, author: _a, node: _n, ...safeBody } = body as any;
     const updated = await this.commentService.update(id, safeBody);
     if (!updated) throw new NotFoundException();
     return updated;

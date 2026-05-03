@@ -31,6 +31,7 @@ import { SessionModule } from './modules/session/session.module';
 import { KanbanBucketModule } from './modules/kanban-bucket/kanban-bucket.module';
 import { AppI18nModule } from './i18n/i18n.module';
 import { SearchModule } from './modules/search/search.module';
+import { NodeModule } from './modules/node/node.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { SearchModule } from './modules/search/search.module';
     SessionModule,
     KanbanBucketModule,
     SearchModule,
+    NodeModule,
   ],
   controllers: [AppController],
 })

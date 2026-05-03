@@ -1,13 +1,13 @@
 import { Entity, Column, ManyToOne } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
-import { Project } from '../project/project.entity';
+import { Node } from '../node/node.entity';
 import { Team } from '../team/team.entity';
 import { Permission } from '../project-user/project-user.entity';
 
 @Entity('project_teams')
 export class ProjectTeam extends BaseEntity {
-  @ManyToOne(() => Project, { onDelete: 'CASCADE', nullable: false })
-  project!: Project;
+  @ManyToOne(() => Node, { onDelete: 'CASCADE', nullable: false })
+  project!: Node;
 
   @ManyToOne(() => Team, { onDelete: 'CASCADE', nullable: false })
   team!: Team;

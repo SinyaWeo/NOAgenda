@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { ProjectService } from './project.service';
-import { Project } from './project.entity';
+import { Node } from '../node/node.entity';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('projects')
@@ -12,13 +12,13 @@ export class ProjectController {
   async findAll(
     @Request() req: any,
     @Query('includeArchived') includeArchived?: string,
-  ): Promise<Project[]> {
+  ): Promise<Node[]> {
     return this.projectService.findAll(req.user.userId, includeArchived === 'true');
   }
 
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
-  async findById(@Param('id') id: number, @Request() req: any): Promise<Project> {
+  async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     // Verify the caller owns or is a member of this project
@@ -29,13 +29,13 @@ export class ProjectController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() body: Partial<Project>, @Request() req: any): Promise<Project> {
+  async create(@Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
     return this.projectService.create({ ...body, ownerId: req.user.userId });
   }
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: number, @Body() body: Partial<Project>, @Request() req: any): Promise<Project> {
+  async update(@Param('id') id: number, @Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     if (project.ownerId !== req.user.userId) throw new ForbiddenException();
@@ -48,7 +48,7 @@ export class ProjectController {
 
   @Put(':id/duplicate')
   @UseGuards(AuthGuard('jwt'))
-  async duplicate(@Param('id') id: number, @Request() req: any): Promise<Project> {
+  async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const project = await this.projectService.duplicate(id, req.user.userId);
     if (!project) throw new NotFoundException();
     return project;
@@ -65,7 +65,7 @@ export class ProjectController {
 
   @Patch(':id/archive')
   @UseGuards(AuthGuard('jwt'))
-  async archive(@Param('id') id: number, @Request() req: any): Promise<Project> {
+  async archive(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     if (project.ownerId !== req.user.userId) throw new ForbiddenException();
@@ -76,7 +76,7 @@ export class ProjectController {
 
   @Patch(':id/unarchive')
   @UseGuards(AuthGuard('jwt'))
-  async unarchive(@Param('id') id: number, @Request() req: any): Promise<Project> {
+  async unarchive(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     if (project.ownerId !== req.user.userId) throw new ForbiddenException();

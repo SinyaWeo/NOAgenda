@@ -11,15 +11,15 @@ export class TaskAssigneeService {
   ) {}
 
   async findByTask(taskId: number): Promise<TaskAssignee[]> {
-    return this.repo.find({ where: { task: { id: taskId } }, relations: ['user', 'task'] });
+    return this.repo.find({ where: { node: { id: taskId } }, relations: ['user', 'node'] });
   }
 
   async add(taskId: number, userId: number): Promise<TaskAssignee> {
-    const assignee = this.repo.create({ task: { id: taskId } as any, user: { id: userId } as any });
+    const assignee = this.repo.create({ node: { id: taskId } as any, user: { id: userId } as any });
     return this.repo.save(assignee);
   }
 
   async remove(taskId: number, userId: number): Promise<void> {
-    await this.repo.delete({ task: { id: taskId }, user: { id: userId } });
+    await this.repo.delete({ node: { id: taskId }, user: { id: userId } });
   }
 }

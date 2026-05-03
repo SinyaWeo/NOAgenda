@@ -12,21 +12,21 @@ export class TaskRelationService {
 
   async findByTask(taskId: number): Promise<TaskRelation[]> {
     return this.repo.find({
-      where: [{ task: { id: taskId } }, { relatedTask: { id: taskId } }],
-      relations: ['task', 'relatedTask'],
+      where: [{ node: { id: taskId } }, { relatedNode: { id: taskId } }],
+      relations: ['node', 'relatedNode'],
     });
   }
 
   async create(taskId: number, relatedTaskId: number, kind: RelationKind): Promise<TaskRelation> {
     const relation = this.repo.create({
-      task: { id: taskId } as any,
-      relatedTask: { id: relatedTaskId } as any,
+      node: { id: taskId } as any,
+      relatedNode: { id: relatedTaskId } as any,
       kind,
     });
     return this.repo.save(relation);
   }
 
   async remove(taskId: number, relatedTaskId: number, kind: RelationKind): Promise<void> {
-    await this.repo.delete({ task: { id: taskId }, relatedTask: { id: relatedTaskId }, kind });
+    await this.repo.delete({ node: { id: taskId }, relatedNode: { id: relatedTaskId }, kind });
   }
 }

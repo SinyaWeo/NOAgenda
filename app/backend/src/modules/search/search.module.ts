@@ -2,11 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SearchController } from './search.controller';
 import { SearchService } from './search.service';
-import { Task } from '../task/task.entity';
-import { Project } from '../project/project.entity';
+import { Node } from '../node/node.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Task, Project])],
+  imports: [TypeOrmModule.forFeature([Node])],
   controllers: [SearchController],
   providers: [SearchService],
 })

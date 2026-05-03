@@ -1,6 +1,6 @@
 import { Entity, Column, ManyToOne } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
-import { Task } from '../task/task.entity';
+import { Node } from '../node/node.entity';
 
 export enum RelationKind {
   SUBTASK = 'subtask',
@@ -13,11 +13,11 @@ export enum RelationKind {
 
 @Entity('task_relations')
 export class TaskRelation extends BaseEntity {
-  @ManyToOne(() => Task, { onDelete: 'CASCADE', nullable: false })
-  task!: Task;
+  @ManyToOne(() => Node, { onDelete: 'CASCADE', nullable: false })
+  node!: Node;
 
-  @ManyToOne(() => Task, { onDelete: 'CASCADE', nullable: false })
-  relatedTask!: Task;
+  @ManyToOne(() => Node, { onDelete: 'CASCADE', nullable: false })
+  relatedNode!: Node;
 
   @Column({ type: 'enum', enum: RelationKind })
   kind!: RelationKind;

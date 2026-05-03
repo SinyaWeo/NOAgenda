@@ -1,22 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
-import { Task } from '../task/task.entity';
-import { Project } from '../project/project.entity';
+import { Node } from '../node/node.entity';
 
 @Injectable()
 export class SearchService {
   constructor(
-    @InjectRepository(Task) private readonly taskRepo: Repository<Task>,
-    @InjectRepository(Project) private readonly projectRepo: Repository<Project>,
+    @InjectRepository(Node) private readonly nodeRepo: Repository<Node>,
   ) {}
 
   async search(q: string) {
     const term = `%${q}%`;
-    const [tasks, projects] = await Promise.all([
-      this.taskRepo.find({ where: { title: Like(term) }, take: 5 }),
-      this.projectRepo.find({ where: { name: Like(term) }, take: 5 }),
-    ]);
+    const results = await this.nodeRepo.find({
+      where: [
+        { title: Like(term) },
+        { name: Like(term) },
+      ],
+      take: 10,
+    });
+    const tasks = results.filter((n) => n.type === 'task');
+    const projects = results.filter((n) => n.type === 'project');
     return { tasks, projects };
   }
 }

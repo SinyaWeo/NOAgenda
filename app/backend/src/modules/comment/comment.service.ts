@@ -10,13 +10,13 @@ export class CommentService {
     private readonly commentRepository: Repository<Comment>,
   ) {}
 
-  async findAll(taskId?: number): Promise<Comment[]> {
-    const where = taskId ? { task: { id: taskId } } : {};
-    return this.commentRepository.find({ where, relations: ['task', 'author'] });
+  async findAll(nodeId?: number): Promise<Comment[]> {
+    const where = nodeId ? { node: { id: nodeId } } : {};
+    return this.commentRepository.find({ where, relations: ['node', 'author'] });
   }
 
   async findById(id: number): Promise<Comment | null> {
-    return this.commentRepository.findOne({ where: { id }, relations: ['task', 'author'] });
+    return this.commentRepository.findOne({ where: { id }, relations: ['node', 'author'] });
   }
 
   async create(comment: Partial<Comment>): Promise<Comment> {

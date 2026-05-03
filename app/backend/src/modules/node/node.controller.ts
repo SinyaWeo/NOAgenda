@@ -1,0 +1,147 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  NotFoundException,
+  ForbiddenException,
+  Request,
+} from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { NodeService, NodeFilter } from './node.service';
+import { Node, NodeType, NodeStatus } from './node.entity';
+
+@Controller('nodes')
+@UseGuards(AuthGuard('jwt'))
+export class NodeController {
+  constructor(private readonly nodeService: NodeService) {}
+
+  @Get()
+  async findAll(
+    @Request() req: any,
+    @Query('type') type?: NodeType,
+    @Query('parentId') parentId?: string,
+    @Query('status') status?: NodeStatus,
+    @Query('search') search?: string,
+    @Query('sort') sort?: string,
+    @Query('order') order?: 'ASC' | 'DESC',
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('includeArchived') includeArchived?: string,
+  ): Promise<Node[]> {
+    const filter: NodeFilter = { userId: req.user.userId };
+    if (type) filter.type = type;
+    if (parentId !== undefined) filter.parentId = parentId === 'null' ? null : Number(parentId);
+    if (status) filter.status = status;
+    if (search) filter.search = search;
+    if (sort) filter.sort = sort;
+    if (order) filter.order = order;
+    if (page) filter.page = Number(page);
+    if (limit) filter.limit = Number(limit);
+    if (includeArchived === 'true') filter.includeArchived = true;
+    return this.nodeService.findAll(filter);
+  }
+
+  @Get(':id/children')
+  async findChildren(@Param('id') id: number): Promise<Node[]> {
+    return this.nodeService.findChildren(Number(id));
+  }
+
+  @Get(':id/tree')
+  async findTree(@Param('id') id: number): Promise<Node> {
+    const tree = await this.nodeService.findTree(Number(id));
+    if (!tree) throw new NotFoundException();
+    return tree;
+  }
+
+  @Get(':id')
+  async findById(@Param('id') id: number): Promise<Node> {
+    const node = await this.nodeService.findById(Number(id));
+    if (!node) throw new NotFoundException();
+    return node;
+  }
+
+  @Post()
+  async create(@Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
+    const data: Partial<Node> = { ...body };
+    if (body.type === NodeType.PROJECT) {
+      data.ownerId = req.user.userId;
+    } else {
+      data.createdBy = req.user.userId;
+    }
+    return this.nodeService.create(data);
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: number, @Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
+    const existing = await this.nodeService.findById(Number(id));
+    if (!existing) throw new NotFoundException();
+    this.assertOwner(existing, req.user.userId);
+    const { id: _id, ownerId: _o, createdBy: _cb, parent: _p, children: _ch, ...safeBody } = body as any;
+    const node = await this.nodeService.update(Number(id), safeBody);
+    if (!node) throw new NotFoundException();
+    return node;
+  }
+
+  @Put(':id/duplicate')
+  async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    const node = await this.nodeService.duplicate(Number(id), req.user.userId);
+    if (!node) throw new NotFoundException();
+    return node;
+  }
+
+  @Patch(':id/move')
+  async move(
+    @Param('id') id: number,
+    @Body() body: { parentId: number | null },
+    @Request() req: any,
+  ): Promise<Node> {
+    const existing = await this.nodeService.findById(Number(id));
+    if (!existing) throw new NotFoundException();
+    this.assertOwner(existing, req.user.userId);
+    const node = await this.nodeService.move(Number(id), body.parentId);
+    if (!node) throw new NotFoundException();
+    return node;
+  }
+
+  @Patch(':id/archive')
+  async archive(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    const existing = await this.nodeService.findById(Number(id));
+    if (!existing) throw new NotFoundException();
+    this.assertOwner(existing, req.user.userId);
+    const node = await this.nodeService.archive(Number(id));
+    if (!node) throw new NotFoundException();
+    return node;
+  }
+
+  @Patch(':id/unarchive')
+  async unarchive(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    const existing = await this.nodeService.findById(Number(id));
+    if (!existing) throw new NotFoundException();
+    this.assertOwner(existing, req.user.userId);
+    const node = await this.nodeService.unarchive(Number(id));
+    if (!node) throw new NotFoundException();
+    return node;
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+    const existing = await this.nodeService.findById(Number(id));
+    if (!existing) throw new NotFoundException();
+    this.assertOwner(existing, req.user.userId);
+    return this.nodeService.remove(Number(id));
+  }
+
+  private assertOwner(node: Node, userId: number): void {
+    const ownerId = node.type === NodeType.PROJECT ? node.ownerId : node.createdBy;
+    if (ownerId !== undefined && ownerId !== userId) {
+      throw new ForbiddenException();
+    }
+  }
+}

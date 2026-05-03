@@ -11,15 +11,15 @@ export class TaskLabelService {
   ) {}
 
   async findByTask(taskId: number): Promise<TaskLabel[]> {
-    return this.repo.find({ where: { task: { id: taskId } }, relations: ['label', 'task'] });
+    return this.repo.find({ where: { node: { id: taskId } }, relations: ['label', 'node'] });
   }
 
   async add(taskId: number, labelId: number): Promise<TaskLabel> {
-    const taskLabel = this.repo.create({ task: { id: taskId } as any, label: { id: labelId } as any });
+    const taskLabel = this.repo.create({ node: { id: taskId } as any, label: { id: labelId } as any });
     return this.repo.save(taskLabel);
   }
 
   async remove(taskId: number, labelId: number): Promise<void> {
-    await this.repo.delete({ task: { id: taskId }, label: { id: labelId } });
+    await this.repo.delete({ node: { id: taskId }, label: { id: labelId } });
   }
 }
