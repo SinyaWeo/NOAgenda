@@ -39,10 +39,17 @@ export class TaskController {
     if (!task) throw new NotFoundException();
     // Creator always has access
     if (task.createdBy === req.user.userId) return task;
-    // Otherwise verify the task is in a project the user has access to via parentId
+    // Otherwise verify the task is in a project the user has access to via parentId.
+    // For subtasks, parentId points to the parent task, so resolve one level up.
     if (task.parentId) {
       const accessible = await this.taskService.findAll({ userId: req.user.userId, projectId: task.parentId });
       if (accessible.some((t) => t.id === Number(id))) return task;
+
+      const parentTask = await this.taskService.findById(task.parentId);
+      if (parentTask?.parentId) {
+        const accessibleViaParent = await this.taskService.findAll({ userId: req.user.userId, projectId: parentTask.parentId });
+        if (accessibleViaParent.some((t) => t.id === Number(id))) return task;
+      }
     }
     throw new ForbiddenException();
   }

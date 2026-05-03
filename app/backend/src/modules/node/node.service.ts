@@ -58,17 +58,19 @@ export class NodeService {
       if (filter.type === NodeType.PROJECT) {
         qb.andWhere('(node.ownerId = :uid OR pu.userId = :uid)', { uid: filter.userId });
       } else if (filter.type === NodeType.TASK) {
-        // Tasks: parent must be an accessible project or sub-task of one
-        qb.innerJoin(
-          (sub: any) =>
-            sub
-              .select('proj.id', 'proj_id')
-              .from('nodes', 'proj')
-              .leftJoin('project_users', 'pu2', 'pu2.projectId = proj.id AND pu2.userId = :uid2')
-              .where('proj.type = :pt2')
-              .andWhere('(proj.ownerId = :uid2 OR pu2.userId = :uid2)'),
-          'accessible',
-          'accessible.proj_id = node.parentId',
+        // Tasks are accessible when either:
+        // 1) their direct parent is an accessible project, or
+        // 2) their parent is a task whose parent is an accessible project.
+        qb.leftJoin('nodes', 'parentTask', 'parentTask.id = node.parentId');
+        qb.andWhere(
+          `EXISTS (
+            SELECT 1
+            FROM nodes proj
+            LEFT JOIN project_users pu2 ON pu2.projectId = proj.id AND pu2.userId = :uid2
+            WHERE proj.type = :pt2
+              AND (proj.ownerId = :uid2 OR pu2.userId = :uid2)
+              AND (proj.id = node.parentId OR proj.id = parentTask.parentId)
+          )`,
           { uid2: filter.userId, pt2: NodeType.PROJECT },
         );
       } else {

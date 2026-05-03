@@ -26,6 +26,29 @@ export interface TaskFilter {
 export class TaskService {
   constructor(private readonly nodeService: NodeService) {}
 
+  private normalizeTaskPayload(data: Partial<Node> & any): Partial<Node> {
+    const normalized: Partial<Node> & any = { ...data };
+
+    if (normalized.parentId === undefined) {
+      if (normalized.project?.id !== undefined) {
+        normalized.parentId = Number(normalized.project.id);
+      } else if (normalized.projectId !== undefined) {
+        normalized.parentId = Number(normalized.projectId);
+      } else if (normalized.parentTask?.id !== undefined) {
+        normalized.parentId = Number(normalized.parentTask.id);
+      } else if (normalized.parentTaskId !== undefined) {
+        normalized.parentId = Number(normalized.parentTaskId);
+      }
+    }
+
+    delete normalized.project;
+    delete normalized.projectId;
+    delete normalized.parentTask;
+    delete normalized.parentTaskId;
+
+    return normalized;
+  }
+
   async findAll(filter?: TaskFilter): Promise<Node[]> {
     const nodeFilter: NodeFilter = { type: NodeType.TASK };
     if (filter?.userId !== undefined) nodeFilter.userId = filter.userId;
@@ -45,11 +68,11 @@ export class TaskService {
   }
 
   async create(data: Partial<Node>): Promise<Node> {
-    return this.nodeService.create({ ...data, type: NodeType.TASK });
+    return this.nodeService.create({ ...this.normalizeTaskPayload(data), type: NodeType.TASK });
   }
 
   async update(id: number, data: Partial<Node>): Promise<Node | null> {
-    return this.nodeService.update(id, data);
+    return this.nodeService.update(id, this.normalizeTaskPayload(data));
   }
 
   async duplicate(id: number, createdBy?: number): Promise<Node | null> {
@@ -61,7 +84,8 @@ export class TaskService {
   }
 
   async bulkUpdate(ids: number[], data: Partial<Node>, _userId?: number): Promise<Node[]> {
-    const results = await Promise.all(ids.map((id) => this.nodeService.update(id, data)));
+    const normalizedData = this.normalizeTaskPayload(data);
+    const results = await Promise.all(ids.map((id) => this.nodeService.update(id, normalizedData)));
     return results.filter(Boolean) as Node[];
   }
 
