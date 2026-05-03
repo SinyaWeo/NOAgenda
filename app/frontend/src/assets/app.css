@@ -9,8 +9,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Scan Flowbite component/icon dist for used classes */
-@source "../../../node_modules/flowbite-svelte/dist";
-@source "../../../node_modules/flowbite-svelte-icons/dist";
+@source "../../node_modules/flowbite-svelte/dist/**/*.{svelte,js}";
+@source "../../node_modules/flowbite-svelte-icons/dist/**/*.{svelte,js}";
 
 /* ─── Custom primary color (indigo) ─── */
 @theme {
@@ -25,6 +25,38 @@
   --color-primary-800: #3730a3;
   --color-primary-900: #312e81;
   --color-primary-950: #1e1b4b;
+}
+
+/* Fallback for runtime/caching issues where utility classes are present in HTML but not applied */
+button.bg-primary-700,
+a.bg-primary-700 {
+  background-color: var(--color-primary-700);
+  color: #fff;
+}
+
+button.hover\:bg-primary-800:hover,
+a.hover\:bg-primary-800:hover {
+  background-color: var(--color-primary-800);
+}
+
+.dark button.dark\:bg-primary-600,
+.dark a.dark\:bg-primary-600 {
+  background-color: var(--color-primary-600);
+}
+
+.dark button.dark\:hover\:bg-primary-700:hover,
+.dark a.dark\:hover\:bg-primary-700:hover {
+  background-color: var(--color-primary-700);
+}
+
+button.bg-white,
+a.bg-white {
+  background-color: #fff;
+}
+
+button.text-gray-900,
+a.text-gray-900 {
+  color: #111827;
 }
 
 /* ─────────────────────────────────────────────────────────────────
