@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { apiGetAuth, apiPutAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
@@ -22,7 +22,7 @@
   onMount(async () => {
     const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
     try {
-      const task = await apiGetAuth<any>(`/tasks/${$page.params.id}`);
+      const task = await apiGetAuth<any>(`/tasks/${page.params.id}`);
       title.set(task.title ?? ''); description.set(task.description ?? '');
       dueDate.set(task.dueDate ? task.dueDate.substring(0, 10) : '');
       startDate.set(task.startDate ? task.startDate.substring(0, 10) : '');
@@ -35,14 +35,14 @@
     event.preventDefault();
     saving.set(true); error.set('');
     try {
-      await apiPutAuth(`/tasks/${$page.params.id}`, { title: $title, description: $description, dueDate: $dueDate ? new Date($dueDate).toISOString() : null, startDate: $startDate ? new Date($startDate).toISOString() : null, priority: $priority, percentDone: $percentDone, repeatAfter: $repeatAfter || null, repeatMode: $repeatAfter ? $repeatMode : null });
-      goto(`/tasks/${$page.params.id}`);
+      await apiPutAuth(`/tasks/${page.params.id}`, { title: $title, description: $description, dueDate: $dueDate ? new Date($dueDate).toISOString() : null, startDate: $startDate ? new Date($startDate).toISOString() : null, priority: $priority, percentDone: $percentDone, repeatAfter: $repeatAfter || null, repeatMode: $repeatAfter ? $repeatMode : null });
+      goto(`/tasks/${page.params.id}`);
     } catch (e: any) { error.set(e.message); } finally { saving.set(false); }
   }
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-  <a href="/tasks/{$page.params.id}" class="text-gray-400 hover:text-gray-600">← Back to Task</a>
+  <a href="/tasks/{page.params.id}" class="text-gray-400 hover:text-gray-600">← Back to Task</a>
   <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">Edit Task</h1>
 </div>
 
@@ -97,7 +97,7 @@
       </fieldset>
       <div class="flex gap-2">
         <Button type="submit" disabled={$saving}>{$saving ? 'Saving…' : 'Save Changes'}</Button>
-        <Button href="/tasks/{$page.params.id}" color="light">Cancel</Button>
+        <Button href="/tasks/{page.params.id}" color="light">Cancel</Button>
       </div>
     </form>
   </Card>

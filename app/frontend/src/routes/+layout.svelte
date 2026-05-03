@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { authSession, clearAuthSession, initializeAuth } from '$lib/auth';
 	import { derived, writable } from 'svelte/store';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { apiGetAuth, apiPostAuth, clearToken, API_BASE } from '$lib/api';
 	import {
@@ -61,6 +61,7 @@
 	let searchQuery = $state('');
 	let searchTimer: ReturnType<typeof setTimeout>;
 	let hydratedUserId = $state<number | null>(null);
+	const currentPath = $derived(page.url.pathname);
 
 	onMount(() => {
 		if (localStorage.getItem('nav-collapsed') === 'true')
@@ -120,7 +121,7 @@
 	}
 
 	function isActive(path: string): boolean {
-		return $page.url.pathname.startsWith(path);
+		return currentPath.startsWith(path);
 	}
 
 	function getInitials(u: any): string {

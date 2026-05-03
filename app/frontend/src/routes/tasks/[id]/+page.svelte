@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import {
 		apiGetAuth,
@@ -79,7 +79,7 @@
 			return;
 		}
 		try {
-			await loadTask($page.params.id ?? '');
+			await loadTask(page.params.id ?? '');
 		} catch (e: any) {
 			error.set(e.message);
 		} finally {
@@ -88,7 +88,7 @@
 	});
 
 	async function addReminder() {
-		const id = $page.params.id;
+		const id = page.params.id;
 		if (!newReminderDate) return;
 		try {
 			await apiPostAuth(`/tasks/${id}/reminders`, {
@@ -101,7 +101,7 @@
 		}
 	}
 	async function deleteReminder(reminderId: number) {
-		const id = $page.params.id;
+		const id = page.params.id;
 		try {
 			await apiDeleteAuth(`/tasks/${id}/reminders/${reminderId}`);
 			reminders.set(await apiGetAuth<any[]>(`/tasks/${id}/reminders`));
@@ -110,7 +110,7 @@
 		}
 	}
 	async function addRelation() {
-		const id = $page.params.id;
+		const id = page.params.id;
 		if (!newRelatedTaskId) return;
 		try {
 			await apiPostAuth(`/tasks/${id}/relations`, {
@@ -124,7 +124,7 @@
 		}
 	}
 	async function deleteRelation(kind: string, relatedTaskId: number) {
-		const id = $page.params.id;
+		const id = page.params.id;
 		try {
 			await apiDeleteAuth(
 				`/tasks/${id}/relations/${kind}/${relatedTaskId}`,
@@ -136,7 +136,7 @@
 	}
 	async function addSubtask(e: SubmitEvent) {
 		e.preventDefault();
-		const id = $page.params.id;
+		const id = page.params.id;
 		if (!newSubtaskTitle.trim()) return;
 		const t = $task;
 		try {
@@ -152,7 +152,7 @@
 		}
 	}
 	async function updatePercentDone(value: number) {
-		const id = $page.params.id;
+		const id = page.params.id;
 		try {
 			const updated = await apiPutAuth<any>(`/tasks/${id}`, {
 				percentDone: value,
@@ -163,7 +163,7 @@
 		}
 	}
 	async function updateStatus(status: string) {
-		const id = $page.params.id;
+		const id = page.params.id;
 		try {
 			const updated = await apiPutAuth<any>(`/tasks/${id}`, { status });
 			task.set(updated);
@@ -172,7 +172,7 @@
 		}
 	}
 	async function deferDueDate(days: number) {
-		const id = $page.params.id;
+		const id = page.params.id;
 		const t = $task;
 		const base = t?.dueDate ? new Date(t.dueDate) : new Date();
 		base.setDate(base.getDate() + days);
@@ -187,7 +187,7 @@
 	}
 	async function postComment(e: SubmitEvent) {
 		e.preventDefault();
-		const id = $page.params.id;
+		const id = page.params.id;
 		if (!newComment.trim()) return;
 		addingComment = true;
 		try {
@@ -207,7 +207,7 @@
 		try {
 			await apiDeleteAuth(`/comments/${commentId}`);
 			comments.set(
-				await apiGetAuth<any[]>(`/comments?taskId=${$page.params.id}`),
+				await apiGetAuth<any[]>(`/comments?taskId=${page.params.id}`),
 			);
 		} catch (e: any) {
 			error.set(e.message);
@@ -217,7 +217,7 @@
 		const input = e.target as HTMLInputElement;
 		const file = input.files?.[0];
 		if (!file) return;
-		const id = $page.params.id ?? '';
+		const id = page.params.id ?? '';
 		const fd = new FormData();
 		fd.append('file', file);
 		fd.append('taskId', id);

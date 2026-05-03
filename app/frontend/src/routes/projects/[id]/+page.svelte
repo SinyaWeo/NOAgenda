@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { apiGetAuth, apiPostAuth, apiPutAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { writable, derived } from 'svelte/store';
@@ -30,7 +30,7 @@
 
   onMount(async () => {
     const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
-    const id = $page.params.id;
+    const id = page.params.id;
     try {
       const [p, t, v] = await Promise.all([apiGetAuth<any>(`/projects/${id}`), apiGetAuth<any[]>(`/tasks?projectId=${id}`), apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => [])]);
       project.set(p); tasks.set(t); views.set(v);
@@ -41,7 +41,7 @@
     e.preventDefault();
     if (!newTaskTitle.trim() || addingTask) return;
     addingTask = true;
-    const id = $page.params.id;
+    const id = page.params.id;
     try {
       await apiPostAuth('/tasks', { title: newTaskTitle, project: { id: Number(id) } });
       newTaskTitle = '';

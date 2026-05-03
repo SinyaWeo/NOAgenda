@@ -3,7 +3,7 @@
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPutAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
   import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
@@ -19,7 +19,7 @@
   let newMemberUserId = $state('');
 
   async function loadTeam() {
-    const id = $page.params.id;
+    const id = page.params.id;
     const [t, m, users] = await Promise.all([
       apiGetAuth<any>(`/teams/${id}`), apiGetAuth<any[]>(`/team-members?teamId=${id}`), apiGetAuth<any[]>('/users').catch(() => []),
     ]);
@@ -33,13 +33,13 @@
 
   async function handleSave(e: Event) {
     e.preventDefault(); saving.set(true);
-    try { await apiPutAuth(`/teams/${$page.params.id}`, { name: $name, description: $description }); goto(`/teams/${$page.params.id}`); }
+    try { await apiPutAuth(`/teams/${page.params.id}`, { name: $name, description: $description }); goto(`/teams/${page.params.id}`); }
     catch (e: any) { error.set(e.message); } finally { saving.set(false); }
   }
 
   async function addMember(e: SubmitEvent) {
     e.preventDefault(); if (!newMemberUserId.trim()) return;
-    try { await apiPostAuth('/team-members', { teamId: Number($page.params.id), userId: Number(newMemberUserId) }); newMemberUserId = ''; await loadTeam(); }
+    try { await apiPostAuth('/team-members', { teamId: Number(page.params.id), userId: Number(newMemberUserId) }); newMemberUserId = ''; await loadTeam(); }
     catch (e: any) { error.set(e.message); }
   }
 
@@ -50,13 +50,13 @@
 
   async function handleDelete() {
     if (!confirm('Delete this team?')) return;
-    try { await apiDeleteAuth(`/teams/${$page.params.id}`); goto('/teams'); }
+    try { await apiDeleteAuth(`/teams/${page.params.id}`); goto('/teams'); }
     catch (e: any) { error.set(e.message); }
   }
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-  <a href="/teams/{$page.params.id}" class="text-gray-400 hover:text-gray-600">← Back</a>
+  <a href="/teams/{page.params.id}" class="text-gray-400 hover:text-gray-600">← Back</a>
   <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">Edit Team</h1>
 </div>
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
@@ -76,7 +76,7 @@
       </div>
       <div class="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
         <Button type="submit" disabled={$saving}>{$saving ? 'Saving…' : 'Save Changes'}</Button>
-        <Button href="/teams/{$page.params.id}" color="light">Cancel</Button>
+        <Button href="/teams/{page.params.id}" color="light">Cancel</Button>
       </div>
     </form>
   </Card>

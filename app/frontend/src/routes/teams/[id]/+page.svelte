@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { apiGetAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { writable } from 'svelte/store';
@@ -14,7 +14,7 @@
 
   onMount(async () => {
     const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
-    const id = $page.params.id;
+    const id = page.params.id;
     try {
       const [t, m] = await Promise.all([apiGetAuth<any>(`/teams/${id}`), apiGetAuth<any[]>(`/team-members?teamId=${id}`)]);
       team.set(t); members.set(m);

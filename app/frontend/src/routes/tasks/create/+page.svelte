@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { apiPostAuth, apiGetAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { writable, get } from 'svelte/store';
@@ -18,7 +18,7 @@
 
   onMount(async () => {
     const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
-    const pid = $page.url.searchParams.get('projectId');
+    const pid = page.url.searchParams.get('projectId');
     if (pid) projectId.set(Number(pid));
     try { projects.set(await apiGetAuth<any[]>('/projects')); } catch (_) {}
   });

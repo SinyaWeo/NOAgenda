@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { apiGetAuth, apiPatchAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
@@ -15,7 +15,7 @@
 
   onMount(async () => {
     const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
-    try { project.set(await apiGetAuth<any>(`/projects/${$page.params.id}`)); }
+    try { project.set(await apiGetAuth<any>(`/projects/${page.params.id}`)); }
     catch (e: any) { error.set(e.message); } finally { loading.set(false); }
   });
 
@@ -32,7 +32,7 @@
 </script>
 
 <div class="flex items-center gap-3 mb-4">
-  <a href="/projects/{$page.params.id}/edit" class="text-gray-400 hover:text-gray-600">← Back</a>
+  <a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">← Back</a>
   <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">Archive Project</h1>
 </div>
 <p class="text-gray-500 dark:text-gray-400 mb-4">Manage whether this project appears in your active project list.</p>

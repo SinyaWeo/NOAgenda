@@ -3,7 +3,7 @@
     import { writable } from 'svelte/store';
     import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
     import { getCurrentUser } from '$lib/auth';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import { Alert, Button, Card, Input } from 'flowbite-svelte';
     import { LinkOutline } from 'flowbite-svelte-icons';
@@ -15,7 +15,7 @@
 
     async function load() {
         webhooks.set(
-            await apiGetAuth<any[]>(`/webhooks?projectId=${$page.params.id}`),
+            await apiGetAuth<any[]>(`/webhooks?projectId=${page.params.id}`),
         );
     }
 
@@ -24,7 +24,7 @@
         try {
             await apiPostAuth('/webhooks', {
                 url: newUrl,
-                projectId: Number($page.params.id),
+                projectId: Number(page.params.id),
             });
             newUrl = '';
             await load();
@@ -60,7 +60,7 @@
 
 <div class="flex items-center gap-3 mb-6">
     <a
-        href="/projects/{$page.params.id}/edit"
+        href="/projects/{page.params.id}/edit"
         class="text-gray-400 hover:text-gray-600">← Back</a
     >
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">

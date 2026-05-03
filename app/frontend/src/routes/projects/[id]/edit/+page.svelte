@@ -4,7 +4,7 @@
   import { apiGetAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
 
   const project = writable<any>(null);
@@ -17,7 +17,7 @@
   onMount(async () => {
     const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
     try {
-      const p = await apiGetAuth<any>(`/projects/${$page.params.id}`);
+      const p = await apiGetAuth<any>(`/projects/${page.params.id}`);
       project.set(p); name.set(p.name ?? ''); description.set(p.description ?? '');
     } catch (e: any) { error.set(e.message); } finally { loading.set(false); }
   });
@@ -25,13 +25,13 @@
   async function handleSave(e: SubmitEvent) {
     e.preventDefault();
     saving.set(true); error.set('');
-    try { await apiPutAuth(`/projects/${$page.params.id}`, { name: $name, description: $description }); goto(`/projects/${$page.params.id}`); }
+    try { await apiPutAuth(`/projects/${page.params.id}`, { name: $name, description: $description }); goto(`/projects/${page.params.id}`); }
     catch (e: any) { error.set(e.message); } finally { saving.set(false); }
   }
 
   async function handleDelete() {
     if (!confirm('Delete this project and all its tasks? This cannot be undone.')) return;
-    try { await apiDeleteAuth(`/projects/${$page.params.id}`); goto('/projects'); }
+    try { await apiDeleteAuth(`/projects/${page.params.id}`); goto('/projects'); }
     catch (e: any) { error.set(e.message); }
   }
 </script>
@@ -40,7 +40,7 @@
   <p class="text-gray-400">Loading…</p>
 {:else}
   <div class="flex items-center gap-3 mb-6">
-    <a href="/projects/{$page.params.id}" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">← Back</a>
+    <a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">← Back</a>
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">Edit Project</h1>
   </div>
 
@@ -58,7 +58,7 @@
       </div>
       <div class="flex gap-2">
         <Button type="submit" disabled={$saving}>{$saving ? 'Saving…' : 'Save Changes'}</Button>
-        <Button href="/projects/{$page.params.id}" color="light">Cancel</Button>
+        <Button href="/projects/{page.params.id}" color="light">Cancel</Button>
       </div>
     </form>
   </Card>
@@ -71,14 +71,14 @@
           <p class="font-medium text-gray-900 dark:text-white m-0">Archive / Restore</p>
           <p class="text-sm text-gray-500 m-0">Toggle archive status of this project</p>
         </div>
-        <Button href="/projects/{$page.params.id}/settings/archive" size="sm" color="light">Archive</Button>
+        <Button href="/projects/{page.params.id}/settings/archive" size="sm" color="light">Archive</Button>
       </div>
       <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
         <div>
           <p class="font-medium text-gray-900 dark:text-white m-0">Duplicate Project</p>
           <p class="text-sm text-gray-500 m-0">Create a copy of this project</p>
         </div>
-        <Button href="/projects/{$page.params.id}/settings/duplicate" size="sm" color="light">Duplicate</Button>
+        <Button href="/projects/{page.params.id}/settings/duplicate" size="sm" color="light">Duplicate</Button>
       </div>
       <div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
         <div>

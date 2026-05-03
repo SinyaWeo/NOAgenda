@@ -1,7 +1,7 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
   import { apiPost } from '$lib/api';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
   import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
@@ -20,7 +20,7 @@
     error.set('');
     success.set(false);
     try {
-      const token = $page.url.searchParams.get('token') ?? '';
+      const token = page.url.searchParams.get('token') ?? '';
       await apiPost('/auth/password-reset/reset', { token, password: $password });
       success.set(true);
       setTimeout(() => goto('/login'), 2000);

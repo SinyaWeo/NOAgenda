@@ -3,7 +3,7 @@
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPutAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { Alert, Badge, Button, Card, Select, Table, TableBody, TableBodyCell, TableBodyRow, TableHead, TableHeadCell } from 'flowbite-svelte';
   import { CalendarMonthOutline, CheckCircleOutline } from 'flowbite-svelte-icons';
@@ -24,7 +24,7 @@
   }
 
   async function load() {
-    const { id, viewId } = $page.params;
+    const { id, viewId } = page.params;
     const [v, t] = await Promise.all([apiGetAuth<any>(`/projects/${id}/views/${viewId}`), apiGetAuth<any[]>(`/tasks?projectId=${id}`)]);
     view.set(v); tasks.set(t);
     if (v.viewType === 'kanban') { buckets.set(await apiGetAuth<any[]>(`/projects/${id}/views/${viewId}/buckets`)); }
@@ -43,11 +43,11 @@
 {:else if $view}
   <div class="flex items-center justify-between gap-4 mb-4">
     <div class="flex items-center gap-3">
-      <a href="/projects/{$page.params.id}" class="text-gray-400 hover:text-gray-600">← Back</a>
+      <a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600">← Back</a>
       <h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">{$view.title}</h1>
       <Badge color="indigo">{$view.viewType}</Badge>
     </div>
-    <Button href="/projects/{$page.params.id}/settings/views" color="light" size="sm">Manage views</Button>
+    <Button href="/projects/{page.params.id}/settings/views" color="light" size="sm">Manage views</Button>
   </div>
 
   {#if $view.viewType === 'list'}
