@@ -1,6 +1,7 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
   import { apiFetch, setToken } from '$lib/api';
+  import { refreshCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
   import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
@@ -27,6 +28,8 @@
       }
       const data = await response.json();
       setToken(data.access_token);
+      const me = await refreshCurrentUser();
+      if (!me) throw new Error('Unable to load your account');
       goto('/dashboard');
     } catch (e) {
       error.set(e instanceof Error ? e.message : 'Unknown error');
@@ -36,11 +39,15 @@
   }
 </script>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+<div
+  class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4"
+>
   <Card class="w-full max-w-md">
     <div class="text-center mb-6">
       <h1 class="text-2xl font-bold text-gray-900 dark:text-white">NOAgenda</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Sign in to your account</p>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        Sign in to your account
+      </p>
     </div>
 
     {#if $error}
@@ -50,25 +57,52 @@
     <form onsubmit={handleLogin} class="flex flex-col gap-4">
       <div>
         <Label for="login-username" class="mb-1">Username</Label>
-        <Input id="login-username" type="text" bind:value={$username} required />
+        <Input
+          id="login-username"
+          type="text"
+          bind:value={$username}
+          required
+        />
       </div>
       <div>
         <Label for="login-password" class="mb-1">Password</Label>
         <div class="flex gap-2">
-          <Input id="login-password" type={showPassword ? 'text' : 'password'} bind:value={$password} required class="flex-1" />
-          <Button type="button" color="light" onclick={() => (showPassword = !showPassword)} class="shrink-0 px-3">
-            {#if showPassword}<EyeSlashOutline class="w-4 h-4" />{:else}<EyeOutline class="w-4 h-4" />{/if}
+          <Input
+            id="login-password"
+            type={showPassword ? 'text' : 'password'}
+            bind:value={$password}
+            required
+            class="flex-1"
+          />
+          <Button
+            type="button"
+            color="light"
+            onclick={() => (showPassword = !showPassword)}
+            class="shrink-0 px-3"
+          >
+            {#if showPassword}<EyeSlashOutline
+                class="w-4 h-4"
+              />{:else}<EyeOutline class="w-4 h-4" />{/if}
           </Button>
         </div>
       </div>
-      <Button type="submit" disabled={$loading} class="w-full mt-1">{$loading ? 'Signing in…' : 'Sign in'}</Button>
+      <Button type="submit" disabled={$loading} class="w-full mt-1"
+        >{$loading ? 'Signing in…' : 'Sign in'}</Button
+      >
     </form>
 
     <p class="text-sm text-center text-gray-500 mt-4">
-      Don't have an account? <a href="/register" class="text-primary-600 dark:text-primary-400 hover:underline">Register</a>
+      Don't have an account? <a
+        href="/register"
+        class="text-primary-600 dark:text-primary-400 hover:underline"
+        >Register</a
+      >
     </p>
     <p class="text-sm text-center mt-1">
-      <a href="/get-password-reset" class="text-gray-400 hover:underline text-xs">Forgot password?</a>
+      <a
+        href="/get-password-reset"
+        class="text-gray-400 hover:underline text-xs">Forgot password?</a
+      >
     </p>
   </Card>
 </div>

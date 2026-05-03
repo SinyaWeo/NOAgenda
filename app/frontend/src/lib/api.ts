@@ -56,15 +56,32 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 // --- Auth token storage ---
-/** Store JWT in sessionStorage (no cookies used by backend JWT) */
+/** Store JWT in localStorage so auth survives reloads and browser restarts. */
 export function setToken(token: string) {
-	if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('access_token', token);
+	if (typeof localStorage !== 'undefined') {
+		localStorage.setItem('access_token', token);
+	}
+	if (typeof sessionStorage !== 'undefined') {
+		sessionStorage.removeItem('access_token');
+	}
 }
 export function getToken(): string | null {
-	if (typeof sessionStorage !== 'undefined') return sessionStorage.getItem('access_token');
+	if (typeof localStorage !== 'undefined') {
+		const token = localStorage.getItem('access_token');
+		if (token) return token;
+	}
+	if (typeof sessionStorage !== 'undefined') {
+		const token = sessionStorage.getItem('access_token');
+		if (token && typeof localStorage !== 'undefined') {
+			localStorage.setItem('access_token', token);
+			sessionStorage.removeItem('access_token');
+		}
+		return token;
+	}
 	return null;
 }
 export function clearToken() {
+	if (typeof localStorage !== 'undefined') localStorage.removeItem('access_token');
 	if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('access_token');
 }
 
