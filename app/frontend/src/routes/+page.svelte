@@ -8,7 +8,7 @@
 		if (u) {
 			goto('/dashboard');
 		} else {
-			goto('/login');
+			goto('/user/login');
 		}
 	});
 </script>

@@ -93,14 +93,14 @@
 
     <p class="text-sm text-center text-gray-500 mt-4">
       Don't have an account? <a
-        href="/register"
+        href="/user/register"
         class="text-primary-600 dark:text-primary-400 hover:underline"
         >Register</a
       >
     </p>
     <p class="text-sm text-center mt-1">
       <a
-        href="/get-password-reset"
+        href="/user/get-password-reset"
         class="text-gray-400 hover:underline text-xs">Forgot password?</a
       >
     </p>

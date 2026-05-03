@@ -9,7 +9,7 @@
   let email = $state(''); let password = $state('');
   const error = writable(''); const success = writable(''); const saving = writable(false);
 
-  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/login'); });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/user/login'); });
 
   async function handleSave(e: Event) {
     e.preventDefault(); saving.set(true); error.set(''); success.set('');

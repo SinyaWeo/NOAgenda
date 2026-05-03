@@ -22,7 +22,7 @@
     onMount(async () => {
         const me = await getCurrentUser();
         if (!me) {
-            goto('/login');
+            goto('/user/login');
             return;
         }
         try {

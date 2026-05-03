@@ -11,7 +11,7 @@
   const error = writable('');
   const loading = writable(false);
 
-  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/login'); });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/user/login'); });
 
   async function handleSubmit(e: Event) {
     e.preventDefault(); loading.set(true); error.set('');

@@ -26,7 +26,7 @@
   onMount(async () => {
     const me = $user ?? (await initializeAuth());
     if (!me) {
-      goto('/login');
+      goto('/user/login');
       return;
     }
     await refresh();

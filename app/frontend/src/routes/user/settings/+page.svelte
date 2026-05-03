@@ -16,7 +16,7 @@
 
 	onMount(async () => {
 		const me = await getCurrentUser();
-		if (!me) goto('/login');
+		if (!me) goto('/user/login');
 	});
 
 	const sections = [

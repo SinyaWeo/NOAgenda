@@ -23,7 +23,7 @@
       const token = page.url.searchParams.get('token') ?? '';
       await apiPost('/auth/password-reset/reset', { token, password: $password });
       success.set(true);
-      setTimeout(() => goto('/login'), 2000);
+      setTimeout(() => goto('/user/login'), 2000);
     } catch (e: any) {
       error.set(e.message ?? 'Reset failed');
     } finally {

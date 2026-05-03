@@ -20,7 +20,7 @@
   const saving = writable(false);
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     try {
       const task = await apiGetAuth<any>(`/tasks/${page.params.id}`);
       title.set(task.title ?? ''); description.set(task.description ?? '');

@@ -7,7 +7,7 @@
   import { Alert, Button, Card } from 'flowbite-svelte';
 
   const error = writable(''); const success = writable(''); const loading = writable(false);
-  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/login'); });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/user/login'); });
 
   async function requestExport() {
     loading.set(true); error.set(''); success.set('');

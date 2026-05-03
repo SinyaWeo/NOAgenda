@@ -95,7 +95,7 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
 
 export async function apiGetAuth<T>(path: string): Promise<T> {
 	const res = await apiFetchAuth(path);
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/login'; throw new Error('Unauthorized'); }
+	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
 	if (!res.ok) throw new Error(await res.text());
 	return res.json();
 }
@@ -106,7 +106,7 @@ export async function apiPostAuth<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/login'; throw new Error('Unauthorized'); }
+	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
 	if (!res.ok) throw new Error(await res.text());
 	const text = await res.text();
 	return text ? JSON.parse(text) : ({} as T);
@@ -118,14 +118,14 @@ export async function apiPutAuth<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/login'; throw new Error('Unauthorized'); }
+	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
 	if (!res.ok) throw new Error(await res.text());
 	return res.json();
 }
 
 export async function apiDeleteAuth(path: string): Promise<void> {
 	const res = await apiFetchAuth(path, { method: 'DELETE' });
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/login'; throw new Error('Unauthorized'); }
+	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
 	if (!res.ok) throw new Error(await res.text());
 }
 
@@ -135,7 +135,7 @@ export async function apiPatchAuth<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/login'; throw new Error('Unauthorized'); }
+	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
 	if (!res.ok) throw new Error(await res.text());
 	return res.json();
 }

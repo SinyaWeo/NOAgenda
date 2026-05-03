@@ -10,7 +10,7 @@
 
   const error = writable('');
   const loading = writable(false);
-  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/login'); });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/user/login'); });
 
   async function handleDelete() {
     if (!confirm('Permanently delete this project and all its tasks?')) return;

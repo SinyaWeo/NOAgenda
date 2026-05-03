@@ -18,7 +18,7 @@
     error.set('');
     try {
       await apiPost('/users', { username: $username, email: $email, password: $password });
-      goto('/login');
+      goto('/user/login');
     } catch (e: any) {
       error.set(e.message ?? 'Registration failed');
     } finally {
@@ -61,7 +61,7 @@
     </form>
 
     <p class="text-sm text-center text-gray-500 mt-4">
-      Already have an account? <a href="/login" class="text-primary-600 dark:text-primary-400 hover:underline">Sign in</a>
+      Already have an account? <a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">Sign in</a>
     </p>
   </Card>
 </div>

@@ -40,7 +40,7 @@
   function startEdit(label: any) { editId = label.id; editTitle = label.title; editColor = label.color ?? '#6366f1'; }
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     await loadLabels(); loading.set(false);
   });
 </script>

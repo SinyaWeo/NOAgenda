@@ -14,7 +14,7 @@
   const success = writable('');
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     try { project.set(await apiGetAuth<any>(`/projects/${page.params.id}`)); }
     catch (e: any) { error.set(e.message); } finally { loading.set(false); }
   });

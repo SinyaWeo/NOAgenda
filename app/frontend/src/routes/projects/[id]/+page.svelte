@@ -29,7 +29,7 @@
   );
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     const id = page.params.id;
     try {
       const [p, t, v] = await Promise.all([apiGetAuth<any>(`/projects/${id}`), apiGetAuth<any[]>(`/tasks?projectId=${id}`), apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => [])]);

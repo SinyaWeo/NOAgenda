@@ -8,7 +8,7 @@
   import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
 
   const error = writable(''); const success = writable(''); const loading = writable(false);
-  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/login'); });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) goto('/user/login'); });
 
   async function requestDeletion() {
     if (!confirm('Are you sure you want to request account deletion? This cannot be undone.')) return;

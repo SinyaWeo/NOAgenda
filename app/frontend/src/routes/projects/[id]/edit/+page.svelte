@@ -15,7 +15,7 @@
   const saving = writable(false);
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     try {
       const p = await apiGetAuth<any>(`/projects/${page.params.id}`);
       project.set(p); name.set(p.name ?? ''); description.set(p.description ?? '');

@@ -12,7 +12,7 @@
   let newUrl = $state(''); let newEvent = $state('task.created'); let newSecret = $state('');
   const EVENT_OPTIONS = ['task.created','task.updated','task.deleted','project.created','project.updated','project.deleted','comment.created'];
 
-  onMount(async () => { const me = await getCurrentUser(); if (!me) { goto('/login'); return; } await load(); });
+  onMount(async () => { const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; } await load(); });
 
   async function load() {
     loading.set(true);

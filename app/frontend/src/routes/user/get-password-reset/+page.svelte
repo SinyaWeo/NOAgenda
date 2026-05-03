@@ -41,7 +41,7 @@
         <p class="text-sm mt-1">If an account exists for that address, we've sent reset instructions.</p>
       </Alert>
       <p class="text-sm text-center mt-4">
-        <a href="/login" class="text-primary-600 dark:text-primary-400 hover:underline">Back to Sign in</a>
+        <a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">Back to Sign in</a>
       </p>
     {:else}
       <form onsubmit={handleRequest} class="flex flex-col gap-4">
@@ -52,7 +52,7 @@
         <Button type="submit" disabled={$loading} class="w-full">{$loading ? 'Sending…' : 'Send reset link'}</Button>
       </form>
       <p class="text-sm text-center mt-4">
-        <a href="/login" class="text-gray-400 hover:underline">← Back to Sign in</a>
+        <a href="/user/login" class="text-gray-400 hover:underline">← Back to Sign in</a>
       </p>
     {/if}
   </Card>

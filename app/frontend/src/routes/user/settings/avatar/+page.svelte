@@ -11,7 +11,7 @@
   const error = writable(''); const success = writable('');
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     try { const data = await apiGetAuth<any>('/user/settings/avatar'); avatarUrl.set(data.avatarUrl ?? ''); }
     catch (e: any) { error.set(e.message); }
   });

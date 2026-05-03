@@ -117,7 +117,7 @@
 
 	function logout() {
 		clearAuthSession();
-		goto('/login');
+		goto('/user/login');
 	}
 
 	function isActive(path: string): boolean {

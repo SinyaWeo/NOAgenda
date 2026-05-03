@@ -31,7 +31,7 @@
   }
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     try { await load(); } catch (e: any) { error.set(e.message); } finally { loading.set(false); }
   });
 </script>

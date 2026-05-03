@@ -11,7 +11,7 @@
   const error = writable(''); const success = writable(''); const loading = writable(true); const saving = writable(false);
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     try {
       const s = await apiGetAuth<any>('/user/settings/general');
       name.set(s.name ?? ''); language.set(s.language ?? 'en'); timezone.set(s.timezone ?? 'UTC'); theme.set(s.theme ?? 'light'); weekStart.set(s.weekStart ?? 1);

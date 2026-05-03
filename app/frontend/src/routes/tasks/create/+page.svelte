@@ -17,7 +17,7 @@
   const projects = writable<any[]>([]);
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     const pid = page.url.searchParams.get('projectId');
     if (pid) projectId.set(Number(pid));
     try { projects.set(await apiGetAuth<any[]>('/projects')); } catch (_) {}

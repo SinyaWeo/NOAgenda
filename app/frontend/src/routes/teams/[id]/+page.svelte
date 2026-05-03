@@ -13,7 +13,7 @@
   const error = writable('');
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/login'); return; }
+    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
     const id = page.params.id;
     try {
       const [t, m] = await Promise.all([apiGetAuth<any>(`/teams/${id}`), apiGetAuth<any[]>(`/team-members?teamId=${id}`)]);
