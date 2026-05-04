@@ -1,5 +1,6 @@
 import { Entity, Column } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
+import { UserRole } from './user-role.enum';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -35,6 +36,9 @@ export class User extends BaseEntity {
 
   @Column({ nullable: true, length: 512 })
   avatarUrl?: string;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role!: UserRole;
 
   @Column({ default: false })
   isDeletionRequested!: boolean;

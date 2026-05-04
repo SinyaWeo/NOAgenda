@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { User } from './user.entity';
+import { UserRole } from './user-role.enum';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -24,6 +25,16 @@ export class UserService {
     return this.userRepository.find({ select: ['id', 'username', 'name', 'avatarUrl', 'createdAt'] as any });
   }
 
+  async findAllAdmin(): Promise<Omit<User, 'password'>[]> {
+    const users = await this.userRepository.find();
+    return users.map(({ password: _p, ...safe }) => safe as Omit<User, 'password'>);
+  }
+
+  async setRole(id: number, role: UserRole): Promise<User | null> {
+    await this.userRepository.update(id, { role });
+    return this.findById(id);
+  }
+
   async findById(id: number): Promise<User | null> {
     return this.userRepository.findOne({ where: { id } });
   }
@@ -34,11 +45,32 @@ export class UserService {
   }
 
   async create(user: Partial<User>): Promise<User> {
+    if (user.email) {
+      const existingByEmail = await this.findByEmail(user.email);
+      if (existingByEmail) {
+        throw new ConflictException('Email is already in use');
+      }
+    }
+    if (user.username) {
+      const existingByUsername = await this.findByUsername(user.username);
+      if (existingByUsername) {
+        throw new ConflictException('Username is already in use');
+      }
+    }
+
     if (user.password) {
       user.password = await bcrypt.hash(user.password, 10);
     }
     const newUser = this.userRepository.create(user);
-    return this.userRepository.save(newUser);
+    try {
+      return await this.userRepository.save(newUser);
+    } catch (err: unknown) {
+      // Handle race conditions where another request inserts the same unique field first.
+      if (err instanceof QueryFailedError && (err as any).driverError?.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException('Username or email is already in use');
+      }
+      throw err;
+    }
   }
 
   async update(id: number, data: Partial<User>): Promise<User | null> {

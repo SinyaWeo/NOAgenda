@@ -32,6 +32,9 @@ import { KanbanBucketModule } from './modules/kanban-bucket/kanban-bucket.module
 import { AppI18nModule } from './i18n/i18n.module';
 import { SearchModule } from './modules/search/search.module';
 import { NodeModule } from './modules/node/node.module';
+import { QuoteModule } from './modules/quotes/quote.module';
+import { AdminModule } from './modules/admin/admin.module';
+import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 
 @Module({
   imports: [
@@ -76,6 +79,9 @@ import { NodeModule } from './modules/node/node.module';
     KanbanBucketModule,
     SearchModule,
     NodeModule,
+    QuoteModule,
+    AdminModule,
+    AppSettingsModule,
   ],
   controllers: [AppController],
 })

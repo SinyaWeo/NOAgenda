@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 	import { authSession, clearAuthSession, initializeAuth } from '$lib/auth';
+	import { isAdmin } from '$lib/roles';
 	import { derived, writable } from 'svelte/store';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -381,6 +382,20 @@
 					</a>
 				</li>
 				<li class="nav-spacer"></li>
+				{#if isAdmin($user)}
+					<li>
+						<a
+							href="/admin"
+							class="nav-link"
+							class:active={isActive('/admin')}
+						>
+							<span class="nav-icon"
+								><CogOutline class="w-5 h-5" /></span
+							>
+							{#if !$sidebarCollapsed}<span>Admin</span>{/if}
+						</a>
+					</li>
+				{/if}
 				<li>
 					<a
 						href="/about"
@@ -589,6 +604,12 @@
 							<span class="block text-xs text-gray-500"
 								>@{$user.username}</span
 							>
+							{#if isAdmin($user)}
+								<span
+									class="inline-block mt-1 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded"
+									>Admin</span
+								>
+							{/if}
 						</DropdownHeader>
 						<DropdownItem
 							href="/user/profile"

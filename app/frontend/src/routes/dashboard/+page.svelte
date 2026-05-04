@@ -1,17 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { derived, writable } from 'svelte/store';
-  import { apiGetAuth, apiPostAuth } from '$lib/api';
+  import { apiGetAuth, apiPostAuth, apiGet } from '$lib/api';
   import { authSession, initializeAuth } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { Alert, Badge, Button, Card, Input, Select } from 'flowbite-svelte';
   import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
+  import type { Quote } from '$lib/types';
 
   const user = derived(authSession, ($authSession) => $authSession.user);
   const projects = writable<any[]>([]);
   const upcomingTasks = writable<any[]>([]);
   const overdueTasks = writable<any[]>([]);
   const loading = writable(true);
+  const quote = writable<Quote | null>(null);
 
   let quickTitle = $state('');
   let quickProjectId = $state('');
@@ -30,6 +32,10 @@
       return;
     }
     await refresh();
+    try {
+      const q = await apiGet<Quote | null>('/quotes/random');
+      quote.set(q);
+    } catch (_) {}
   });
 
   async function refresh() {
@@ -103,6 +109,17 @@
       day: 'numeric',
     })}
   </p>
+
+  {#if $quote}
+    <blockquote
+      class="relative bg-white dark:bg-gray-800 border-l-4 border-primary-500 rounded-lg px-5 py-4 mb-6 shadow-sm"
+    >
+      <p class="text-gray-700 dark:text-gray-200 italic m-0">“{$quote.text}”</p>
+      {#if $quote.author}
+        <footer class="mt-2 text-sm text-gray-400">— {$quote.author}</footer>
+      {/if}
+    </blockquote>
+  {/if}
 
   <!-- Stat cards -->
   <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 mb-6">

@@ -1,11 +1,12 @@
 import { get, writable } from 'svelte/store';
 import { apiFetchAuth, clearToken, getToken } from './api';
+import type { User } from './types';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
 
 type AuthSession = {
 	status: AuthStatus;
-	user: any | null;
+	user: User | null;
 };
 
 export const authSession = writable<AuthSession>({
@@ -13,9 +14,9 @@ export const authSession = writable<AuthSession>({
 	user: null,
 });
 
-let refreshPromise: Promise<any | null> | null = null;
+let refreshPromise: Promise<User | null> | null = null;
 
-export async function refreshCurrentUser(): Promise<any | null> {
+export async function refreshCurrentUser(): Promise<User | null> {
 	if (!getToken()) {
 		authSession.set({ status: 'unauthenticated', user: null });
 		return null;
@@ -44,7 +45,7 @@ export async function refreshCurrentUser(): Promise<any | null> {
 	return refreshPromise;
 }
 
-export async function initializeAuth(): Promise<any | null> {
+export async function initializeAuth(): Promise<User | null> {
 	if (refreshPromise) return refreshPromise;
 	return refreshCurrentUser();
 }
@@ -54,7 +55,7 @@ export function clearAuthSession() {
 	authSession.set({ status: 'unauthenticated', user: null });
 }
 
-export async function getCurrentUser(): Promise<any | null> {
+export async function getCurrentUser(): Promise<User | null> {
 	if (refreshPromise) return refreshPromise;
 	const session = get(authSession);
 	if (session.status === 'authenticated' && session.user !== null) {

@@ -2,6 +2,18 @@
 // Set your backend base URL here or use an environment variable
 export const API_BASE: string = (import.meta.env.VITE_API_BASE as string) || 'http://localhost:3000';
 
+function extractApiErrorMessage(rawText: string, fallback = 'Request failed'): string {
+	if (!rawText) return fallback;
+	try {
+		const parsed = JSON.parse(rawText) as { message?: string | string[] };
+		if (Array.isArray(parsed.message)) return parsed.message.join(', ');
+		if (typeof parsed.message === 'string' && parsed.message.trim().length > 0) return parsed.message;
+	} catch {
+		// rawText is not JSON; return it directly.
+	}
+	return rawText;
+}
+
 export async function apiFetch(path: string, options: RequestInit = {}) {
 	const url = path.startsWith('http') ? path : `${API_BASE}${path.startsWith('/') ? path : '/' + path}`;
 	try {
@@ -26,7 +38,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 	const text = await res.text();
 	return text ? JSON.parse(text) : ({} as T);
 }
@@ -38,20 +50,20 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 	return res.json();
 }
 
 /** Helper: DELETE and return void or throw */
 export async function apiDelete(path: string): Promise<void> {
 	const res = await apiFetch(path, { method: 'DELETE' });
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 }
 
 /** Helper: GET and return parsed JSON or throw */
 export async function apiGet<T>(path: string): Promise<T> {
 	const res = await apiFetch(path);
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 	return res.json();
 }
 
@@ -96,7 +108,7 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
 export async function apiGetAuth<T>(path: string): Promise<T> {
 	const res = await apiFetchAuth(path);
 	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 	return res.json();
 }
 
@@ -107,7 +119,7 @@ export async function apiPostAuth<T>(path: string, body: unknown): Promise<T> {
 		body: JSON.stringify(body),
 	});
 	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 	const text = await res.text();
 	return text ? JSON.parse(text) : ({} as T);
 }
@@ -119,14 +131,14 @@ export async function apiPutAuth<T>(path: string, body: unknown): Promise<T> {
 		body: JSON.stringify(body),
 	});
 	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 	return res.json();
 }
 
 export async function apiDeleteAuth(path: string): Promise<void> {
 	const res = await apiFetchAuth(path, { method: 'DELETE' });
 	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 }
 
 export async function apiPatchAuth<T>(path: string, body: unknown): Promise<T> {
@@ -136,7 +148,7 @@ export async function apiPatchAuth<T>(path: string, body: unknown): Promise<T> {
 		body: JSON.stringify(body),
 	});
 	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(await res.text());
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
 	return res.json();
 }
 

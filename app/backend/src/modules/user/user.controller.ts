@@ -40,13 +40,8 @@ export class UserController {
 
   @Post()
   async create(@Body() body: CreateUserDto): Promise<Omit<User, 'password'>> {
-    try {
-      const user = await this.userService.create(body);
-      return this.strip(user);
-    } catch (err) {
-      console.error('User registration error:', err);
-      throw err;
-    }
+    const user = await this.userService.create(body);
+    return this.strip(user);
   }
 
   @Put(':id')

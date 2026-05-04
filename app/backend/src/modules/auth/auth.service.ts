@@ -31,14 +31,15 @@ export class AuthService {
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    const payload = { username: user.username, sub: user.id };
+    const payload = { username: user.username, sub: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
     };
   }
 
   async refresh(userId: number, username: string) {
-    const payload = { username, sub: userId };
+    const user = await this.userService.findById(userId);
+    const payload = { username, sub: userId, role: user?.role };
     return {
       access_token: this.jwtService.sign(payload),
     };

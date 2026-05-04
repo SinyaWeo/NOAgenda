@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import { getCurrentUser } from '$lib/auth';
 	import { goto } from '$app/navigation';
+	import { isAdmin } from '$lib/roles';
+	import type { User } from '$lib/types';
 	import {
 		UserCircleOutline,
 		CogOutline,
@@ -12,10 +14,13 @@
 		LinkOutline,
 		ArrowDownToBracketOutline,
 		TrashBinOutline,
+		QuoteOutline,
 	} from 'flowbite-svelte-icons';
 
+	let me: User | null = $state(null);
+
 	onMount(async () => {
-		const me = await getCurrentUser();
+		me = await getCurrentUser();
 		if (!me) goto('/user/login');
 	});
 
@@ -94,8 +99,7 @@
 				? 'border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20'
 				: 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'} transition-colors"
 		>
-			<svelte:component
-				this={s.icon}
+			<s.icon
 				class="w-6 h-6 shrink-0 {s.danger
 					? 'text-red-600'
 					: 'text-primary-600'}"
@@ -113,3 +117,29 @@
 		</a>
 	{/each}
 </div>
+
+{#if isAdmin(me)}
+	<h2
+		class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-8 mb-3"
+	>
+		Admin
+	</h2>
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+		<a
+			href="/admin/quotes"
+			class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+		>
+			<QuoteOutline class="w-6 h-6 shrink-0 text-primary-600" />
+			<div>
+				<p
+					class="font-semibold text-sm m-0 text-gray-900 dark:text-white"
+				>
+					Quotes
+				</p>
+				<p class="text-xs text-gray-500 m-0">
+					Manage motivational quotes
+				</p>
+			</div>
+		</a>
+	</div>
+{/if}
