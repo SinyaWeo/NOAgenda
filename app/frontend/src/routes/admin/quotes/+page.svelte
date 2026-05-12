@@ -27,6 +27,7 @@
         EditOutline,
         TrashBinOutline,
         QuoteOutline,
+        CaretLeftSolid,
     } from 'flowbite-svelte-icons';
     import type { Quote } from '$lib/types';
 
@@ -124,7 +125,7 @@
             <a
                 href="/admin"
                 class="text-sm text-primary-600 dark:text-primary-400"
-                >← Admin</a
+                ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Admin</a
             >
             <Button size="sm" onclick={openNew}>
                 <PlusOutline class="w-4 h-4 mr-1" />New Quote

@@ -21,6 +21,7 @@
   import {
     CalendarMonthOutline,
     CheckCircleOutline,
+    CaretLeftSolid,
   } from 'flowbite-svelte-icons';
   import {
     SvelteFlow,
@@ -187,7 +188,8 @@
     <div class="flex items-center gap-2 flex-wrap">
       <a
         href="/projects/{page.params.id}"
-        class="text-gray-400 hover:text-gray-600 text-sm shrink-0">← Back</a
+        class="text-gray-400 hover:text-gray-600 text-sm shrink-0"
+        ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
       >
       {#if $views.length > 0}
         <nav class="flex gap-1 flex-wrap">

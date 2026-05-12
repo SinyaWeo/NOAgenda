@@ -14,6 +14,7 @@
     Select,
     Textarea,
   } from 'flowbite-svelte';
+  import { CaretLeftSolid } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
 
   const title = writable('');
@@ -78,7 +79,7 @@
 
 <div class="flex items-center gap-3 mb-6">
   <a href="/tasks/{page.params.id}" class="text-gray-400 hover:text-gray-600"
-    >← Back to Task</a
+    ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back to Task</a
   >
   <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
     Edit Task

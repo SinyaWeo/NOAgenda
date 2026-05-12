@@ -5,7 +5,7 @@
     import { getCurrentUser } from '$lib/auth';
     import { goto } from '$app/navigation';
     import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
-    import { ApiKeyOutline } from 'flowbite-svelte-icons';
+    import { ApiKeyOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
     const tokens = writable<any[]>([]);
     const loading = writable(true);
@@ -65,7 +65,8 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-    <a href="/user/settings" class="text-gray-400 hover:text-gray-600">← Back</a
+    <a href="/user/settings" class="text-gray-400 hover:text-gray-600"
+        ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
     >
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
         API Tokens

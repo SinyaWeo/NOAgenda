@@ -3,6 +3,7 @@
     import { apiGetAuth, apiPatchAuth } from '$lib/api';
     import { writable } from 'svelte/store';
     import { Alert, Button, Input, Label, Toggle } from 'flowbite-svelte';
+    import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
     const settings = writable<Record<string, string>>({});
     const error = writable('');
@@ -53,7 +54,7 @@
             App Settings
         </h1>
         <a href="/admin" class="text-sm text-primary-600 dark:text-primary-400"
-            >← Admin</a
+            ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Admin</a
         >
     </div>
 

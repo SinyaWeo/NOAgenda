@@ -41,15 +41,19 @@
         all
           .filter((t: any) => {
             if (t.status === 'done') return false;
-            if (!t.dueDate) return false;
+            if (!t.dueDate) return true; // no due date → always upcoming
             const due = new Date(t.dueDate);
-            if (showOverdue && due < now) return true;
-            return due <= cutoff;
+            if (due < now) return showOverdue; // overdue: only if opted in
+            return due <= cutoff; // future: within selected window
           })
-          .sort(
-            (a: any, b: any) =>
-              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
-          ),
+          .sort((a: any, b: any) => {
+            if (!a.dueDate && !b.dueDate) return 0;
+            if (!a.dueDate) return 1; // no-date tasks go to the bottom
+            if (!b.dueDate) return -1;
+            return (
+              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
+            );
+          }),
       );
     } catch (e: any) {
       error.set(e.message);
@@ -109,8 +113,8 @@
 {:else}
   <div class="flex flex-col gap-2">
     {#each $tasks as task}
-      {@const due = new Date(task.dueDate)}
-      {@const isOverdue = due < new Date()}
+      {@const due = task.dueDate ? new Date(task.dueDate) : null}
+      {@const isOverdue = due !== null && due < new Date()}
       <Card
         class="flex flex-col gap-2 p-3.5 {isOverdue
           ? 'border-red-300 dark:border-red-700'
@@ -133,13 +137,15 @@
                 >{PRIORITY_LABELS[task.priority]}</span
               >
             {/if}
-            <span
-              class="text-sm {isOverdue ? 'text-red-500' : 'text-gray-400'}"
-            >
-              {#if isOverdue}<ExclamationCircleOutline
-                  class="w-3.5 h-3.5 inline mr-0.5"
-                />{/if}{due.toLocaleDateString()}
-            </span>
+            {#if due !== null}
+              <span
+                class="text-sm {isOverdue ? 'text-red-500' : 'text-gray-400'}"
+              >
+                {#if isOverdue}<ExclamationCircleOutline
+                    class="w-3.5 h-3.5 inline mr-0.5"
+                  />{/if}{due.toLocaleDateString()}
+              </span>
+            {/if}
             <span
               class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
               data-status={task.status}

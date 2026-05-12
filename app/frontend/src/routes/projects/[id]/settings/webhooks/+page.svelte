@@ -6,7 +6,7 @@
     import { page } from '$app/state';
     import { goto } from '$app/navigation';
     import { Alert, Button, Card, Input } from 'flowbite-svelte';
-    import { LinkOutline } from 'flowbite-svelte-icons';
+    import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
     const webhooks = writable<any[]>([]);
     const loading = writable(true);
@@ -61,7 +61,8 @@
 <div class="flex items-center gap-3 mb-6">
     <a
         href="/projects/{page.params.id}/edit"
-        class="text-gray-400 hover:text-gray-600">← Back</a
+        class="text-gray-400 hover:text-gray-600"
+        ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
     >
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
         Webhooks

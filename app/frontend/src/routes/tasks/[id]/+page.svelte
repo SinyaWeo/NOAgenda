@@ -22,7 +22,7 @@
 		Select,
 		Textarea,
 	} from 'flowbite-svelte';
-	import { PaperClipOutline } from 'flowbite-svelte-icons';
+	import { PaperClipOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
 	const task = writable<any>(null);
 	const comments = writable<any[]>([]);
@@ -260,7 +260,8 @@
 		<div class="flex items-center gap-3">
 			<a
 				href="/projects/{$task.project?.id ?? ''}"
-				class="text-gray-400 hover:text-gray-600">← Back</a
+				class="text-gray-400 hover:text-gray-600"
+				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
 			>
 			<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
 				{$task.title}

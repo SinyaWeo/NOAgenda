@@ -5,7 +5,10 @@
   import { authSession, initializeAuth } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { Alert, Badge, Button, Card, Input, Select } from 'flowbite-svelte';
-  import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
+  import {
+    ExclamationCircleOutline,
+    CaretRightSolid,
+  } from 'flowbite-svelte-icons';
   import type { Quote } from '$lib/types';
 
   const user = derived(authSession, ($authSession) => $authSession.user);
@@ -58,8 +61,11 @@
       );
       upcomingTasks.set(
         pending
-          .filter((task: any) => !task.dueDate || new Date(task.dueDate) >= now)
           .sort((a: any, b: any) => {
+            const aOver = a.dueDate && new Date(a.dueDate) < now;
+            const bOver = b.dueDate && new Date(b.dueDate) < now;
+            if (aOver && !bOver) return -1;
+            if (!aOver && bOver) return 1;
             if (!a.dueDate) return 1;
             if (!b.dueDate) return -1;
             return (
@@ -133,7 +139,7 @@
       <a
         href="/projects"
         class="text-xs text-primary-600 dark:text-primary-400 no-underline hover:underline"
-        >View all →</a
+        >View all <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
       >
     </Card>
     <Card class="p-4">
@@ -146,7 +152,7 @@
       <a
         href="/upcoming"
         class="text-xs text-primary-600 dark:text-primary-400 no-underline hover:underline"
-        >View all →</a
+        >View all <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
       >
     </Card>
     {#if $overdueTasks.length > 0}
@@ -163,7 +169,8 @@
         </p>
         <a
           href="/upcoming"
-          class="text-xs text-red-500 no-underline hover:underline">Review →</a
+          class="text-xs text-red-500 no-underline hover:underline"
+          >Review <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
         >
       </Card>
     {/if}
@@ -242,13 +249,15 @@
         <a
           href="/upcoming"
           class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
-          >View all →</a
+          >View all <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
         >
       </div>
       {#if $upcomingTasks.length === 0}
         <p class="text-gray-400 text-sm m-0">No pending tasks.</p>
       {:else}
         {#each $upcomingTasks as task}
+          {@const isOverdue =
+            task.dueDate && new Date(task.dueDate) < new Date()}
           <div
             class="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0"
           >
@@ -261,7 +270,10 @@
               class="text-sm flex-1 truncate text-gray-800 dark:text-gray-200 hover:underline"
               >{task.title}</a
             >
-            {#if task.dueDate}<span class="text-xs text-gray-400 shrink-0"
+            {#if task.dueDate}<span
+                class="text-xs shrink-0 {isOverdue
+                  ? 'text-red-500'
+                  : 'text-gray-400'}"
                 >{new Date(task.dueDate).toLocaleDateString()}</span
               >{/if}
           </div>
@@ -278,7 +290,7 @@
         <a
           href="/projects"
           class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
-          >View all →</a
+          >View all <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
         >
       </div>
       {#if $projects.length === 0}

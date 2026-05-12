@@ -6,6 +6,7 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
+  import { CaretLeftSolid } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
 
   const project = writable<any>(null);
@@ -72,7 +73,7 @@
     <a
       href="/projects/{page.params.id}"
       class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-      >← Back</a
+      ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
     >
     <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
       Edit Project

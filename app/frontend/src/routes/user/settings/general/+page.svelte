@@ -5,29 +5,67 @@
   import { getCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
+  import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
-  const name = writable(''); const language = writable('en'); const timezone = writable('UTC');
-  const theme = writable('light'); const weekStart = writable(1);
-  const error = writable(''); const success = writable(''); const loading = writable(true); const saving = writable(false);
+  const name = writable('');
+  const language = writable('en');
+  const timezone = writable('UTC');
+  const theme = writable('light');
+  const weekStart = writable(1);
+  const error = writable('');
+  const success = writable('');
+  const loading = writable(true);
+  const saving = writable(false);
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
+    const me = await getCurrentUser();
+    if (!me) {
+      goto('/user/login');
+      return;
+    }
     try {
       const s = await apiGetAuth<any>('/user/settings/general');
-      name.set(s.name ?? ''); language.set(s.language ?? 'en'); timezone.set(s.timezone ?? 'UTC'); theme.set(s.theme ?? 'light'); weekStart.set(s.weekStart ?? 1);
-    } catch (e: any) { error.set(e.message); } finally { loading.set(false); }
+      name.set(s.name ?? '');
+      language.set(s.language ?? 'en');
+      timezone.set(s.timezone ?? 'UTC');
+      theme.set(s.theme ?? 'light');
+      weekStart.set(s.weekStart ?? 1);
+    } catch (e: any) {
+      error.set(e.message);
+    } finally {
+      loading.set(false);
+    }
   });
 
   async function handleSave(e: Event) {
-    e.preventDefault(); saving.set(true); error.set(''); success.set('');
-    try { await apiPostAuth('/user/settings/general', { name: $name, language: $language, timezone: $timezone, theme: $theme, weekStart: $weekStart }); success.set('Settings saved.'); }
-    catch (e: any) { error.set(e.message); } finally { saving.set(false); }
+    e.preventDefault();
+    saving.set(true);
+    error.set('');
+    success.set('');
+    try {
+      await apiPostAuth('/user/settings/general', {
+        name: $name,
+        language: $language,
+        timezone: $timezone,
+        theme: $theme,
+        weekStart: $weekStart,
+      });
+      success.set('Settings saved.');
+    } catch (e: any) {
+      error.set(e.message);
+    } finally {
+      saving.set(false);
+    }
   }
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-  <a href="/user/settings" class="text-gray-400 hover:text-gray-600">← Back</a>
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">General Settings</h1>
+  <a href="/user/settings" class="text-gray-400 hover:text-gray-600"
+    ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
+  >
+  <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
+    General Settings
+  </h1>
 </div>
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
@@ -45,18 +83,26 @@
       <div>
         <Label for="gen-language" class="mb-1">Language</Label>
         <Select id="gen-language" bind:value={$language}>
-          <option value="en">English</option><option value="de">German</option><option value="fr">French</option><option value="cs">Czech</option>
+          <option value="en">English</option><option value="de">German</option
+          ><option value="fr">French</option><option value="cs">Czech</option>
         </Select>
       </div>
       <div>
         <Label for="gen-timezone" class="mb-1">Timezone</Label>
-        <Input id="gen-timezone" type="text" bind:value={$timezone} placeholder="e.g. Europe/Prague" />
+        <Input
+          id="gen-timezone"
+          type="text"
+          bind:value={$timezone}
+          placeholder="e.g. Europe/Prague"
+        />
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <Label for="gen-theme" class="mb-1">Theme</Label>
           <Select id="gen-theme" bind:value={$theme}>
-            <option value="light">Light</option><option value="dark">Dark</option><option value="system">System</option>
+            <option value="light">Light</option><option value="dark"
+              >Dark</option
+            ><option value="system">System</option>
           </Select>
         </div>
         <div>
@@ -67,7 +113,9 @@
         </div>
       </div>
       <div class="pt-2 border-t border-gray-100 dark:border-gray-700">
-        <Button type="submit" disabled={$saving}>{$saving ? 'Saving…' : 'Save Settings'}</Button>
+        <Button type="submit" disabled={$saving}
+          >{$saving ? 'Saving…' : 'Save Settings'}</Button
+        >
       </div>
     </form>
   </Card>

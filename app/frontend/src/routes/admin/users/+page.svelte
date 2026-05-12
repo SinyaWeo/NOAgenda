@@ -15,6 +15,7 @@
         TableHead,
         TableHeadCell,
     } from 'flowbite-svelte';
+    import { CaretLeftSolid } from 'flowbite-svelte-icons';
     import type { User } from '$lib/types';
 
     const currentUser = derived(authSession, ($s) => $s.user);
@@ -66,7 +67,7 @@
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Users</h1>
         <a href="/admin" class="text-sm text-primary-600 dark:text-primary-400"
-            >← Admin</a
+            ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Admin</a
         >
     </div>
 
