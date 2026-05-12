@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { authSession, clearAuthSession, initializeAuth } from '$lib/auth';
 	import { isAdmin } from '$lib/roles';
+	import ToastContainer from '$lib/components/Toast.svelte';
 	import { derived, writable } from 'svelte/store';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -217,6 +218,13 @@
 			</div>
 
 			<ul class="nav-list">
+				{#if !$sidebarCollapsed}
+					<li
+						class="px-3 mt-4 mb-1 text-xs text-slate-400 uppercase tracking-wider select-none"
+					>
+						Work
+					</li>
+				{/if}
 				<li>
 					<a
 						href="/dashboard"
@@ -273,6 +281,13 @@
 						{#if !$sidebarCollapsed}<span>Upcoming</span>{/if}
 					</a>
 				</li>
+				{#if !$sidebarCollapsed}
+					<li
+						class="px-3 mt-4 mb-1 text-xs text-slate-400 uppercase tracking-wider select-none"
+					>
+						Organize
+					</li>
+				{/if}
 				<li>
 					<a
 						href="/mindmap"
@@ -651,6 +666,7 @@
 			</div>
 		</main>
 	</div>
+	<ToastContainer />
 {:else if $authSession.status === 'loading'}
 	<div
 		class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500"

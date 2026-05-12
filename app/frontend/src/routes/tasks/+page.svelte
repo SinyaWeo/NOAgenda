@@ -1,10 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { apiGetAuth } from '$lib/api';
+  import { apiGetAuth, apiPatchAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { writable } from 'svelte/store';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
+  import { showToast } from '$lib/toast';
   import {
     Alert,
     Button,
@@ -21,6 +22,7 @@
     CheckCircleOutline,
     ChevronLeftOutline,
     ChevronRightOutline,
+    ExclamationCircleOutline,
     PlusOutline,
   } from 'flowbite-svelte-icons';
 
@@ -116,6 +118,18 @@
       await loadTasks();
     }
   }
+
+  async function updateTaskStatus(taskId: number, status: string) {
+    try {
+      const updated = await apiPatchAuth<any>(`/tasks/${taskId}`, { status });
+      tasks.update((list) =>
+        list.map((t) => (t.id === taskId ? { ...t, ...updated } : t)),
+      );
+      showToast('Status updated', 'success');
+    } catch (e: any) {
+      showToast(e.message ?? 'Failed to update status', 'error');
+    }
+  }
 </script>
 
 <div class="flex items-center justify-between mb-4">
@@ -167,10 +181,6 @@
             ? 'border-b border-gray-100 dark:border-gray-700'
             : ''} {isOverdue ? 'bg-red-50 dark:bg-red-900/10' : ''}"
         >
-          <span
-            class="w-2.5 h-2.5 rounded-full shrink-0"
-            data-status={task.status}
-          ></span>
           <a
             href="/tasks/{task.id}"
             class="flex-1 truncate font-medium text-gray-800 dark:text-gray-200 hover:underline {task.status ===
@@ -184,15 +194,33 @@
                 data-priority={task.priority}
                 >{PRIORITY_LABELS[task.priority]}</span
               >{/if}
-            {#if task.dueDate}<span
-                class="text-xs {isOverdue ? 'text-red-500' : 'text-gray-400'}"
-                >{new Date(task.dueDate).toLocaleDateString()}</span
-              >{/if}
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+            {#if task.dueDate}
+              <span
+                class="text-xs flex items-center gap-0.5 {isOverdue
+                  ? 'text-red-500'
+                  : 'text-gray-400'}"
+              >
+                {#if isOverdue}<ExclamationCircleOutline
+                    class="w-3.5 h-3.5 shrink-0"
+                  />{/if}
+                {new Date(task.dueDate).toLocaleDateString()}
+              </span>
+            {/if}
+            <select
+              class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent"
               data-status={task.status}
-              >{STATUS_LABELS[task.status] ?? task.status}</span
+              value={task.status}
+              onchange={(e) =>
+                updateTaskStatus(
+                  task.id,
+                  (e.target as HTMLSelectElement).value,
+                )}
+              aria-label="Change status"
             >
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
           </div>
         </div>
       {/each}

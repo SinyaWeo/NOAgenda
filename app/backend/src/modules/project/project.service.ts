@@ -44,4 +44,8 @@ export class ProjectService {
   async unarchive(id: number): Promise<Node | null> {
     return this.nodeService.unarchive(id);
   }
+
+  async getTaskStats(projectIds: number[]): Promise<Record<number, { total: number; done: number }>> {
+    return this.nodeService.getTaskStats(projectIds);
+  }
 }

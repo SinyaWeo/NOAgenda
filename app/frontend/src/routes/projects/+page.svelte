@@ -4,7 +4,7 @@
 	import { getCurrentUser } from '$lib/auth';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { Alert, Badge, Button, Card } from 'flowbite-svelte';
+	import { Alert, Badge, Button, Card, Progressbar } from 'flowbite-svelte';
 	import {
 		FolderOutline,
 		PlusOutline,
@@ -14,6 +14,9 @@
 
 	const projects = writable<any[]>([]);
 	const favorites = writable<Set<number>>(new Set());
+	const taskStats = writable<Record<number, { total: number; done: number }>>(
+		{},
+	);
 	const loading = writable(true);
 	const error = writable('');
 
@@ -24,11 +27,15 @@
 			return;
 		}
 		try {
-			const [ps, favs] = await Promise.all([
+			const [ps, favs, stats] = await Promise.all([
 				apiGetAuth<any[]>('/projects'),
 				apiGetAuth<any[]>('/favorites').catch(() => []),
+				apiGetAuth<Record<number, { total: number; done: number }>>(
+					'/projects/stats',
+				).catch(() => ({})),
 			]);
 			projects.set(ps);
+			taskStats.set(stats ?? {});
 			favorites.set(
 				new Set(
 					(favs as any[])
@@ -108,6 +115,28 @@
 				</div>
 				{#if project.isArchived}<Badge color="gray">Archived</Badge
 					>{/if}
+				{@const stats = $taskStats[project.id]}
+				{#if stats && stats.total > 0}
+					<div class="mt-1">
+						<div class="flex justify-between items-center mb-1">
+							<span class="text-xs text-gray-400"
+								>{stats.done} / {stats.total} tasks</span
+							>
+							<span class="text-xs text-gray-400"
+								>{Math.round(
+									(stats.done / stats.total) * 100,
+								)}%</span
+							>
+						</div>
+						<Progressbar
+							progress={Math.round(
+								(stats.done / stats.total) * 100,
+							)}
+							size="h-1.5"
+							color="indigo"
+						/>
+					</div>
+				{/if}
 				<div
 					class="flex items-center gap-3 mt-auto pt-2 border-t border-gray-100 dark:border-gray-700"
 				>

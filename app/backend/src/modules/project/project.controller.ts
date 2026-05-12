@@ -16,6 +16,14 @@ export class ProjectController {
     return this.projectService.findAll(req.user.userId, includeArchived === 'true');
   }
 
+  @Get('stats')
+  @UseGuards(AuthGuard('jwt'))
+  async getStats(@Request() req: any): Promise<Record<number, { total: number; done: number }>> {
+    const projects = await this.projectService.findAll(req.user.userId);
+    const ids = projects.map((p) => p.id);
+    return this.projectService.getTaskStats(ids);
+  }
+
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {

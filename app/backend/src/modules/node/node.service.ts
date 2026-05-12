@@ -191,4 +191,26 @@ export class NodeService {
       createdBy: original.type === NodeType.TASK ? userId : original.createdBy,
     });
   }
+
+  async getTaskStats(projectIds: number[]): Promise<Record<number, { total: number; done: number }>> {
+    if (!projectIds.length) return {};
+    const rows: { parentId: number; total: string; done: string }[] = await this.nodeRepository
+      .createQueryBuilder('n')
+      .select('n.parentId', 'parentId')
+      .addSelect('COUNT(*)', 'total')
+      .addSelect(`SUM(CASE WHEN n.status = 'done' THEN 1 ELSE 0 END)`, 'done')
+      .where('n.type = :t', { t: NodeType.TASK })
+      .andWhere('n.parentId IN (:...ids)', { ids: projectIds })
+      .groupBy('n.parentId')
+      .getRawMany();
+
+    const result: Record<number, { total: number; done: number }> = {};
+    for (const row of rows) {
+      result[Number(row.parentId)] = {
+        total: Number(row.total),
+        done: Number(row.done),
+      };
+    }
+    return result;
+  }
 }
