@@ -40,9 +40,11 @@
 {:else if $error}
   <Alert color="red">{$error}</Alert>
 {:else if $teams.length}
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"
+  >
     {#each $teams as team}
-      <Card>
+      <Card class="h-full">
         <div class="flex flex-col gap-3 h-full">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">

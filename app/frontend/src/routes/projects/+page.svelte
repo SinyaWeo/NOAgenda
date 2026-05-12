@@ -85,9 +85,11 @@
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $projects.length}
-	<div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
+	<div
+		class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4 items-stretch"
+	>
 		{#each $projects as project}
-			<Card class="flex flex-col gap-2">
+			<Card class="flex flex-col gap-2 h-full">
 				<div class="flex items-start gap-2">
 					<div class="flex-1 min-w-0">
 						<a

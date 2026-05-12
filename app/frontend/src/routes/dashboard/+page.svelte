@@ -128,8 +128,10 @@
   {/if}
 
   <!-- Stat cards -->
-  <div class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 mb-6">
-    <Card class="p-4">
+  <div
+    class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 mb-6 items-stretch"
+  >
+    <Card class="p-4 h-full">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
         Projects
       </p>
@@ -142,7 +144,7 @@
         >View all <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
       >
     </Card>
-    <Card class="p-4">
+    <Card class="p-4 h-full">
       <p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
         Upcoming
       </p>
@@ -157,7 +159,7 @@
     </Card>
     {#if $overdueTasks.length > 0}
       <Card
-        class="p-4 border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20"
+        class="p-4 h-full border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20"
       >
         <p
           class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0"
@@ -209,11 +211,11 @@
     </Card>
   {/if}
 
-  <div class="grid grid-cols-2 gap-6">
+  <div class="grid grid-cols-2 gap-6 items-stretch">
     <!-- Overdue -->
     {#if $overdueTasks.length > 0}
       <Card
-        class="border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10"
+        class="h-full border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10"
       >
         <div class="flex items-center gap-2 mb-3">
           <ExclamationCircleOutline class="w-4 h-4 text-red-500" />
@@ -241,7 +243,7 @@
     {/if}
 
     <!-- Upcoming tasks -->
-    <Card class={$overdueTasks.length === 0 ? 'col-span-2' : ''}>
+    <Card class={$overdueTasks.length === 0 ? 'col-span-2 h-full' : 'h-full'}>
       <div class="flex justify-between items-center mb-3">
         <h2 class="text-base font-semibold text-gray-900 dark:text-white m-0">
           Upcoming Tasks

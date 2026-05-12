@@ -91,7 +91,7 @@
 
 <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Settings</h1>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
 	{#each sections as s}
 		<a
 			href={s.href}
@@ -124,7 +124,9 @@
 	>
 		Admin
 	</h2>
-	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+	<div
+		class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch"
+	>
 		<a
 			href="/admin/quotes"
 			class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
