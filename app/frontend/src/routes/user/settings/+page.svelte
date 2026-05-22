@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { isAdmin } from '$lib/roles';
 	import type { User } from '$lib/types';
+	import { Card } from 'flowbite-svelte';
 	import {
 		UserCircleOutline,
 		CogOutline,
@@ -93,27 +94,30 @@
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
 	{#each sections as s}
-		<a
-			href={s.href}
-			class="flex items-center gap-3 p-4 rounded-lg border {s.danger
-				? 'border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20'
-				: 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'} transition-colors"
-		>
-			<s.icon
-				class="w-6 h-6 shrink-0 {s.danger
-					? 'text-red-600'
-					: 'text-primary-600'}"
-			/>
-			<div>
-				<p
-					class="font-semibold text-sm m-0 {s.danger
-						? 'text-red-600'
-						: 'text-gray-900 dark:text-white'}"
-				>
-					{s.label}
-				</p>
-				<p class="text-xs text-gray-500 m-0">{s.desc}</p>
-			</div>
+		<a href={s.href} class="no-underline h-full">
+			<Card
+				class="hover:shadow-md transition-shadow cursor-pointer h-full {s.danger
+					? 'border-red-200 dark:border-red-800'
+					: ''}"
+			>
+				<div class="flex items-center gap-3">
+					<s.icon
+						class="w-8 h-8 shrink-0 {s.danger
+							? 'text-red-600'
+							: 'text-primary-600'}"
+					/>
+					<div>
+						<p
+							class="font-semibold m-0 {s.danger
+								? 'text-red-600'
+								: 'text-gray-900 dark:text-white'}"
+						>
+							{s.label}
+						</p>
+						<p class="text-sm text-gray-500 m-0">{s.desc}</p>
+					</div>
+				</div>
+			</Card>
 		</a>
 	{/each}
 </div>
@@ -127,21 +131,24 @@
 	<div
 		class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch"
 	>
-		<a
-			href="/admin/quotes"
-			class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-		>
-			<QuoteOutline class="w-6 h-6 shrink-0 text-primary-600" />
-			<div>
-				<p
-					class="font-semibold text-sm m-0 text-gray-900 dark:text-white"
-				>
-					Quotes
-				</p>
-				<p class="text-xs text-gray-500 m-0">
-					Manage motivational quotes
-				</p>
-			</div>
+		<a href="/admin/quotes" class="no-underline h-full">
+			<Card
+				class="hover:shadow-md transition-shadow cursor-pointer h-full"
+			>
+				<div class="flex items-center gap-3">
+					<QuoteOutline class="w-8 h-8 shrink-0 text-primary-600" />
+					<div>
+						<p
+							class="font-semibold m-0 text-gray-900 dark:text-white"
+						>
+							Quotes
+						</p>
+						<p class="text-sm text-gray-500 m-0">
+							Manage motivational quotes
+						</p>
+					</div>
+				</div>
+			</Card>
 		</a>
 	</div>
 {/if}

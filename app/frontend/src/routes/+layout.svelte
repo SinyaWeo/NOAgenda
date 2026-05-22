@@ -447,7 +447,7 @@
 
 			<!-- ── Main area ── -->
 			<main
-				class="flex-1 min-w-0 flex flex-col bg-gray-50 dark:bg-gray-900"
+				class="flex-1 min-w-0 flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
 			>
 				<!-- Top bar -->
 				<header

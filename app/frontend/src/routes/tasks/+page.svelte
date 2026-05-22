@@ -9,7 +9,9 @@
   import {
     Alert,
     Button,
+    ButtonGroup,
     Card,
+    Progressbar,
     Table,
     TableBody,
     TableBodyCell,
@@ -139,7 +141,7 @@
   >
 </div>
 
-<div class="flex items-center gap-1 mb-4">
+<ButtonGroup class="mb-4 *:ring-primary-700!">
   {#each VIEWS as v}
     <Button
       size="sm"
@@ -147,20 +149,22 @@
       onclick={() => setView(v.id)}>{v.label}</Button
     >
   {/each}
-</div>
+</ButtonGroup>
 
 {#if viewMode !== 'kanban'}
   <div class="flex items-center gap-2 mb-4 flex-wrap">
     <span class="text-sm text-gray-500">Sort:</span>
-    {#each [['createdAt', 'Created'], ['dueDate', 'Due Date'], ['priority', 'Priority'], ['title', 'Title'], ['status', 'Status']] as [field, label]}
-      <Button
-        size="sm"
-        color={$sort === field ? 'primary' : 'light'}
-        onclick={() => changeSort(field)}
-      >
-        {label}{$sort === field ? ($order === 'ASC' ? ' ↑' : ' ↓') : ''}
-      </Button>
-    {/each}
+    <ButtonGroup class="*:ring-primary-700!">
+      {#each [['createdAt', 'Created'], ['dueDate', 'Due Date'], ['priority', 'Priority'], ['title', 'Title'], ['status', 'Status']] as [field, label]}
+        <Button
+          size="sm"
+          color={$sort === field ? 'primary' : 'light'}
+          onclick={() => changeSort(field)}
+        >
+          {label}{$sort === field ? ($order === 'ASC' ? ' ↑' : ' ↓') : ''}
+        </Button>
+      {/each}
+    </ButtonGroup>
   </div>
 {/if}
 
@@ -170,61 +174,99 @@
   <Alert color="red">{$error}</Alert>
 {:else if viewMode === 'list'}
   {#if $tasks.length}
-    <Card class="p-0 overflow-hidden mb-4">
-      {#each $tasks as task, i}
+    <div class="flex flex-col gap-2 mb-4">
+      {#each $tasks as task}
+        {@const due = task.dueDate ? new Date(task.dueDate) : null}
         {@const isOverdue =
-          task.dueDate &&
-          new Date(task.dueDate) < new Date() &&
-          task.status !== 'done'}
-        <div
-          class="flex items-center gap-2.5 px-4 py-3 {i < $tasks.length - 1
-            ? 'border-b border-gray-100 dark:border-gray-700'
-            : ''} {isOverdue ? 'bg-red-50 dark:bg-red-900/10' : ''}"
+          due !== null && due < new Date() && task.status !== 'done'}
+        <Card
+          class="flex flex-col gap-2 p-3.5 {isOverdue
+            ? 'border-red-300 dark:bg-gray-800 dark:border-red-700'
+            : ''}"
         >
-          <a
-            href="/tasks/{task.id}"
-            class="flex-1 truncate font-medium text-gray-800 dark:text-gray-200 hover:underline {task.status ===
-            'done'
-              ? 'line-through text-gray-400'
-              : ''}">{task.title}</a
-          >
-          <div class="flex items-center gap-2 shrink-0">
-            {#if task.priority && task.priority > 0}<span
-                class="text-xs"
-                data-priority={task.priority}
-                >{PRIORITY_LABELS[task.priority]}</span
-              >{/if}
-            {#if task.dueDate}
-              <span
-                class="text-xs flex items-center gap-0.5 {isOverdue
-                  ? 'text-red-500'
-                  : 'text-gray-400'}"
+          <div class="flex items-center gap-3">
+            <div class="flex-1 min-w-0">
+              <a
+                href="/tasks/{task.id}"
+                class="font-medium text-gray-900 dark:text-white hover:underline {task.status ===
+                'done'
+                  ? 'line-through text-gray-400'
+                  : ''}">{task.title}</a
               >
-                {#if isOverdue}<ExclamationCircleOutline
-                    class="w-3.5 h-3.5 shrink-0"
-                  />{/if}
-                {new Date(task.dueDate).toLocaleDateString()}
-              </span>
-            {/if}
-            <select
-              class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent"
-              data-status={task.status}
-              value={task.status}
-              onchange={(e) =>
-                updateTaskStatus(
-                  task.id,
-                  (e.target as HTMLSelectElement).value,
-                )}
-              aria-label="Change status"
-            >
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
+              {#if task.project?.name}<span class="text-xs text-gray-400 ml-2"
+                  >{task.project.name}</span
+                >{/if}
+            </div>
+            <div class="shrink-0 text-right flex flex-col gap-1">
+              <div>
+                <div
+                  class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
+                >
+                  Due date
+                </div>
+                <span
+                  class="text-xs flex items-center justify-end gap-0.5 {isOverdue
+                    ? 'text-red-500'
+                    : due !== null
+                      ? 'text-gray-600 dark:text-gray-300'
+                      : 'text-gray-400'}"
+                >
+                  {#if isOverdue}<ExclamationCircleOutline
+                      class="w-3.5 h-3.5 shrink-0"
+                    />{/if}
+                  {due !== null ? due.toLocaleDateString() : 'Not set'}
+                </span>
+              </div>
+              <div>
+                <div
+                  class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
+                >
+                  Priority
+                </div>
+                <span
+                  class="text-xs dark:text-gray-400"
+                  data-priority={task.priority}
+                >
+                  {task.priority && task.priority > 0
+                    ? PRIORITY_LABELS[task.priority]
+                    : '—'}
+                </span>
+              </div>
+              <div>
+                <div
+                  class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
+                >
+                  Status
+                </div>
+                <select
+                  class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent dark:text-white"
+                  data-status={task.status}
+                  value={task.status}
+                  onchange={(e) =>
+                    updateTaskStatus(
+                      task.id,
+                      (e.target as HTMLSelectElement).value,
+                    )}
+                  aria-label="Change status"
+                >
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
+          {#if task.percentDone && task.percentDone > 0}
+            <Progressbar
+              progress={task.percentDone}
+              size="h-4"
+              color="indigo"
+              labelInside
+            />
+          {/if}
+        </Card>
       {/each}
-    </Card>
+    </div>
     <div class="flex items-center gap-3 justify-center">
       <Button
         size="sm"

@@ -205,7 +205,7 @@
               : ''}">{task.title}</a
           >
           {#if task.priority}<span
-              class="text-xs shrink-0"
+              class="text-xs shrink-0 dark:text-gray-400"
               data-priority={task.priority}
               >{PRIORITY_LABELS[task.priority] ?? task.priority}</span
             >{/if}
@@ -224,7 +224,7 @@
             </span>
           {/if}
           <select
-            class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent shrink-0"
+            class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent shrink-0 dark:text-white"
             data-status={task.status}
             value={task.status}
             onchange={(e) =>

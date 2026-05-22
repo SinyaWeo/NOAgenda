@@ -21,7 +21,7 @@
   const tasks = writable<any[]>([]);
   const loading = writable(true);
   const error = writable('');
-  let showOverdue = $state(false);
+  let showOverdue = $state(true);
   let daysAhead = $state(7);
 
   const STATUS_LABELS: Record<string, string> = {
@@ -117,7 +117,7 @@
       {@const isOverdue = due !== null && due < new Date()}
       <Card
         class="flex flex-col gap-2 p-3.5 {isOverdue
-          ? 'border-red-300 dark:border-red-700'
+          ? 'border-red-300 dark:bg-gray-800 dark:border-red-700'
           : ''}"
       >
         <div class="flex items-center gap-3">
@@ -131,30 +131,62 @@
                 >{task.project.name}</span
               >{/if}
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            {#if task.priority && task.priority > 0}
-              <span class="text-xs font-medium" data-priority={task.priority}
-                >{PRIORITY_LABELS[task.priority]}</span
+          <div class="shrink-0 text-right flex flex-col gap-1">
+            <div>
+              <div
+                class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
               >
-            {/if}
-            {#if due !== null}
+                Due date
+              </div>
               <span
-                class="text-sm {isOverdue ? 'text-red-500' : 'text-gray-400'}"
+                class="text-xs flex items-center justify-end gap-0.5 {isOverdue
+                  ? 'text-red-500'
+                  : due !== null
+                    ? 'text-gray-600 dark:text-gray-300'
+                    : 'text-gray-400'}"
               >
                 {#if isOverdue}<ExclamationCircleOutline
-                    class="w-3.5 h-3.5 inline mr-0.5"
-                  />{/if}{due.toLocaleDateString()}
+                    class="w-3.5 h-3.5 shrink-0"
+                  />{/if}
+                {due !== null ? due.toLocaleDateString() : 'Not set'}
               </span>
-            {/if}
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
-              data-status={task.status}
-              >{STATUS_LABELS[task.status] ?? task.status}</span
-            >
+            </div>
+            <div>
+              <div
+                class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
+              >
+                Priority
+              </div>
+              <span
+                class="text-xs dark:text-gray-400"
+                data-priority={task.priority}
+              >
+                {task.priority && task.priority > 0
+                  ? PRIORITY_LABELS[task.priority]
+                  : '—'}
+              </span>
+            </div>
+            <div>
+              <div
+                class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
+              >
+                Status
+              </div>
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+                data-status={task.status}
+                >{STATUS_LABELS[task.status] ?? task.status}</span
+              >
+            </div>
           </div>
         </div>
         {#if task.percentDone && task.percentDone > 0}
-          <Progressbar progress={task.percentDone} size="h-1" color="indigo" />
+          <Progressbar
+            progress={task.percentDone}
+            size="h-4"
+            color="indigo"
+            labelInside
+          />
         {/if}
       </Card>
     {/each}

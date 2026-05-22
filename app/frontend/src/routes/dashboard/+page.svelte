@@ -23,7 +23,7 @@
   let addingTask = $state(false);
 
   const STATUS_DOTS: Record<string, string> = {
-    open: 'bg-indigo-500',
+    open: 'bg-primary-500',
     in_progress: 'bg-amber-400',
     done: 'bg-green-500',
   };
@@ -100,21 +100,78 @@
 {#if $loading}
   <p class="text-gray-400">Loading…</p>
 {:else}
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-    Welcome{$user?.name
-      ? `, ${$user.name}`
-      : $user?.username
-        ? `, ${$user.username}`
-        : ''}!
-  </h1>
-  <p class="text-gray-500 dark:text-gray-400 mt-0 mb-6">
-    {new Date().toLocaleDateString(undefined, {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    })}
-  </p>
+  <!-- Header row: welcome text left, stat cards right -->
+  <div
+    class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6"
+  >
+    <div class="min-w-0">
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+        Welcome{$user?.name
+          ? `, ${$user.name}`
+          : $user?.username
+            ? `, ${$user.username}`
+            : ''}!
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-0 mb-0">
+        {new Date().toLocaleDateString(undefined, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        })}
+      </p>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="flex gap-3 shrink-0">
+      <a href="/projects" class="no-underline">
+        <Card
+          class="p-4 hover:shadow-md transition-shadow cursor-pointer text-center"
+        >
+          <p
+            class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0"
+          >
+            Projects
+          </p>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+            {$projects.length}
+          </p>
+        </Card>
+      </a>
+      <a href="/upcoming" class="no-underline">
+        <Card
+          class="p-4 hover:shadow-md transition-shadow cursor-pointer text-center"
+        >
+          <p
+            class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0"
+          >
+            Upcoming
+          </p>
+          <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+            {$upcomingTasks.length}
+          </p>
+        </Card>
+      </a>
+      {#if $overdueTasks.length > 0}
+        <a href="/upcoming" class="no-underline">
+          <Card
+            class="p-4 hover:shadow-md transition-shadow cursor-pointer text-center border-red-300 dark:bg-gray-800 dark:border-red-700"
+          >
+            <p
+              class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0"
+            >
+              Overdue
+            </p>
+            <p
+              class="text-3xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0"
+            >
+              {$overdueTasks.length}
+            </p>
+          </Card>
+        </a>
+      {/if}
+    </div>
+  </div>
 
   {#if $quote}
     <blockquote
@@ -126,57 +183,6 @@
       {/if}
     </blockquote>
   {/if}
-
-  <!-- Stat cards -->
-  <div
-    class="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-4 mb-6 items-stretch"
-  >
-    <Card class="p-4 h-full">
-      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
-        Projects
-      </p>
-      <p class="text-4xl font-bold text-gray-900 dark:text-white mt-1 mb-1">
-        {$projects.length}
-      </p>
-      <a
-        href="/projects"
-        class="text-xs text-primary-600 dark:text-primary-400 no-underline hover:underline"
-        >View all <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
-      >
-    </Card>
-    <Card class="p-4 h-full">
-      <p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
-        Upcoming
-      </p>
-      <p class="text-4xl font-bold text-gray-900 dark:text-white mt-1 mb-1">
-        {$upcomingTasks.length}
-      </p>
-      <a
-        href="/upcoming"
-        class="text-xs text-primary-600 dark:text-primary-400 no-underline hover:underline"
-        >View all <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
-      >
-    </Card>
-    {#if $overdueTasks.length > 0}
-      <Card
-        class="p-4 h-full border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20"
-      >
-        <p
-          class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0"
-        >
-          Overdue
-        </p>
-        <p class="text-4xl font-bold text-red-600 dark:text-red-400 mt-1 mb-1">
-          {$overdueTasks.length}
-        </p>
-        <a
-          href="/upcoming"
-          class="text-xs text-red-500 no-underline hover:underline"
-          >Review <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
-        >
-      </Card>
-    {/if}
-  </div>
 
   <!-- Quick-add task -->
   {#if $projects.length > 0}
@@ -214,9 +220,7 @@
   <div class="grid grid-cols-2 gap-6 items-stretch">
     <!-- Overdue -->
     {#if $overdueTasks.length > 0}
-      <Card
-        class="h-full border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10"
-      >
+      <Card class="h-full border-red-300 dark:bg-gray-800 dark:border-red-700">
         <div class="flex items-center gap-2 mb-3">
           <ExclamationCircleOutline class="w-4 h-4 text-red-500" />
           <h2
