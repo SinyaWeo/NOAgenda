@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../auth.service';
 import { UserService } from '../../user/user.service';
 import { JwtService } from '@nestjs/jwt';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { PasswordResetToken } from '../password-reset-token.entity';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -12,6 +14,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: UserService, useValue: {} },
         { provide: JwtService, useValue: {} },
+        { provide: getRepositoryToken(PasswordResetToken), useValue: {} },
       ],
     }).compile();
     service = module.get<AuthService>(AuthService);

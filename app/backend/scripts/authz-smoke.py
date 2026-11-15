@@ -11,10 +11,12 @@ role-escalation payload is rejected, and that read/write sharing behaves.
    registration rate limit (10/hour/IP) means a second run needs a restart.
 
 Usage:  BASE_URL=http://127.0.0.1:3000 python3 scripts/authz-smoke.py
+        (self-signed HTTPS, e.g. a local Caddy: add AUTHZ_INSECURE=1)
 """
 import json, sys, urllib.request, urllib.error
-import os
+import os, ssl
 B = os.environ.get('BASE_URL', 'http://127.0.0.1:3000')
+CTX = ssl._create_unverified_context() if os.environ.get('AUTHZ_INSECURE') == '1' else None
 results = []
 
 def call(method, path, body=None, token=None):
@@ -23,7 +25,7 @@ def call(method, path, body=None, token=None):
     req.add_header('Content-Type', 'application/json')
     if token: req.add_header('Authorization', 'Bearer ' + token)
     try:
-        with urllib.request.urlopen(req) as r:
+        with urllib.request.urlopen(req, context=CTX) as r:
             t = r.read().decode(); return r.status, (json.loads(t) if t else None)
     except urllib.error.HTTPError as e:
         t = e.read().decode()

@@ -1,14 +1,25 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
+import { DataSource } from 'typeorm';
 
 @Controller()
 export class AppController {
+  constructor(private readonly dataSource: DataSource) {}
+
   @Get()
   getHello(): string {
     return 'NOAgenda backend is running!';
   }
 
+  /** Liveness + readiness: 200 only if the database answers. Used by Docker healthchecks. */
   @Get('health')
-  getHealth(): { status: string } {
+  @SkipThrottle()
+  async getHealth(): Promise<{ status: string }> {
+    try {
+      await this.dataSource.query('SELECT 1');
+    } catch {
+      throw new ServiceUnavailableException({ status: 'database unavailable' });
+    }
     return { status: 'ok' };
   }
 

@@ -11,6 +11,7 @@
     "migration:run": "npm run build && typeorm migration:run -d dist/data-source.js",
     "migration:run:prod": "typeorm migration:run -d dist/data-source.js",
     "migration:revert": "npm run build && typeorm migration:revert -d dist/data-source.js",
+    "admin:promote": "node dist/scripts/promote-admin.js",
     "test": "jest"
   },
   "dependencies": {

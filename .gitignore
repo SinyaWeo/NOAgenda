@@ -1,3 +1,5 @@
 /vikunja
 docker/.env
 .claude
+docker/.env.production
+backups/

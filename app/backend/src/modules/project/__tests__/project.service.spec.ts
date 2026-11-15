@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProjectService } from '../project.service';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Project } from '../project.entity';
+import { NodeService } from '../../node/node.service';
 
 describe('ProjectService', () => {
   let service: ProjectService;
@@ -10,10 +9,7 @@ describe('ProjectService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProjectService,
-        {
-          provide: getRepositoryToken(Project),
-          useValue: { find: jest.fn(), findOne: jest.fn() },
-        },
+        { provide: NodeService, useValue: { findAll: jest.fn(), findById: jest.fn() } },
       ],
     }).compile();
     service = module.get<ProjectService>(ProjectService);

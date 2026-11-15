@@ -1,3 +1,3 @@
-# allow crawling everything by default
+# The app requires a login; keep it out of search indexes.
 User-agent: *
-Disallow:
+Disallow: /

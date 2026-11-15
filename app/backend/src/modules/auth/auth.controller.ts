@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, HttpCode, HttpStatus, Logger, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
@@ -8,13 +8,24 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: LoginDto) {
-    return this.authService.login(body.username, body.password);
+  async login(@Body() body: LoginDto, @Request() req: any) {
+    try {
+      return await this.authService.login(body.username, body.password);
+    } catch (err) {
+      if (err instanceof UnauthorizedException) {
+        // Audit trail for brute-force detection. Never log the password; strip control chars.
+        const user = String(body.username).replace(/[^\x20-\x7e]/g, '?').slice(0, 64);
+        this.logger.warn(`Failed login for "${user}" from ${req.ip}`);
+      }
+      throw err;
+    }
   }
 
   @Post('refresh')
