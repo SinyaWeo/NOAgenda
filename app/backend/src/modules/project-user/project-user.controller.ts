@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 import { ProjectUserService } from './project-user.service';
 import { ProjectService } from '../project/project.service';
 import { ProjectUser, Permission } from './project-user.entity';
@@ -9,6 +10,7 @@ export class ProjectUserController {
   constructor(
     private readonly projectUserService: ProjectUserService,
     private readonly projectService: ProjectService,
+    private readonly access: NodeAccessService,
   ) {}
 
   @Get()
@@ -30,7 +32,7 @@ export class ProjectUserController {
   ): Promise<ProjectUser> {
     const project = await this.projectService.findById(projectId);
     if (!project) throw new NotFoundException();
-    if (project.ownerId !== undefined && project.ownerId !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertAdmin(req.user.userId, Number(projectId));
     return this.projectUserService.add(projectId, body.userId, body.permission);
   }
 
@@ -44,7 +46,7 @@ export class ProjectUserController {
   ): Promise<void> {
     const project = await this.projectService.findById(projectId);
     if (!project) throw new NotFoundException();
-    if (project.ownerId !== undefined && project.ownerId !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertAdmin(req.user.userId, Number(projectId));
     return this.projectUserService.update(projectId, userId, body.permission);
   }
 
@@ -53,7 +55,7 @@ export class ProjectUserController {
   async remove(@Param('projectId') projectId: number, @Param('userId') userId: number, @Request() req: any): Promise<void> {
     const project = await this.projectService.findById(projectId);
     if (!project) throw new NotFoundException();
-    if (project.ownerId !== undefined && project.ownerId !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertAdmin(req.user.userId, Number(projectId));
     return this.projectUserService.remove(projectId, userId);
   }
 }

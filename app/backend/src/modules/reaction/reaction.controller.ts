@@ -1,34 +1,57 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 import { ReactionService } from './reaction.service';
 import { Reaction } from './reaction.entity';
 
 @Controller('reactions')
 export class ReactionController {
-  constructor(private readonly service: ReactionService) {}
+  constructor(
+    private readonly service: ReactionService,
+    private readonly access: NodeAccessService,
+  ) {}
+
+  /** Reactions are only supported on tasks and projects the caller can read. */
+  private async check(userId: number, entityType: unknown, entityId: unknown): Promise<number> {
+    if (entityType !== 'task' && entityType !== 'project') throw new BadRequestException('entityType must be "task" or "project"');
+    const id = Number(entityId);
+    if (!Number.isInteger(id) || id < 1) throw new BadRequestException('Invalid entityId');
+    await this.access.assertRead(userId, id);
+    return id;
+  }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  findAll(@Query('entityType') entityType: string, @Query('entityId') entityId: number): Promise<Reaction[]> {
-    return this.service.findAll(entityType, entityId);
+  async findAll(
+    @Query('entityType') entityType: string,
+    @Query('entityId') entityId: number,
+    @Request() req: any,
+  ): Promise<Reaction[]> {
+    const id = await this.check(req.user.userId, entityType, entityId);
+    return this.service.findAll(entityType, id);
   }
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  upsert(
+  async upsert(
     @Body() body: { entityType: string; entityId: number; reaction: string },
     @Request() req: any,
   ): Promise<Reaction> {
-    return this.service.upsert(req.user.userId, body.entityType, body.entityId, body.reaction);
+    const id = await this.check(req.user.userId, body?.entityType, body?.entityId);
+    if (typeof body.reaction !== 'string' || !body.reaction.trim() || body.reaction.length > 100) {
+      throw new BadRequestException('reaction is required (max 100 characters)');
+    }
+    return this.service.upsert(req.user.userId, body.entityType, id, body.reaction);
   }
 
   @Delete()
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(
+  async remove(
     @Body() body: { entityType: string; entityId: number; reaction: string },
     @Request() req: any,
   ): Promise<void> {
-    return this.service.remove(req.user.userId, body.entityType, body.entityId, body.reaction);
+    const id = await this.check(req.user.userId, body?.entityType, body?.entityId);
+    return this.service.remove(req.user.userId, body.entityType, id, body.reaction);
   }
 }

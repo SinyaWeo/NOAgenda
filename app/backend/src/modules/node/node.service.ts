@@ -104,7 +104,7 @@ export class NodeService {
 
     if (filter.search) {
       qb.andWhere('(node.name LIKE :s OR node.title LIKE :s OR node.description LIKE :s)', {
-        s: `%${filter.search}%`,
+        s: `%${filter.search.replace(/[\\%_]/g, (c) => '\\' + c)}%`,
       });
     }
 

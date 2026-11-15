@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 import { FavoriteService } from './favorite.service';
 import { Favorite, FavoriteEntityType } from './favorite.entity';
 
 @Controller('favorites')
 export class FavoriteController {
-  constructor(private readonly favoriteService: FavoriteService) {}
+  constructor(
+    private readonly favoriteService: FavoriteService,
+    private readonly access: NodeAccessService,
+  ) {}
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
@@ -19,7 +23,12 @@ export class FavoriteController {
     @Request() req: any,
     @Body() body: { entityType: FavoriteEntityType; entityId: number },
   ): Promise<Favorite> {
-    return this.favoriteService.add(req.user.userId, body.entityType, body.entityId);
+    if (!Object.values(FavoriteEntityType).includes(body?.entityType)) throw new BadRequestException('Invalid entityType');
+    const entityId = Number(body.entityId);
+    if (!Number.isInteger(entityId) || entityId < 1) throw new BadRequestException('Invalid entityId');
+    // You may only favorite things you can read.
+    await this.access.assertRead(req.user.userId, entityId);
+    return this.favoriteService.add(req.user.userId, body.entityType, entityId);
   }
 
   @Delete(':entityType/:entityId')

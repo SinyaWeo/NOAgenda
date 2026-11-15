@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -39,7 +41,7 @@ import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    ThrottlerModule.forRoot([{ ttl: 60000, limit: 20 }]),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 300 }]),
     AppI18nModule,
     TypeOrmModule.forRoot({
       type: 'mariadb',
@@ -49,7 +51,19 @@ import { AppSettingsModule } from './modules/app-settings/app-settings.module';
       password: process.env.DB_PASSWORD,
       database: process.env.DB_DATABASE,
       autoLoadEntities: true,
-      synchronize: true, // Set to false in production
+      // Versioned schema changes. In production pending migrations run on startup
+      // (override with DB_MIGRATIONS_RUN=false to run them manually instead).
+      migrations: [join(__dirname, 'migrations', '*.{js,ts}')],
+      migrationsRun:
+        process.env.DB_MIGRATIONS_RUN !== undefined
+          ? process.env.DB_MIGRATIONS_RUN === 'true'
+          : process.env.NODE_ENV === 'production',
+      // Auto schema sync is for local development only. In production it is off
+      // unless explicitly enabled (e.g. DB_SYNCHRONIZE=true for the very first boot).
+      synchronize:
+        process.env.DB_SYNCHRONIZE !== undefined
+          ? process.env.DB_SYNCHRONIZE === 'true'
+          : process.env.NODE_ENV !== 'production',
     }),
     UserModule,
     AuthModule,
@@ -84,5 +98,6 @@ import { AppSettingsModule } from './modules/app-settings/app-settings.module';
     AppSettingsModule,
   ],
   controllers: [AppController],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

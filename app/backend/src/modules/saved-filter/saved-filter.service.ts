@@ -3,6 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SavedFilter } from './saved-filter.entity';
 
+/** Fields a client must never control (identity / ownership). */
+function clean(data: Partial<SavedFilter>): Partial<SavedFilter> {
+  const { id: _i, userId: _u, createdAt: _c, updatedAt: _up, ...rest } = (data ?? {}) as any;
+  return rest;
+}
+
 @Injectable()
 export class SavedFilterService {
   constructor(
@@ -21,13 +27,13 @@ export class SavedFilterService {
   }
 
   create(userId: number, data: Partial<SavedFilter>): Promise<SavedFilter> {
-    const entity = this.repo.create({ ...data, userId });
+    const entity = this.repo.create({ ...clean(data), userId });
     return this.repo.save(entity);
   }
 
   async update(id: number, userId: number, data: Partial<SavedFilter>): Promise<SavedFilter> {
     await this.findOne(id, userId);
-    await this.repo.update(id, data);
+    await this.repo.update(id, clean(data));
     return this.findOne(id, userId);
   }
 

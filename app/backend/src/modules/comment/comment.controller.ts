@@ -2,15 +2,20 @@ import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, NotF
 import { CommentService } from './comment.service';
 import { Comment } from './comment.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 
 @Controller('comments')
 export class CommentController {
-  constructor(private readonly commentService: CommentService) {}
+  constructor(
+    private readonly commentService: CommentService,
+    private readonly access: NodeAccessService,
+  ) {}
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  async findAll(@Query('taskId') taskId?: number): Promise<Comment[]> {
+  async findAll(@Query('taskId') taskId: number | undefined, @Request() req: any): Promise<Comment[]> {
     if (!taskId) throw new BadRequestException('taskId query parameter is required');
+    await this.access.assertRead(req.user.userId, Number(taskId));
     return this.commentService.findAll(Number(taskId));
   }
 
@@ -30,9 +35,15 @@ export class CommentController {
     @Body() body: { content: string; taskId: number },
     @Request() req: any,
   ): Promise<Comment> {
+    if (typeof body?.content !== 'string' || !body.content.trim() || body.content.length > 10000) {
+      throw new BadRequestException('content is required (max 10000 characters)');
+    }
+    const taskId = Number(body.taskId);
+    if (!Number.isInteger(taskId) || taskId < 1) throw new BadRequestException('Invalid taskId');
+    await this.access.assertWrite(req.user.userId, taskId);
     return this.commentService.create({
       content: body.content,
-      node: { id: body.taskId } as any,
+      node: { id: taskId } as any,
       author: { id: req.user.userId } as any,
     });
   }
@@ -43,9 +54,11 @@ export class CommentController {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
     if (comment.author?.id !== req.user.userId) throw new ForbiddenException();
-    // Only allow updating the content field
-    const { id: _id, author: _a, node: _n, ...safeBody } = body as any;
-    const updated = await this.commentService.update(id, safeBody);
+    // Only the content field may change
+    if (typeof body?.content !== 'string' || !body.content.trim() || body.content.length > 10000) {
+      throw new BadRequestException('content is required (max 10000 characters)');
+    }
+    const updated = await this.commentService.update(id, { content: body.content });
     if (!updated) throw new NotFoundException();
     return updated;
   }

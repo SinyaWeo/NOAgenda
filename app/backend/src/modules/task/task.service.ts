@@ -26,7 +26,7 @@ export interface TaskFilter {
 export class TaskService {
   constructor(private readonly nodeService: NodeService) {}
 
-  private normalizeTaskPayload(data: Partial<Node> & any): Partial<Node> {
+  normalizeTaskPayload(data: Partial<Node> & any): Partial<Node> {
     const normalized: Partial<Node> & any = { ...data };
 
     if (normalized.parentId === undefined) {

@@ -5,8 +5,10 @@ import { TaskRelationService } from './task-relation.service';
 import { TaskRelationController } from './task-relation.controller';
 import { TaskModule } from '../task/task.module';
 
+import { NodeModule } from '../node/node.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([TaskRelation]), TaskModule],
+  imports: [NodeModule, TypeOrmModule.forFeature([TaskRelation]), TaskModule],
   providers: [TaskRelationService],
   controllers: [TaskRelationController],
   exports: [TaskRelationService],

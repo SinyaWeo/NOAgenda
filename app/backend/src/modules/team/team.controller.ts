@@ -15,16 +15,20 @@ export class TeamController {
 
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
-  async findById(@Param('id') id: number): Promise<Team> {
+  async findById(@Param('id') id: number, @Request() req: any): Promise<Team> {
     const team = await this.teamService.findById(id);
     if (!team) throw new NotFoundException();
+    // Only the owner or a member may view a team.
+    const mine = await this.teamService.findAll(req.user.userId);
+    if (!mine.some((t) => t.id === Number(id))) throw new ForbiddenException();
     return team;
   }
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: Partial<Team>, @Request() req: any): Promise<Team> {
-    return this.teamService.create({ ...body, ownerId: req.user.userId });
+    const { id: _i, createdAt: _c, updatedAt: _u, ownerId: _o, ...data } = body as any;
+    return this.teamService.create({ ...data, ownerId: req.user.userId });
   }
 
   @Put(':id')

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NodeAccessService } from '../../node/node-access.service';
 import { AttachmentController } from '../attachment.controller';
 import { AttachmentService } from '../attachment.service';
 
@@ -10,6 +11,7 @@ describe('AttachmentController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AttachmentController],
       providers: [
+        { provide: NodeAccessService, useValue: { assertRead: jest.fn(), assertWrite: jest.fn(), assertAdmin: jest.fn(), assertCanModify: jest.fn(), assertCanUseAsParent: jest.fn(), sanitize: jest.fn((x) => x) } },
         {
           provide: AttachmentService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },

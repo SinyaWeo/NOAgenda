@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 import { TaskLabelService } from './task-label.service';
 import { TaskService } from '../task/task.service';
 import { TaskLabel } from './task-label.entity';
@@ -9,6 +10,7 @@ export class TaskLabelController {
   constructor(
     private readonly taskLabelService: TaskLabelService,
     private readonly taskService: TaskService,
+    private readonly access: NodeAccessService,
   ) {}
 
   @Get()
@@ -16,7 +18,7 @@ export class TaskLabelController {
   async findAll(@Param('taskId') taskId: number, @Request() req: any): Promise<TaskLabel[]> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
-    if (task.createdBy !== undefined && task.createdBy !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertRead(req.user.userId, Number(taskId));
     return this.taskLabelService.findByTask(taskId);
   }
 
@@ -25,7 +27,7 @@ export class TaskLabelController {
   async add(@Param('taskId') taskId: number, @Body() body: { labelId: number }, @Request() req: any): Promise<TaskLabel> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
-    if (task.createdBy !== undefined && task.createdBy !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertWrite(req.user.userId, Number(taskId));
     return this.taskLabelService.add(taskId, body.labelId);
   }
 
@@ -34,7 +36,7 @@ export class TaskLabelController {
   async remove(@Param('taskId') taskId: number, @Param('labelId') labelId: number, @Request() req: any): Promise<void> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
-    if (task.createdBy !== undefined && task.createdBy !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertWrite(req.user.userId, Number(taskId));
     return this.taskLabelService.remove(taskId, labelId);
   }
 }

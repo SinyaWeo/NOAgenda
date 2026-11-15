@@ -1,13 +1,21 @@
 import {
   Controller, Get, Post, Put, Body, UseGuards, Request,
-  NotFoundException, UnauthorizedException, UploadedFile, UseInterceptors,
+  NotFoundException, UnauthorizedException, BadRequestException, UploadedFile, UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { randomUUID } from 'crypto';
+
+const AVATAR_MIME_EXT: Record<string, string> = {
+  'image/jpeg': '.jpg',
+  'image/png': '.png',
+  'image/gif': '.gif',
+  'image/webp': '.webp',
+};
 import * as bcrypt from 'bcryptjs';
+import { UpdateGeneralSettingsDto, UpdateEmailDto, UpdatePasswordDto } from './dto/user-settings.dto';
 
 @Controller('user')
 @UseGuards(AuthGuard('jwt'))
@@ -28,16 +36,13 @@ export class UserSettingsController {
   @Post('settings/general')
   async updateGeneral(
     @Request() req: any,
-    @Body() body: {
-      name?: string;
-      language?: string;
-      timezone?: string;
-      theme?: string;
-      weekStart?: number;
-      defaultProjectId?: number;
-    },
+    @Body() body: UpdateGeneralSettingsDto,
   ) {
-    const user = await this.userService.update(req.user.userId, body);
+    // Explicit pick: never pass the raw body (role, password, etc.) to update().
+    const { name, language, timezone, theme, weekStart, defaultProjectId } = body;
+    const user = await this.userService.update(req.user.userId, {
+      name, language, timezone, theme, weekStart, defaultProjectId,
+    });
     if (!user) throw new NotFoundException();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...safe } = user as any;
@@ -46,7 +51,7 @@ export class UserSettingsController {
 
   /** POST /user/settings/email — change email address */
   @Post('settings/email')
-  async updateEmail(@Request() req: any, @Body() body: { email: string; password: string }) {
+  async updateEmail(@Request() req: any, @Body() body: UpdateEmailDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     const valid = await bcrypt.compare(body.password, user.password);
@@ -69,9 +74,13 @@ export class UserSettingsController {
     storage: diskStorage({
       destination: './uploads/avatars',
       filename: (req: any, file: Express.Multer.File, cb: (err: Error | null, name: string) => void) => {
-        cb(null, `avatar-${req.user?.userId ?? 'unknown'}-${Date.now()}${extname(file.originalname)}`);
+        cb(null, `avatar-${req.user?.userId ?? 'unknown'}-${randomUUID()}${AVATAR_MIME_EXT[file.mimetype] ?? ''}`);
       },
     }),
+    fileFilter: (_req: any, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
+      if (AVATAR_MIME_EXT[file.mimetype]) cb(null, true);
+      else cb(new BadRequestException('Avatar must be a JPEG, PNG, GIF or WebP image'), false);
+    },
     limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
   }))
   async uploadAvatar(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
@@ -82,7 +91,7 @@ export class UserSettingsController {
 
   /** POST /user/settings/password — change password */
   @Post('settings/password')
-  async updatePassword(@Request() req: any, @Body() body: { oldPassword: string; newPassword: string }) {
+  async updatePassword(@Request() req: any, @Body() body: UpdatePasswordDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     const valid = await bcrypt.compare(body.oldPassword, user.password);

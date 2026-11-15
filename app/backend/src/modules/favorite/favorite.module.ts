@@ -4,8 +4,10 @@ import { Favorite } from './favorite.entity';
 import { FavoriteService } from './favorite.service';
 import { FavoriteController } from './favorite.controller';
 
+import { NodeModule } from '../node/node.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([Favorite])],
+  imports: [NodeModule, TypeOrmModule.forFeature([Favorite])],
   providers: [FavoriteService],
   controllers: [FavoriteController],
   exports: [FavoriteService],

@@ -1,12 +1,16 @@
-import { Controller, Get, Put, Delete, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Param, UseGuards, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 import { SubscriptionService } from './subscription.service';
 import { Subscription, SubscriptionEntityType } from './subscription.entity';
 
 @Controller('subscriptions')
 @UseGuards(AuthGuard('jwt'))
 export class SubscriptionController {
-  constructor(private readonly service: SubscriptionService) {}
+  constructor(
+    private readonly service: SubscriptionService,
+    private readonly access: NodeAccessService,
+  ) {}
 
   @Get()
   findAll(@Request() req: any): Promise<Subscription[]> {
@@ -15,12 +19,15 @@ export class SubscriptionController {
 
   @Put(':entityType/:entityId')
   @HttpCode(HttpStatus.CREATED)
-  subscribe(
+  async subscribe(
     @Param('entityType') entityType: SubscriptionEntityType,
     @Param('entityId') entityId: number,
     @Request() req: any,
   ): Promise<Subscription> {
-    return this.service.subscribe(req.user.userId, entityType, entityId);
+    if (entityType !== 'project' && entityType !== 'task') throw new BadRequestException('Invalid entityType');
+    // You may only subscribe to things you can read.
+    await this.access.assertRead(req.user.userId, Number(entityId));
+    return this.service.subscribe(req.user.userId, entityType, Number(entityId));
   }
 
   @Delete(':entityType/:entityId')

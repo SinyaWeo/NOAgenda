@@ -1,25 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
-import { Node } from '../node/node.entity';
+import { NodeService } from '../node/node.service';
+import { NodeType } from '../node/node.entity';
 
 @Injectable()
 export class SearchService {
-  constructor(
-    @InjectRepository(Node) private readonly nodeRepo: Repository<Node>,
-  ) {}
+  constructor(private readonly nodeService: NodeService) {}
 
-  async search(q: string) {
-    const term = `%${q}%`;
-    const results = await this.nodeRepo.find({
-      where: [
-        { title: Like(term) },
-        { name: Like(term) },
-      ],
-      take: 10,
-    });
-    const tasks = results.filter((n) => n.type === 'task');
-    const projects = results.filter((n) => n.type === 'project');
+  /** Search only among projects and tasks the given user can access. */
+  async search(userId: number, q: string) {
+    const [tasks, projects] = await Promise.all([
+      this.nodeService.findAll({ userId, type: NodeType.TASK, search: q, limit: 10 }),
+      this.nodeService.findAll({ userId, type: NodeType.PROJECT, search: q, limit: 10 }),
+    ]);
     return { tasks, projects };
   }
 }

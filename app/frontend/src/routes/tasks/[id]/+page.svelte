@@ -8,6 +8,7 @@
 		apiDeleteAuth,
 		getToken,
 		API_BASE,
+		downloadAuthFile,
 	} from '$lib/api';
 	import { getCurrentUser } from '$lib/auth';
 	import { writable } from 'svelte/store';
@@ -64,6 +65,14 @@
 		'duplicated_by',
 	];
 	const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
+
+	async function downloadAttachment(id: number, filename: string) {
+		try {
+			await downloadAuthFile(`/attachments/${id}/download`, filename);
+		} catch (e: any) {
+			showToast(e?.message ?? 'Download failed', 'error');
+		}
+	}
 
 	async function loadTask(id: string) {
 		const [t, c, a, l, att, rem, rel, sub] = await Promise.all([
@@ -240,11 +249,16 @@
 		const token = getToken();
 		const headers: Record<string, string> = {};
 		if (token) headers['Authorization'] = `Bearer ${token}`;
-		await fetch(API_BASE + '/attachments/upload', {
+		const up = await fetch(API_BASE + '/attachments/upload', {
 			method: 'POST',
 			headers,
 			body: fd,
 		});
+		if (!up.ok) {
+			showToast('Upload failed', 'error');
+			input.value = '';
+			return;
+		}
 		attachments.set(await apiGetAuth<any[]>(`/attachments?taskId=${id}`));
 		showToast('File uploaded', 'success');
 		input.value = '';
@@ -615,11 +629,11 @@
 							<PaperClipOutline
 								class="w-4 h-4 text-gray-400 shrink-0"
 							/>
-							<a
-								href="{API_BASE}/attachments/{att.id}/download"
-								target="_blank"
-								class="text-sm text-primary-600 dark:text-primary-400 hover:underline"
-								>{att.filename}</a
+							<button
+								type="button"
+								onclick={() => downloadAttachment(att.id, att.filename)}
+								class="text-sm text-primary-600 dark:text-primary-400 hover:underline text-left"
+								>{att.filename}</button
 							>
 						</div>
 					{/each}

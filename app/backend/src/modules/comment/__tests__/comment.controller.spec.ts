@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NodeAccessService } from '../../node/node-access.service';
 import { CommentController } from '../comment.controller';
 import { CommentService } from '../comment.service';
 
@@ -10,6 +11,7 @@ describe('CommentController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CommentController],
       providers: [
+        { provide: NodeAccessService, useValue: { assertRead: jest.fn(), assertWrite: jest.fn(), assertAdmin: jest.fn(), assertCanModify: jest.fn(), assertCanUseAsParent: jest.fn(), sanitize: jest.fn((x) => x) } },
         {
           provide: CommentService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },

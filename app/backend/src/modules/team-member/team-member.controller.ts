@@ -36,7 +36,7 @@ export class TeamMemberController {
   async add(@Body() body: { userId: number; teamId: number }, @Request() req: any): Promise<TeamMember> {
     const team = await this.teamService.findById(body.teamId);
     if (!team) throw new NotFoundException();
-    if (team.ownerId !== undefined && team.ownerId !== req.user.userId) throw new ForbiddenException();
+    if (team.ownerId !== req.user.userId) throw new ForbiddenException();
     return this.teamMemberService.add(body.userId, body.teamId);
   }
 
@@ -47,7 +47,7 @@ export class TeamMemberController {
     if (!member) throw new NotFoundException();
     const team = await this.teamService.findById(member.team?.id);
     if (!team) throw new NotFoundException();
-    if (team.ownerId !== undefined && team.ownerId !== req.user.userId) throw new ForbiddenException();
+    if (team.ownerId !== req.user.userId) throw new ForbiddenException();
     return this.teamMemberService.remove(id);
   }
 }

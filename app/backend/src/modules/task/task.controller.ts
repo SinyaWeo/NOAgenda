@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { TaskService, TaskFilter } from './task.service';
 import { Node, NodeStatus } from '../node/node.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 
 @Controller('tasks')
 export class TaskController {
-  constructor(private readonly taskService: TaskService) {}
+  constructor(
+    private readonly taskService: TaskService,
+    private readonly access: NodeAccessService,
+  ) {}
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
@@ -35,35 +39,34 @@ export class TaskController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {
-    const task = await this.taskService.findById(id);
+    await this.access.assertRead(req.user.userId, Number(id));
+    const task = await this.taskService.findById(Number(id));
     if (!task) throw new NotFoundException();
-    // Creator always has access
-    if (task.createdBy === req.user.userId) return task;
-    // Otherwise verify the task is in a project the user has access to via parentId.
-    // For subtasks, parentId points to the parent task, so resolve one level up.
-    if (task.parentId) {
-      const accessible = await this.taskService.findAll({ userId: req.user.userId, projectId: task.parentId });
-      if (accessible.some((t) => t.id === Number(id))) return task;
-
-      const parentTask = await this.taskService.findById(task.parentId);
-      if (parentTask?.parentId) {
-        const accessibleViaParent = await this.taskService.findAll({ userId: req.user.userId, projectId: parentTask.parentId });
-        if (accessibleViaParent.some((t) => t.id === Number(id))) return task;
-      }
-    }
-    throw new ForbiddenException();
+    return task;
   }
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
-    return this.taskService.create({ ...body, createdBy: req.user.userId });
+    const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
+    await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
+    return this.taskService.create({ ...data, createdBy: req.user.userId });
   }
 
   @Post('bulk')
   @UseGuards(AuthGuard('jwt'))
   async bulkUpdate(@Body() body: { ids: number[]; data: Partial<Node> }, @Request() req: any): Promise<Node[]> {
-    return this.taskService.bulkUpdate(body.ids, body.data, req.user.userId);
+    if (!Array.isArray(body?.ids) || body.ids.length === 0 || body.ids.length > 200) {
+      throw new BadRequestException('ids must be a non-empty array of at most 200 task ids');
+    }
+    const ids = body.ids.map((i) => Number(i));
+    if (ids.some((i) => !Number.isInteger(i) || i < 1)) throw new BadRequestException('Invalid task id');
+    // Every task must be writable by the caller before anything is changed.
+    for (const id of ids) await this.access.assertWrite(req.user.userId, id);
+    const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body.data ?? {}));
+    delete (data as any).type;
+    if (data.parentId !== undefined) await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
+    return this.taskService.bulkUpdate(ids, data, req.user.userId);
   }
 
   @Put(':id')
@@ -71,11 +74,13 @@ export class TaskController {
   async update(@Param('id') id: number, @Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
     const existing = await this.taskService.findById(id);
     if (!existing) throw new NotFoundException();
-    if (existing.createdBy !== undefined && existing.createdBy !== req.user.userId) {
-      throw new ForbiddenException();
+    await this.access.assertWrite(req.user.userId, existing.id);
+    // Prevent mass-assignment of ownership/identity fields; type is immutable.
+    const safeBody = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
+    delete (safeBody as any).type;
+    if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
+      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId);
     }
-    // Prevent mass-assignment of ownership/identity fields
-    const { id: _id, createdBy: _cb, parent: _p, children: _ch, ...safeBody } = body as any;
     const task = await this.taskService.update(id, safeBody);
     if (!task) throw new NotFoundException();
     return task;
@@ -84,7 +89,8 @@ export class TaskController {
   @Put(':id/duplicate')
   @UseGuards(AuthGuard('jwt'))
   async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
-    const task = await this.taskService.duplicate(id, req.user.userId);
+    await this.access.assertWrite(req.user.userId, Number(id));
+    const task = await this.taskService.duplicate(Number(id), req.user.userId);
     if (!task) throw new NotFoundException();
     return task;
   }
@@ -94,7 +100,7 @@ export class TaskController {
   async updatePosition(@Param('id') id: number, @Body() body: { position: number }, @Request() req: any): Promise<Node> {
     const existing = await this.taskService.findById(id);
     if (!existing) throw new NotFoundException();
-    if (existing.createdBy !== undefined && existing.createdBy !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertWrite(req.user.userId, existing.id);
     const task = await this.taskService.updatePosition(id, body.position);
     if (!task) throw new NotFoundException();
     return task;
@@ -105,7 +111,7 @@ export class TaskController {
   async markRead(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const existing = await this.taskService.findById(id);
     if (!existing) throw new NotFoundException();
-    if (existing.createdBy !== undefined && existing.createdBy !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertRead(req.user.userId, existing.id);
     const task = await this.taskService.update(id, { isUnread: false } as any);
     if (!task) throw new NotFoundException();
     return task;
@@ -116,9 +122,7 @@ export class TaskController {
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const existing = await this.taskService.findById(id);
     if (!existing) throw new NotFoundException();
-    if (existing.createdBy !== undefined && existing.createdBy !== req.user.userId) {
-      throw new ForbiddenException();
-    }
+    await this.access.assertWrite(req.user.userId, existing.id);
     return this.taskService.remove(id);
   }
 }

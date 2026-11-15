@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NodeAccessService } from '../../node/node-access.service';
 import { TaskController } from '../task.controller';
 import { TaskService } from '../task.service';
 
@@ -10,6 +11,7 @@ describe('TaskController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TaskController],
       providers: [
+        { provide: NodeAccessService, useValue: { assertRead: jest.fn(), assertWrite: jest.fn(), assertAdmin: jest.fn(), assertCanModify: jest.fn(), assertCanUseAsParent: jest.fn(), sanitize: jest.fn((x) => x) } },
         {
           provide: TaskService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },

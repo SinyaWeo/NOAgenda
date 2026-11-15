@@ -5,8 +5,10 @@ import { TaskReminderService } from './task-reminder.service';
 import { TaskReminderController } from './task-reminder.controller';
 import { TaskModule } from '../task/task.module';
 
+import { NodeModule } from '../node/node.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([TaskReminder]), TaskModule],
+  imports: [NodeModule, TypeOrmModule.forFeature([TaskReminder]), TaskModule],
   providers: [TaskReminderService],
   controllers: [TaskReminderController],
   exports: [TaskReminderService],

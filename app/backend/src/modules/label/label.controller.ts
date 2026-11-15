@@ -15,16 +15,21 @@ export class LabelController {
 
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
-  async findById(@Param('id') id: number): Promise<Label> {
+  async findById(@Param('id') id: number, @Request() req: any): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
+    if (label.createdBy !== req.user.userId) {
+      const mine = await this.labelService.findAll(req.user.userId);
+      if (!mine.some((l) => l.id === Number(id))) throw new ForbiddenException();
+    }
     return label;
   }
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: Partial<Label>, @Request() req: any): Promise<Label> {
-    return this.labelService.create({ ...body, createdBy: req.user.userId });
+    const { id: _i, createdAt: _c, updatedAt: _u, createdBy: _o, ...data } = body as any;
+    return this.labelService.create({ ...data, createdBy: req.user.userId });
   }
 
   @Put(':id')
@@ -32,7 +37,7 @@ export class LabelController {
   async update(@Param('id') id: number, @Body() body: Partial<Label>, @Request() req: any): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
-    if (label.createdBy !== undefined && label.createdBy !== req.user.userId) throw new ForbiddenException();
+    if (label.createdBy !== req.user.userId) throw new ForbiddenException();
     // Prevent mass-assignment of ownership/identity fields
     const { id: _id, createdBy: _cb, ...safeBody } = body as any;
     const updated = await this.labelService.update(id, safeBody);
@@ -45,7 +50,7 @@ export class LabelController {
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
-    if (label.createdBy !== undefined && label.createdBy !== req.user.userId) throw new ForbiddenException();
+    if (label.createdBy !== req.user.userId) throw new ForbiddenException();
     return this.labelService.remove(id);
   }
 }

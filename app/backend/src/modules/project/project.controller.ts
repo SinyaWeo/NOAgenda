@@ -2,10 +2,14 @@ import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuard
 import { ProjectService } from './project.service';
 import { Node } from '../node/node.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { NodeAccessService } from '../node/node-access.service';
 
 @Controller('projects')
 export class ProjectController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(
+    private readonly projectService: ProjectService,
+    private readonly access: NodeAccessService,
+  ) {}
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
@@ -38,7 +42,11 @@ export class ProjectController {
   @Post()
   @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
-    return this.projectService.create({ ...body, ownerId: req.user.userId });
+    // sanitize() strips id/ownerId/etc. so a client cannot overwrite someone else's node.
+    const data = this.access.sanitize(body);
+    delete (data as any).type;
+    await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
+    return this.projectService.create({ ...data, ownerId: req.user.userId });
   }
 
   @Put(':id')
@@ -48,7 +56,11 @@ export class ProjectController {
     if (!project) throw new NotFoundException();
     if (project.ownerId !== req.user.userId) throw new ForbiddenException();
     // Prevent mass-assignment of ownership/identity fields
-    const { id: _id, ownerId: _o, ...safeBody } = body as any;
+    const safeBody = this.access.sanitize(body);
+    delete (safeBody as any).type;
+    if (safeBody.parentId !== undefined && safeBody.parentId !== project.parentId) {
+      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId);
+    }
     const updated = await this.projectService.update(id, safeBody);
     if (!updated) throw new NotFoundException();
     return updated;
@@ -57,6 +69,7 @@ export class ProjectController {
   @Put(':id/duplicate')
   @UseGuards(AuthGuard('jwt'))
   async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    await this.access.assertRead(req.user.userId, Number(id));
     const project = await this.projectService.duplicate(id, req.user.userId);
     if (!project) throw new NotFoundException();
     return project;

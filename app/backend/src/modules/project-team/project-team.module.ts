@@ -5,8 +5,10 @@ import { ProjectTeamService } from './project-team.service';
 import { ProjectTeamController } from './project-team.controller';
 import { ProjectModule } from '../project/project.module';
 
+import { NodeModule } from '../node/node.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([ProjectTeam]), ProjectModule],
+  imports: [NodeModule, TypeOrmModule.forFeature([ProjectTeam]), ProjectModule],
   providers: [ProjectTeamService],
   controllers: [ProjectTeamController],
   exports: [ProjectTeamService],

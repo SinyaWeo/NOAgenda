@@ -5,8 +5,10 @@ import { ProjectUserService } from './project-user.service';
 import { ProjectUserController } from './project-user.controller';
 import { ProjectModule } from '../project/project.module';
 
+import { NodeModule } from '../node/node.module';
+
 @Module({
-  imports: [TypeOrmModule.forFeature([ProjectUser]), ProjectModule],
+  imports: [NodeModule, TypeOrmModule.forFeature([ProjectUser]), ProjectModule],
   providers: [ProjectUserService],
   controllers: [ProjectUserController],
   exports: [ProjectUserService],

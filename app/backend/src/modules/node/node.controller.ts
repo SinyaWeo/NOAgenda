@@ -10,17 +10,21 @@ import {
   Query,
   UseGuards,
   NotFoundException,
-  ForbiddenException,
+  BadRequestException,
   Request,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NodeService, NodeFilter } from './node.service';
+import { NodeAccessService } from './node-access.service';
 import { Node, NodeType, NodeStatus } from './node.entity';
 
 @Controller('nodes')
 @UseGuards(AuthGuard('jwt'))
 export class NodeController {
-  constructor(private readonly nodeService: NodeService) {}
+  constructor(
+    private readonly nodeService: NodeService,
+    private readonly access: NodeAccessService,
+  ) {}
 
   @Get()
   async findAll(
@@ -49,19 +53,22 @@ export class NodeController {
   }
 
   @Get(':id/children')
-  async findChildren(@Param('id') id: number): Promise<Node[]> {
+  async findChildren(@Param('id') id: number, @Request() req: any): Promise<Node[]> {
+    await this.access.assertRead(req.user.userId, Number(id));
     return this.nodeService.findChildren(Number(id));
   }
 
   @Get(':id/tree')
-  async findTree(@Param('id') id: number): Promise<Node> {
+  async findTree(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    await this.access.assertRead(req.user.userId, Number(id));
     const tree = await this.nodeService.findTree(Number(id));
     if (!tree) throw new NotFoundException();
     return tree;
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number): Promise<Node> {
+  async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    await this.access.assertRead(req.user.userId, Number(id));
     const node = await this.nodeService.findById(Number(id));
     if (!node) throw new NotFoundException();
     return node;
@@ -69,7 +76,11 @@ export class NodeController {
 
   @Post()
   async create(@Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
-    const data: Partial<Node> = { ...body };
+    if (body.type !== NodeType.PROJECT && body.type !== NodeType.TASK) {
+      throw new BadRequestException('type must be "project" or "task"');
+    }
+    await this.access.assertCanUseAsParent(req.user.userId, body.parentId);
+    const data: Partial<Node> = this.access.sanitize(body);
     if (body.type === NodeType.PROJECT) {
       data.ownerId = req.user.userId;
     } else {
@@ -82,8 +93,12 @@ export class NodeController {
   async update(@Param('id') id: number, @Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
-    this.assertOwner(existing, req.user.userId);
-    const { id: _id, ownerId: _o, createdBy: _cb, parent: _p, children: _ch, ...safeBody } = body as any;
+    await this.access.assertCanModify(req.user.userId, existing);
+    const safeBody: Partial<Node> = this.access.sanitize(body);
+    delete (safeBody as any).type; // a node's type is immutable
+    if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
+      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId);
+    }
     const node = await this.nodeService.update(Number(id), safeBody);
     if (!node) throw new NotFoundException();
     return node;
@@ -91,6 +106,11 @@ export class NodeController {
 
   @Put(':id/duplicate')
   async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    const source = await this.nodeService.findById(Number(id));
+    if (!source) throw new NotFoundException();
+    // A copy of a task lands in the same project, so it needs write access there.
+    if (source.type === NodeType.PROJECT) await this.access.assertRead(req.user.userId, source.id);
+    else await this.access.assertWrite(req.user.userId, source.id);
     const node = await this.nodeService.duplicate(Number(id), req.user.userId);
     if (!node) throw new NotFoundException();
     return node;
@@ -104,7 +124,8 @@ export class NodeController {
   ): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
-    this.assertOwner(existing, req.user.userId);
+    await this.access.assertCanModify(req.user.userId, existing);
+    await this.access.assertCanUseAsParent(req.user.userId, body.parentId);
     const node = await this.nodeService.move(Number(id), body.parentId);
     if (!node) throw new NotFoundException();
     return node;
@@ -114,7 +135,7 @@ export class NodeController {
   async archive(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
-    this.assertOwner(existing, req.user.userId);
+    await this.access.assertCanModify(req.user.userId, existing);
     const node = await this.nodeService.archive(Number(id));
     if (!node) throw new NotFoundException();
     return node;
@@ -124,7 +145,7 @@ export class NodeController {
   async unarchive(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
-    this.assertOwner(existing, req.user.userId);
+    await this.access.assertCanModify(req.user.userId, existing);
     const node = await this.nodeService.unarchive(Number(id));
     if (!node) throw new NotFoundException();
     return node;
@@ -134,14 +155,7 @@ export class NodeController {
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
-    this.assertOwner(existing, req.user.userId);
+    await this.access.assertCanModify(req.user.userId, existing);
     return this.nodeService.remove(Number(id));
-  }
-
-  private assertOwner(node: Node, userId: number): void {
-    const ownerId = node.type === NodeType.PROJECT ? node.ownerId : node.createdBy;
-    if (ownerId !== undefined && ownerId !== userId) {
-      throw new ForbiddenException();
-    }
   }
 }

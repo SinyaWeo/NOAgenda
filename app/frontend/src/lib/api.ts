@@ -26,7 +26,8 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 		}
 		return response;
 	} catch (err) {
-		console.error('Network/API fetch error:', err, url, options);
+		// Never log request options/body: they can contain credentials.
+		console.error('Network/API fetch error:', err, url);
 		throw err;
 	}
 }
@@ -103,6 +104,25 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
 	const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
 	if (token) headers['Authorization'] = `Bearer ${token}`;
 	return apiFetch(path, { ...options, headers });
+}
+
+/**
+ * Download an authenticated file. A plain <a href> cannot send the Bearer
+ * header, so fetch it with auth, then hand the blob to the browser.
+ */
+export async function downloadAuthFile(path: string, filename: string): Promise<void> {
+	const res = await apiFetchAuth(path);
+	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
+	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Download failed'));
+	const blob = await res.blob();
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
 export async function apiGetAuth<T>(path: string): Promise<T> {

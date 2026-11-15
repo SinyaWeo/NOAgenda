@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundExc
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { Throttle } from '@nestjs/throttler';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -39,6 +40,7 @@ export class UserController {
   }
 
   @Post()
+  @Throttle({ default: { ttl: 3600000, limit: 10 } }) // 10 registrations / hour / IP
   async create(@Body() body: CreateUserDto): Promise<Omit<User, 'password'>> {
     const user = await this.userService.create(body);
     return this.strip(user);
