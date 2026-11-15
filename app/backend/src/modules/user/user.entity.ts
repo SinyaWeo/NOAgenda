@@ -40,6 +40,13 @@ export class User extends BaseEntity {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role!: UserRole;
 
+  /** Consecutive failed logins; reset on success. Drives the account lockout. */
+  @Column({ default: 0 })
+  failedLoginAttempts!: number;
+
+  @Column({ nullable: true, type: 'datetime' })
+  lockedUntil?: Date;
+
   @Column({ default: false })
   isDeletionRequested!: boolean;
 

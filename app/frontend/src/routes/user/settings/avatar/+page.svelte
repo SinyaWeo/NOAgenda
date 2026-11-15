@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
-  import { apiGetAuth, getToken, API_BASE } from '$lib/api';
+  import { apiGetAuth, apiFetchAuth, API_BASE } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card } from 'flowbite-svelte';
@@ -31,12 +31,8 @@
     if (!file) return;
     const fd = new FormData();
     fd.append('avatar', file);
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(API_BASE + '/user/settings/avatar/upload', {
+    const res = await apiFetchAuth('/user/settings/avatar/upload', {
       method: 'PUT',
-      headers,
       body: fd,
     });
     if (!res.ok) {

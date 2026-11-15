@@ -39,6 +39,17 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required (>= 32 chars)}
       CORS_ORIGIN: ${PUBLIC_ORIGIN:-https://${DOMAIN}}
       TRUST_PROXY: 1
+      PUBLIC_URL: ${PUBLIC_ORIGIN:-https://${DOMAIN}}
+      # The browser sees the API under /api, so the refresh cookie is scoped to /api/auth.
+      REFRESH_COOKIE_PATH: /api/auth
+      # Email (password reset + address verification). Without SMTP_HOST mail is only logged.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURE: ${SMTP_SECURE:-}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-}
     volumes:
       - uploads:/app/uploads
     depends_on:

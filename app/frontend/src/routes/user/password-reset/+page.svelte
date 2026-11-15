@@ -21,7 +21,8 @@
     success.set(false);
     try {
       const token = page.url.searchParams.get('token') ?? '';
-      await apiPost('/auth/password-reset/reset', { token, password: $password });
+      if (!token) throw new Error('This reset link is incomplete. Request a new one.');
+      await apiPost('/auth/password/reset', { token, password: $password });
       success.set(true);
       setTimeout(() => goto('/user/login'), 2000);
     } catch (e: any) {

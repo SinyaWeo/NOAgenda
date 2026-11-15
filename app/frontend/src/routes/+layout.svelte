@@ -2,7 +2,7 @@
 	import '../assets/app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
-	import { authSession, clearAuthSession, initializeAuth } from '$lib/auth';
+	import { authSession, initializeAuth, logout as signOut } from '$lib/auth';
 	import { isAdmin } from '$lib/roles';
 	import ToastContainer from '$lib/components/Toast.svelte';
 	import { derived, writable } from 'svelte/store';
@@ -118,8 +118,8 @@
 		} catch (_) {}
 	}
 
-	function logout() {
-		clearAuthSession();
+	async function logout() {
+		await signOut();
 		goto('/user/login');
 	}
 

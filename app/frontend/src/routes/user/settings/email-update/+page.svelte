@@ -25,7 +25,7 @@
     success.set('');
     try {
       await apiPostAuth('/user/settings/email', { email, password });
-      success.set('Email update request sent. Check your inbox.');
+      success.set('Email updated. We sent a link to the new address: confirm it to keep signing in.');
       email = '';
       password = '';
     } catch (e: any) {

@@ -15,7 +15,7 @@
     error.set('');
     success.set(false);
     try {
-      await apiPost('/auth/password-reset/request', { email: $email });
+      await apiPost('/auth/password/token', { email: $email });
       success.set(true);
     } catch (e: any) {
       error.set(e.message ?? 'Request failed');

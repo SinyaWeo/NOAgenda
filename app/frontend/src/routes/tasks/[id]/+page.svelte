@@ -6,8 +6,7 @@
 		apiPostAuth,
 		apiPutAuth,
 		apiDeleteAuth,
-		getToken,
-		API_BASE,
+		apiFetchAuth,
 		downloadAuthFile,
 	} from '$lib/api';
 	import { getCurrentUser } from '$lib/auth';
@@ -246,12 +245,8 @@
 		const fd = new FormData();
 		fd.append('file', file);
 		fd.append('taskId', id);
-		const token = getToken();
-		const headers: Record<string, string> = {};
-		if (token) headers['Authorization'] = `Bearer ${token}`;
-		const up = await fetch(API_BASE + '/attachments/upload', {
+		const up = await apiFetchAuth('/attachments/upload', {
 			method: 'POST',
-			headers,
 			body: fd,
 		});
 		if (!up.ok) {

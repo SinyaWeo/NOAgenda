@@ -92,6 +92,59 @@ jobs:
       - if: failure()
         run: cat app/backend/api.log
 
+  # Email verification, sessions, refresh rotation/theft detection, lockout, password
+  # reset and API tokens, with real SMTP delivery into a Mailpit sink.
+  auth-lifecycle:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.3
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root-password
+          MARIADB_DATABASE: noagenda_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+      mailpit:
+        image: axllent/mailpit
+        ports:
+          - 1025:1025
+          - 8025:8025
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: ci-root-password
+      DB_DATABASE: noagenda_ci
+      JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      CORS_ORIGIN: http://localhost:5173
+      PORT: 3000
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: 1025
+      LOGIN_RATE_LIMIT: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/backend/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: app/backend
+      - name: Start API
+        working-directory: app/backend
+        run: |
+          nohup node dist/main.js > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3000/health && exit 0; sleep 2; done
+          cat api.log; exit 1
+      - name: Auth lifecycle test
+        working-directory: app/backend
+        run: BASE_URL=http://127.0.0.1:3000 MAILPIT_URL=http://127.0.0.1:8025 python3 scripts/auth-lifecycle-smoke.py
+      - if: failure()
+        run: cat app/backend/api.log
+
   docker:
     runs-on: ubuntu-latest
     steps:

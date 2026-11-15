@@ -1,11 +1,28 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserService } from '../user/user.service';
 import { PasswordResetToken } from './password-reset-token.entity';
-import * as bcrypt from 'bcryptjs';
-import * as crypto from 'crypto';
+import { SessionService, SessionMeta } from '../session/session.service';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
+import { MailService } from '../mail/mail.service';
+import { hashPassword, needsRehash, verifyPassword } from '../../common/password';
+import { randomToken, sha256 } from '../../common/tokens';
+
+export const MAX_FAILED_LOGINS = Number(process.env.MAX_FAILED_LOGINS || 5);
+export const LOCKOUT_MINUTES = Number(process.env.LOCKOUT_MINUTES || 15);
+const RESET_TTL_MS = 60 * 60 * 1000;
+
+/** Same text for unknown user, wrong password and locked account, so none can be told apart. */
+const INVALID_CREDENTIALS = 'Invalid credentials, or the account is temporarily locked';
+
+export interface AuthResult {
+  access_token: string;
+  expires_in: number;
+  /** Set (and to be placed in the httpOnly cookie) unless the request lost a benign refresh race. */
+  refreshToken: string | null;
+}
 
 @Injectable()
 export class AuthService {
@@ -14,60 +31,104 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @InjectRepository(PasswordResetToken)
     private readonly resetTokenRepository: Repository<PasswordResetToken>,
+    private readonly sessions: SessionService,
+    private readonly emailVerification: EmailVerificationService,
+    private readonly mail: MailService,
   ) {}
 
-  async validateUser(username: string, password: string) {
-    const user = await this.userService.findByUsername(username);
-    if (user && await bcrypt.compare(password, user.password)) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...result } = user;
-      return result;
-    }
-    return null;
+  private signAccessToken(user: { id: number; username: string; role: string }, sessionId: number) {
+    const payload = { sub: user.id, username: user.username, role: user.role, sid: sessionId };
+    const access_token = this.jwtService.sign(payload);
+    const { exp, iat } = this.jwtService.decode(access_token) as { exp: number; iat: number };
+    return { access_token, expires_in: exp - iat };
   }
 
-  async login(username: string, password: string) {
+  async login(username: string, password: string, meta: SessionMeta = {}): Promise<AuthResult> {
     const user = await this.userService.findByUsername(username);
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid credentials');
+
+    // Always do one bcrypt comparison, user or no user, so timing does not reveal which usernames exist.
+    const passwordOk = await verifyPassword(password, user?.password);
+
+    const locked = !!user?.lockedUntil && user.lockedUntil.getTime() > Date.now();
+    if (!user || locked || !passwordOk) {
+      if (user && !locked) {
+        await this.userService.recordFailedLogin(
+          user.id,
+          MAX_FAILED_LOGINS,
+          new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000),
+        );
+      }
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
     }
-    const payload = { username: user.username, sub: user.id, role: user.role };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+
+    if (this.emailVerification.required && !user.isEmailConfirmed) {
+      // Only reachable with the correct password, so this does not disclose accounts.
+      throw new ForbiddenException({ code: 'EMAIL_NOT_VERIFIED', message: 'Please verify your email address first' });
+    }
+
+    if (needsRehash(user.password)) {
+      await this.userService.setPasswordHash(user.id, await hashPassword(password));
+    }
+    if (user.failedLoginAttempts || user.lockedUntil) await this.userService.resetLoginState(user.id);
+
+    const { session, refreshToken } = await this.sessions.create(user.id, meta);
+    return { ...this.signAccessToken(user, session.id), refreshToken };
   }
 
-  async refresh(userId: number, username: string) {
-    const user = await this.userService.findById(userId);
-    const payload = { username, sub: userId, role: user?.role };
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
+  /** Trade a valid refresh token for a new access token (and a rotated refresh token). */
+  async refresh(presented: string, meta: SessionMeta = {}): Promise<AuthResult> {
+    const { session, refreshToken } = await this.sessions.rotate(presented, meta);
+    const user = await this.userService.findById(session.userId);
+    if (!user) {
+      await this.sessions.revokeById(session.id);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    return { ...this.signAccessToken(user, session.id), refreshToken };
+  }
+
+  async logout(sessionId?: number, refreshToken?: string): Promise<void> {
+    if (refreshToken) await this.sessions.revokeByRefreshToken(refreshToken);
+    if (sessionId) await this.sessions.revokeById(sessionId);
   }
 
   async requestPasswordReset(email: string): Promise<void> {
     const user = await this.userService.findByEmail(email);
-    // Always succeed to avoid email enumeration
+    // Always succeeds from the caller's point of view (no email enumeration).
     if (!user) return;
-    // Remove any existing token for this user
     await this.resetTokenRepository.delete({ user: { id: user.id } });
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-    const resetToken = this.resetTokenRepository.create({ token, user, expiresAt });
-    await this.resetTokenRepository.save(resetToken);
-    // TODO: send token via email in production; do NOT return it in the response.
+    const token = randomToken(32);
+    await this.resetTokenRepository.save(
+      this.resetTokenRepository.create({
+        token: sha256(token), // only the hash is stored; the raw token travels by email
+        user,
+        expiresAt: new Date(Date.now() + RESET_TTL_MS),
+      }),
+    );
+    // Not awaited: the response time must not reveal whether the account exists.
+    void this.mail.send({
+      to: user.email,
+      subject: 'Reset your NOAgenda password',
+      text:
+        `Hi ${user.username},\n\n` +
+        `Someone asked to reset the password for your account. Open this link within 1 hour to choose a new one:\n\n` +
+        `${this.mail.link('/user/password-reset', { token })}\n\n` +
+        `If this was not you, ignore this email: your password stays unchanged.`,
+    });
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const record = await this.resetTokenRepository.findOne({
-      where: { token },
+      where: { token: sha256(token) },
       relations: ['user'],
     });
-    if (!record || record.expiresAt < new Date()) {
+    if (!record || record.expiresAt.getTime() < Date.now()) {
+      if (record) await this.resetTokenRepository.delete(record.id);
       throw new BadRequestException('Invalid or expired reset token');
     }
-    await this.userService.update(record.user.id, { password: newPassword });
-    await this.resetTokenRepository.delete(record.id);
+    await this.userService.update(record.user.id, { password: newPassword, isEmailConfirmed: true });
+    await this.userService.resetLoginState(record.user.id);
+    await this.resetTokenRepository.delete({ user: { id: record.user.id } }); // single use
+    await this.sessions.revokeAllForUser(record.user.id); // sign out everywhere
   }
 }

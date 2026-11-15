@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Body, UseGuards, Request,
-  NotFoundException, UnauthorizedException, BadRequestException, UploadedFile, UseInterceptors,
+  NotFoundException, UnauthorizedException, BadRequestException, ConflictException, UploadedFile, UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -14,13 +14,20 @@ const AVATAR_MIME_EXT: Record<string, string> = {
   'image/gif': '.gif',
   'image/webp': '.webp',
 };
-import * as bcrypt from 'bcryptjs';
+import { verifyPassword } from '../../common/password';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
+import { SessionService } from '../session/session.service';
+import { NoApiTokenGuard } from '../auth/no-api-token.guard';
 import { UpdateGeneralSettingsDto, UpdateEmailDto, UpdatePasswordDto } from './dto/user-settings.dto';
 
 @Controller('user')
 @UseGuards(AuthGuard('jwt'))
 export class UserSettingsController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly emailVerification: EmailVerificationService,
+    private readonly sessions: SessionService,
+  ) {}
 
   /** GET /user/settings/general — return current user profile */
   @Get('settings/general')
@@ -51,13 +58,19 @@ export class UserSettingsController {
 
   /** POST /user/settings/email — change email address */
   @Post('settings/email')
+  @UseGuards(NoApiTokenGuard)
   async updateEmail(@Request() req: any, @Body() body: UpdateEmailDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
-    const valid = await bcrypt.compare(body.password, user.password);
-    if (!valid) throw new UnauthorizedException('Incorrect password');
-    await this.userService.update(req.user.userId, { email: body.email });
-    return { message: 'Email updated successfully' };
+    if (!(await verifyPassword(body.password, user.password))) throw new UnauthorizedException('Incorrect password');
+    const existing = await this.userService.findByEmail(body.email);
+    if (existing && existing.id !== user.id) throw new ConflictException('Email is already in use');
+    if (body.email !== user.email) {
+      // A new address is unverified until the owner clicks the emailed link.
+      await this.userService.update(user.id, { email: body.email, isEmailConfirmed: false });
+      void this.emailVerification.send({ id: user.id, email: body.email, username: user.username }).catch(() => undefined);
+    }
+    return { message: 'Email updated. Please check your inbox to verify the new address.' };
   }
 
   /** GET /user/settings/avatar — return avatar URL */
@@ -91,12 +104,14 @@ export class UserSettingsController {
 
   /** POST /user/settings/password — change password */
   @Post('settings/password')
+  @UseGuards(NoApiTokenGuard)
   async updatePassword(@Request() req: any, @Body() body: UpdatePasswordDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
-    const valid = await bcrypt.compare(body.oldPassword, user.password);
-    if (!valid) throw new UnauthorizedException('Incorrect current password');
+    if (!(await verifyPassword(body.oldPassword, user.password))) throw new UnauthorizedException('Incorrect current password');
     await this.userService.update(req.user.userId, { password: body.newPassword });
+    // Everyone else (including a thief holding an old session) is signed out; this session stays.
+    await this.sessions.revokeAllForUser(req.user.userId, req.user.sessionId);
     return { message: 'Password updated successfully' };
   }
 
@@ -108,6 +123,7 @@ export class UserSettingsController {
 
   /** POST /user/deletion/request — request account deletion (7-day grace period) */
   @Post('deletion/request')
+  @UseGuards(NoApiTokenGuard)
   async requestDeletion(@Request() req: any) {
     const scheduledAt = new Date();
     scheduledAt.setDate(scheduledAt.getDate() + 7);

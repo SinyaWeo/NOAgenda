@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
-  import { apiPost } from '$lib/api';
+  import { apiFetch, apiPost } from '$lib/api';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card, Helper, Input, Label } from 'flowbite-svelte';
   import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
@@ -11,6 +11,7 @@
   const error = writable('');
   const loading = writable(false);
   let showPassword = $state(false);
+  let checkEmail = $state(false);
 
   async function handleRegister(event: SubmitEvent) {
     event.preventDefault();
@@ -18,7 +19,14 @@
     error.set('');
     try {
       await apiPost('/users', { username: $username, email: $email, password: $password });
-      goto('/user/login');
+      const cfg: { emailVerificationRequired?: boolean } = await apiFetch('/auth/config')
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => ({}));
+      if (cfg.emailVerificationRequired) {
+        checkEmail = true;
+      } else {
+        goto('/user/login');
+      }
     } catch (e: any) {
       error.set(e.message ?? 'Registration failed');
     } finally {
@@ -38,6 +46,17 @@
       <Alert color="red" class="mb-4">{$error}</Alert>
     {/if}
 
+    {#if checkEmail}
+      <Alert color="green" class="mb-4">
+        <p class="font-semibold">Check your email</p>
+        <p class="text-sm mt-1">
+          We sent a confirmation link to {$email}. Open it to activate your account, then sign in.
+        </p>
+      </Alert>
+      <p class="text-sm text-center mt-4">
+        <a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">Go to Sign in</a>
+      </p>
+    {:else}
     <form onsubmit={handleRegister} class="flex flex-col gap-4">
       <div>
         <Label for="reg-username" class="mb-1">Username</Label>
@@ -63,5 +82,6 @@
     <p class="text-sm text-center text-gray-500 mt-4">
       Already have an account? <a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">Sign in</a>
     </p>
+    {/if}
   </Card>
 </div>

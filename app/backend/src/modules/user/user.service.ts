@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryFailedError } from 'typeorm';
 import { User } from './user.entity';
 import { UserRole } from './user-role.enum';
-import * as bcrypt from 'bcryptjs';
+import { hashPassword } from '../../common/password';
 
 @Injectable()
 export class UserService {
@@ -59,7 +59,7 @@ export class UserService {
     }
 
     if (user.password) {
-      user.password = await bcrypt.hash(user.password, 10);
+      user.password = await hashPassword(user.password);
     }
     const newUser = this.userRepository.create(user);
     try {
@@ -75,10 +75,33 @@ export class UserService {
 
   async update(id: number, data: Partial<User>): Promise<User | null> {
     if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
+      data.password = await hashPassword(data.password);
     }
     await this.userRepository.update(id, data);
     return this.findById(id);
+  }
+
+  /**
+   * Atomically count a failed login; after `maxAttempts` consecutive failures the
+   * account is locked until `lockedUntil` and the counter restarts.
+   */
+  async recordFailedLogin(id: number, maxAttempts: number, lockedUntil: Date): Promise<void> {
+    await this.userRepository.query(
+      `UPDATE users SET
+         lockedUntil = IF(failedLoginAttempts + 1 >= ?, ?, lockedUntil),
+         failedLoginAttempts = IF(failedLoginAttempts + 1 >= ?, 0, failedLoginAttempts + 1)
+       WHERE id = ?`,
+      [maxAttempts, lockedUntil, maxAttempts, id],
+    );
+  }
+
+  async resetLoginState(id: number): Promise<void> {
+    await this.userRepository.update(id, { failedLoginAttempts: 0, lockedUntil: null as any });
+  }
+
+  /** Store an already-hashed password (e.g. a cost upgrade) without re-hashing it. */
+  async setPasswordHash(id: number, hash: string): Promise<void> {
+    await this.userRepository.update(id, { password: hash });
   }
 
   async remove(id: number): Promise<void> {

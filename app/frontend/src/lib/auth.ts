@@ -1,5 +1,5 @@
 import { get, writable } from 'svelte/store';
-import { apiFetchAuth, clearToken, getToken } from './api';
+import { apiFetchAuth, clearToken, endServerSession, getToken, refreshAccessToken } from './api';
 import type { User } from './types';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -17,7 +17,8 @@ export const authSession = writable<AuthSession>({
 let refreshPromise: Promise<User | null> | null = null;
 
 export async function refreshCurrentUser(): Promise<User | null> {
-	if (!getToken()) {
+	// No access token (e.g. it was cleared or expired long ago): a valid refresh cookie can still restore the session.
+	if (!getToken() && !(await refreshAccessToken())) {
 		authSession.set({ status: 'unauthenticated', user: null });
 		return null;
 	}
@@ -50,6 +51,12 @@ export async function initializeAuth(): Promise<User | null> {
 	return refreshCurrentUser();
 }
 
+/** Sign out: end the session on the server (revokes the refresh token), then clear local state. */
+export async function logout(): Promise<void> {
+	await endServerSession();
+	clearAuthSession();
+}
+
 export function clearAuthSession() {
 	clearToken();
 	authSession.set({ status: 'unauthenticated', user: null });
@@ -60,11 +67,6 @@ export async function getCurrentUser(): Promise<User | null> {
 	const session = get(authSession);
 	if (session.status === 'authenticated' && session.user !== null) {
 		return session.user;
-	}
-	const token = getToken();
-	if (!token) {
-		authSession.set({ status: 'unauthenticated', user: null });
-		return null;
 	}
 	return refreshCurrentUser();
 }

@@ -5,10 +5,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly emailVerification: EmailVerificationService,
+  ) {}
 
   private strip(user: User): Omit<User, 'password'> {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -43,6 +47,8 @@ export class UserController {
   @Throttle({ default: { ttl: 3600000, limit: 10 } }) // 10 registrations / hour / IP
   async create(@Body() body: CreateUserDto): Promise<Omit<User, 'password'>> {
     const user = await this.userService.create(body);
+    // Not awaited: registration must not fail or stall on mail delivery.
+    void this.emailVerification.send(user).catch(() => undefined);
     return this.strip(user);
   }
 

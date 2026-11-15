@@ -37,12 +37,14 @@ import { NodeModule } from './modules/node/node.module';
 import { QuoteModule } from './modules/quotes/quote.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AppSettingsModule } from './modules/app-settings/app-settings.module';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 300 }]),
     AppI18nModule,
+    MailModule,
     TypeOrmModule.forRoot({
       type: 'mariadb',
       host: process.env.DB_HOST,

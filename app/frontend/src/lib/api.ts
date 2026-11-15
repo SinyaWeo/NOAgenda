@@ -69,8 +69,9 @@ export async function apiGet<T>(path: string): Promise<T> {
 }
 
 // --- Auth token storage ---
-/** Store JWT in localStorage so auth survives reloads and browser restarts. */
+/** Store the (short-lived) access token in localStorage so it survives reloads. */
 export function setToken(token: string) {
+	lastRefreshFailure = 0;
 	if (typeof localStorage !== 'undefined') {
 		localStorage.setItem('access_token', token);
 	}
@@ -98,12 +99,67 @@ export function clearToken() {
 	if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem('access_token');
 }
 
-/** apiFetch with Bearer token attached */
+// --- Session refresh ---
+// The access token is short-lived (minutes). The long-lived credential is an
+// httpOnly refresh cookie that scripts cannot read; the backend rotates it on use.
+let refreshInFlight: Promise<boolean> | null = null;
+let lastRefreshFailure = 0;
+
+/**
+ * Exchange the refresh cookie for a new access token. Concurrent callers share one
+ * request (the cookie rotates, so parallel refreshes would race). Returns false when
+ * there is no valid session.
+ */
+export function refreshAccessToken(): Promise<boolean> {
+	if (refreshInFlight) return refreshInFlight;
+	// Don't hammer the server while logged out.
+	if (Date.now() - lastRefreshFailure < 10_000) return Promise.resolve(false);
+	refreshInFlight = (async () => {
+		try {
+			const res = await fetch(`${API_BASE}/auth/refresh`, { method: 'POST', credentials: 'include' });
+			if (!res.ok) {
+				lastRefreshFailure = Date.now();
+				return false;
+			}
+			const data = (await res.json()) as { access_token?: string };
+			if (!data.access_token) return false;
+			setToken(data.access_token);
+			lastRefreshFailure = 0;
+			return true;
+		} catch {
+			return false;
+		}
+	})().finally(() => {
+		refreshInFlight = null;
+	});
+	return refreshInFlight;
+}
+
+/** Tell the server to end this session and drop the refresh cookie (best effort). */
+export async function endServerSession(): Promise<void> {
+	try {
+		await fetch(`${API_BASE}/auth/logout`, { method: 'POST', credentials: 'include' });
+	} catch {
+		// offline: the local token is cleared by the caller anyway
+	}
+}
+
+/**
+ * apiFetch with the Bearer token attached. If the access token is missing or has
+ * expired, silently refreshes it from the cookie and retries once.
+ */
 export async function apiFetchAuth(path: string, options: RequestInit = {}) {
-	const token = getToken();
-	const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
-	if (token) headers['Authorization'] = `Bearer ${token}`;
-	return apiFetch(path, { ...options, headers });
+	const isAuthEndpoint = path.startsWith('/auth/');
+	const send = () => {
+		const token = getToken();
+		const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
+		if (token) headers['Authorization'] = `Bearer ${token}`;
+		return apiFetch(path, { ...options, headers });
+	};
+	if (!getToken() && !isAuthEndpoint) await refreshAccessToken();
+	let res = await send();
+	if (res.status === 401 && !isAuthEndpoint && (await refreshAccessToken())) res = await send();
+	return res;
 }
 
 /**

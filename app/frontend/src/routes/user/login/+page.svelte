@@ -11,11 +11,16 @@
   const error = writable('');
   const loading = writable(false);
   let showPassword = $state(false);
+  let needsVerification = $state(false);
+  let resendEmail = $state('');
+  let resendStatus = $state('');
 
   async function handleLogin(event: Event) {
     event.preventDefault();
     loading.set(true);
     error.set('');
+    needsVerification = false;
+    resendStatus = '';
     try {
       const response = await apiFetch('/auth/login', {
         method: 'POST',
@@ -24,6 +29,7 @@
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
+        if (data.code === 'EMAIL_NOT_VERIFIED') needsVerification = true;
         throw new Error(data.message ?? 'Login failed');
       }
       const data = await response.json();
@@ -36,6 +42,19 @@
     } finally {
       loading.set(false);
     }
+  }
+
+  async function resendVerification(event: Event) {
+    event.preventDefault();
+    resendStatus = '';
+    const res = await apiFetch('/auth/email/resend', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: resendEmail }),
+    });
+    resendStatus = res.ok
+      ? 'If that address belongs to an unverified account, we sent a new link.'
+      : 'Could not send the email. Try again in a minute.';
   }
 </script>
 
@@ -52,6 +71,17 @@
 
     {#if $error}
       <Alert color="red" class="mb-4">{$error}</Alert>
+    {/if}
+
+    {#if needsVerification}
+      <form onsubmit={resendVerification} class="flex flex-col gap-2 mb-4">
+        <Label for="resend-email">Send the confirmation link again</Label>
+        <div class="flex gap-2">
+          <Input id="resend-email" type="email" bind:value={resendEmail} placeholder="you@example.com" required class="flex-1" />
+          <Button type="submit" color="light" class="shrink-0">Resend</Button>
+        </div>
+        {#if resendStatus}<p class="text-xs text-gray-500">{resendStatus}</p>{/if}
+      </form>
     {/if}
 
     <form onsubmit={handleLogin} class="flex flex-col gap-4">

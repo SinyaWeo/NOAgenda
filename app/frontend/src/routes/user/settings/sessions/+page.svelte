@@ -67,6 +67,7 @@
                         class="font-medium text-sm text-gray-900 dark:text-white m-0 truncate"
                     >
                         {session.userAgent ?? 'Unknown client'}
+                        {#if session.current}<span class="ml-2 text-xs font-normal text-primary-600 dark:text-primary-400">This device</span>{/if}
                     </p>
                     <p class="text-xs text-gray-400 m-0">
                         {#if session.ipAddress}IP: {session.ipAddress} ·

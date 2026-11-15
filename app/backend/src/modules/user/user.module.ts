@@ -4,9 +4,11 @@ import { User } from './user.entity';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { UserSettingsController } from './user-settings.controller';
+import { EmailVerificationModule } from '../email-verification/email-verification.module';
+import { SessionModule } from '../session/session.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User])],
+  imports: [TypeOrmModule.forFeature([User]), EmailVerificationModule, SessionModule],
   providers: [UserService],
   controllers: [UserController, UserSettingsController],
   exports: [UserService],
