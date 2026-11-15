@@ -190,6 +190,21 @@ a.text-gray-900 {
 }
 .sidebar-collapsed { width: 60px; }
 .sidebar-expanded  { width: 220px; }
+/* Mobile: the sidebar is an off-canvas drawer opened from the header menu button. */
+.mobile-backdrop { display: none; }
+@media (max-width: 767px) {
+  .sidebar-nav {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 250;
+    width: 270px !important; transform: translateX(-100%);
+    transition: transform 0.2s ease; overflow-y: auto;
+  }
+  .sidebar-nav.mobile-open { transform: translateX(0); box-shadow: 0 0 24px rgba(0,0,0,0.3); }
+  .mobile-backdrop.open { display: block; position: fixed; inset: 0; z-index: 240; background: rgba(0,0,0,0.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav { transition: none; }
+}
+
 .sidebar-brand {
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 0.75rem; height: 52px; flex-shrink: 0;

@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AddAssigneeDto } from './dto/task-links.dto';
 import { NodeAccessService } from '../node/node-access.service';
 import { TaskAssigneeService } from './task-assignee.service';
 import { TaskService } from '../task/task.service';
@@ -24,7 +25,7 @@ export class TaskAssigneeController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async add(@Param('taskId') taskId: number, @Body() body: { userId: number }, @Request() req: any): Promise<TaskAssignee> {
+  async add(@Param('taskId') taskId: number, @Body() body: AddAssigneeDto, @Request() req: any): Promise<TaskAssignee> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));

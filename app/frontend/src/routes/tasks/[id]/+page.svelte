@@ -160,12 +160,11 @@
 		e.preventDefault();
 		const id = page.params.id;
 		if (!newSubtaskTitle.trim()) return;
-		const t = $task;
 		try {
+			// The parent task is all the server needs; the project is found through the task tree.
 			await apiPostAuth('/tasks', {
 				title: newSubtaskTitle,
 				parentTaskId: Number(id),
-				project: { id: t?.project?.id },
 			});
 			subtasks.set(await apiGetAuth<any[]>(`/tasks?parentTaskId=${id}`));
 			newSubtaskTitle = '';

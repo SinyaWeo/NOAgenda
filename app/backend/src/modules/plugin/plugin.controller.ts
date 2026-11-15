@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nes
 import { PluginService } from './plugin.service';
 import { Plugin } from './plugin.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { CreatePluginDto, UpdatePluginDto } from './dto/plugin.dto';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/user-role.enum';
@@ -25,17 +26,15 @@ export class PluginController {
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN)
-  async create(@Body() body: Partial<Plugin>): Promise<Plugin> {
-    const { id: _id, ...safeBody } = body as any;
-    return this.pluginService.create(safeBody);
+  async create(@Body() body: CreatePluginDto): Promise<Plugin> {
+    return this.pluginService.create({ ...body });
   }
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN)
-  async update(@Param('id') id: number, @Body() body: Partial<Plugin>): Promise<Plugin | null> {
-    const { id: _id, ...safeBody } = body as any;
-    return this.pluginService.update(id, safeBody);
+  async update(@Param('id') id: number, @Body() body: UpdatePluginDto): Promise<Plugin | null> {
+    return this.pluginService.update(id, { ...body });
   }
 
   @Delete(':id')

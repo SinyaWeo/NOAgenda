@@ -5,6 +5,7 @@
 import { Injectable } from '@nestjs/common';
 import { NodeService, NodeFilter } from '../node/node.service';
 import { Node, NodeType, NodeStatus } from '../node/node.entity';
+import { normalizeParentRefs } from '../node/node-payload';
 
 // Re-export the shape consumers expect
 export type Task = Node;
@@ -27,26 +28,7 @@ export class TaskService {
   constructor(private readonly nodeService: NodeService) {}
 
   normalizeTaskPayload(data: Partial<Node> & any): Partial<Node> {
-    const normalized: Partial<Node> & any = { ...data };
-
-    if (normalized.parentId === undefined) {
-      if (normalized.project?.id !== undefined) {
-        normalized.parentId = Number(normalized.project.id);
-      } else if (normalized.projectId !== undefined) {
-        normalized.parentId = Number(normalized.projectId);
-      } else if (normalized.parentTask?.id !== undefined) {
-        normalized.parentId = Number(normalized.parentTask.id);
-      } else if (normalized.parentTaskId !== undefined) {
-        normalized.parentId = Number(normalized.parentTaskId);
-      }
-    }
-
-    delete normalized.project;
-    delete normalized.projectId;
-    delete normalized.parentTask;
-    delete normalized.parentTaskId;
-
-    return normalized;
+    return normalizeParentRefs(data);
   }
 
   async findAll(filter?: TaskFilter): Promise<Node[]> {

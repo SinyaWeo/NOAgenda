@@ -155,7 +155,7 @@ s, _, _ = call('GET', '/users/me', token=Bt); check('the revoked session is sign
 
 # ================= password change signs out other sessions =================
 s, b3, _ = login(alice); C = b3['access_token']
-s, _, _ = call('POST', '/user/settings/password', {'oldPassword': 'wrong', 'newPassword': 'brand new pass 9'}, token=A); check('password change needs the current password', s, 401)
+s, _, _ = call('POST', '/user/settings/password', {'oldPassword': 'wrong', 'newPassword': 'brand new pass 9'}, token=A); check('password change needs the current password (400, not a session error)', s, 400)
 NEW = 'brand new pass 9'
 s, _, _ = call('POST', '/user/settings/password', {'oldPassword': PW, 'newPassword': NEW}, token=A); check('password change works', s, [200, 201])
 s, _, _ = call('GET', '/users/me', token=A); check('the session that changed it stays signed in', s, 200)
@@ -180,7 +180,7 @@ s, _, _ = call('GET', '/users/me', token=raw); check('a revoked API token stops 
 # ================= email change needs re-verification =================
 call('DELETE', '/api/v1/messages', base=M)
 new_mail = f'alice-new{run}@example.com'
-s, _, _ = call('POST', '/user/settings/email', {'email': new_mail, 'password': 'wrong'}, token=A); check('email change needs the password', s, 401)
+s, _, _ = call('POST', '/user/settings/email', {'email': new_mail, 'password': 'wrong'}, token=A); check('email change needs the password (400, not a session error)', s, 400)
 bob, bob_mail = register('bob')
 tokb = latest_token(bob_mail, 'Confirm'); call('POST', '/auth/email/verify', {'token': tokb})
 s, _, _ = call('POST', '/user/settings/email', {'email': bob_mail, 'password': NEW}, token=A); check('cannot take an address that is already in use', s, 409)

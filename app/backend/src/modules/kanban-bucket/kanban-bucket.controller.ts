@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { KanbanBucketService } from './kanban-bucket.service';
 import { KanbanBucket } from './kanban-bucket.entity';
 import { ProjectService } from '../project/project.service';
+import { CreateBucketDto, UpdateBucketDto } from './dto/kanban-bucket.dto';
 
 @Controller('projects/:projectId/views/:viewId/buckets')
 @UseGuards(AuthGuard('jwt'))
@@ -46,7 +47,7 @@ export class KanbanBucketController {
   async create(
     @Param('projectId') projectId: number,
     @Param('viewId') viewId: number,
-    @Body() body: Partial<KanbanBucket>,
+    @Body() body: CreateBucketDto,
     @Request() req: any,
   ): Promise<KanbanBucket> {
     await this.assertAccess(projectId, req, true);
@@ -58,7 +59,7 @@ export class KanbanBucketController {
     @Param('id') id: number,
     @Param('projectId') projectId: number,
     @Param('viewId') viewId: number,
-    @Body() body: Partial<KanbanBucket>,
+    @Body() body: UpdateBucketDto,
     @Request() req: any,
   ): Promise<KanbanBucket> {
     await this.assertAccess(projectId, req, true);

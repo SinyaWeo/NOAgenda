@@ -40,6 +40,10 @@ export class User extends BaseEntity {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role!: UserRole;
 
+  /** When the user accepted the Terms of Service / Privacy Policy at sign-up. */
+  @Column({ nullable: true, type: 'datetime' })
+  termsAcceptedAt?: Date;
+
   /** Consecutive failed logins; reset on success. Drives the account lockout. */
   @Column({ default: 0 })
   failedLoginAttempts!: number;

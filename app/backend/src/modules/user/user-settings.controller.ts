@@ -1,6 +1,6 @@
 import {
   Controller, Get, Post, Put, Body, UseGuards, Request,
-  NotFoundException, UnauthorizedException, BadRequestException, ConflictException, UploadedFile, UseInterceptors,
+  NotFoundException, BadRequestException, ConflictException, UploadedFile, UseInterceptors, Res,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -18,7 +18,10 @@ import { verifyPassword } from '../../common/password';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { SessionService } from '../session/session.service';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
-import { UpdateGeneralSettingsDto, UpdateEmailDto, UpdatePasswordDto } from './dto/user-settings.dto';
+import { UpdateGeneralSettingsDto, UpdateEmailDto, UpdatePasswordDto, DeletionRequestDto } from './dto/user-settings.dto';
+import { AccountService } from '../account/account.service';
+import { Throttle } from '@nestjs/throttler';
+import type { Response } from 'express';
 
 @Controller('user')
 @UseGuards(AuthGuard('jwt'))
@@ -27,6 +30,7 @@ export class UserSettingsController {
     private readonly userService: UserService,
     private readonly emailVerification: EmailVerificationService,
     private readonly sessions: SessionService,
+    private readonly account: AccountService,
   ) {}
 
   /** GET /user/settings/general — return current user profile */
@@ -57,12 +61,14 @@ export class UserSettingsController {
   }
 
   /** POST /user/settings/email — change email address */
+  // A wrong password here is bad INPUT (400), not a failed session: a 401 would make the
+  // frontend treat it as "session expired" and sign the user out over a typo.
   @Post('settings/email')
   @UseGuards(NoApiTokenGuard)
   async updateEmail(@Request() req: any, @Body() body: UpdateEmailDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
-    if (!(await verifyPassword(body.password, user.password))) throw new UnauthorizedException('Incorrect password');
+    if (!(await verifyPassword(body.password, user.password))) throw new BadRequestException('Incorrect password');
     const existing = await this.userService.findByEmail(body.email);
     if (existing && existing.id !== user.id) throw new ConflictException('Email is already in use');
     if (body.email !== user.email) {
@@ -108,40 +114,42 @@ export class UserSettingsController {
   async updatePassword(@Request() req: any, @Body() body: UpdatePasswordDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
-    if (!(await verifyPassword(body.oldPassword, user.password))) throw new UnauthorizedException('Incorrect current password');
+    if (!(await verifyPassword(body.oldPassword, user.password))) throw new BadRequestException('Incorrect current password');
     await this.userService.update(req.user.userId, { password: body.newPassword });
     // Everyone else (including a thief holding an old session) is signed out; this session stays.
     await this.sessions.revokeAllForUser(req.user.userId, req.user.sessionId);
     return { message: 'Password updated successfully' };
   }
 
-  /** POST /user/export/request — request a data export */
-  @Post('export/request')
-  async requestExport(@Request() req: any) {
-    return { message: 'Data export requested. You will be notified when it is ready.' };
+  /** GET /user/export — download everything we store about you as JSON. */
+  @Get('export')
+  @UseGuards(NoApiTokenGuard)
+  @Throttle({ default: { ttl: 3600000, limit: 5 } })
+  async exportData(@Request() req: any, @Res() res: Response) {
+    const data = await this.account.exportData(req.user.userId);
+    const day = new Date().toISOString().slice(0, 10);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="noagenda-export-${day}.json"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(JSON.stringify(data, null, 2));
   }
 
-  /** POST /user/deletion/request — request account deletion (7-day grace period) */
+  /** POST /user/deletion/request — schedule deletion after a grace period (password required). */
   @Post('deletion/request')
   @UseGuards(NoApiTokenGuard)
-  async requestDeletion(@Request() req: any) {
-    const scheduledAt = new Date();
-    scheduledAt.setDate(scheduledAt.getDate() + 7);
-    await this.userService.update(req.user.userId, {
-      isDeletionRequested: true,
-      deletionScheduledAt: scheduledAt,
-    });
-    return { message: 'Account deletion scheduled', scheduledAt };
+  @Throttle({ default: { ttl: 3600000, limit: 5 } })
+  async requestDeletion(@Request() req: any, @Body() body: DeletionRequestDto) {
+    const user = await this.userService.findById(req.user.userId);
+    if (!user) throw new NotFoundException();
+    if (!(await verifyPassword(body.password, user.password))) throw new BadRequestException('Incorrect password');
+    const { scheduledAt } = await this.account.requestDeletion(user.id);
+    return { message: 'Account deletion scheduled', scheduledAt, graceDays: this.account.graceDays };
   }
 
-  /** POST /user/deletion/cancel — cancel pending account deletion */
+  /** POST /user/deletion/cancel — cancel a pending account deletion. */
   @Post('deletion/cancel')
   async cancelDeletion(@Request() req: any) {
-    await this.userService.update(req.user.userId, {
-      isDeletionRequested: false,
-      deletionScheduledAt: undefined,
-    });
+    await this.account.cancelDeletion(req.user.userId);
     return { message: 'Account deletion cancelled' };
   }
 }
-

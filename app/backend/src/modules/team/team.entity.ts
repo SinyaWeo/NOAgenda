@@ -1,9 +1,10 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
 
+@Index(['ownerId', 'name'], { unique: true })
 @Entity('teams')
 export class Team extends BaseEntity {
-  @Column({ unique: true })
+  @Column()
   name!: string;
 
   @Column({ nullable: true })

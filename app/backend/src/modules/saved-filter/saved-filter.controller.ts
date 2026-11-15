@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateFilterDto, UpdateFilterDto } from './dto/saved-filter.dto';
 import { SavedFilterService } from './saved-filter.service';
 import { SavedFilter } from './saved-filter.entity';
 
@@ -19,12 +20,12 @@ export class SavedFilterController {
   }
 
   @Post()
-  create(@Body() body: Partial<SavedFilter>, @Request() req: any): Promise<SavedFilter> {
+  create(@Body() body: CreateFilterDto, @Request() req: any): Promise<SavedFilter> {
     return this.service.create(req.user.userId, body);
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() body: Partial<SavedFilter>, @Request() req: any): Promise<SavedFilter> {
+  update(@Param('id') id: number, @Body() body: UpdateFilterDto, @Request() req: any): Promise<SavedFilter> {
     return this.service.update(id, req.user.userId, body);
   }
 

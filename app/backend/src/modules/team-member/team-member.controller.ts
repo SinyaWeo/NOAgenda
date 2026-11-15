@@ -3,6 +3,7 @@ import { TeamMemberService } from './team-member.service';
 import { TeamService } from '../team/team.service';
 import { TeamMember } from './team-member.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { AddTeamMemberDto } from './dto/team-member.dto';
 
 @Controller('team-members')
 export class TeamMemberController {
@@ -33,7 +34,7 @@ export class TeamMemberController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async add(@Body() body: { userId: number; teamId: number }, @Request() req: any): Promise<TeamMember> {
+  async add(@Body() body: AddTeamMemberDto, @Request() req: any): Promise<TeamMember> {
     const team = await this.teamService.findById(body.teamId);
     if (!team) throw new NotFoundException();
     if (team.ownerId !== req.user.userId) throw new ForbiddenException();

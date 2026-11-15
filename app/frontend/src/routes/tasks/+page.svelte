@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { apiGetAuth, apiPatchAuth } from '$lib/api';
+  import { apiGetAuth, apiPutAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { writable } from 'svelte/store';
   import { goto } from '$app/navigation';
@@ -123,7 +123,7 @@
 
   async function updateTaskStatus(taskId: number, status: string) {
     try {
-      const updated = await apiPatchAuth<any>(`/tasks/${taskId}`, { status });
+      const updated = await apiPutAuth<any>(`/tasks/${taskId}`, { status });
       tasks.update((list) =>
         list.map((t) => (t.id === taskId ? { ...t, ...updated } : t)),
       );

@@ -1,8 +1,9 @@
-import { BadRequestException, Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { TaskService, TaskFilter } from './task.service';
 import { Node, NodeStatus } from '../node/node.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { NodeAccessService } from '../node/node-access.service';
+import { TaskCreateDto, TaskUpdateDto, BulkTaskUpdateDto, TaskListQueryDto, TaskPositionDto } from '../node/dto/node.dto';
 
 @Controller('tasks')
 export class TaskController {
@@ -13,26 +14,16 @@ export class TaskController {
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
-  async findAll(
-    @Request() req: any,
-    @Query('projectId') projectId?: number,
-    @Query('parentTaskId') parentTaskId?: number,
-    @Query('status') status?: NodeStatus,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-    @Query('order') order?: 'ASC' | 'DESC',
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-  ): Promise<Node[]> {
+  async findAll(@Request() req: any, @Query() q: TaskListQueryDto): Promise<Node[]> {
     const filter: TaskFilter = { userId: req.user.userId };
-    if (projectId) filter.projectId = Number(projectId);
-    if (parentTaskId !== undefined) filter.parentTaskId = Number(parentTaskId);
-    if (status) filter.status = status;
-    if (search) filter.search = search;
-    if (sort) filter.sort = sort;
-    if (order) filter.order = order;
-    if (page) filter.page = Number(page);
-    if (limit) filter.limit = Number(limit);
+    if (q.projectId) filter.projectId = q.projectId;
+    if (q.parentTaskId !== undefined) filter.parentTaskId = q.parentTaskId;
+    if (q.status) filter.status = q.status;
+    if (q.search) filter.search = q.search;
+    if (q.sort) filter.sort = q.sort;
+    if (q.order) filter.order = q.order;
+    if (q.page) filter.page = q.page;
+    if (q.limit) filter.limit = q.limit;
     return this.taskService.findAll(filter);
   }
 
@@ -47,7 +38,7 @@ export class TaskController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
+  async create(@Body() body: TaskCreateDto, @Request() req: any): Promise<Node> {
     const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
     return this.taskService.create({ ...data, createdBy: req.user.userId });
@@ -55,12 +46,8 @@ export class TaskController {
 
   @Post('bulk')
   @UseGuards(AuthGuard('jwt'))
-  async bulkUpdate(@Body() body: { ids: number[]; data: Partial<Node> }, @Request() req: any): Promise<Node[]> {
-    if (!Array.isArray(body?.ids) || body.ids.length === 0 || body.ids.length > 200) {
-      throw new BadRequestException('ids must be a non-empty array of at most 200 task ids');
-    }
-    const ids = body.ids.map((i) => Number(i));
-    if (ids.some((i) => !Number.isInteger(i) || i < 1)) throw new BadRequestException('Invalid task id');
+  async bulkUpdate(@Body() body: BulkTaskUpdateDto, @Request() req: any): Promise<Node[]> {
+    const ids = body.ids;
     // Every task must be writable by the caller before anything is changed.
     for (const id of ids) await this.access.assertWrite(req.user.userId, id);
     const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body.data ?? {}));
@@ -71,7 +58,7 @@ export class TaskController {
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: number, @Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
+  async update(@Param('id') id: number, @Body() body: TaskUpdateDto, @Request() req: any): Promise<Node> {
     const existing = await this.taskService.findById(id);
     if (!existing) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, existing.id);
@@ -97,7 +84,7 @@ export class TaskController {
 
   @Post(':id/position')
   @UseGuards(AuthGuard('jwt'))
-  async updatePosition(@Param('id') id: number, @Body() body: { position: number }, @Request() req: any): Promise<Node> {
+  async updatePosition(@Param('id') id: number, @Body() body: TaskPositionDto, @Request() req: any): Promise<Node> {
     const existing = await this.taskService.findById(id);
     if (!existing) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, existing.id);

@@ -4,6 +4,10 @@ WORKDIR /app
 # Baked into the client bundle at build time. "/api" = same origin behind the reverse proxy.
 ARG VITE_API_BASE=/api
 ENV VITE_API_BASE=$VITE_API_BASE
+# Shown on the Terms and Privacy pages (build-time). Leave empty to show the "template" banner.
+ARG VITE_OPERATOR_NAME=
+ARG VITE_CONTACT_EMAIL=
+ENV VITE_OPERATOR_NAME=$VITE_OPERATOR_NAME VITE_CONTACT_EMAIL=$VITE_CONTACT_EMAIL
 COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 COPY . .

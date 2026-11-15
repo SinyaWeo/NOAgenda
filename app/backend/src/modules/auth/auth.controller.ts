@@ -75,7 +75,10 @@ export class AuthController {
   /** Public, non-sensitive settings the UI needs before login. */
   @Get('config')
   config() {
-    return { emailVerificationRequired: this.emailVerification.required };
+    return {
+      emailVerificationRequired: this.emailVerification.required,
+      termsAcceptanceRequired: process.env.REQUIRE_TERMS_ACCEPTANCE === 'true',
+    };
   }
 
   @Post('login')

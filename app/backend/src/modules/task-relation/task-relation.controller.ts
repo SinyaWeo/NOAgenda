@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AddRelationDto } from '../task-assignee/dto/task-links.dto';
 import { NodeAccessService } from '../node/node-access.service';
 import { TaskRelationService } from './task-relation.service';
 import { TaskService } from '../task/task.service';
@@ -26,7 +27,7 @@ export class TaskRelationController {
   @UseGuards(AuthGuard('jwt'))
   async create(
     @Param('taskId') taskId: number,
-    @Body() body: { relatedTaskId: number; kind: RelationKind },
+    @Body() body: AddRelationDto,
     @Request() req: any,
   ): Promise<TaskRelation> {
     const task = await this.taskService.findById(taskId);

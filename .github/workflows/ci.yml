@@ -71,6 +71,8 @@ jobs:
       JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
       CORS_ORIGIN: http://localhost:5173
       PORT: 3000
+      LOGIN_RATE_LIMIT: 100
+      ACCOUNT_PURGE_INTERVAL_SECONDS: 3
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -89,6 +91,11 @@ jobs:
       - name: Authorization smoke test
         working-directory: app/backend
         run: BASE_URL=http://127.0.0.1:3000 python3 scripts/authz-smoke.py
+      - name: Validation, export and account-deletion test
+        working-directory: app/backend
+        run: |
+          SQL_CMD="mysql --protocol=TCP -h127.0.0.1 -uroot -pci-root-password noagenda_ci -N" \
+          UPLOADS_ON_THIS_HOST=1 BASE_URL=http://127.0.0.1:3000 python3 scripts/validation-account-smoke.py
       - if: failure()
         run: cat app/backend/api.log
 

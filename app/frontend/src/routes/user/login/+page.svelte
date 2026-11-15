@@ -3,6 +3,7 @@
   import { apiFetch, setToken } from '$lib/api';
   import { refreshCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
   import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
   import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 
@@ -14,6 +15,15 @@
   let needsVerification = $state(false);
   let resendEmail = $state('');
   let resendStatus = $state('');
+
+  /** Only ever go back to a page on this site (never an external URL or the login page itself). */
+  function safeRedirect(target: string | null): string {
+    if (!target || !target.startsWith('/') || target.startsWith('//') || target.startsWith('/\\')) return '/dashboard';
+    if (target.startsWith('/user/login')) return '/dashboard';
+    return target;
+  }
+
+  const expired = page.url.searchParams.get('reason') === 'expired';
 
   async function handleLogin(event: Event) {
     event.preventDefault();
@@ -36,7 +46,7 @@
       setToken(data.access_token);
       const me = await refreshCurrentUser();
       if (!me) throw new Error('Unable to load your account');
-      goto('/dashboard');
+      goto(safeRedirect(page.url.searchParams.get('redirect')), { replaceState: true });
     } catch (e) {
       error.set(e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -69,6 +79,9 @@
       </p>
     </div>
 
+    {#if expired && !$error}
+      <Alert color="yellow" class="mb-4">Your session has expired. Please sign in again.</Alert>
+    {/if}
     {#if $error}
       <Alert color="red" class="mb-4">{$error}</Alert>
     {/if}
@@ -133,6 +146,10 @@
         href="/user/get-password-reset"
         class="text-gray-400 hover:underline text-xs">Forgot password?</a
       >
+    </p>
+    <p class="text-xs text-center text-gray-400 mt-4">
+      <a href="/terms" class="hover:underline">Terms</a> ·
+      <a href="/privacy" class="hover:underline">Privacy</a>
     </p>
   </Card>
 </div>

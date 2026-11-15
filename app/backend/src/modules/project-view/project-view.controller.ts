@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateViewDto, UpdateViewDto } from './dto/project-view.dto';
 import { ProjectViewService } from './project-view.service';
 import { ProjectService } from '../project/project.service';
 import { ProjectView, ViewType } from './project-view.entity';
@@ -40,7 +41,7 @@ export class ProjectViewController {
   @UseGuards(AuthGuard('jwt'))
   async create(
     @Param('projectId') projectId: number,
-    @Body() body: { title: string; viewType?: ViewType },
+    @Body() body: CreateViewDto,
     @Request() req: any,
   ): Promise<ProjectView> {
     await this.assertAccess(projectId, req, true);
@@ -52,15 +53,14 @@ export class ProjectViewController {
   async update(
     @Param('projectId') projectId: number,
     @Param('id') id: number,
-    @Body() body: Partial<ProjectView>,
+    @Body() body: UpdateViewDto,
     @Request() req: any,
   ): Promise<ProjectView> {
     await this.assertAccess(projectId, req, true);
     const view = await this.projectViewService.findById(id);
     if (!view) throw new NotFoundException();
     if (Number(view.project?.id) !== Number(projectId)) throw new ForbiddenException();
-    const { id: _id, project: _p, ...safeBody } = body as any;
-    const updated = await this.projectViewService.update(id, safeBody);
+    const updated = await this.projectViewService.update(id, { ...body });
     if (!updated) throw new NotFoundException();
     return updated;
   }

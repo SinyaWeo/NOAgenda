@@ -40,3 +40,9 @@ export class UpdatePasswordDto {
   @IsString() @MinLength(8) @MaxLength(255)
   newPassword!: string;
 }
+
+/** Deleting an account needs the current password. */
+export class DeletionRequestDto {
+  @IsString() @MaxLength(255)
+  password!: string;
+}

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Delete, Body, Param, UseGuards, NotFoundExceptio
 import { NotificationService } from './notification.service';
 import { Notification } from './notification.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateNotificationDto } from './dto/notification.dto';
 
 @Controller('notifications')
 export class NotificationController {
@@ -24,10 +25,9 @@ export class NotificationController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() body: Partial<Notification>, @Request() req: any): Promise<Notification> {
+  async create(@Body() body: CreateNotificationDto, @Request() req: any): Promise<Notification> {
     // Notifications created via the API are always scoped to the requesting user
-    const { id: _id, user: _u, ...safeBody } = body as any;
-    return this.notificationService.create({ ...safeBody, user: { id: req.user.userId } });
+    return this.notificationService.create({ message: body.message, user: { id: req.user.userId } as any });
   }
 
   @Post('read/all')

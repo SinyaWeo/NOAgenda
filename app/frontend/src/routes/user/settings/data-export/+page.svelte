@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
-  import { apiPostAuth } from '$lib/api';
+  import { downloadAuthFile } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
@@ -15,15 +15,14 @@
     if (!me) goto('/user/login');
   });
 
-  async function requestExport() {
+  async function downloadExport() {
     loading.set(true);
     error.set('');
     success.set('');
     try {
-      await apiPostAuth('/user/export/request', {});
-      success.set(
-        'Export requested. You will receive an email with your data.',
-      );
+      const day = new Date().toISOString().slice(0, 10);
+      await downloadAuthFile('/user/export', `noagenda-export-${day}.json`);
+      success.set('Your export was downloaded.');
     } catch (e: any) {
       error.set(e.message);
     } finally {
@@ -46,10 +45,12 @@
 
 <Card class="max-w-md">
   <p class="text-sm text-gray-500 mb-4">
-    Request a complete copy of all your data. You'll receive an email with a
-    download link when the export is ready.
+    Download a complete copy of your data as a JSON file: your profile, the
+    projects and tasks you own, your comments, labels, teams, filters and
+    settings. Passwords, tokens and secrets are never included, and attachment
+    files are listed but not bundled.
   </p>
-  <Button onclick={requestExport} disabled={$loading}
-    >{$loading ? 'Requesting…' : 'Request Data Export'}</Button
+  <Button onclick={downloadExport} disabled={$loading}
+    >{$loading ? 'Preparing…' : 'Download my data'}</Button
   >
 </Card>

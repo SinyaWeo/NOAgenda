@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AddReminderDto } from '../task-assignee/dto/task-links.dto';
 import { NodeAccessService } from '../node/node-access.service';
 import { TaskReminderService } from './task-reminder.service';
 import { TaskService } from '../task/task.service';
@@ -26,7 +27,7 @@ export class TaskReminderController {
   @UseGuards(AuthGuard('jwt'))
   async create(
     @Param('taskId') taskId: number,
-    @Body() body: { reminderDate: string },
+    @Body() body: AddReminderDto,
     @Request() req: any,
   ): Promise<TaskReminder> {
     const task = await this.taskService.findById(taskId);

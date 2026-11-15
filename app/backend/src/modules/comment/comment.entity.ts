@@ -5,7 +5,7 @@ import { BaseEntity } from '@common/base.entity';
 
 @Entity('comments')
 export class Comment extends BaseEntity {
-  @Column()
+  @Column({ type: 'text' })
   content!: string;
 
   @ManyToOne(() => Node, { nullable: false, onDelete: 'CASCADE' })

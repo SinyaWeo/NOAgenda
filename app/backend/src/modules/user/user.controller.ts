@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Param, UseGuards, NotFoundException, ForbiddenException, BadRequestException, Request } from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { AuthGuard } from '@nestjs/passport';
@@ -46,7 +46,11 @@ export class UserController {
   @Post()
   @Throttle({ default: { ttl: 3600000, limit: 10 } }) // 10 registrations / hour / IP
   async create(@Body() body: CreateUserDto): Promise<Omit<User, 'password'>> {
-    const user = await this.userService.create(body);
+    const { acceptTerms, ...data } = body;
+    if (process.env.REQUIRE_TERMS_ACCEPTANCE === 'true' && acceptTerms !== true) {
+      throw new BadRequestException('You must accept the Terms of Service and Privacy Policy to register');
+    }
+    const user = await this.userService.create({ ...data, ...(acceptTerms ? { termsAcceptedAt: new Date() } : {}) });
     // Not awaited: registration must not fail or stall on mail delivery.
     void this.emailVerification.send(user).catch(() => undefined);
     return this.strip(user);
@@ -59,12 +63,5 @@ export class UserController {
     const user = await this.userService.update(id, body);
     if (!user) throw new NotFoundException();
     return this.strip(user);
-  }
-
-  @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
-    if (req.user.userId !== Number(id)) throw new ForbiddenException();
-    return this.userService.remove(id);
   }
 }

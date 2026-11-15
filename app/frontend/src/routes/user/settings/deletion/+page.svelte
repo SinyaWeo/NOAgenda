@@ -4,7 +4,7 @@
   import { getCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { Alert, Button } from 'flowbite-svelte';
+  import { Alert, Button, Input, Label } from 'flowbite-svelte';
   import {
     ExclamationCircleOutline,
     CaretLeftSolid,
@@ -13,15 +13,22 @@
   const error = writable('');
   const success = writable('');
   const loading = writable(false);
+  let password = $state('');
+  let scheduledAt = $state<string | null>(null);
+  let graceDays = $state(7);
   onMount(async () => {
     const me = await getCurrentUser();
     if (!me) goto('/user/login');
   });
 
   async function requestDeletion() {
+    if (!password) {
+      error.set('Enter your password to confirm.');
+      return;
+    }
     if (
       !confirm(
-        'Are you sure you want to request account deletion? This cannot be undone.',
+        `Delete your account? After ${graceDays} days your account and the projects you own will be permanently removed. You can cancel until then.`,
       )
     )
       return;
@@ -29,9 +36,12 @@
     error.set('');
     success.set('');
     try {
-      await apiPostAuth('/user/deletion/request', {});
+      const r = await apiPostAuth<{ scheduledAt: string; graceDays: number }>('/user/deletion/request', { password });
+      scheduledAt = r.scheduledAt;
+      graceDays = r.graceDays ?? graceDays;
+      password = '';
       success.set(
-        'Deletion requested. Your account will be deleted after a grace period.',
+        `Deletion scheduled for ${new Date(r.scheduledAt).toLocaleString()}. You can still sign in and cancel until then.`,
       );
     } catch (e: any) {
       error.set(e.message);
@@ -45,7 +55,8 @@
     error.set('');
     try {
       await apiPostAuth('/user/deletion/cancel', {});
-      success.set('Deletion request cancelled.');
+      scheduledAt = null;
+      success.set('Deletion request cancelled. Your account stays as it is.');
     } catch (e: any) {
       error.set(e.message);
     } finally {
@@ -76,11 +87,18 @@
         This will permanently delete your account
       </p>
       <p class="text-sm text-gray-500 mt-1 m-0">
-        All your data including projects, tasks, and settings will be
-        permanently removed. There is a grace period during which you can
-        cancel.
+        After a {graceDays}-day grace period your account and the projects you
+        own (with their tasks, comments and attachments), your labels, teams,
+        filters and settings are permanently removed. Projects shared with you
+        are not affected; tasks you created in other people's projects stay
+        there without your name. Download a copy first under
+        <a href="/user/settings/data-export" class="underline">Data Export</a>.
       </p>
     </div>
+  </div>
+  <div class="mb-4">
+    <Label for="del-password" class="mb-1">Confirm with your password</Label>
+    <Input id="del-password" type="password" autocomplete="current-password" bind:value={password} />
   </div>
   <div class="flex gap-3 flex-wrap">
     <Button color="red" onclick={requestDeletion} disabled={$loading}

@@ -2,7 +2,7 @@
   import { writable } from 'svelte/store';
   import { apiFetch, apiPost } from '$lib/api';
   import { goto } from '$app/navigation';
-  import { Alert, Button, Card, Helper, Input, Label } from 'flowbite-svelte';
+  import { Alert, Button, Card, Checkbox, Helper, Input, Label } from 'flowbite-svelte';
   import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 
   const username = writable('');
@@ -12,13 +12,14 @@
   const loading = writable(false);
   let showPassword = $state(false);
   let checkEmail = $state(false);
+  let acceptTerms = $state(false);
 
   async function handleRegister(event: SubmitEvent) {
     event.preventDefault();
     loading.set(true);
     error.set('');
     try {
-      await apiPost('/users', { username: $username, email: $email, password: $password });
+      await apiPost('/users', { username: $username, email: $email, password: $password, acceptTerms });
       const cfg: { emailVerificationRequired?: boolean } = await apiFetch('/auth/config')
         .then((r) => (r.ok ? r.json() : {}))
         .catch(() => ({}));
@@ -76,7 +77,16 @@
         </div>
         <Helper class="mt-1">Minimum 8 characters</Helper>
       </div>
-      <Button type="submit" disabled={$loading} class="w-full mt-1">{$loading ? 'Registering…' : 'Create account'}</Button>
+      <div class="flex items-start gap-2">
+        <Checkbox id="reg-terms" bind:checked={acceptTerms} required />
+        <Label for="reg-terms" class="text-sm font-normal">
+          I have read and agree to the
+          <a href="/terms" target="_blank" rel="noopener" class="text-primary-600 dark:text-primary-400 hover:underline">Terms of Service</a>
+          and the
+          <a href="/privacy" target="_blank" rel="noopener" class="text-primary-600 dark:text-primary-400 hover:underline">Privacy Policy</a>.
+        </Label>
+      </div>
+      <Button type="submit" disabled={$loading || !acceptTerms} class="w-full mt-1">{$loading ? 'Registering…' : 'Create account'}</Button>
     </form>
 
     <p class="text-sm text-center text-gray-500 mt-4">

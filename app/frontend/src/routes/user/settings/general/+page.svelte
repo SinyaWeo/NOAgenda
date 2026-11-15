@@ -45,7 +45,6 @@
     try {
       await apiPostAuth('/user/settings/general', {
         name: $name,
-        language: $language,
         timezone: $timezone,
         theme: $theme,
         weekStart: $weekStart,
@@ -79,13 +78,6 @@
       <div>
         <Label for="gen-name" class="mb-1">Display Name</Label>
         <Input id="gen-name" type="text" bind:value={$name} />
-      </div>
-      <div>
-        <Label for="gen-language" class="mb-1">Language</Label>
-        <Select id="gen-language" bind:value={$language}>
-          <option value="en">English</option><option value="de">German</option
-          ><option value="fr">French</option><option value="cs">Czech</option>
-        </Select>
       </div>
       <div>
         <Label for="gen-timezone" class="mb-1">Timezone</Label>

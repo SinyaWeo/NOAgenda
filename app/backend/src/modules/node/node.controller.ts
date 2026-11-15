@@ -16,6 +16,8 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { NodeService, NodeFilter } from './node.service';
 import { NodeAccessService } from './node-access.service';
+import { normalizeParentRefs } from './node-payload';
+import { NodeCreateDto, NodeUpdateDto, NodeMoveDto, NodeListQueryDto } from './dto/node.dto';
 import { Node, NodeType, NodeStatus } from './node.entity';
 
 @Controller('nodes')
@@ -27,28 +29,17 @@ export class NodeController {
   ) {}
 
   @Get()
-  async findAll(
-    @Request() req: any,
-    @Query('type') type?: NodeType,
-    @Query('parentId') parentId?: string,
-    @Query('status') status?: NodeStatus,
-    @Query('search') search?: string,
-    @Query('sort') sort?: string,
-    @Query('order') order?: 'ASC' | 'DESC',
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('includeArchived') includeArchived?: string,
-  ): Promise<Node[]> {
+  async findAll(@Request() req: any, @Query() q: NodeListQueryDto): Promise<Node[]> {
     const filter: NodeFilter = { userId: req.user.userId };
-    if (type) filter.type = type;
-    if (parentId !== undefined) filter.parentId = parentId === 'null' ? null : Number(parentId);
-    if (status) filter.status = status;
-    if (search) filter.search = search;
-    if (sort) filter.sort = sort;
-    if (order) filter.order = order;
-    if (page) filter.page = Number(page);
-    if (limit) filter.limit = Number(limit);
-    if (includeArchived === 'true') filter.includeArchived = true;
+    if (q.type) filter.type = q.type;
+    if (q.parentId !== undefined) filter.parentId = q.parentId === 'null' ? null : Number(q.parentId);
+    if (q.status) filter.status = q.status;
+    if (q.search) filter.search = q.search;
+    if (q.sort) filter.sort = q.sort;
+    if (q.order) filter.order = q.order;
+    if (q.page) filter.page = q.page;
+    if (q.limit) filter.limit = q.limit;
+    if (q.includeArchived === 'true') filter.includeArchived = true;
     return this.nodeService.findAll(filter);
   }
 
@@ -75,12 +66,12 @@ export class NodeController {
   }
 
   @Post()
-  async create(@Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
+  async create(@Body() body: NodeCreateDto, @Request() req: any): Promise<Node> {
     if (body.type !== NodeType.PROJECT && body.type !== NodeType.TASK) {
       throw new BadRequestException('type must be "project" or "task"');
     }
-    await this.access.assertCanUseAsParent(req.user.userId, body.parentId);
-    const data: Partial<Node> = this.access.sanitize(body);
+    const data: Partial<Node> = normalizeParentRefs(this.access.sanitize(body));
+    await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
     if (body.type === NodeType.PROJECT) {
       data.ownerId = req.user.userId;
     } else {
@@ -90,11 +81,11 @@ export class NodeController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() body: Partial<Node>, @Request() req: any): Promise<Node> {
+  async update(@Param('id') id: number, @Body() body: NodeUpdateDto, @Request() req: any): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
-    const safeBody: Partial<Node> = this.access.sanitize(body);
+    const safeBody: Partial<Node> = normalizeParentRefs(this.access.sanitize(body));
     delete (safeBody as any).type; // a node's type is immutable
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
       await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId);
@@ -119,14 +110,14 @@ export class NodeController {
   @Patch(':id/move')
   async move(
     @Param('id') id: number,
-    @Body() body: { parentId: number | null },
+    @Body() body: NodeMoveDto,
     @Request() req: any,
   ): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
     await this.access.assertCanUseAsParent(req.user.userId, body.parentId);
-    const node = await this.nodeService.move(Number(id), body.parentId);
+    const node = await this.nodeService.move(Number(id), body.parentId ?? null);
     if (!node) throw new NotFoundException();
     return node;
   }

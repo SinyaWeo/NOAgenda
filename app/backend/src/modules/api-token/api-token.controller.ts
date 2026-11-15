@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
+import { CreateApiTokenDto } from './dto/api-token.dto';
 import { ApiTokenService } from './api-token.service';
 import { ApiToken } from './api-token.entity';
 
@@ -17,10 +18,10 @@ export class ApiTokenController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   create(
-    @Body() body: { name: string; expiresAt?: Date },
+    @Body() body: CreateApiTokenDto,
     @Request() req: any,
   ): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
-    return this.service.create(req.user.userId, body.name, body.expiresAt);
+    return this.service.create(req.user.userId, body.name, body.expiresAt ? new Date(body.expiresAt) : undefined);
   }
 
   @Delete(':id')

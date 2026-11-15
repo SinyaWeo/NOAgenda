@@ -1,9 +1,10 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
 
+@Index(['createdBy', 'title'], { unique: true })
 @Entity('labels')
 export class Label extends BaseEntity {
-  @Column({ unique: true })
+  @Column()
   title!: string;
 
   @Column({ nullable: true })

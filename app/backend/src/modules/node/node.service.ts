@@ -113,6 +113,8 @@ export class NodeService {
       : filter.sort === 'priority' ? 'node.priority'
       : filter.sort === 'status' ? 'node.status'
       : filter.sort === 'dueDate' ? 'node.dueDate'
+      : filter.sort === 'createdAt' ? 'node.createdAt'
+      : filter.sort === 'updatedAt' ? 'node.updatedAt'
       : 'node.position';
     const sortOrder = filter.order === 'DESC' ? 'DESC' : 'ASC';
     qb.orderBy(sortField, sortOrder).addOrderBy('node.createdAt', 'DESC');
@@ -160,7 +162,7 @@ export class NodeService {
   }
 
   async move(id: number, parentId: number | null): Promise<Node | null> {
-    await this.nodeRepository.update(id, { parentId: parentId ?? undefined });
+    await this.nodeRepository.update(id, { parentId: parentId as any }); // null = top level
     return this.findById(id);
   }
 

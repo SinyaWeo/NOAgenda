@@ -14,6 +14,59 @@ function extractApiErrorMessage(rawText: string, fallback = 'Request failed'): s
 	return rawText;
 }
 
+/** Error from a failed API call. `status` is the HTTP status. */
+export class ApiError extends Error {
+	status: number;
+	constructor(message: string, status: number) {
+		super(message);
+		this.name = 'ApiError';
+		this.status = status;
+	}
+}
+
+/**
+ * Build the Error to throw for a failed response. Validation/conflict messages from the
+ * server are shown as they are (they say what to fix); permission, rate-limit and
+ * server errors get one consistent, friendly wording.
+ */
+export async function apiError(res: Response, fallback = 'Request failed'): Promise<ApiError> {
+	const raw = await res.text().catch(() => '');
+	let message: string;
+	switch (res.status) {
+		case 403:
+			message = 'You do not have permission to do that.';
+			break;
+		case 404:
+			message = 'That item could not be found. It may have been deleted.';
+			break;
+		case 413:
+			message = 'That is too large to upload.';
+			break;
+		case 429:
+			message = 'Too many attempts. Please wait a minute and try again.';
+			break;
+		default:
+			message =
+				res.status >= 500
+					? 'Something went wrong on our side. Please try again in a moment.'
+					: extractApiErrorMessage(raw, fallback);
+	}
+	return new ApiError(message, res.status);
+}
+
+/** The session is gone (refresh failed): clear it and go to the login page, remembering where we were. */
+export function sessionExpired(): Error {
+	clearToken();
+	if (typeof window !== 'undefined') {
+		const here = window.location.pathname + window.location.search;
+		const onLogin = window.location.pathname.startsWith('/user/login');
+		window.location.href = onLogin
+			? '/user/login'
+			: `/user/login?reason=expired&redirect=${encodeURIComponent(here)}`;
+	}
+	return new ApiError('Your session has expired. Please sign in again.', 401);
+}
+
 export async function apiFetch(path: string, options: RequestInit = {}) {
 	const url = path.startsWith('http') ? path : `${API_BASE}${path.startsWith('/') ? path : '/' + path}`;
 	try {
@@ -39,7 +92,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (!res.ok) throw await apiError(res, 'Request failed');
 	const text = await res.text();
 	return text ? JSON.parse(text) : ({} as T);
 }
@@ -51,20 +104,20 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (!res.ok) throw await apiError(res, 'Request failed');
 	return res.json();
 }
 
 /** Helper: DELETE and return void or throw */
 export async function apiDelete(path: string): Promise<void> {
 	const res = await apiFetch(path, { method: 'DELETE' });
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (!res.ok) throw await apiError(res, 'Request failed');
 }
 
 /** Helper: GET and return parsed JSON or throw */
 export async function apiGet<T>(path: string): Promise<T> {
 	const res = await apiFetch(path);
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (!res.ok) throw await apiError(res, 'Request failed');
 	return res.json();
 }
 
@@ -168,8 +221,8 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
  */
 export async function downloadAuthFile(path: string, filename: string): Promise<void> {
 	const res = await apiFetchAuth(path);
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Download failed'));
+	if (res.status === 401) throw sessionExpired();
+	if (!res.ok) throw await apiError(res, 'Download failed');
 	const blob = await res.blob();
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
@@ -183,8 +236,8 @@ export async function downloadAuthFile(path: string, filename: string): Promise<
 
 export async function apiGetAuth<T>(path: string): Promise<T> {
 	const res = await apiFetchAuth(path);
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (res.status === 401) throw sessionExpired();
+	if (!res.ok) throw await apiError(res, 'Request failed');
 	return res.json();
 }
 
@@ -194,8 +247,8 @@ export async function apiPostAuth<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (res.status === 401) throw sessionExpired();
+	if (!res.ok) throw await apiError(res, 'Request failed');
 	const text = await res.text();
 	return text ? JSON.parse(text) : ({} as T);
 }
@@ -206,15 +259,15 @@ export async function apiPutAuth<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (res.status === 401) throw sessionExpired();
+	if (!res.ok) throw await apiError(res, 'Request failed');
 	return res.json();
 }
 
 export async function apiDeleteAuth(path: string): Promise<void> {
 	const res = await apiFetchAuth(path, { method: 'DELETE' });
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (res.status === 401) throw sessionExpired();
+	if (!res.ok) throw await apiError(res, 'Request failed');
 }
 
 export async function apiPatchAuth<T>(path: string, body: unknown): Promise<T> {
@@ -223,8 +276,8 @@ export async function apiPatchAuth<T>(path: string, body: unknown): Promise<T> {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify(body),
 	});
-	if (res.status === 401) { clearToken(); if (typeof window !== 'undefined') window.location.href = '/user/login'; throw new Error('Unauthorized'); }
-	if (!res.ok) throw new Error(extractApiErrorMessage(await res.text(), 'Request failed'));
+	if (res.status === 401) throw sessionExpired();
+	if (!res.ok) throw await apiError(res, 'Request failed');
 	return res.json();
 }
 

@@ -37,7 +37,7 @@ export class Node extends BaseEntity {
   @Column({ nullable: true })
   title?: string;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, type: 'text' })
   description?: string;
 
   @Column({ type: 'enum', enum: NodeStatus, nullable: true })

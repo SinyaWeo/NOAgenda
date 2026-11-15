@@ -40,6 +40,7 @@
 		BellOutline,
 		ArrowRightToBracketOutline,
 		SearchOutline,
+		BarsOutline,
 	} from 'flowbite-svelte-icons';
 
 	/** Resolve a backend-relative path to a full URL */
@@ -66,11 +67,82 @@
 	let hydratedUserId = $state<number | null>(null);
 	const currentPath = $derived(page.url.pathname);
 
+	// Pages anyone may open without being signed in. Everything else needs a session.
+	const PUBLIC_ROUTES = [
+		'/',
+		'/user/login',
+		'/user/register',
+		'/user/get-password-reset',
+		'/user/password-reset',
+		'/user/verify-email',
+		'/terms',
+		'/privacy',
+	];
+	const isPublicRoute = $derived(
+		PUBLIC_ROUTES.includes(currentPath.replace(/\/+$/, '') || '/'),
+	);
+
+	// Browser-tab titles. A page can still set its own <title>.
+	const TITLES: [string, string][] = [
+		['/dashboard', 'Dashboard'],
+		['/projects/new', 'New project'],
+		['/projects', 'Projects'],
+		['/tasks/create', 'New task'],
+		['/tasks', 'Tasks'],
+		['/upcoming', 'Upcoming'],
+		['/teams', 'Teams'],
+		['/labels', 'Labels'],
+		['/filters', 'Filters'],
+		['/mindmap', 'Mind map'],
+		['/about', 'About'],
+		['/admin', 'Administration'],
+		['/user/profile', 'Profile'],
+		['/user/settings', 'Settings'],
+		['/user/login', 'Sign in'],
+		['/user/register', 'Create account'],
+		['/user/get-password-reset', 'Reset password'],
+		['/user/password-reset', 'Choose a new password'],
+		['/user/verify-email', 'Confirm email'],
+		['/terms', 'Terms of Service'],
+		['/privacy', 'Privacy Policy'],
+	];
+	const pageTitle = $derived(
+		TITLES.find(([prefix]) => currentPath === prefix || currentPath.startsWith(prefix + '/'))?.[1],
+	);
+
+	// Mobile: the sidebar becomes a slide-in drawer.
+	let isMobile = $state(false);
+	let mobileNavOpen = $state(false);
+	let signingOut = $state(false);
+	const compact = $derived($sidebarCollapsed && !isMobile);
+
 	onMount(() => {
 		if (localStorage.getItem('nav-collapsed') === 'true')
 			sidebarCollapsed.set(true);
 
+		const mq = window.matchMedia('(max-width: 767px)');
+		const sync = () => {
+			isMobile = mq.matches;
+			if (!mq.matches) mobileNavOpen = false;
+		};
+		sync();
+		mq.addEventListener('change', sync);
+
 		initializeAuth();
+		return () => mq.removeEventListener('change', sync);
+	});
+
+	// Close the drawer after navigating.
+	$effect(() => {
+		currentPath;
+		mobileNavOpen = false;
+	});
+
+	// Central route guard: no session on a protected page -> sign in, then come back here.
+	$effect(() => {
+		if ($authSession.status !== 'unauthenticated' || isPublicRoute || signingOut) return;
+		const back = page.url.pathname + page.url.search;
+		goto(`/user/login?redirect=${encodeURIComponent(back)}`, { replaceState: true });
 	});
 
 	$effect(() => {
@@ -119,8 +191,10 @@
 	}
 
 	async function logout() {
+		signingOut = true; // an explicit logout should not be remembered as a "come back here" redirect
 		await signOut();
-		goto('/user/login');
+		await goto('/user/login');
+		signingOut = false;
 	}
 
 	function isActive(path: string): boolean {
@@ -184,20 +258,33 @@
 
 <svelte:head>
 	<link rel="icon" type="image/svg+xml" href={favicon} />
-	<title>NOAgenda</title>
+	<title>{pageTitle ? `${pageTitle} · NOAgenda` : 'NOAgenda'}</title>
 </svelte:head>
 
 <ThemeProvider theme={{ card: { base: 'p-5' } }}>
 	{#if $user !== null}
+		<a
+			href="#main-content"
+			class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[500] focus:bg-white focus:text-primary-700 focus:px-3 focus:py-2 focus:rounded focus:shadow"
+			>Skip to content</a
+		>
 		<div class="sidebar-shell">
+			<!-- Dim the page behind the mobile drawer; clicking it closes the drawer -->
+			<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
+			<div
+				class="mobile-backdrop {mobileNavOpen ? 'open' : ''}"
+				onclick={() => (mobileNavOpen = false)}
+			></div>
 			<!-- ── Sidebar ── -->
 			<nav
-				class="sidebar-nav {$sidebarCollapsed
+				aria-label="Main"
+				id="main-nav"
+				class="sidebar-nav {compact
 					? 'sidebar-collapsed'
-					: 'sidebar-expanded'}"
+					: 'sidebar-expanded'} {mobileNavOpen ? 'mobile-open' : ''}"
 			>
 				<div class="sidebar-brand">
-					{#if !$sidebarCollapsed}
+					{#if !compact}
 						<a
 							href="/dashboard"
 							class="text-white font-bold text-base no-underline whitespace-nowrap overflow-hidden flex-1"
@@ -206,12 +293,13 @@
 					{/if}
 					<button
 						onclick={toggleSidebar}
-						title={$sidebarCollapsed
-							? 'Expand sidebar'
-							: 'Collapse sidebar'}
-						class="bg-transparent border-0 text-slate-400 cursor-pointer p-1 rounded opacity-70 hover:bg-white/10 hover:opacity-100 flex items-center"
+						title={compact ? 'Expand sidebar' : 'Collapse sidebar'}
+						aria-label={compact ? 'Expand sidebar' : 'Collapse sidebar'}
+						aria-expanded={!compact}
+						aria-controls="main-nav"
+						class="hidden md:flex bg-transparent border-0 text-slate-400 cursor-pointer p-1 rounded opacity-70 hover:bg-white/10 hover:opacity-100 items-center"
 					>
-						{#if $sidebarCollapsed}
+						{#if compact}
 							<ChevronRightOutline class="w-5 h-5" />
 						{:else}
 							<ChevronLeftOutline class="w-5 h-5" />
@@ -220,7 +308,7 @@
 				</div>
 
 				<ul class="nav-list">
-					{#if !$sidebarCollapsed}
+					{#if !compact}
 						<li
 							class="px-3 mt-4 mb-1 text-xs text-slate-400 uppercase tracking-wider select-none"
 						>
@@ -240,7 +328,7 @@
 										class="w-5 h-5"
 									/>{/if}
 							</span>
-							{#if !$sidebarCollapsed}<span>Dashboard</span>{/if}
+							{#if !compact}<span>Dashboard</span>{/if}
 						</a>
 					</li>
 					<li>
@@ -256,7 +344,7 @@
 										class="w-5 h-5"
 									/>{/if}
 							</span>
-							{#if !$sidebarCollapsed}<span>Projects</span>{/if}
+							{#if !compact}<span>Projects</span>{/if}
 						</a>
 					</li>
 					<li>
@@ -272,7 +360,7 @@
 										class="w-5 h-5"
 									/>{/if}
 							</span>
-							{#if !$sidebarCollapsed}<span>Tasks</span>{/if}
+							{#if !compact}<span>Tasks</span>{/if}
 						</a>
 					</li>
 					<li>
@@ -284,10 +372,10 @@
 							<span class="nav-icon"
 								><CalendarMonthOutline class="w-5 h-5" /></span
 							>
-							{#if !$sidebarCollapsed}<span>Upcoming</span>{/if}
+							{#if !compact}<span>Upcoming</span>{/if}
 						</a>
 					</li>
-					{#if !$sidebarCollapsed}
+					{#if !compact}
 						<li
 							class="px-3 mt-4 mb-1 text-xs text-slate-400 uppercase tracking-wider select-none"
 						>
@@ -369,7 +457,7 @@
 									></line>
 								</svg>
 							</span>
-							{#if !$sidebarCollapsed}<span>MindMap</span>{/if}
+							{#if !compact}<span>MindMap</span>{/if}
 						</a>
 					</li>
 					<li>
@@ -385,7 +473,7 @@
 										class="w-5 h-5"
 									/>{/if}
 							</span>
-							{#if !$sidebarCollapsed}<span>Teams</span>{/if}
+							{#if !compact}<span>Teams</span>{/if}
 						</a>
 					</li>
 					<li>
@@ -399,7 +487,7 @@
 										class="w-5 h-5"
 									/>{:else}<TagOutline class="w-5 h-5" />{/if}
 							</span>
-							{#if !$sidebarCollapsed}<span>Labels</span>{/if}
+							{#if !compact}<span>Labels</span>{/if}
 						</a>
 					</li>
 					<li>
@@ -411,7 +499,7 @@
 							<span class="nav-icon"
 								><FilterOutline class="w-5 h-5" /></span
 							>
-							{#if !$sidebarCollapsed}<span>Saved Filters</span
+							{#if !compact}<span>Saved Filters</span
 								>{/if}
 						</a>
 					</li>
@@ -426,7 +514,7 @@
 								<span class="nav-icon"
 									><CogOutline class="w-5 h-5" /></span
 								>
-								{#if !$sidebarCollapsed}<span>Admin</span>{/if}
+								{#if !compact}<span>Admin</span>{/if}
 							</a>
 						</li>
 					{/if}
@@ -439,7 +527,7 @@
 							<span class="nav-icon"
 								><InfoCircleOutline class="w-5 h-5" /></span
 							>
-							{#if !$sidebarCollapsed}<span>About</span>{/if}
+							{#if !compact}<span>About</span>{/if}
 						</a>
 					</li>
 				</ul>
@@ -447,12 +535,25 @@
 
 			<!-- ── Main area ── -->
 			<main
-				class="flex-1 min-w-0 flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white"
+				id="main-content"
+				tabindex="-1"
+				class="flex-1 min-w-0 flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white outline-none"
 			>
 				<!-- Top bar -->
 				<header
-					class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-5 flex items-center gap-3 h-[52px] shrink-0"
+					class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 md:px-5 flex items-center gap-2 md:gap-3 h-[52px] shrink-0"
 				>
+					<!-- Mobile menu button -->
+					<button
+						type="button"
+						class="md:hidden bg-transparent border-0 cursor-pointer p-1.5 -ml-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
+						aria-label="Open menu"
+						aria-controls="main-nav"
+						aria-expanded={mobileNavOpen}
+						onclick={() => (mobileNavOpen = true)}
+					>
+						<BarsOutline class="w-6 h-6" />
+					</button>
 					<!-- Search -->
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -469,6 +570,7 @@
 							type="search"
 							class="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:border-primary-500 dark:focus:border-primary-400"
 							placeholder="Search tasks & projects…"
+							aria-label="Search tasks and projects"
 							value={searchQuery}
 							oninput={onSearchInput}
 							onfocus={() => {
@@ -526,6 +628,7 @@
 							id="quick-add-btn"
 							class="w-7 h-7 rounded-full bg-primary-600 text-white border-0 cursor-pointer flex items-center justify-content-center hover:opacity-85 transition-opacity"
 							title="Create new…"
+							aria-label="Create new task or project"
 						>
 							<PlusOutline class="w-4 h-4 m-auto" />
 						</button>
@@ -547,6 +650,7 @@
 						<button
 							onclick={toggleTheme}
 							title="Toggle theme"
+							aria-label="Toggle light/dark theme"
 							class="bg-transparent border-0 cursor-pointer p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
 						>
 							{#if ($user.theme ?? 'light') === 'light'}
@@ -559,6 +663,7 @@
 						<!-- Notifications -->
 						<button
 							id="notif-btn"
+							aria-label={$unreadCount > 0 ? `Notifications, ${$unreadCount} unread` : 'Notifications'}
 							class="relative bg-transparent border-0 cursor-pointer p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
 							onclick={loadNotifications}
 						>
@@ -619,6 +724,7 @@
 						<!-- User menu -->
 						<button
 							id="user-menu-btn"
+							aria-label="Account menu"
 							class="bg-transparent border-0 cursor-pointer p-0 flex items-center rounded-full"
 						>
 							{#if $user.avatarUrl}
@@ -674,6 +780,12 @@
 							>
 								<CogOutline class="w-4 h-4 mr-2" />Settings
 							</DropdownItem>
+							<DropdownItem href="/terms" class="flex items-center text-xs text-gray-500">
+								Terms of Service
+							</DropdownItem>
+							<DropdownItem href="/privacy" class="flex items-center text-xs text-gray-500">
+								Privacy Policy
+							</DropdownItem>
 							<DropdownDivider />
 							<DropdownItem
 								onclick={logout}
@@ -688,20 +800,23 @@
 
 				<!-- Page content -->
 				<div
-					class="flex-1 p-6 overflow-auto text-gray-900 dark:text-gray-100"
+					class="flex-1 p-3 sm:p-6 overflow-auto text-gray-900 dark:text-gray-100"
 				>
 					{@render children?.()}
 				</div>
 			</main>
 		</div>
 		<ToastContainer />
-	{:else if $authSession.status === 'loading'}
+	{:else if isPublicRoute}
+		{@render children?.()}
+	{:else}
+		<!-- Protected page and no session (yet): show nothing of the page. The guard above
+		     redirects to sign-in once it is known that there is no session. -->
 		<div
 			class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500"
+			role="status"
 		>
-			<p>Loading…</p>
+			<p>{$authSession.status === 'loading' ? 'Loading…' : 'Redirecting to sign in…'}</p>
 		</div>
-	{:else}
-		{@render children?.()}
 	{/if}
 </ThemeProvider>

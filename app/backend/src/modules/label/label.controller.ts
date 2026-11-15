@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundExc
 import { LabelService } from './label.service';
 import { Label } from './label.entity';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateLabelDto, UpdateLabelDto } from './dto/label.dto';
 
 @Controller('labels')
 export class LabelController {
@@ -27,20 +28,18 @@ export class LabelController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'))
-  async create(@Body() body: Partial<Label>, @Request() req: any): Promise<Label> {
-    const { id: _i, createdAt: _c, updatedAt: _u, createdBy: _o, ...data } = body as any;
+  async create(@Body() body: CreateLabelDto, @Request() req: any): Promise<Label> {
+    const data = { ...body };
     return this.labelService.create({ ...data, createdBy: req.user.userId });
   }
 
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
-  async update(@Param('id') id: number, @Body() body: Partial<Label>, @Request() req: any): Promise<Label> {
+  async update(@Param('id') id: number, @Body() body: UpdateLabelDto, @Request() req: any): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
     if (label.createdBy !== req.user.userId) throw new ForbiddenException();
-    // Prevent mass-assignment of ownership/identity fields
-    const { id: _id, createdBy: _cb, ...safeBody } = body as any;
-    const updated = await this.labelService.update(id, safeBody);
+    const updated = await this.labelService.update(id, { ...body });
     if (!updated) throw new NotFoundException();
     return updated;
   }

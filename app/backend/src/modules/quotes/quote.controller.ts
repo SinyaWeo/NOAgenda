@@ -10,6 +10,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
 import { QuoteService } from './quote.service';
 import { Quote } from './quote.entity';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -37,7 +38,7 @@ export class QuoteController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles(UserRole.ADMIN)
   async create(
-    @Body() body: { text: string; author?: string; isActive?: boolean },
+    @Body() body: CreateQuoteDto,
   ): Promise<Quote> {
     return this.quoteService.create(body);
   }
@@ -47,7 +48,7 @@ export class QuoteController {
   @Roles(UserRole.ADMIN)
   async update(
     @Param('id') id: number,
-    @Body() body: { text?: string; author?: string; isActive?: boolean },
+    @Body() body: UpdateQuoteDto,
   ): Promise<Quote> {
     const updated = await this.quoteService.update(id, body);
     if (!updated) throw new NotFoundException();

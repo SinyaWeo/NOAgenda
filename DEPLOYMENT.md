@@ -79,6 +79,29 @@ docker/restore.sh /var/backups/noagenda/db-<ts>.sql.gz /var/backups/noagenda/upl
 ```
 Test a restore on a scratch machine before you need it.
 
+## Legal pages (Terms of Service and Privacy Policy)
+The app ships `/terms` and `/privacy` pages and a required "I agree" box on registration (the acceptance time
+is stored on the user). The texts are **templates written for what this app actually does**: they are not legal
+advice, so have them reviewed before you accept real users.
+- Set `OPERATOR_NAME` and `CONTACT_EMAIL` in `docker/.env.production` (baked in at build time: re-run
+  `up -d --build`). Until both are set the pages show a yellow "template, not yet configured" banner.
+- Complete the `[bracketed]` placeholders in `app/frontend/src/routes/{terms,privacy}/+page.svelte` (hosting and email
+  providers, retention periods, minimum age, governing law).
+- `REQUIRE_TERMS_ACCEPTANCE=true` makes the API refuse registrations that do not send `acceptTerms: true`
+  (the UI always sends it). No cookie banner is shown because only strictly necessary storage is used; the
+  privacy page says so. Revisit that if you add analytics.
+
+## Accounts: deleting and exporting data
+- **Export**: Settings → Data export downloads everything the app stores about the user as JSON (no secrets;
+  attachments are listed, not bundled).
+- **Delete**: Settings → Delete account (password required). The account is scheduled and **purged after a
+  7-day grace period** (`ACCOUNT_DELETION_GRACE_DAYS`); the user can cancel until then. The purge removes the user,
+  every project they own (with its tasks, comments, attachments, views, webhooks), their personal tasks, labels,
+  teams they own, filters, tokens, sessions, notifications, and their comments/uploads elsewhere. Tasks they
+  created inside other people's projects are kept but anonymised; projects shared *with* them are untouched.
+  Collaborators lose any project its owner deletes. A background sweep runs hourly
+  (`ACCOUNT_PURGE_INTERVAL_SECONDS`). Backups still contain the data until they age out (see backup retention).
+
 ## Sign-in, sessions and security behaviour
 - **Access token**: a 15-minute JWT, kept in the browser and refreshed silently.
 - **Refresh token**: a random value in an `httpOnly; Secure; SameSite=Strict` cookie scoped to `/api/auth`,
@@ -121,15 +144,21 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
 - `app/backend/scripts/auth-lifecycle-smoke.py` — email verification, sessions, refresh rotation and theft
   detection, lockout, password reset/change, API tokens. Needs a mail sink with a Mailpit-compatible API
   (`axllent/mailpit`) and `LOGIN_RATE_LIMIT=100` on the API (see the file header).
-- Both create users/data: run them against a **disposable** database only. CI runs both on every push.
+- `app/backend/scripts/validation-account-smoke.py` — input validation, error handling, data export, and the full
+  account purge (including that other users' data is untouched). Needs `LOGIN_RATE_LIMIT=100`,
+  `ACCOUNT_PURGE_INTERVAL_SECONDS=3` and a way to run SQL (see the file header).
+- All of these create users/data: run them against a **disposable** database only. CI runs the three scripts on every push.
 
 ## Known gaps before opening registration to the public
-- No Terms / Privacy pages or consent notice yet.
-- Most request bodies outside auth and user settings are not DTO-validated (a malformed body can return 500 instead of 400).
-- "Delete my account" only flags the account (nothing deletes it after the grace period); "export my data" is a stub.
+- **The UI is English only.** (The language setting was removed because it did nothing.) Translating it is a
+  separate project.
+- Terms and Privacy texts are templates and need review (see above).
+- A project's owner deleting their account deletes the project for everyone in it (ownership transfer is not built).
 - Webhook secrets are stored in plaintext (they must be readable to sign deliveries). No webhook sender exists yet; when it
   does, add SSRF protection and consider encrypting the secrets.
 - `GET /users` lists every user to any signed-in user (needed for member pickers; reveals usernames).
 - One known high-severity dependency advisory (`multer` DoS) that needs a major NestJS upgrade.
-- The access token lives in `localStorage` (15-minute lifetime; the refresh credential is an httpOnly cookie).
-  A strict CSP is in place to limit XSS, but it has not been verified in a real browser.
+- The access token lives in `localStorage` (15-minute lifetime; the refresh credential is an httpOnly cookie). A strict CSP
+  is in place and was exercised in a real browser during testing, but a new XSS bug would still expose the short-lived token.
+- There are no automated browser (UI) tests in the repository. The screens were exercised with a headless browser during
+  development; adding Playwright to CI is a sensible next step.
