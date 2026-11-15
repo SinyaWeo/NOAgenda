@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiFetch, setToken } from '$lib/api';
   import { refreshCurrentUser } from '$lib/auth';
@@ -24,6 +25,14 @@
   }
 
   const expired = page.url.searchParams.get('reason') === 'expired';
+
+  let registrationEnabled = $state(true);
+  onMount(async () => {
+    const cfg: { registrationEnabled?: boolean } = await apiFetch('/auth/config')
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+    registrationEnabled = cfg.registrationEnabled !== false;
+  });
 
   async function handleLogin(event: Event) {
     event.preventDefault();
@@ -134,13 +143,15 @@
       >
     </form>
 
-    <p class="text-sm text-center text-gray-500 mt-4">
-      Don't have an account? <a
-        href="/user/register"
-        class="text-primary-600 dark:text-primary-400 hover:underline"
-        >Register</a
-      >
-    </p>
+    {#if registrationEnabled}
+      <p class="text-sm text-center text-gray-500 mt-4">
+        Don't have an account? <a
+          href="/user/register"
+          class="text-primary-600 dark:text-primary-400 hover:underline"
+          >Register</a
+        >
+      </p>
+    {/if}
     <p class="text-sm text-center mt-1">
       <a
         href="/user/get-password-reset"

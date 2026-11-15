@@ -5,6 +5,9 @@
 #
 # Env: ENV_FILE (default docker/.env.production), COMPOSE_FILE, COMPOSE_PROJECT,
 #      KEEP_DAYS (default 14; older backups are deleted).
+#      BACKUP_PING_URL  optional "dead man's switch" (healthchecks.io, Uptime Kuma, ...): GET <url> after a
+#                       successful backup and <url>/fail after a failed one. If the pings stop, you are
+#                       alerted that backups are no longer running.
 # Cron example (daily 03:15):  15 3 * * * /opt/noagenda/docker/backup.sh /var/backups/noagenda
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -13,6 +16,9 @@ ENV_FILE="${ENV_FILE:-$HERE/.env.production}"
 BACKUP_DIR="${1:-$HERE/../backups}"
 KEEP_DAYS="${KEEP_DAYS:-14}"
 DC=(docker compose ${COMPOSE_PROJECT:+-p "$COMPOSE_PROJECT"} -f "$COMPOSE_FILE" --env-file "$ENV_FILE")
+
+ping() { [ -n "${BACKUP_PING_URL:-}" ] && curl -fsS -m 10 --retry 3 -o /dev/null "$BACKUP_PING_URL$1" || true; }
+trap 'ping /fail' ERR
 
 umask 077
 mkdir -p "$BACKUP_DIR"
@@ -32,4 +38,5 @@ gzip -t "$db.part" && gzip -t "$up.part"
 mv "$db.part" "$db"; mv "$up.part" "$up"
 
 find "$BACKUP_DIR" -maxdepth 1 \( -name 'db-*.sql.gz' -o -name 'uploads-*.tar.gz' \) -mtime +"$KEEP_DAYS" -delete
+ping ""
 echo "Backup written: $db ($(du -h "$db" | cut -f1)), $up ($(du -h "$up" | cut -f1))"

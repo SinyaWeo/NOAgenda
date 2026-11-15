@@ -21,4 +21,10 @@ export class CreateUserDto {
   @IsOptional()
   @IsBoolean()
   acceptTerms?: boolean;
+
+  /** Required only when the operator set REGISTRATION_INVITE_CODE. */
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  inviteCode?: string;
 }

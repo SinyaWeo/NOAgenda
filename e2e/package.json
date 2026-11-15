@@ -1,0 +1,12 @@
+{
+  "name": "noagenda-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Real-browser smoke test of the production stack (run via ./run.sh)",
+  "scripts": {
+    "test": "node ui.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.1"
+  }
+}

@@ -1,5 +1,7 @@
 # Deploying NOAgenda
 
+> **Going live?** Follow [PRELAUNCH.md](PRELAUNCH.md): a step-by-step checklist with scripts that verify your configuration (`docker/preflight.sh`) and your backups (`docker/verify-backup.sh`).
+
 Production stack (`docker/docker-compose.prod.yml`):
 
 ```
@@ -129,6 +131,9 @@ advice, so have them reviewed before you accept real users.
 | `REQUIRE_EMAIL_VERIFICATION` | `.env.production` | Default: on if `SMTP_HOST` is set |
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL_DAYS` | backend | Defaults `15m` / `30` |
 | `MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES` | backend | Defaults `5` / `15` |
+| `REGISTRATION_INVITE_CODE` / `REGISTRATION_ENABLED=false` | `.env.production` | Soft launch: require an invite code to sign up, or close sign-ups entirely (existing users unaffected) |
+| `OPERATOR_NAME`, `CONTACT_EMAIL`, `REQUIRE_TERMS_ACCEPTANCE` | `.env.production` | Legal pages and consent (see above) |
+| `BACKUP_PING_URL` | environment of `backup.sh` | Dead-man's-switch URL pinged after each backup (`/fail` on failure) |
 
 In production the backend also refuses to start without `CORS_ORIGIN` (compose sets it from `DOMAIN`).
 
@@ -147,6 +152,8 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
 - `app/backend/scripts/validation-account-smoke.py` — input validation, error handling, data export, and the full
   account purge (including that other users' data is untouched). Needs `LOGIN_RATE_LIMIT=100`,
   `ACCOUNT_PURGE_INTERVAL_SECONDS=3` and a way to run SQL (see the file header).
+- `e2e/run.sh` — real-browser test (Chromium) of the production Docker stack; see `e2e/README.md`. It builds and tears down its own
+  isolated stack, so it never touches a real deployment. CI runs it on every push.
 - All of these create users/data: run them against a **disposable** database only. CI runs the three scripts on every push.
 
 ## Known gaps before opening registration to the public
@@ -157,8 +164,8 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
 - Webhook secrets are stored in plaintext (they must be readable to sign deliveries). No webhook sender exists yet; when it
   does, add SSRF protection and consider encrypting the secrets.
 - `GET /users` lists every user to any signed-in user (needed for member pickers; reveals usernames).
-- One known high-severity dependency advisory (`multer` DoS) that needs a major NestJS upgrade.
+- Dependencies: no critical/high advisories (CI fails if one appears). Three *moderate* ones sit inside TypeORM's own `glob`/`minimatch`; they are not reachable (the patterns are constants), and the only fix is a major TypeORM upgrade.
+- No independent security review or penetration test has been done.
 - The access token lives in `localStorage` (15-minute lifetime; the refresh credential is an httpOnly cookie). A strict CSP
   is in place and was exercised in a real browser during testing, but a new XSS bug would still expose the short-lived token.
-- There are no automated browser (UI) tests in the repository. The screens were exercised with a headless browser during
-  development; adding Playwright to CI is a sensible next step.
+- The browser test (`e2e/run.sh`, Chromium via Playwright, runs in CI) covers the main flows in Chromium only.

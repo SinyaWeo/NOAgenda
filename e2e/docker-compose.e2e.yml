@@ -1,0 +1,13 @@
+# Extra services/settings layered on docker/docker-compose.prod.yml for the browser test.
+# Not for production: it adds a mail sink and relaxes the login rate limit.
+services:
+  mailpit:
+    image: axllent/mailpit:v1.33
+    ports: ["127.0.0.1:8126:8025"]   # web/API; the backend reaches SMTP on mailpit:1025 inside the network
+    networks: [internal]
+  backend:
+    environment:
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      LOGIN_RATE_LIMIT: "100"
+      REGISTRATION_INVITE_CODE: e2e-invite-code   # soft-launch mode: registering needs this code

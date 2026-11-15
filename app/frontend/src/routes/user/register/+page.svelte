@@ -2,6 +2,7 @@
   import { writable } from 'svelte/store';
   import { apiFetch, apiPost } from '$lib/api';
   import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
   import { Alert, Button, Card, Checkbox, Helper, Input, Label } from 'flowbite-svelte';
   import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 
@@ -13,13 +14,31 @@
   let showPassword = $state(false);
   let checkEmail = $state(false);
   let acceptTerms = $state(false);
+  let registrationEnabled = $state(true);
+  let inviteRequired = $state(false);
+  let inviteCode = $state('');
+
+  // The operator may close registration or require an invite code for a soft launch.
+  onMount(async () => {
+    const cfg: { registrationEnabled?: boolean; inviteRequired?: boolean } = await apiFetch('/auth/config')
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+    registrationEnabled = cfg.registrationEnabled !== false;
+    inviteRequired = cfg.inviteRequired === true;
+  });
 
   async function handleRegister(event: SubmitEvent) {
     event.preventDefault();
     loading.set(true);
     error.set('');
     try {
-      await apiPost('/users', { username: $username, email: $email, password: $password, acceptTerms });
+      await apiPost('/users', {
+        username: $username,
+        email: $email,
+        password: $password,
+        acceptTerms,
+        ...(inviteRequired ? { inviteCode: inviteCode.trim() } : {}),
+      });
       const cfg: { emailVerificationRequired?: boolean } = await apiFetch('/auth/config')
         .then((r) => (r.ok ? r.json() : {}))
         .catch(() => ({}));
@@ -47,7 +66,15 @@
       <Alert color="red" class="mb-4">{$error}</Alert>
     {/if}
 
-    {#if checkEmail}
+    {#if !registrationEnabled}
+      <Alert color="yellow" class="mb-4">
+        <p class="font-semibold">Registration is closed</p>
+        <p class="text-sm mt-1">New accounts cannot be created right now. If you already have an account you can sign in.</p>
+      </Alert>
+      <p class="text-sm text-center mt-4">
+        <a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">Go to Sign in</a>
+      </p>
+    {:else if checkEmail}
       <Alert color="green" class="mb-4">
         <p class="font-semibold">Check your email</p>
         <p class="text-sm mt-1">
@@ -59,6 +86,13 @@
       </p>
     {:else}
     <form onsubmit={handleRegister} class="flex flex-col gap-4">
+      {#if inviteRequired}
+        <div>
+          <Label for="reg-invite" class="mb-1">Invite code</Label>
+          <Input id="reg-invite" type="text" bind:value={inviteCode} required autocomplete="off" />
+          <Helper class="mt-1">Registration is by invitation. Enter the code you were given.</Helper>
+        </div>
+      {/if}
       <div>
         <Label for="reg-username" class="mb-1">Username</Label>
         <Input id="reg-username" type="text" bind:value={$username} required />

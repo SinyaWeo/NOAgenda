@@ -5,8 +5,17 @@
 #   docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
 name: noagenda
 
+# Container logs rotate (3 x 10 MB per service). Without this, Docker keeps them forever and
+# they eventually fill the disk.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   mariadb:
+    logging: *default-logging
     image: mariadb:11.3
     restart: unless-stopped
     environment:
@@ -25,6 +34,7 @@ services:
     networks: [internal]
 
   backend:
+    logging: *default-logging
     build:
       context: ../app/backend
     restart: unless-stopped
@@ -51,6 +61,8 @@ services:
       MAIL_FROM: ${MAIL_FROM:-}
       REQUIRE_EMAIL_VERIFICATION: ${REQUIRE_EMAIL_VERIFICATION:-}
       REQUIRE_TERMS_ACCEPTANCE: ${REQUIRE_TERMS_ACCEPTANCE:-}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-}
+      REGISTRATION_INVITE_CODE: ${REGISTRATION_INVITE_CODE:-}
       ACCOUNT_DELETION_GRACE_DAYS: ${ACCOUNT_DELETION_GRACE_DAYS:-}
     volumes:
       - uploads:/app/uploads
@@ -60,6 +72,7 @@ services:
     networks: [internal]
 
   frontend:
+    logging: *default-logging
     build:
       context: ../app/frontend
       args:
@@ -75,6 +88,7 @@ services:
     networks: [internal]
 
   caddy:
+    logging: *default-logging
     image: caddy:2-alpine
     restart: unless-stopped
     environment:

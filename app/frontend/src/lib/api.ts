@@ -31,13 +31,17 @@ export class ApiError extends Error {
  */
 export async function apiError(res: Response, fallback = 'Request failed'): Promise<ApiError> {
 	const raw = await res.text().catch(() => '');
+	// A specific server message ("A valid invite code is required...", "Registration is closed") beats
+	// our generic wording; only the framework's bare defaults are replaced.
+	const server = extractApiErrorMessage(raw, '');
+	const isGeneric = !server || /^(forbidden( resource)?|not found|unauthorized|bad request)$/i.test(server.trim());
 	let message: string;
 	switch (res.status) {
 		case 403:
-			message = 'You do not have permission to do that.';
+			message = isGeneric ? 'You do not have permission to do that.' : server;
 			break;
 		case 404:
-			message = 'That item could not be found. It may have been deleted.';
+			message = isGeneric ? 'That item could not be found. It may have been deleted.' : server;
 			break;
 		case 413:
 			message = 'That is too large to upload.';

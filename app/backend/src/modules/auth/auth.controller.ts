@@ -12,6 +12,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto, ResendVerificationDto } from './dto/email-verification.dto';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { SessionMeta } from '../session/session.service';
+import { registrationPolicy } from '../user/registration';
 
 const COOKIE_NAME = 'noa_rt';
 const isProd = () => process.env.NODE_ENV === 'production';
@@ -78,6 +79,8 @@ export class AuthController {
     return {
       emailVerificationRequired: this.emailVerification.required,
       termsAcceptanceRequired: process.env.REQUIRE_TERMS_ACCEPTANCE === 'true',
+      registrationEnabled: registrationPolicy().enabled,
+      inviteRequired: registrationPolicy().inviteRequired,
     };
   }
 

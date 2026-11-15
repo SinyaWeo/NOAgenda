@@ -24,9 +24,9 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npx jest
-      # Fails on critical advisories only: a known high-severity multer DoS needs a
-      # major NestJS upgrade. Tighten to `high` once that is done.
-      - run: npm audit --omit=dev --audit-level=critical
+      # No high/critical advisories remain. (Three moderate ones sit inside TypeORM's own
+      # glob/minimatch dependencies and are not reachable: the glob patterns are constants.)
+      - run: npm audit --omit=dev --audit-level=high
 
   frontend:
     runs-on: ubuntu-latest
@@ -151,6 +151,29 @@ jobs:
         run: BASE_URL=http://127.0.0.1:3000 MAILPIT_URL=http://127.0.0.1:8025 python3 scripts/auth-lifecycle-smoke.py
       - if: failure()
         run: cat app/backend/api.log
+
+  # Real browser (Chromium) against the production Docker stack: Caddy over HTTPS, the real
+  # CSP and Secure cookie, email to a mail sink. See e2e/README.md.
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+      - name: Browser smoke test
+        run: e2e/run.sh
+      - name: Keep screenshots and logs of a failed run
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-artifacts
+          path: e2e/artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
 
   docker:
     runs-on: ubuntu-latest
