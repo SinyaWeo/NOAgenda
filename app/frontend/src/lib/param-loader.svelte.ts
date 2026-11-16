@@ -1,6 +1,7 @@
 import { goto } from '$app/navigation';
 import type { Writable } from 'svelte/store';
 import { getCurrentUser } from '$lib/auth';
+import { errMessage } from '$lib/errors';
 
 /**
  * Load a page's data on mount AND whenever `key()` changes.
@@ -20,7 +21,7 @@ export function loadOnParamChange(
 	key: () => string,
 	load: (key: string, isStale: () => boolean) => Promise<void>,
 	loading: Writable<boolean>,
-	error: Writable<string>,
+	error: Writable<string>
 ): void {
 	$effect(() => {
 		const k = key(); // the only reactive read: re-run when the route params change
@@ -36,8 +37,8 @@ export function loadOnParamChange(
 			}
 			try {
 				await load(k, () => stale);
-			} catch (e: any) {
-				if (!stale) error.set(e?.message ?? 'Failed to load');
+			} catch (e: unknown) {
+				if (!stale) error.set(errMessage(e));
 			} finally {
 				if (!stale) loading.set(false);
 			}

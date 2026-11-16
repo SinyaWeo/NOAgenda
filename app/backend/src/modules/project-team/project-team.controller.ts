@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Request, ForbiddenException } from '@nestjs/common';
 import { AddProjectTeamDto, SetPermissionDto } from '../project-user/dto/project-sharing.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { ProjectTeamService } from './project-team.service';
 import { ProjectService } from '../project/project.service';
 import { ProjectTeam } from './project-team.entity';
-import { Permission } from '../project-user/project-user.entity';
 
 @Controller('projects/:projectId/teams')
 export class ProjectTeamController {
@@ -27,7 +26,8 @@ export class ProjectTeamController {
     @Request() req: any,
   ): Promise<ProjectTeam> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
-    if (!(await this.projectTeamService.canUseTeam(req.user.userId, Number(body.teamId)))) throw new ForbiddenException();
+    if (!(await this.projectTeamService.canUseTeam(req.user.userId, Number(body.teamId))))
+      throw new ForbiddenException();
     return this.projectTeamService.add(projectId, body.teamId, body.permission);
   }
 
@@ -43,7 +43,11 @@ export class ProjectTeamController {
   }
 
   @Delete(':teamId')
-  async remove(@Param('projectId') projectId: number, @Param('teamId') teamId: number, @Request() req: any): Promise<void> {
+  async remove(
+    @Param('projectId') projectId: number,
+    @Param('teamId') teamId: number,
+    @Request() req: any,
+  ): Promise<void> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectTeamService.remove(projectId, teamId);
   }

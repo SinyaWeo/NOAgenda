@@ -38,7 +38,9 @@ export async function apiError(res: Response, fallback?: string): Promise<ApiErr
 	// our generic wording; only the framework's bare defaults are replaced. Known server messages are
 	// translated into the current language, unknown ones are shown as sent.
 	const server = extractApiErrorMessage(raw, '');
-	const isGeneric = !server || /^(forbidden( resource)?|not found|unauthorized|bad request|payload too large)$/i.test(server.trim());
+	const isGeneric =
+		!server ||
+		/^(forbidden( resource)?|not found|unauthorized|bad request|payload too large)$/i.test(server.trim());
 	const specific = () => localizeServerMessage(server);
 	let message: string;
 	switch (res.status) {
@@ -84,7 +86,10 @@ const ABSOLUTE = /^https?:\/\//i;
 function isApiUrl(path: string): boolean {
 	if (!ABSOLUTE.test(path)) return true;
 	try {
-		return new URL(path).origin === new URL(API_BASE, typeof window !== 'undefined' ? window.location.origin : undefined).origin;
+		return (
+			new URL(path).origin ===
+			new URL(API_BASE, typeof window !== 'undefined' ? window.location.origin : undefined).origin
+		);
 	} catch {
 		return false;
 	}

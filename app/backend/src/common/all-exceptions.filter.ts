@@ -36,7 +36,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     if (exception instanceof QueryFailedError) {
       const known = DB_ERRORS[(exception as any).driverError?.code];
       if (known) {
-        return res.status(known.status).json({ statusCode: known.status, message: known.message, error: HttpStatus[known.status] });
+        return res
+          .status(known.status)
+          .json({ statusCode: known.status, message: known.message, error: HttpStatus[known.status] });
       }
     }
 

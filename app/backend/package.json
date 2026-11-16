@@ -15,7 +15,10 @@
     "migration:run:prod": "typeorm migration:run -d dist/data-source.js",
     "migration:revert": "npm run build && typeorm migration:revert -d dist/data-source.js",
     "admin:promote": "node dist/scripts/promote-admin.js",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint src",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\""
   },
   "dependencies": {
     "@nestjs/common": "^11.1.17",
@@ -41,6 +44,7 @@
     "typeorm": "^0.3.17"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "@nestjs/cli": "^11.0.16",
     "@nestjs/schematics": "^11.0.9",
     "@nestjs/testing": "^11.1.17",
@@ -50,8 +54,12 @@
     "@types/nodemailer": "^8.0.2",
     "@types/passport": "^1.0.17",
     "@types/passport-jwt": "^4.0.1",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
     "jest": "^30.3.0",
+    "prettier": "^3.10.1",
     "ts-jest": "^29.4.6",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "typescript-eslint": "^8.73.0"
   }
 }

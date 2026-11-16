@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Body,
-  Param,
-  UseGuards,
-  NotFoundException,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundException } from '@nestjs/common';
 import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
 import { QuoteService } from './quote.service';
 import { Quote } from './quote.entity';
@@ -38,19 +28,14 @@ export class QuoteController {
   @Post()
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  async create(
-    @Body() body: CreateQuoteDto,
-  ): Promise<Quote> {
+  async create(@Body() body: CreateQuoteDto): Promise<Quote> {
     return this.quoteService.create(body);
   }
 
   @Put(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  async update(
-    @Param('id') id: number,
-    @Body() body: UpdateQuoteDto,
-  ): Promise<Quote> {
+  async update(@Param('id') id: number, @Body() body: UpdateQuoteDto): Promise<Quote> {
     const updated = await this.quoteService.update(id, body);
     if (!updated) throw new NotFoundException();
     return updated;

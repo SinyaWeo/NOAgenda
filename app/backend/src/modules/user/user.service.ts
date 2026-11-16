@@ -53,7 +53,10 @@ export class UserService {
   }
 
   async findByIdSafe(id: number): Promise<Omit<User, 'password'> | null> {
-    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'username', 'name', 'avatarUrl', 'createdAt'] as any });
+    const user = await this.userRepository.findOne({
+      where: { id },
+      select: ['id', 'username', 'name', 'avatarUrl', 'createdAt'] as any,
+    });
     return user;
   }
 

@@ -7,7 +7,7 @@
 export type Locale = 'en' | 'cs';
 export const LOCALES: { code: Locale; label: string }[] = [
 	{ code: 'en', label: 'English' },
-	{ code: 'cs', label: 'Čeština' },
+	{ code: 'cs', label: 'Čeština' }
 ];
 export const DEFAULT_LOCALE: Locale = 'en';
 
@@ -21,11 +21,18 @@ export type Params = Record<string, string | number>;
 
 function fill(template: string, params?: Params): string {
 	if (!params) return template;
-	return template.replace(/\{(\w+)\}/g, (whole, name: string) => (name in params ? String(params[name]) : whole));
+	return template.replace(/\{(\w+)\}/g, (whole, name: string) =>
+		name in params ? String(params[name]) : whole
+	);
 }
 
 /** Resolve one message for a locale. `count` selects a plural form when the message has them. */
-export function format(locale: Locale, message: Message | undefined, params?: Params, count?: number): string {
+export function format(
+	locale: Locale,
+	message: Message | undefined,
+	params?: Params,
+	count?: number
+): string {
 	if (message === undefined) return '';
 	if (typeof message === 'string') return fill(message, params);
 	const n = count ?? (typeof params?.count === 'number' ? params.count : 0);

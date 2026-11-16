@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, NotFoundException, ForbiddenException, BadRequestException, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  Request,
+} from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { Comment } from './comment.entity';
 import { NodeAccessService } from '../node/node-access.service';
@@ -27,10 +40,7 @@ export class CommentController {
   }
 
   @Post()
-  async create(
-    @Body() body: { content: string; taskId: number },
-    @Request() req: any,
-  ): Promise<Comment> {
+  async create(@Body() body: { content: string; taskId: number }, @Request() req: any): Promise<Comment> {
     if (typeof body?.content !== 'string' || !body.content.trim() || body.content.length > 10000) {
       throw new BadRequestException('content is required (max 10000 characters)');
     }

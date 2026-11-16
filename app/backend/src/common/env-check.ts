@@ -7,6 +7,8 @@ export function validateJwtSecret(secret: string | undefined, isProd: boolean): 
   if (!isProd) return;
   if (secret.length < 32) throw new Error('JWT_SECRET must be at least 32 characters in production.');
   if (PLACEHOLDER.test(secret)) {
-    throw new Error('JWT_SECRET is still a placeholder from an example file. Generate a real one: openssl rand -base64 48');
+    throw new Error(
+      'JWT_SECRET is still a placeholder from an example file. Generate a real one: openssl rand -base64 48',
+    );
   }
 }

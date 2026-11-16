@@ -94,6 +94,16 @@ s, e1 = call('POST', '/users', {'username': bob, 'email': 'fresh' + run + '@exam
 s2, e2 = call('POST', '/users', {'username': 'fresh' + run, 'email': bob + '@example.com', 'password': PW})
 check('taken username and taken email give the same answer', (s, s2, e1.get('message') == e2.get('message')), (409, 409, True))
 
+# ================= registration remembers the visitor's language and time zone
+nm = 'loc' + run
+s, _ = call('POST', '/users', {'username': nm, 'email': nm + '@example.com', 'password': PW, 'language': 'cs', 'timezone': 'Europe/Prague'}); check('registration with language + time zone accepted', s, 201)
+s, l = call('POST', '/auth/login', {'username': nm, 'password': PW}); s, me = call('GET', '/users/me', None, l['access_token'])
+check('the account starts in that language and zone', (me['language'], me['timezone']), ('cs', 'Europe/Prague'))
+s, _ = call('POST', '/users', {'username': nm + 'x', 'email': nm + 'x@example.com', 'password': PW, 'language': 'xx'}); check('unknown language rejected', s, 400)
+s, _ = call('POST', '/users', {'username': nm + 'y', 'email': nm + 'y@example.com', 'password': PW, 'timezone': 'Mars/Olympus'}); check('invalid time zone rejected', s, 400)
+s, _ = call('POST', '/user/settings/general', {'timezone': 'Mars/Olympus'}, A); check('settings reject an invalid time zone', s, 400)
+s, _ = call('POST', '/user/settings/general', {'language': 'cs', 'theme': 'system', 'timezone': 'Europe/Prague'}, A); check('settings accept language, system theme and a valid zone', s, [200, 201])
+
 # ================= avatar: the bytes must match the claim
 body, ct = multipart({}, {'avatar': ('a.png', 'image/png', b'<html><script>alert(1)</script></html>')})
 s, _ = call('PUT', '/user/settings/avatar/upload', token=A, raw=body, ctype=ct); check('HTML labelled image/png is rejected', s, 400)

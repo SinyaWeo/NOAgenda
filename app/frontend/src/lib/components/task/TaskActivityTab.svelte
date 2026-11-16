@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, fmt } from '$lib/i18n';
 	import type { Attachment, Comment, Reminder } from '$lib/types';
 	import { Button, Card, Input } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
@@ -14,7 +15,7 @@
 		onDownload,
 		onUpload,
 		onPostComment,
-		onDeleteComment,
+		onDeleteComment
 	}: {
 		taskId: number;
 		reminders: Reminder[];
@@ -63,7 +64,7 @@
 
 <!-- Reminders -->
 <Card class="mb-4">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Reminders</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.reminders.title')}</h2>
 	{#if reminders.length}
 		<div class="mb-3">
 			{#each reminders as rem, i (rem.id)}
@@ -73,29 +74,29 @@
 						: ''}"
 				>
 					<span class="flex-1 text-sm text-gray-700 dark:text-gray-300"
-						>{new Date(rem.reminderDate).toLocaleString()}</span
+						>{$fmt.dateTime(rem.reminderDate)}</span
 					>
 					<Button
 						size="xs"
 						color="light"
 						onclick={() => onDeleteReminder(rem.id)}
-						aria-label="Remove reminder">✕</Button
+						aria-label={$t('tasks.reminders.remove')}>✕</Button
 					>
 				</div>
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">No reminders.</p>
+		<p class="text-sm text-gray-400 mb-3">{$t('tasks.reminders.empty')}</p>
 	{/if}
 	<div class="flex gap-2">
 		<Input type="datetime-local" bind:value={newReminderDate} class="flex-1" />
-		<Button size="sm" onclick={submitReminder}>Add</Button>
+		<Button size="sm" onclick={submitReminder}>{$t('common.add')}</Button>
 	</div>
 </Card>
 
 <!-- Attachments -->
 <Card class="mb-4">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Attachments</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.attachments.title')}</h2>
 	{#if attachments.length}
 		<div class="mb-3">
 			{#each attachments as att, i (att.id)}
@@ -115,19 +116,19 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">No attachments.</p>
+		<p class="text-sm text-gray-400 mb-3">{$t('tasks.attachments.empty')}</p>
 	{/if}
 	<label
 		class="inline-flex items-center gap-2 cursor-pointer px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
 	>
-		Upload file
+		{$t('tasks.attachments.upload')}
 		<input type="file" onchange={onUpload} class="sr-only" />
 	</label>
 </Card>
 
 <!-- Comments -->
 <Card>
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Comments</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.comments.title')}</h2>
 	{#if comments.length}
 		<div class="mb-4">
 			{#each comments as comment, i (comment.id)}
@@ -138,39 +139,33 @@
 				>
 					<div class="flex items-center justify-between">
 						<span class="text-sm font-bold text-primary-600 dark:text-primary-400"
-							>{comment.author?.username ?? 'Unknown'}</span
+							>{comment.author?.username ?? $t('common.unknown')}</span
 						>
 						<div class="flex items-center gap-2">
-							<span class="text-xs text-gray-400"
-								>{new Date(comment.createdAt).toLocaleString()}</span
-							>
+							<span class="text-xs text-gray-400">{$fmt.dateTime(comment.createdAt)}</span>
 							{#if canDeleteComment(comment)}
-								<Button
-									size="xs"
-									color="light"
-									onclick={() => onDeleteComment(comment.id)}>Delete</Button
+								<Button size="xs" color="light" onclick={() => onDeleteComment(comment.id)}
+									>{$t('common.delete')}</Button
 								>
 							{/if}
 						</div>
 					</div>
-					<p
-						class="text-sm text-gray-700 dark:text-gray-300 m-0 whitespace-pre-wrap"
-					>
+					<p class="text-sm text-gray-700 dark:text-gray-300 m-0 whitespace-pre-wrap">
 						{comment.content}
 					</p>
 				</div>
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-4">No comments yet.</p>
+		<p class="text-sm text-gray-400 mb-4">{$t('tasks.comments.empty')}</p>
 	{/if}
 	<form onsubmit={submitComment} class="flex gap-2">
 		<Input
 			type="text"
 			bind:value={newComment}
-			placeholder="Add a comment…"
+			placeholder={$t('tasks.comments.placeholder')}
 			class="flex-1"
 		/>
-		<Button type="submit" size="sm" disabled={addingComment}>Post</Button>
+		<Button type="submit" size="sm" disabled={addingComment}>{$t('tasks.comments.post')}</Button>
 	</form>
 </Card>

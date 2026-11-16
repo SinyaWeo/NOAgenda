@@ -20,7 +20,12 @@ export class ApiTokenController {
     @Body() body: CreateApiTokenDto,
     @Request() req: any,
   ): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
-    return this.service.create(req.user.userId, body.name, body.scope ?? 'read', body.expiresAt ? new Date(body.expiresAt) : undefined);
+    return this.service.create(
+      req.user.userId,
+      body.name,
+      body.scope ?? 'read',
+      body.expiresAt ? new Date(body.expiresAt) : undefined,
+    );
   }
 
   @Delete(':id')

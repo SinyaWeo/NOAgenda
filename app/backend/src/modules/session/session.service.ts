@@ -1,4 +1,11 @@
-import { Injectable, Logger, NotFoundException, OnModuleDestroy, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  OnModuleDestroy,
+  OnModuleInit,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, Not } from 'typeorm';
 import { UserSession } from './session.entity';
@@ -194,11 +201,7 @@ export class SessionService implements OnModuleInit, OnModuleDestroy {
 
   /** Housekeeping: drop expired sessions. */
   async purgeExpired(): Promise<number> {
-    const res = await this.repo
-      .createQueryBuilder()
-      .delete()
-      .where('expiresAt < :now', { now: new Date() })
-      .execute();
+    const res = await this.repo.createQueryBuilder().delete().where('expiresAt < :now', { now: new Date() }).execute();
     return res.affected ?? 0;
   }
 }

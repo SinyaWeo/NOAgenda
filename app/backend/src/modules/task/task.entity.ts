@@ -58,4 +58,3 @@ export class Task extends BaseEntity {
   @ManyToOne(() => Project, { nullable: false })
   project!: Project;
 }
-

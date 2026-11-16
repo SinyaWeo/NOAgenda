@@ -1,6 +1,17 @@
 import {
-  Controller, Get, Post, Put, Body, UseGuards, Request,
-  NotFoundException, BadRequestException, ConflictException, UploadedFile, UseInterceptors, Res,
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  UseGuards,
+  Request,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+  UploadedFile,
+  UseInterceptors,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
@@ -22,7 +33,12 @@ import { verifyPassword } from '../../common/password';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { SessionService } from '../session/session.service';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
-import { UpdateGeneralSettingsDto, UpdateEmailDto, UpdatePasswordDto, DeletionRequestDto } from './dto/user-settings.dto';
+import {
+  UpdateGeneralSettingsDto,
+  UpdateEmailDto,
+  UpdatePasswordDto,
+  DeletionRequestDto,
+} from './dto/user-settings.dto';
 import { sniffFile } from '../../common/file-sniff';
 import { AccountService } from '../account/account.service';
 import { Throttle } from '@nestjs/throttler';
@@ -49,14 +65,16 @@ export class UserSettingsController {
 
   /** POST /user/settings/general — update name, language, timezone, theme, weekStart, defaultProjectId */
   @Post('settings/general')
-  async updateGeneral(
-    @Request() req: any,
-    @Body() body: UpdateGeneralSettingsDto,
-  ) {
+  async updateGeneral(@Request() req: any, @Body() body: UpdateGeneralSettingsDto) {
     // Explicit pick: never pass the raw body (role, password, etc.) to update().
     const { name, language, timezone, theme, weekStart, defaultProjectId } = body;
     const user = await this.userService.update(req.user.userId, {
-      name, language, timezone, theme, weekStart, defaultProjectId,
+      name,
+      language,
+      timezone,
+      theme,
+      weekStart,
+      defaultProjectId,
     });
     if (!user) throw new NotFoundException();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -78,7 +96,9 @@ export class UserSettingsController {
     if (body.email !== user.email) {
       // A new address is unverified until the owner clicks the emailed link.
       await this.userService.update(user.id, { email: body.email, isEmailConfirmed: false });
-      void this.emailVerification.send({ id: user.id, email: body.email, username: user.username }).catch(() => undefined);
+      void this.emailVerification
+        .send({ id: user.id, email: body.email, username: user.username })
+        .catch(() => undefined);
     }
     return { message: 'Email updated. Please check your inbox to verify the new address.' };
   }
@@ -93,19 +113,21 @@ export class UserSettingsController {
 
   /** PUT /user/settings/avatar/upload — upload a new avatar image */
   @Put('settings/avatar/upload')
-  @UseInterceptors(FileInterceptor('avatar', {
-    storage: diskStorage({
-      destination: './uploads/avatars',
-      filename: (req: any, file: Express.Multer.File, cb: (err: Error | null, name: string) => void) => {
-        cb(null, `avatar-${req.user?.userId ?? 'unknown'}-${randomUUID()}${AVATAR_MIME_EXT[file.mimetype] ?? ''}`);
+  @UseInterceptors(
+    FileInterceptor('avatar', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (req: any, file: Express.Multer.File, cb: (err: Error | null, name: string) => void) => {
+          cb(null, `avatar-${req.user?.userId ?? 'unknown'}-${randomUUID()}${AVATAR_MIME_EXT[file.mimetype] ?? ''}`);
+        },
+      }),
+      fileFilter: (_req: any, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
+        if (AVATAR_MIME_EXT[file.mimetype]) cb(null, true);
+        else cb(new BadRequestException('Avatar must be a JPEG, PNG, GIF or WebP image'), false);
       },
+      limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
     }),
-    fileFilter: (_req: any, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
-      if (AVATAR_MIME_EXT[file.mimetype]) cb(null, true);
-      else cb(new BadRequestException('Avatar must be a JPEG, PNG, GIF or WebP image'), false);
-    },
-    limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
-  }))
+  )
   async uploadAvatar(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
     // multer trusted the Content-Type header; check what was actually written to disk.
@@ -130,7 +152,8 @@ export class UserSettingsController {
   async updatePassword(@Request() req: any, @Body() body: UpdatePasswordDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
-    if (!(await verifyPassword(body.oldPassword, user.password))) throw new BadRequestException('Incorrect current password');
+    if (!(await verifyPassword(body.oldPassword, user.password)))
+      throw new BadRequestException('Incorrect current password');
     await this.userService.update(req.user.userId, { password: body.newPassword });
     // Everyone else (including a thief holding an old session) is signed out; this session stays.
     await this.sessions.revokeAllForUser(req.user.userId, req.user.sessionId);

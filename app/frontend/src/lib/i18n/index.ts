@@ -21,4 +21,6 @@ authSession.subscribe((s) => {
 export const t = derived(locale, ($l) => (key: MessageKey, params?: Params) => translate($l, key, params));
 
 /** Dates and numbers in the current language and the user's saved time zone: `{$fmt.date(task.dueDate)}`. */
-export const fmt = derived([locale, authSession], ([$l, $s]) => makeFormatters($l, $s.user?.timezone ?? undefined));
+export const fmt = derived([locale, authSession], ([$l, $s]) =>
+	makeFormatters($l, $s.user?.timezone ?? undefined)
+);

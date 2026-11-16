@@ -79,6 +79,12 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
    ```
    Keep `DOMAIN=noagenda.app`; the public origin stays `https://noagenda.app`. Start the stack as usual and check
    `curl -H 'Host: noagenda.app' http://127.0.0.1:8080/api/health`.
+   **The backend must see the visitor's real address** (rate limits and login lockouts are per address). The Caddyfile
+   trusts `X-Forwarded-For` from private network ranges only (`trusted_proxies static private_ranges`), so Apache's header
+   passes through while a visitor on the public internet cannot forge one. Verify once after setup: attempt a login with a wrong
+   password from outside, then `docker compose -f docker/docker-compose.prod.yml logs backend | grep "Failed login"` must
+   show your own public IP, not `172.x.x.x`/`127.0.0.1`. (If it shows the proxy's address, every visitor shares one rate
+   limit: re-check `TRUST_PROXY=2`.)
 2. Apache: `a2enmod proxy proxy_http headers ssl rewrite`, then a vhost, e.g.
    `/etc/apache2/sites-available/noagenda.app.conf`:
    ```apache
@@ -108,6 +114,24 @@ git pull
 docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
 ```
 Pending migrations run on startup. **Take a backup first** (below).
+
+### Upgrading MariaDB (11.3 -> 11.8 LTS)
+The stack now uses `mariadb:11.8` (long-term support; 11.3 was a short-term release that is out of support). The data
+directory is upgraded in place on the first start (`MARIADB_AUTO_UPGRADE=1` is set), but **a data directory cannot be
+downgraded**, so:
+```bash
+docker/backup.sh /var/backups/noagenda                  # 1. fresh backup, copy it off the server
+docker/verify-backup.sh /var/backups/noagenda/db-<ts>.sql.gz   # 2. prove it restores (it now starts a 11.8 scratch server)
+git pull && docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build   # 3.
+docker compose -f docker/docker-compose.prod.yml logs mariadb | grep -i upgrade      # 4. look for a clean upgrade
+```
+Rollback = stop the stack, restore the backup into a fresh volume on the old image tag. Local development: the dev compose
+file uses the same image; `docker compose -f docker/docker-compose.yml up -d` upgrades your local data volume (dump it first
+if it matters).
+
+The migration `1794900000000-Hardening` also runs: it removes duplicate rows from the join tables (keeping the strongest
+permission), deletes rows that point at things that no longer exist, then adds the missing foreign keys and unique indexes.
+Read it before upgrading a production database; `down()` reverts it.
 
 ### Changing the data model (developers)
 Production never auto-syncs the schema. After changing an entity:
@@ -157,12 +181,28 @@ advice, so have them reviewed before you accept real users.
   stored server-side only as a hash, **rotated on every use**. Replaying an old one revokes that session (theft detection).
 - Every request checks that its session still exists, and the user's role comes from the database. So **logout,
   password change/reset, "revoke session" (Settings > Sessions) and admin demotion take effect immediately**.
-- **Lockout**: 5 consecutive wrong passwords lock the account for 15 minutes (`MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES`).
-  A password reset clears it. Login errors are identical for unknown user / wrong password / locked account.
-- Passwords: bcrypt cost 12 (older hashes are upgraded at next login). Reset and verification links are single-use,
-  stored hashed, valid 1 h / 24 h.
-- **API tokens** (Settings > API tokens): shown once, stored hashed, usable as `Authorization: Bearer noa_...`.
-  They cannot change passwords/emails, manage sessions or create tokens.
+- **Lockout** (two layers, so it cannot be used to lock the real owner out): 5 wrong passwords for one account **from one
+  address** lock that address out of that account for 15 minutes (`MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES`); an attacker only
+  locks themselves. 20 wrong passwords from **all addresses together** (`ACCOUNT_LOCK_THRESHOLD`) lock the account for
+  everyone except addresses the owner is currently signed in from. A password reset clears both. Login errors are identical for
+  unknown user / wrong password / locked. The per-address counter is in memory (reset when the API restarts).
+- Passwords: native bcrypt, cost 12 (older hashes, including ones made by the previous JavaScript implementation, keep working and
+  are upgraded at next login). bcrypt only reads the first 72 bytes, so longer passwords are rejected instead of silently cut. Reset
+  and verification links are single-use, stored hashed, valid 1 h / 24 h.
+- **Every route requires a sign-in unless it is explicitly marked public** (default-deny). The public ones are exactly: health/info,
+  `auth/*` (login, refresh, logout, reset and verification flows, config), `POST /users` (registration) and `GET /quotes/random`.
+  A unit test fails if any other route becomes public.
+- **API tokens** (Settings > API tokens): shown once, stored hashed, usable as `Authorization: Bearer noa_...`. Each has a
+  **scope**: *read only* (GET requests only; the default) or *read & write*. Neither can use admin endpoints, change
+  passwords/emails, manage sessions or create tokens. Tokens created before scopes existed became read & write.
+- **User lookup**: there is no "list all users" endpoint. Adding members uses a search (at least 3 characters, 10 results,
+  username and display name only, 30 requests per minute). Registration says "username or email already in use" without
+  saying which.
+- **Uploads**: images (avatars, and image/PDF attachments) must really be what they claim (checked by file signature, not the
+  browser's Content-Type); each user has a storage allowance (`USER_STORAGE_QUOTA_MB`, default 200 MB).
+- **Webhooks**: a target URL must be http(s), contain no credentials and must not resolve to an internal address (loopback,
+  private ranges, link-local/cloud metadata). No sender exists yet; when one is built it must repeat this check right
+  before connecting (`common/url-guard.ts`). `WEBHOOK_ALLOW_PRIVATE=true` lifts the restriction on purpose.
 - Logging out of all devices: change the password, or revoke sessions individually.
 
 ## Configuration reference
@@ -179,7 +219,11 @@ advice, so have them reviewed before you accept real users.
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `.env.production` | Outgoing mail (see above) |
 | `REQUIRE_EMAIL_VERIFICATION` | `.env.production` | Default: on if `SMTP_HOST` is set |
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL_DAYS` | backend | Defaults `15m` / `30` |
-| `MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES` | backend | Defaults `5` / `15` |
+| `MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES` | backend | Failures per address+account before that address is locked, and the lock length. Defaults `5` / `15` |
+| `ACCOUNT_LOCK_THRESHOLD` | backend | Failures across all addresses before the account itself is locked (default `20`) |
+| `USER_STORAGE_QUOTA_MB` | backend | Attachment storage per user (default `200`) |
+| `WEBHOOK_ALLOW_PRIVATE` | backend | `true` allows webhook URLs that point at internal addresses (default off) |
+| `BACKEND_MEM_LIMIT`, `FRONTEND_MEM_LIMIT`, `CADDY_MEM_LIMIT` | `.env.production` | Container memory caps (defaults `768m` / `512m` / `256m`) |
 | `REGISTRATION_INVITE_CODE` / `REGISTRATION_ENABLED=false` | `.env.production` | Soft launch: require an invite code to sign up, or close sign-ups entirely (existing users unaffected) |
 | `OPERATOR_NAME`, `CONTACT_EMAIL`, `REQUIRE_TERMS_ACCEPTANCE` | `.env.production` | Legal pages and consent (see above) |
 | `BACKUP_PING_URL` | environment of `backup.sh` | Dead-man's-switch URL pinged after each backup (`/fail` on failure) |
@@ -187,17 +231,22 @@ advice, so have them reviewed before you accept real users.
 In production the backend also refuses to start without `CORS_ORIGIN` (compose sets it from `DOMAIN`).
 
 ## Local development
-Unchanged: `docker/docker-compose.yml` runs MariaDB + Adminer (bound to 127.0.0.1 only), then
+`docker/docker-compose.yml` runs MariaDB, plus Adminer when started with `--profile tools` (`noagenda.sh start` does; both are bound
+to 127.0.0.1 only), then
 `npm run start:dev` in `app/backend` and `npm run dev` in `app/frontend` (see `noagenda.sh`).
 Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
 
 ## Testing
-- `npm test` (backend unit tests), `npm run check` (frontend types).
+- Backend: `npm test` (unit tests), `npm run lint`, `npm run format:check`. Frontend: `npm test` (Vitest: i18n catalogs, dates,
+  filters), `npm run check` (types), `npm run lint`, `npm run format:check`.
 - `app/backend/scripts/authz-smoke.py` — end-to-end authorization regression test (users cannot reach each
   other's data). Needs a server with **email verification off** (no SMTP).
 - `app/backend/scripts/auth-lifecycle-smoke.py` — email verification, sessions, refresh rotation and theft
   detection, lockout, password reset/change, API tokens. Needs a mail sink with a Mailpit-compatible API
   (`axllent/mailpit`) and `LOGIN_RATE_LIMIT=100` on the API (see the file header).
+- `app/backend/scripts/hardening-smoke.py` — default-deny routes, API-token scopes, search-only user lookup, upload checks and quota,
+  webhook SSRF guard, per-address lockout, join-table uniqueness. Needs the API started with `TRUST_PROXY=1`,
+  `USER_STORAGE_QUOTA_MB=1` and `LOGIN_RATE_LIMIT=100` (see the file header).
 - `app/backend/scripts/validation-account-smoke.py` — input validation, error handling, data export, and the full
   account purge (including that other users' data is untouched). Needs `LOGIN_RATE_LIMIT=100`,
   `ACCOUNT_PURGE_INTERVAL_SECONDS=3` and a way to run SQL (see the file header).
@@ -206,15 +255,15 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
 - All of these create users/data: run them against a **disposable** database only. CI runs the three scripts on every push.
 
 ## Known gaps before opening registration to the public
-- **The UI is English only.** (The language setting was removed because it did nothing.) Translating it is a
-  separate project.
-- Terms and Privacy texts are templates and need review (see above).
+- The UI is available in **English and Czech** (see `app/frontend/src/lib/i18n/README.md`). Terms and Privacy texts are templates
+  in English that the operator must replace with their own reviewed text. Server validation messages are translated when they
+  are one of the common ones; anything else is shown in English.
 - A project's owner deleting their account deletes the project for everyone in it (ownership transfer is not built).
-- Webhook secrets are stored in plaintext (they must be readable to sign deliveries). No webhook sender exists yet; when it
-  does, add SSRF protection and consider encrypting the secrets.
-- `GET /users` lists every user to any signed-in user (needed for member pickers; reveals usernames).
+- Webhook secrets are stored in plaintext (they must be readable to sign deliveries). No webhook sender exists yet; when it does,
+  re-check the target address at delivery time (see Uploads/Webhooks above) and consider encrypting the secrets.
+- The per-address login counter lives in the API process's memory: a restart clears it and several API instances would not share it.
 - Dependencies: no critical/high advisories (CI fails if one appears). Three *moderate* ones sit inside TypeORM's own `glob`/`minimatch`; they are not reachable (the patterns are constants), and the only fix is a major TypeORM upgrade.
 - No independent security review or penetration test has been done.
 - The access token lives in `localStorage` (15-minute lifetime; the refresh credential is an httpOnly cookie). A strict CSP
   is in place and was exercised in a real browser during testing, but a new XSS bug would still expose the short-lived token.
-- The browser test (`e2e/run.sh`, Chromium via Playwright, runs in CI) covers the main flows in Chromium only.
+- The browser test (`e2e/run.sh`, Chromium via Playwright, runs in CI) covers the main flows in Chromium only, in English.

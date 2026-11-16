@@ -18,7 +18,11 @@ const marks = (n: number) => Array(n).fill('?').join(',');
 
 function parseJson(value: unknown): unknown {
   if (typeof value !== 'string') return value;
-  try { return JSON.parse(value); } catch { return value; }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
 }
 
 /**
@@ -39,8 +43,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly ds: DataSource) {}
 
   onModuleInit() {
-    const sweep = () =>
-      this.purgeDue().catch((e) => this.logger.error(`Account purge failed: ${e.message}`));
+    const sweep = () => this.purgeDue().catch((e) => this.logger.error(`Account purge failed: ${e.message}`));
     setTimeout(sweep, Math.min(30, PURGE_INTERVAL_S) * 1000).unref(); // shortly after boot
     this.timer = setInterval(sweep, PURGE_INTERVAL_S * 1000);
     this.timer.unref();
@@ -98,7 +101,11 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       const next: number[] = [];
       for (const part of chunks(frontier)) {
         const rows = await q(`SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`, part);
-        for (const r of rows) if (!all.has(r.id)) { all.add(r.id); next.push(r.id); }
+        for (const r of rows)
+          if (!all.has(r.id)) {
+            all.add(r.id);
+            next.push(r.id);
+          }
       }
       frontier = next;
     }
@@ -156,7 +163,16 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       await q('DELETE FROM team_members WHERE userId = ?', [userId]);
 
       await q('DELETE FROM labels WHERE createdBy = ?', [userId]); // task_labels cascade
-      for (const table of ['notifications', 'saved_filters', 'api_tokens', 'user_sessions', 'favorites', 'subscriptions', 'reactions', 'webhook']) {
+      for (const table of [
+        'notifications',
+        'saved_filters',
+        'api_tokens',
+        'user_sessions',
+        'favorites',
+        'subscriptions',
+        'reactions',
+        'webhook',
+      ]) {
         await q(`DELETE FROM ${table} WHERE userId = ?`, [userId]);
       }
 
@@ -209,9 +225,9 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
          FROM team_members m JOIN teams t ON t.id = m.teamId WHERE m.userId = ?`,
       [userId],
     );
-    const filters = (await q('SELECT id, name, description, filters, createdAt FROM saved_filters WHERE userId = ?', [userId])).map(
-      (f: any) => ({ ...f, filters: parseJson(f.filters) }),
-    );
+    const filters = (
+      await q('SELECT id, name, description, filters, createdAt FROM saved_filters WHERE userId = ?', [userId])
+    ).map((f: any) => ({ ...f, filters: parseJson(f.filters) }));
 
     return {
       exportedAt: new Date().toISOString(),
@@ -220,24 +236,30 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       ownedProjectsAndTasks: owned,
       tasksCreatedInOtherProjects: elsewhere,
       comments: await q('SELECT id, content, nodeId, createdAt FROM comments WHERE authorId = ? ORDER BY id', [userId]),
-      attachments: await q('SELECT id, filename, nodeId, createdAt FROM attachments WHERE uploaderId = ? ORDER BY id', [userId]),
+      attachments: await q('SELECT id, filename, nodeId, createdAt FROM attachments WHERE uploaderId = ? ORDER BY id', [
+        userId,
+      ]),
       labels: await q('SELECT id, title, color, createdAt FROM labels WHERE createdBy = ?', [userId]),
       savedFilters: filters,
       teamsOwned,
       teamMemberships: memberships,
-      sharedProjectsWithMe: await q(
-        'SELECT projectId, permission FROM project_users WHERE userId = ?',
-        [userId],
-      ),
+      sharedProjectsWithMe: await q('SELECT projectId, permission FROM project_users WHERE userId = ?', [userId]),
       favorites: await q('SELECT entityType, entityId, createdAt FROM favorites WHERE userId = ?', [userId]),
       subscriptions: await q('SELECT entityType, entityId, createdAt FROM subscriptions WHERE userId = ?', [userId]),
       reactions: await q('SELECT entityType, entityId, reaction, createdAt FROM reactions WHERE userId = ?', [userId]),
-      notifications: await q('SELECT id, message, `read`, createdAt FROM notifications WHERE userId = ? ORDER BY id', [userId]),
+      notifications: await q('SELECT id, message, `read`, createdAt FROM notifications WHERE userId = ? ORDER BY id', [
+        userId,
+      ]),
       webhooks: await q('SELECT id, url, event, active, projectId, createdAt FROM webhook WHERE userId = ?', [userId]),
-      apiTokens: await q('SELECT id, name, tokenPrefix, expiresAt, lastUsedAt, createdAt FROM api_tokens WHERE userId = ?', [userId]),
-      sessions: await q('SELECT id, userAgent, ipAddress, createdAt, lastUsedAt, expiresAt FROM user_sessions WHERE userId = ?', [userId]),
-      note:
-        'Passwords, token hashes and webhook secrets are not exported. Attachment files are not included, only their metadata.',
+      apiTokens: await q(
+        'SELECT id, name, tokenPrefix, expiresAt, lastUsedAt, createdAt FROM api_tokens WHERE userId = ?',
+        [userId],
+      ),
+      sessions: await q(
+        'SELECT id, userAgent, ipAddress, createdAt, lastUsedAt, expiresAt FROM user_sessions WHERE userId = ?',
+        [userId],
+      ),
+      note: 'Passwords, token hashes and webhook secrets are not exported. Attachment files are not included, only their metadata.',
     };
   }
 }

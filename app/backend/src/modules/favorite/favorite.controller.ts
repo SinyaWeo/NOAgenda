@@ -20,7 +20,8 @@ export class FavoriteController {
     @Request() req: any,
     @Body() body: { entityType: FavoriteEntityType; entityId: number },
   ): Promise<Favorite> {
-    if (!Object.values(FavoriteEntityType).includes(body?.entityType)) throw new BadRequestException('Invalid entityType');
+    if (!Object.values(FavoriteEntityType).includes(body?.entityType))
+      throw new BadRequestException('Invalid entityType');
     const entityId = Number(body.entityId);
     if (!Number.isInteger(entityId) || entityId < 1) throw new BadRequestException('Invalid entityId');
     // You may only favorite things you can read.

@@ -11,7 +11,17 @@ describe('ProjectController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProjectController],
       providers: [
-        { provide: NodeAccessService, useValue: { assertRead: jest.fn(), assertWrite: jest.fn(), assertAdmin: jest.fn(), assertCanModify: jest.fn(), assertCanUseAsParent: jest.fn(), sanitize: jest.fn((x) => x) } },
+        {
+          provide: NodeAccessService,
+          useValue: {
+            assertRead: jest.fn(),
+            assertWrite: jest.fn(),
+            assertAdmin: jest.fn(),
+            assertCanModify: jest.fn(),
+            assertCanUseAsParent: jest.fn(),
+            sanitize: jest.fn((x) => x),
+          },
+        },
         {
           provide: ProjectService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },

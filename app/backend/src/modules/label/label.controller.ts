@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  NotFoundException,
+  ForbiddenException,
+  Request,
+} from '@nestjs/common';
 import { LabelService } from './label.service';
 import { Label } from './label.entity';
 import { CreateLabelDto, UpdateLabelDto } from './dto/label.dto';

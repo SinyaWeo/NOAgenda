@@ -10,7 +10,10 @@ export function MaxBytes(max: number, options?: ValidationOptions) {
       name: 'maxBytes',
       target: target.constructor,
       propertyName,
-      options: { message: `$property must be at most ${max} bytes (long or non-ASCII passwords count per byte)`, ...options },
+      options: {
+        message: `$property must be at most ${max} bytes (long or non-ASCII passwords count per byte)`,
+        ...options,
+      },
       validator: { validate: (v: unknown) => typeof v !== 'string' || Buffer.byteLength(v, 'utf8') <= max },
     });
 }

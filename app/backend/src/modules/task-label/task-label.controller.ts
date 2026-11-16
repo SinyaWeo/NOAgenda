@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, Request, NotFoundException } from '@nestjs/common';
 import { AddTaskLabelDto } from '../task-assignee/dto/task-links.dto';
 import { NodeAccessService } from '../node/node-access.service';
 import { TaskLabelService } from './task-label.service';

@@ -1,3 +1,4 @@
+import type { MessageKey } from '$lib/i18n';
 import type { RelationKind } from '$lib/types';
 
 export const RELATION_KINDS: RelationKind[] = [
@@ -6,27 +7,32 @@ export const RELATION_KINDS: RelationKind[] = [
 	'blocks',
 	'blocked_by',
 	'duplicate_of',
-	'duplicated_by',
+	'duplicated_by'
 ];
 
-/** How a relation reads from the point of view of the task being viewed. */
-const OUTGOING: Record<RelationKind, string> = {
-	related: 'related to',
-	subtask: 'subtask of',
-	blocks: 'blocks',
-	blocked_by: 'blocked by',
-	duplicate_of: 'duplicate of',
-	duplicated_by: 'duplicated by',
+/** Message key for the option label of a relation kind in the "add relation" select. */
+export function relationKindKey(kind: RelationKind): MessageKey {
+	return `tasks.relationKind.${kind}` as MessageKey;
+}
+
+/** How a relation reads from the point of view of the task being viewed (a message key: translate it with $t). */
+const OUTGOING: Record<RelationKind, MessageKey> = {
+	related: 'tasks.relation.related',
+	subtask: 'tasks.relation.subtaskOf',
+	blocks: 'tasks.relation.blocks',
+	blocked_by: 'tasks.relation.blockedBy',
+	duplicate_of: 'tasks.relation.duplicateOf',
+	duplicated_by: 'tasks.relation.duplicatedBy'
 };
-const INCOMING: Record<RelationKind, string> = {
-	related: 'related to',
-	subtask: 'parent of',
-	blocks: 'blocked by',
-	blocked_by: 'blocks',
-	duplicate_of: 'duplicated by',
-	duplicated_by: 'duplicate of',
+const INCOMING: Record<RelationKind, MessageKey> = {
+	related: 'tasks.relation.related',
+	subtask: 'tasks.relation.parentOf',
+	blocks: 'tasks.relation.blockedBy',
+	blocked_by: 'tasks.relation.blocks',
+	duplicate_of: 'tasks.relation.duplicatedBy',
+	duplicated_by: 'tasks.relation.duplicateOf'
 };
 
-export function relationLabel(kind: RelationKind, incoming: boolean): string {
-	return (incoming ? INCOMING : OUTGOING)[kind] ?? kind.replace(/_/g, ' ');
+export function relationLabel(kind: RelationKind, incoming: boolean): MessageKey {
+	return (incoming ? INCOMING : OUTGOING)[kind] ?? 'tasks.relation.related';
 }

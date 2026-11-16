@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository, Like } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { existsSync, unlink } from 'fs';
 import { resolve } from 'path';
 import { Node, NodeType, NodeStatus } from './node.entity';
@@ -86,7 +86,10 @@ export class NodeService {
     if (filter.excludeDone) qb.andWhere("(node.status IS NULL OR node.status != 'done')");
     if (filter.priority !== undefined) qb.andWhere('node.priority = :priority', { priority: filter.priority });
     if (filter.dueBefore) {
-      qb.andWhere(filter.includeUndated ? '(node.dueDate IS NULL OR node.dueDate <= :dueBefore)' : 'node.dueDate <= :dueBefore', { dueBefore: filter.dueBefore });
+      qb.andWhere(
+        filter.includeUndated ? '(node.dueDate IS NULL OR node.dueDate <= :dueBefore)' : 'node.dueDate <= :dueBefore',
+        { dueBefore: filter.dueBefore },
+      );
     }
     if (filter.dueAfter) qb.andWhere('node.dueDate >= :dueAfter', { dueAfter: filter.dueAfter });
 
@@ -96,14 +99,24 @@ export class NodeService {
       });
     }
 
-    const sortField = filter.sort === 'title' ? 'node.title'
-      : filter.sort === 'name' ? 'node.name'
-      : filter.sort === 'priority' ? 'node.priority'
-      : filter.sort === 'status' ? 'node.status'
-      : filter.sort === 'dueDate' ? (filter.order === 'DESC' ? "COALESCE(node.dueDate, '1000-01-01')" : "COALESCE(node.dueDate, '9999-12-31')")
-      : filter.sort === 'createdAt' ? 'node.createdAt'
-      : filter.sort === 'updatedAt' ? 'node.updatedAt'
-      : 'node.position';
+    const sortField =
+      filter.sort === 'title'
+        ? 'node.title'
+        : filter.sort === 'name'
+          ? 'node.name'
+          : filter.sort === 'priority'
+            ? 'node.priority'
+            : filter.sort === 'status'
+              ? 'node.status'
+              : filter.sort === 'dueDate'
+                ? filter.order === 'DESC'
+                  ? "COALESCE(node.dueDate, '1000-01-01')"
+                  : "COALESCE(node.dueDate, '9999-12-31')"
+                : filter.sort === 'createdAt'
+                  ? 'node.createdAt'
+                  : filter.sort === 'updatedAt'
+                    ? 'node.updatedAt'
+                    : 'node.position';
     const sortOrder = filter.order === 'DESC' ? 'DESC' : 'ASC';
     qb.orderBy(sortField, sortOrder).addOrderBy('node.createdAt', 'DESC');
 
@@ -132,7 +145,11 @@ export class NodeService {
   }
 
   /** Depth- and cycle-safe: each node is visited once, nesting is capped. */
-  private async loadChildrenRecursive(parentId: number, seen = new Set<number>([parentId]), depth = 0): Promise<Node[]> {
+  private async loadChildrenRecursive(
+    parentId: number,
+    seen = new Set<number>([parentId]),
+    depth = 0,
+  ): Promise<Node[]> {
     if (depth >= MAX_TREE_DEPTH) return [];
     const children = (await this.findChildren(parentId)).filter((c) => !seen.has(c.id));
     for (const child of children) seen.add(child.id);
@@ -183,7 +200,10 @@ export class NodeService {
         for (let i = 0; i < frontier.length; i += CHUNK) {
           const part = frontier.slice(i, i + CHUNK);
           for (const r of await q(`SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`, part)) {
-            if (!all.has(r.id)) { all.add(r.id); next.push(r.id); }
+            if (!all.has(r.id)) {
+              all.add(r.id);
+              next.push(r.id);
+            }
           }
         }
         frontier = next;

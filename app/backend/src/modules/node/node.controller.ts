@@ -16,7 +16,7 @@ import { NodeService, NodeFilter } from './node.service';
 import { NodeAccessService } from './node-access.service';
 import { normalizeParentRefs } from './node-payload';
 import { NodeCreateDto, NodeUpdateDto, NodeMoveDto, NodeListQueryDto } from './dto/node.dto';
-import { Node, NodeType, NodeStatus } from './node.entity';
+import { Node, NodeType } from './node.entity';
 
 @Controller('nodes')
 export class NodeController {
@@ -106,11 +106,7 @@ export class NodeController {
   }
 
   @Patch(':id/move')
-  async move(
-    @Param('id') id: number,
-    @Body() body: NodeMoveDto,
-    @Request() req: any,
-  ): Promise<Node> {
+  async move(@Param('id') id: number, @Body() body: NodeMoveDto, @Request() req: any): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);

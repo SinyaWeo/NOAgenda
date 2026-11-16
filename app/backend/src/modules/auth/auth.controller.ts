@@ -1,6 +1,15 @@
 import {
-  Controller, Get, Post, Body, Request, Res, HttpCode, HttpStatus,
-  Logger, UnauthorizedException, ForbiddenException,
+  Controller,
+  Get,
+  Post,
+  Body,
+  Request,
+  Res,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
@@ -28,7 +37,11 @@ function readCookie(req: any, name: string): string | undefined {
   for (const part of header.split(';')) {
     const i = part.indexOf('=');
     if (i > 0 && part.slice(0, i).trim() === name) {
-      try { return decodeURIComponent(part.slice(i + 1).trim()); } catch { return undefined; }
+      try {
+        return decodeURIComponent(part.slice(i + 1).trim());
+      } catch {
+        return undefined;
+      }
     }
   }
   return undefined;
@@ -95,7 +108,9 @@ export class AuthController {
     } catch (err) {
       if (err instanceof UnauthorizedException) {
         // Audit trail for brute-force detection. Never log the password; strip control chars.
-        const user = String(body.username).replace(/[^\x20-\x7e]/g, '?').slice(0, 64);
+        const user = String(body.username)
+          .replace(/[^\x20-\x7e]/g, '?')
+          .slice(0, 64);
         this.logger.warn(`Failed login for "${user}" from ${req.ip}`);
       }
       throw err;

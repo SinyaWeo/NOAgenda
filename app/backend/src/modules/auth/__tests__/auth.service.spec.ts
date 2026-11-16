@@ -7,8 +7,14 @@ jest.mock('../../../common/password');
 const pw = password as jest.Mocked<typeof password>;
 
 const USER = {
-  id: 7, username: 'ann', email: 'ann@example.com', role: 'user', password: '$2a$12$hash',
-  isEmailConfirmed: true, failedLoginAttempts: 0, lockedUntil: undefined as Date | undefined,
+  id: 7,
+  username: 'ann',
+  email: 'ann@example.com',
+  role: 'user',
+  password: '$2a$12$hash',
+  isEmailConfirmed: true,
+  failedLoginAttempts: 0,
+  lockedUntil: undefined as Date | undefined,
 };
 
 function build(over: { user?: any; verificationRequired?: boolean } = {}) {
@@ -27,11 +33,17 @@ function build(over: { user?: any; verificationRequired?: boolean } = {}) {
     decode: jest.fn(() => ({ iat: 100, exp: 1000 })),
   };
   const resets: any = {
-    delete: jest.fn(async () => ({ affected: 1 })), save: jest.fn(async (x) => x), create: jest.fn((x) => x), findOne: jest.fn(),
+    delete: jest.fn(async () => ({ affected: 1 })),
+    save: jest.fn(async (x) => x),
+    create: jest.fn((x) => x),
+    findOne: jest.fn(),
   };
   const sessions: any = {
     create: jest.fn(async () => ({ session: { id: 55 }, refreshToken: 'rt' })),
-    rotate: jest.fn(), revokeAllForUser: jest.fn(), revokeById: jest.fn(), revokeByRefreshToken: jest.fn(),
+    rotate: jest.fn(),
+    revokeAllForUser: jest.fn(),
+    revokeById: jest.fn(),
+    revokeByRefreshToken: jest.fn(),
     hasActiveSessionFromIp: jest.fn(async () => false),
   };
   const verification: any = { required: over.verificationRequired ?? false };
@@ -70,7 +82,9 @@ describe('AuthService.login', () => {
     const err = await svc.login('ann', 'bad').catch((e) => e);
     expect(err).toBeInstanceOf(UnauthorizedException);
     expect(users.recordFailedLogin).toHaveBeenCalledWith(7, ACCOUNT_LOCK_THRESHOLD, expect.any(Date));
-    const unknown = await build({ user: null }).svc.login('x', 'bad').catch((e) => e);
+    const unknown = await build({ user: null })
+      .svc.login('x', 'bad')
+      .catch((e) => e);
     expect(unknown.message).toBe(err.message);
   });
 
@@ -113,7 +127,7 @@ describe('AuthService.login', () => {
       await expect(svc.login('ann', 'right', { ip: '9.9.9.9' })).rejects.toBeInstanceOf(UnauthorizedException);
     });
 
-    it('a wrong password from the owner\'s own address is still rejected while the account is locked', async () => {
+    it("a wrong password from the owner's own address is still rejected while the account is locked", async () => {
       const locked = { ...USER, lockedUntil: new Date(Date.now() + 60_000) };
       const { svc, sessions } = build({ user: locked });
       sessions.hasActiveSessionFromIp.mockResolvedValue(true);
@@ -123,7 +137,9 @@ describe('AuthService.login', () => {
   });
 
   it('lets a user back in once the lock has expired and clears the counters', async () => {
-    const { svc, users } = build({ user: { ...USER, failedLoginAttempts: 3, lockedUntil: new Date(Date.now() - 1000) } });
+    const { svc, users } = build({
+      user: { ...USER, failedLoginAttempts: 3, lockedUntil: new Date(Date.now() - 1000) },
+    });
     await expect(svc.login('ann', 'right')).resolves.toMatchObject({ refreshToken: 'rt' });
     expect(users.resetLoginState).toHaveBeenCalledWith(7);
   });
@@ -136,7 +152,9 @@ describe('AuthService.login', () => {
     expect(sessions.create).not.toHaveBeenCalled();
 
     pw.verifyPassword.mockResolvedValue(false);
-    const wrong = await build({ user: { ...USER, isEmailConfirmed: false }, verificationRequired: true }).svc.login('ann', 'bad').catch((e) => e);
+    const wrong = await build({ user: { ...USER, isEmailConfirmed: false }, verificationRequired: true })
+      .svc.login('ann', 'bad')
+      .catch((e) => e);
     expect(wrong).toBeInstanceOf(UnauthorizedException); // wrong password never reveals verification state
   });
 
@@ -173,7 +191,11 @@ describe('AuthService password reset', () => {
 
   it('resets the password, is single use, and signs the user out everywhere', async () => {
     const { svc, resets, users, sessions } = build();
-    resets.findOne.mockResolvedValue({ id: 1, user: { id: 7, username: 'ann' }, expiresAt: new Date(Date.now() + 60_000) });
+    resets.findOne.mockResolvedValue({
+      id: 1,
+      user: { id: 7, username: 'ann' },
+      expiresAt: new Date(Date.now() + 60_000),
+    });
     await svc.resetPassword('rawtoken', 'new-password-1');
     expect(resets.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { token: sha256('rawtoken') } }));
     expect(users.update).toHaveBeenCalledWith(7, { password: 'new-password-1', isEmailConfirmed: true });

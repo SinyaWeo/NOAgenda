@@ -21,8 +21,10 @@ export class AppSettingsController {
     const entries = body && typeof body === 'object' && !Array.isArray(body) ? Object.entries(body) : null;
     if (!entries || entries.length > 100) throw new BadRequestException('Expected an object with at most 100 settings');
     for (const [key, value] of entries) {
-      if (!/^[A-Za-z0-9_.-]{1,64}$/.test(key)) throw new BadRequestException(`Invalid setting name "${key.slice(0, 20)}"`);
-      if (typeof value !== 'string' || value.length > 2000) throw new BadRequestException(`Setting "${key}" must be a string of at most 2000 characters`);
+      if (!/^[A-Za-z0-9_.-]{1,64}$/.test(key))
+        throw new BadRequestException(`Invalid setting name "${key.slice(0, 20)}"`);
+      if (typeof value !== 'string' || value.length > 2000)
+        throw new BadRequestException(`Setting "${key}" must be a string of at most 2000 characters`);
     }
     await this.appSettingsService.setMany(body);
     return this.appSettingsService.getAll();

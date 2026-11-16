@@ -1,6 +1,200 @@
 import type { Message } from '../core';
 
 // Messages for the "layout" area. Keys are prefixed "layout." (see ../README.md).
-export const en = {} as const;
+export const en = {
+	// Browser tab titles
+	'layout.title.dashboard': 'Dashboard',
+	'layout.title.newProject': 'New project',
+	'layout.title.projects': 'Projects',
+	'layout.title.newTask': 'New task',
+	'layout.title.tasks': 'Tasks',
+	'layout.title.upcoming': 'Upcoming',
+	'layout.title.teams': 'Teams',
+	'layout.title.labels': 'Labels',
+	'layout.title.filters': 'Filters',
+	'layout.title.mindmap': 'Mind map',
+	'layout.title.about': 'About',
+	'layout.title.admin': 'Administration',
+	'layout.title.profile': 'Profile',
+	'layout.title.settings': 'Settings',
+	'layout.title.login': 'Sign in',
+	'layout.title.register': 'Create account',
+	'layout.title.resetRequest': 'Reset password',
+	'layout.title.resetPassword': 'Choose a new password',
+	'layout.title.verifyEmail': 'Confirm email',
+	'layout.title.terms': 'Terms of Service',
+	'layout.title.privacy': 'Privacy Policy',
+	'layout.titleWithApp': '{title} · NOAgenda',
 
-export const cs: Record<keyof typeof en, Message> = {};
+	// Shell
+	'layout.skipToContent': 'Skip to content',
+	'layout.openMenu': 'Open menu',
+	'layout.redirecting': 'Redirecting to sign in…',
+
+	// Sidebar
+	'layout.nav.main': 'Main',
+	'layout.nav.work': 'Work',
+	'layout.nav.organize': 'Organize',
+	'layout.nav.dashboard': 'Dashboard',
+	'layout.nav.projects': 'Projects',
+	'layout.nav.tasks': 'Tasks',
+	'layout.nav.upcoming': 'Upcoming',
+	'layout.nav.mindmap': 'MindMap',
+	'layout.nav.teams': 'Teams',
+	'layout.nav.labels': 'Labels',
+	'layout.nav.filters': 'Saved Filters',
+	'layout.nav.admin': 'Admin',
+	'layout.nav.about': 'About',
+	'layout.nav.expand': 'Expand sidebar',
+	'layout.nav.collapse': 'Collapse sidebar',
+
+	// Search
+	'layout.search.placeholder': 'Search tasks & projects…',
+	'layout.search.label': 'Search tasks and projects',
+	'layout.search.results': 'Search results',
+	'layout.search.tasks': 'Tasks',
+	'layout.search.projects': 'Projects',
+
+	// Quick add
+	'layout.quickAdd.title': 'Create new…',
+	'layout.quickAdd.label': 'Create new task or project',
+	'layout.quickAdd.task': 'New Task',
+	'layout.quickAdd.project': 'New Project',
+
+	// Notifications (message text itself comes from the server and is not translated)
+	'layout.notifications.title': 'Notifications',
+	'layout.notifications.withUnread': 'Notifications, {count} unread',
+	'layout.notifications.markAllRead': 'Mark all read',
+	'layout.notifications.empty': 'No notifications.',
+	'layout.notifications.fallback': 'Notification #{id}',
+
+	// User menu
+	'layout.user.toggleThemeTitle': 'Toggle theme',
+	'layout.user.toggleTheme': 'Toggle light/dark theme',
+	'layout.user.accountMenu': 'Account menu',
+	'layout.user.admin': 'Admin',
+	'layout.user.profile': 'Profile',
+	'layout.user.teams': 'Teams',
+	'layout.user.settings': 'Settings',
+	'layout.user.terms': 'Terms of Service',
+	'layout.user.privacy': 'Privacy Policy',
+	'layout.user.logout': 'Logout',
+	'layout.user.language': 'Language',
+
+	// Toast
+	'layout.toast.dismiss': 'Dismiss',
+
+	// Error page
+	'layout.error.notFound': 'Page not found',
+	'layout.error.forbidden': 'No access',
+	'layout.error.server': 'Something went wrong',
+	'layout.error.other': 'Something is not right',
+	'layout.error.notFoundDetail': 'The page you are looking for does not exist or was moved.',
+	'layout.error.forbiddenDetail': 'You do not have permission to open this page.',
+	'layout.error.serverDetail': 'Our side hit an unexpected problem. Please try again in a moment.',
+	'layout.error.otherDetail': 'The request could not be completed.',
+	'layout.error.backToDashboard': 'Back to Dashboard',
+	'layout.error.signIn': 'Sign in',
+	'layout.error.goBack': 'Go back',
+
+	// Legal page chrome
+	'layout.legal.terms': 'Terms',
+	'layout.legal.privacy': 'Privacy',
+	'layout.legal.templateNoticeTitle': 'Template, not yet configured.',
+	'layout.legal.templateNotice':
+		'The operator has not set {nameVar} and {emailVar} when building this site, and this text has not been reviewed by a lawyer. Complete the bracketed parts and have it checked before accepting real users.'
+} as const;
+
+export const cs: Record<keyof typeof en, Message> = {
+	'layout.title.dashboard': 'Přehled',
+	'layout.title.newProject': 'Nový projekt',
+	'layout.title.projects': 'Projekty',
+	'layout.title.newTask': 'Nový úkol',
+	'layout.title.tasks': 'Úkoly',
+	'layout.title.upcoming': 'Nadcházející',
+	'layout.title.teams': 'Týmy',
+	'layout.title.labels': 'Štítky',
+	'layout.title.filters': 'Filtry',
+	'layout.title.mindmap': 'Myšlenková mapa',
+	'layout.title.about': 'O aplikaci',
+	'layout.title.admin': 'Správa',
+	'layout.title.profile': 'Profil',
+	'layout.title.settings': 'Nastavení',
+	'layout.title.login': 'Přihlášení',
+	'layout.title.register': 'Vytvořit účet',
+	'layout.title.resetRequest': 'Obnovení hesla',
+	'layout.title.resetPassword': 'Zvolte nové heslo',
+	'layout.title.verifyEmail': 'Potvrzení e‑mailu',
+	'layout.title.terms': 'Podmínky používání',
+	'layout.title.privacy': 'Zásady ochrany osobních údajů',
+	'layout.titleWithApp': '{title} · NOAgenda',
+
+	'layout.skipToContent': 'Přeskočit na obsah',
+	'layout.openMenu': 'Otevřít menu',
+	'layout.redirecting': 'Přesměrování na přihlášení…',
+
+	'layout.nav.main': 'Hlavní',
+	'layout.nav.work': 'Práce',
+	'layout.nav.organize': 'Organizace',
+	'layout.nav.dashboard': 'Přehled',
+	'layout.nav.projects': 'Projekty',
+	'layout.nav.tasks': 'Úkoly',
+	'layout.nav.upcoming': 'Nadcházející',
+	'layout.nav.mindmap': 'Myšlenková mapa',
+	'layout.nav.teams': 'Týmy',
+	'layout.nav.labels': 'Štítky',
+	'layout.nav.filters': 'Uložené filtry',
+	'layout.nav.admin': 'Správa',
+	'layout.nav.about': 'O aplikaci',
+	'layout.nav.expand': 'Rozbalit postranní panel',
+	'layout.nav.collapse': 'Sbalit postranní panel',
+
+	'layout.search.placeholder': 'Hledat úkoly a projekty…',
+	'layout.search.label': 'Hledat úkoly a projekty',
+	'layout.search.results': 'Výsledky hledání',
+	'layout.search.tasks': 'Úkoly',
+	'layout.search.projects': 'Projekty',
+
+	'layout.quickAdd.title': 'Vytvořit…',
+	'layout.quickAdd.label': 'Vytvořit nový úkol nebo projekt',
+	'layout.quickAdd.task': 'Nový úkol',
+	'layout.quickAdd.project': 'Nový projekt',
+
+	'layout.notifications.title': 'Oznámení',
+	'layout.notifications.withUnread': 'Oznámení, nepřečtených: {count}',
+	'layout.notifications.markAllRead': 'Označit vše jako přečtené',
+	'layout.notifications.empty': 'Žádná oznámení.',
+	'layout.notifications.fallback': 'Oznámení č. {id}',
+
+	'layout.user.toggleThemeTitle': 'Přepnout motiv',
+	'layout.user.toggleTheme': 'Přepnout světlý/tmavý motiv',
+	'layout.user.accountMenu': 'Menu účtu',
+	'layout.user.admin': 'Správce',
+	'layout.user.profile': 'Profil',
+	'layout.user.teams': 'Týmy',
+	'layout.user.settings': 'Nastavení',
+	'layout.user.terms': 'Podmínky používání',
+	'layout.user.privacy': 'Zásady ochrany osobních údajů',
+	'layout.user.logout': 'Odhlásit se',
+	'layout.user.language': 'Jazyk',
+
+	'layout.toast.dismiss': 'Zavřít',
+
+	'layout.error.notFound': 'Stránka nenalezena',
+	'layout.error.forbidden': 'Přístup odepřen',
+	'layout.error.server': 'Něco se pokazilo',
+	'layout.error.other': 'Něco není v pořádku',
+	'layout.error.notFoundDetail': 'Stránka, kterou hledáte, neexistuje nebo byla přesunuta.',
+	'layout.error.forbiddenDetail': 'Nemáte oprávnění otevřít tuto stránku.',
+	'layout.error.serverDetail': 'Na naší straně došlo k neočekávané chybě. Zkuste to prosím za chvíli znovu.',
+	'layout.error.otherDetail': 'Požadavek se nepodařilo dokončit.',
+	'layout.error.backToDashboard': 'Zpět na Přehled',
+	'layout.error.signIn': 'Přihlásit se',
+	'layout.error.goBack': 'Zpět',
+
+	'layout.legal.terms': 'Podmínky',
+	'layout.legal.privacy': 'Soukromí',
+	'layout.legal.templateNoticeTitle': 'Šablona, dosud nenastaveno.',
+	'layout.legal.templateNotice':
+		'Provozovatel při sestavení tohoto webu nenastavil {nameVar} ani {emailVar} a text nebyl posouzen právníkem. Doplňte části v hranatých závorkách a nechte text zkontrolovat, než přijmete skutečné uživatele.'
+};

@@ -14,6 +14,7 @@
 	import { derived } from 'svelte/store';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { t, type MessageKey } from '$lib/i18n';
 	import { ThemeProvider } from 'flowbite-svelte';
 	import { BarsOutline } from 'flowbite-svelte-icons';
 
@@ -31,39 +32,40 @@
 		'/user/password-reset',
 		'/user/verify-email',
 		'/terms',
-		'/privacy',
+		'/privacy'
 	];
-	const isPublicRoute = $derived(
-		PUBLIC_ROUTES.includes(currentPath.replace(/\/+$/, '') || '/'),
-	);
+	const isPublicRoute = $derived(PUBLIC_ROUTES.includes(currentPath.replace(/\/+$/, '') || '/'));
 
 	// Browser-tab titles. A page can still set its own <title>.
-	const TITLES: [string, string][] = [
-		['/dashboard', 'Dashboard'],
-		['/projects/new', 'New project'],
-		['/projects', 'Projects'],
-		['/tasks/create', 'New task'],
-		['/tasks', 'Tasks'],
-		['/upcoming', 'Upcoming'],
-		['/teams', 'Teams'],
-		['/labels', 'Labels'],
-		['/filters', 'Filters'],
-		['/mindmap', 'Mind map'],
-		['/about', 'About'],
-		['/admin', 'Administration'],
-		['/user/profile', 'Profile'],
-		['/user/settings', 'Settings'],
-		['/user/login', 'Sign in'],
-		['/user/register', 'Create account'],
-		['/user/get-password-reset', 'Reset password'],
-		['/user/password-reset', 'Choose a new password'],
-		['/user/verify-email', 'Confirm email'],
-		['/terms', 'Terms of Service'],
-		['/privacy', 'Privacy Policy'],
+	const TITLES: [string, MessageKey][] = [
+		['/dashboard', 'layout.title.dashboard'],
+		['/projects/new', 'layout.title.newProject'],
+		['/projects', 'layout.title.projects'],
+		['/tasks/create', 'layout.title.newTask'],
+		['/tasks', 'layout.title.tasks'],
+		['/upcoming', 'layout.title.upcoming'],
+		['/teams', 'layout.title.teams'],
+		['/labels', 'layout.title.labels'],
+		['/filters', 'layout.title.filters'],
+		['/mindmap', 'layout.title.mindmap'],
+		['/about', 'layout.title.about'],
+		['/admin', 'layout.title.admin'],
+		['/user/profile', 'layout.title.profile'],
+		['/user/settings', 'layout.title.settings'],
+		['/user/login', 'layout.title.login'],
+		['/user/register', 'layout.title.register'],
+		['/user/get-password-reset', 'layout.title.resetRequest'],
+		['/user/password-reset', 'layout.title.resetPassword'],
+		['/user/verify-email', 'layout.title.verifyEmail'],
+		['/terms', 'layout.title.terms'],
+		['/privacy', 'layout.title.privacy']
 	];
-	const pageTitle = $derived(
-		TITLES.find(([prefix]) => currentPath === prefix || currentPath.startsWith(prefix + '/'))?.[1],
-	);
+	const pageTitle = $derived.by(() => {
+		const key = TITLES.find(
+			([prefix]) => currentPath === prefix || currentPath.startsWith(prefix + '/')
+		)?.[1];
+		return key ? $t(key) : undefined;
+	});
 
 	// Mobile: the sidebar becomes a slide-in drawer.
 	let isMobile = $state(false);
@@ -115,9 +117,11 @@
 		const theme = session.user.theme ?? 'light';
 		document.documentElement.classList.toggle(
 			'dark',
-			theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
+			theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
 		);
-		try { localStorage.setItem('theme', theme); } catch (_) {} // read by app.html before first paint
+		try {
+			localStorage.setItem('theme', theme);
+		} catch (_) {} // read by app.html before first paint
 	});
 
 	async function logout() {
@@ -133,7 +137,7 @@
 
 <svelte:head>
 	<link rel="icon" type="image/svg+xml" href={favicon} />
-	<title>{pageTitle ? `${pageTitle} · NOAgenda` : 'NOAgenda'}</title>
+	<title>{pageTitle ? $t('layout.titleWithApp', { title: pageTitle }) : 'NOAgenda'}</title>
 </svelte:head>
 
 <ThemeProvider theme={{ card: { base: 'p-5' } }}>
@@ -141,7 +145,7 @@
 		<a
 			href="#main-content"
 			class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[500] focus:bg-white focus:text-primary-700 focus:px-3 focus:py-2 focus:rounded focus:shadow"
-			>Skip to content</a
+			>{$t('layout.skipToContent')}</a
 		>
 		<div class="sidebar-shell">
 			<Sidebar {currentPath} showAdmin={isAdmin($user)} {isMobile} bind:mobileOpen={mobileNavOpen} />
@@ -159,7 +163,7 @@
 					<button
 						type="button"
 						class="md:hidden bg-transparent border-0 cursor-pointer p-1.5 -ml-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-						aria-label="Open menu"
+						aria-label={$t('layout.openMenu')}
 						aria-controls="main-nav"
 						aria-expanded={mobileNavOpen}
 						onclick={() => (mobileNavOpen = true)}
@@ -190,7 +194,7 @@
 			class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500"
 			role="status"
 		>
-			<p>{$authSession.status === 'loading' ? 'Loading…' : 'Redirecting to sign in…'}</p>
+			<p>{$authSession.status === 'loading' ? $t('common.loading') : $t('layout.redirecting')}</p>
 		</div>
 	{/if}
 	<ToastContainer />

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t, type MessageKey } from '$lib/i18n';
 	import {
 		HomeOutline,
 		HomeSolid,
@@ -14,14 +15,14 @@
 		InfoCircleOutline,
 		ChevronRightOutline,
 		ChevronLeftOutline,
-		CogOutline,
+		CogOutline
 	} from 'flowbite-svelte-icons';
 
 	let {
 		currentPath,
 		showAdmin,
 		isMobile,
-		mobileOpen = $bindable(false),
+		mobileOpen = $bindable(false)
 	}: {
 		currentPath: string;
 		showAdmin: boolean;
@@ -32,25 +33,25 @@
 	type Icon = typeof HomeOutline;
 	interface NavItem {
 		href: string;
-		label: string;
+		label: MessageKey;
 		icon?: Icon; // omitted: the custom mind-map glyph
 		activeIcon?: Icon;
 	}
 
 	const WORK: NavItem[] = [
-		{ href: '/dashboard', label: 'Dashboard', icon: HomeOutline, activeIcon: HomeSolid },
-		{ href: '/projects', label: 'Projects', icon: FolderOutline, activeIcon: FolderSolid },
-		{ href: '/tasks', label: 'Tasks', icon: CheckCircleOutline, activeIcon: CheckCircleSolid },
-		{ href: '/upcoming', label: 'Upcoming', icon: CalendarMonthOutline },
+		{ href: '/dashboard', label: 'layout.nav.dashboard', icon: HomeOutline, activeIcon: HomeSolid },
+		{ href: '/projects', label: 'layout.nav.projects', icon: FolderOutline, activeIcon: FolderSolid },
+		{ href: '/tasks', label: 'layout.nav.tasks', icon: CheckCircleOutline, activeIcon: CheckCircleSolid },
+		{ href: '/upcoming', label: 'layout.nav.upcoming', icon: CalendarMonthOutline }
 	];
 	const ORGANIZE: NavItem[] = [
-		{ href: '/mindmap', label: 'MindMap' },
-		{ href: '/teams', label: 'Teams', icon: UsersGroupOutline },
-		{ href: '/labels', label: 'Labels', icon: TagOutline },
-		{ href: '/filters', label: 'Saved Filters', icon: FilterOutline },
+		{ href: '/mindmap', label: 'layout.nav.mindmap' },
+		{ href: '/teams', label: 'layout.nav.teams', icon: UsersGroupOutline },
+		{ href: '/labels', label: 'layout.nav.labels', icon: TagOutline },
+		{ href: '/filters', label: 'layout.nav.filters', icon: FilterOutline }
 	];
-	const ADMIN: NavItem = { href: '/admin', label: 'Admin', icon: CogOutline };
-	const ABOUT: NavItem = { href: '/about', label: 'About', icon: InfoCircleOutline };
+	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.admin', icon: CogOutline };
+	const ABOUT: NavItem = { href: '/about', label: 'layout.nav.about', icon: InfoCircleOutline };
 
 	let collapsed = $state(false);
 	const compact = $derived(collapsed && !isMobile);
@@ -67,7 +68,9 @@
 
 	function toggleSidebar() {
 		collapsed = !collapsed;
-		try { localStorage.setItem('nav-collapsed', String(collapsed)); } catch (_) {}
+		try {
+			localStorage.setItem('nav-collapsed', String(collapsed));
+		} catch (_) {}
 	}
 </script>
 
@@ -100,7 +103,7 @@
 					</svg>
 				{/if}
 			</span>
-			{#if !compact}<span>{item.label}</span>{/if}
+			{#if !compact}<span>{$t(item.label)}</span>{/if}
 		</a>
 	</li>
 {/snippet}
@@ -118,11 +121,9 @@
 <div class="mobile-backdrop {mobileOpen ? 'open' : ''}" onclick={() => (mobileOpen = false)}></div>
 
 <nav
-	aria-label="Main"
+	aria-label={$t('layout.nav.main')}
 	id="main-nav"
-	class="sidebar-nav {compact ? 'sidebar-collapsed' : 'sidebar-expanded'} {mobileOpen
-		? 'mobile-open'
-		: ''}"
+	class="sidebar-nav {compact ? 'sidebar-collapsed' : 'sidebar-expanded'} {mobileOpen ? 'mobile-open' : ''}"
 >
 	<div class="sidebar-brand">
 		{#if !compact}
@@ -134,8 +135,8 @@
 		{/if}
 		<button
 			onclick={toggleSidebar}
-			title={compact ? 'Expand sidebar' : 'Collapse sidebar'}
-			aria-label={compact ? 'Expand sidebar' : 'Collapse sidebar'}
+			title={compact ? $t('layout.nav.expand') : $t('layout.nav.collapse')}
+			aria-label={compact ? $t('layout.nav.expand') : $t('layout.nav.collapse')}
 			aria-expanded={!compact}
 			aria-controls="main-nav"
 			class="hidden md:flex bg-transparent border-0 text-slate-400 cursor-pointer p-1 rounded opacity-70 hover:bg-white/10 hover:opacity-100 items-center"
@@ -149,9 +150,9 @@
 	</div>
 
 	<ul class="nav-list">
-		{@render sectionTitle('Work')}
+		{@render sectionTitle($t('layout.nav.work'))}
 		{#each WORK as item (item.href)}{@render navItem(item)}{/each}
-		{@render sectionTitle('Organize')}
+		{@render sectionTitle($t('layout.nav.organize'))}
 		{#each ORGANIZE as item (item.href)}{@render navItem(item)}{/each}
 		<li class="nav-spacer"></li>
 		{#if showAdmin}{@render navItem(ADMIN)}{/if}

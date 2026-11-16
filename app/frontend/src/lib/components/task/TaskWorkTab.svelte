@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { t, type MessageKey } from '$lib/i18n';
 	import type { Task, TaskRelation } from '$lib/types';
-	import { relationLabel, RELATION_KINDS } from '$lib/types-task';
+	import { relationLabel, relationKindKey, RELATION_KINDS } from '$lib/types-task';
 	import { Button, Card, Input, Select } from 'flowbite-svelte';
 
 	let {
@@ -9,7 +10,7 @@
 		relations,
 		onAddSubtask,
 		onAddRelation,
-		onDeleteRelation,
+		onDeleteRelation
 	}: {
 		taskId: number;
 		subtasks: Task[];
@@ -38,7 +39,7 @@
 			const other = incoming ? rel.node : rel.relatedNode;
 			if (!other) return [];
 			return [{ rel, incoming, other }];
-		}),
+		})
 	);
 
 	async function submitSubtask(e: SubmitEvent) {
@@ -48,14 +49,13 @@
 	}
 	async function submitRelation() {
 		if (!newRelatedTaskId) return;
-		if (await onAddRelation(Number(newRelatedTaskId), newRelationKind))
-			newRelatedTaskId = '';
+		if (await onAddRelation(Number(newRelatedTaskId), newRelationKind)) newRelatedTaskId = '';
 	}
 </script>
 
 <!-- Subtasks -->
 <Card class="mb-4">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">Subtasks</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.subtasks.title')}</h2>
 	{#if subtasks.length}
 		<div class="mb-3">
 			{#each subtasks as sub, i (sub.id)}
@@ -66,34 +66,34 @@
 				>
 					<a
 						href="/tasks/{sub.id}"
-						class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline"
-						>{sub.title}</a
+						class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline">{sub.title}</a
 					>
 					<span
 						class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
-						data-status={sub.status ?? 'open'}>{sub.status ?? 'open'}</span
+						data-status={sub.status ?? 'open'}
+						>{$t(`common.status.${sub.status ?? 'open'}` as MessageKey)}</span
 					>
 				</div>
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">No subtasks.</p>
+		<p class="text-sm text-gray-400 mb-3">{$t('tasks.subtasks.empty')}</p>
 	{/if}
 	<form onsubmit={submitSubtask} class="flex gap-2">
 		<Input
 			type="text"
 			bind:value={newSubtaskTitle}
-			placeholder="Add subtask…"
+			placeholder={$t('tasks.subtasks.placeholder')}
 			class="flex-1"
 		/>
-		<Button type="submit" size="sm">Add</Button>
+		<Button type="submit" size="sm">{$t('common.add')}</Button>
 	</form>
 </Card>
 
 <!-- Related Tasks -->
 <Card class="mb-4">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-		Related Tasks
+		{$t('tasks.relations.title')}
 	</h2>
 	{#if rows.length}
 		<div class="mb-3">
@@ -105,38 +105,39 @@
 				>
 					<span
 						class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 shrink-0"
-						>{relationLabel(row.rel.kind, row.incoming)}</span
+						>{$t(relationLabel(row.rel.kind, row.incoming))}</span
 					>
 					<a
 						href="/tasks/{row.other.id}"
 						class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline"
-						>{row.other.title ?? row.other.name ?? `Task #${row.other.id}`}</a
+						>{row.other.title ??
+							row.other.name ??
+							$t('tasks.relations.taskFallback', { id: row.other.id })}</a
 					>
 					{#if !row.incoming}
 						<Button
 							size="xs"
 							color="light"
 							onclick={() => onDeleteRelation(row.rel.kind, row.other.id)}
-							aria-label="Remove relation">✕</Button
+							aria-label={$t('tasks.relations.remove')}>✕</Button
 						>
 					{/if}
 				</div>
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">No relations.</p>
+		<p class="text-sm text-gray-400 mb-3">{$t('tasks.relations.empty')}</p>
 	{/if}
 	<div class="flex gap-2 flex-wrap">
 		<Input
 			type="number"
 			bind:value={newRelatedTaskId}
-			placeholder="Task ID"
+			placeholder={$t('tasks.relations.idPlaceholder')}
 			class="w-28"
 		/>
 		<Select bind:value={newRelationKind} class="w-auto">
-			{#each RELATION_KINDS as k (k)}<option value={k}>{k.replace(/_/g, ' ')}</option
-				>{/each}
+			{#each RELATION_KINDS as k (k)}<option value={k}>{$t(relationKindKey(k))}</option>{/each}
 		</Select>
-		<Button size="sm" onclick={submitRelation}>Add</Button>
+		<Button size="sm" onclick={submitRelation}>{$t('common.add')}</Button>
 	</div>
 </Card>

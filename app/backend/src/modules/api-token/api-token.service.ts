@@ -29,7 +29,12 @@ export class ApiTokenService {
   }
 
   /** The raw token is returned once and only its hash is stored. */
-  async create(userId: number, name: string, scope: 'read' | 'write' = 'read', expiresAt?: Date): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
+  async create(
+    userId: number,
+    name: string,
+    scope: 'read' | 'write' = 'read',
+    expiresAt?: Date,
+  ): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
     const rawToken = API_TOKEN_PREFIX + randomToken(32);
     const saved = await this.repo.save(
       this.repo.create({ userId, name, token: sha256(rawToken), tokenPrefix: rawToken.slice(0, 8), scope, expiresAt }),
@@ -59,6 +64,12 @@ export class ApiTokenService {
     if (!row.lastUsedAt || Date.now() - new Date(row.lastUsedAt).getTime() > 60_000) {
       await this.repo.update(row.tokenId, { lastUsedAt: new Date() });
     }
-    return { id: row.id, username: row.username, role: row.role, tokenId: row.tokenId, scope: row.scope === 'write' ? 'write' : 'read' };
+    return {
+      id: row.id,
+      username: row.username,
+      role: row.role,
+      tokenId: row.tokenId,
+      scope: row.scope === 'write' ? 'write' : 'read',
+    };
   }
 }

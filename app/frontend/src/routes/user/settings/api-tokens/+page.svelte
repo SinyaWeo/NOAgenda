@@ -1,173 +1,171 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { writable } from 'svelte/store';
-    import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-    import { Alert, Badge, Button, Card, Input, Label, Select } from 'flowbite-svelte';
-    import { ApiKeyOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
-    import { errMessage } from '$lib/errors';
-    import { showToast } from '$lib/toast';
-    import type { ApiTokenInfo, TokenScope } from '$lib/types';
-    import type { CreatedApiToken } from '$lib/types-misc';
+	import { t, fmt } from '$lib/i18n';
+	import { onMount } from 'svelte';
+	import { writable } from 'svelte/store';
+	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
+	import { Alert, Badge, Button, Card, Input, Label, Select } from 'flowbite-svelte';
+	import { ApiKeyOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { errMessage } from '$lib/errors';
+	import { showToast } from '$lib/toast';
+	import type { ApiTokenInfo, TokenScope } from '$lib/types';
+	import type { CreatedApiToken } from '$lib/types-misc';
 
-    const tokens = writable<ApiTokenInfo[]>([]);
-    const loading = writable(true);
-    const error = writable('');
-    let newTokenName = $state('');
-    let newTokenExpiry = $state('');
-    let newTokenScope = $state<TokenScope>('read');
-    let createdToken = $state('');
+	const tokens = writable<ApiTokenInfo[]>([]);
+	const loading = writable(true);
+	const error = writable('');
+	let newTokenName = $state('');
+	let newTokenExpiry = $state('');
+	let newTokenScope = $state<TokenScope>('read');
+	let createdToken = $state('');
 
-    async function loadTokens() {
-        tokens.set(await apiGetAuth<ApiTokenInfo[]>('/tokens'));
-    }
+	function expiresText(v: string | null | undefined): string {
+		return v ? $fmt.date(v) : $t('settings.tokens.never');
+	}
 
-    onMount(async () => {
-        try {
-            await loadTokens();
-        } catch (e: unknown) {
-            error.set(errMessage(e));
-        } finally {
-            loading.set(false);
-        }
-    });
+	async function loadTokens() {
+		tokens.set(await apiGetAuth<ApiTokenInfo[]>('/tokens'));
+	}
 
-    async function createToken(e: Event) {
-        e.preventDefault();
-        createdToken = '';
-        try {
-            const result = await apiPostAuth<CreatedApiToken>('/tokens', {
-                name: newTokenName,
-                scope: newTokenScope,
-                expiresAt: newTokenExpiry
-                    ? new Date(newTokenExpiry).toISOString()
-                    : null,
-            });
-            createdToken = result.rawToken ?? '';
-            newTokenName = '';
-            newTokenExpiry = '';
-            newTokenScope = 'read';
-            await loadTokens();
-        } catch (e: unknown) {
-            showToast(errMessage(e), 'error');
-        }
-    }
+	onMount(async () => {
+		try {
+			await loadTokens();
+		} catch (e: unknown) {
+			error.set(errMessage(e));
+		} finally {
+			loading.set(false);
+		}
+	});
 
-    async function deleteToken(id: number) {
-        try {
-            await apiDeleteAuth(`/tokens/${id}`);
-            await loadTokens();
-        } catch (e: unknown) {
-            showToast(errMessage(e), 'error');
-        }
-    }
+	async function createToken(e: Event) {
+		e.preventDefault();
+		createdToken = '';
+		try {
+			const result = await apiPostAuth<CreatedApiToken>('/tokens', {
+				name: newTokenName,
+				scope: newTokenScope,
+				expiresAt: newTokenExpiry ? new Date(newTokenExpiry).toISOString() : null
+			});
+			createdToken = result.rawToken ?? '';
+			newTokenName = '';
+			newTokenExpiry = '';
+			newTokenScope = 'read';
+			await loadTokens();
+		} catch (e: unknown) {
+			showToast(errMessage(e), 'error');
+		}
+	}
+
+	async function deleteToken(id: number) {
+		try {
+			await apiDeleteAuth(`/tokens/${id}`);
+			await loadTokens();
+		} catch (e: unknown) {
+			showToast(errMessage(e), 'error');
+		}
+	}
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-    <a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-        ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
-    >
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-        API Tokens
-    </h1>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
+		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
+	>
+	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
+		{$t('settings.tokens.title')}
+	</h1>
 </div>
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 {#if createdToken}
-    <Alert color="green" class="mb-4">
-        <p class="font-bold mb-2">
-            Token created — copy it now, it won't be shown again:
-        </p>
-        <code class="token-value break-all font-mono text-sm"
-            >{createdToken}</code
-        >
-    </Alert>
+	<Alert color="green" class="mb-4">
+		<p class="font-bold mb-2">
+			{$t('settings.tokens.created')}
+		</p>
+		<code class="token-value break-all font-mono text-sm">{createdToken}</code>
+	</Alert>
 {/if}
 
 <Card class="mb-4">
-    <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-        Create New Token
-    </h2>
-    <form onsubmit={createToken} class="flex flex-wrap gap-3 items-end">
-        <div class="flex-1 min-w-40">
-            <Label for="token-name" class="mb-1">Token Name</Label>
-            <Input
-                id="token-name"
-                type="text"
-                bind:value={newTokenName}
-                placeholder="e.g. CI/CD token"
-                required
-            />
-        </div>
-        <div>
-            <Label for="token-expiry" class="mb-1"
-                >Expiry <span class="text-xs text-gray-400">(optional)</span
-                ></Label
-            >
-            <Input id="token-expiry" type="date" bind:value={newTokenExpiry} />
-        </div>
-        <div>
-            <Label for="token-scope" class="mb-1">Access</Label>
-            <Select
-                id="token-scope"
-                bind:value={newTokenScope}
-                items={[
-                    { value: 'read', name: 'Read only (can only view data)' },
-                    { value: 'write', name: 'Read & write' },
-                ]}
-            />
-        </div>
-        <Button type="submit">Create</Button>
-    </form>
-    <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 mb-0">
-        API tokens can never use admin actions or account-security actions (changing your
-        password or email, managing sessions or tokens, deleting your account), whatever
-        access you choose.
-    </p>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+		{$t('settings.tokens.createTitle')}
+	</h2>
+	<form onsubmit={createToken} class="flex flex-wrap gap-3 items-end">
+		<div class="flex-1 min-w-40">
+			<Label for="token-name" class="mb-1">{$t('settings.tokens.name')}</Label>
+			<Input
+				id="token-name"
+				type="text"
+				bind:value={newTokenName}
+				placeholder={$t('settings.tokens.namePlaceholder')}
+				required
+			/>
+		</div>
+		<div>
+			<Label for="token-expiry" class="mb-1"
+				>{$t('settings.tokens.expiry')}
+				<span class="text-xs text-gray-400">({$t('common.optional')})</span></Label
+			>
+			<Input id="token-expiry" type="date" bind:value={newTokenExpiry} />
+		</div>
+		<div>
+			<Label for="token-scope" class="mb-1">{$t('settings.tokens.access')}</Label>
+			<Select
+				id="token-scope"
+				bind:value={newTokenScope}
+				items={[
+					{ value: 'read', name: $t('settings.tokens.scope.read') },
+					{ value: 'write', name: $t('settings.tokens.scope.write') }
+				]}
+			/>
+		</div>
+		<Button type="submit">{$t('common.create')}</Button>
+	</form>
+	<p class="text-xs text-gray-500 dark:text-gray-400 mt-3 mb-0">
+		{$t('settings.tokens.limits')}
+	</p>
 </Card>
 
 {#if $loading}
-    <p class="text-gray-400">Loading…</p>
+	<p class="text-gray-400">{$t('common.loading')}</p>
 {:else if $tokens.length}
-    <Card class="p-0 overflow-hidden">
-        {#each $tokens as token, i (token.id)}
-            <div
-                class="flex items-center gap-3 px-4 py-3 {i < $tokens.length - 1
-                    ? 'border-b border-gray-100 dark:border-gray-700'
-                    : ''}"
-            >
-                <div class="flex-1">
-                    <p
-                        class="font-bold text-sm text-gray-900 dark:text-white m-0"
-                    >
-                        {token.name}
-                        <Badge
-                            color={token.scope === 'write' ? 'yellow' : 'gray'}
-                            class="ml-2 align-middle"
-                            data-testid="token-scope"
-                            >{token.scope === 'write' ? 'Read & write' : 'Read only'}</Badge
-                        >
-                    </p>
-                    <p class="text-xs text-gray-400 m-0">
-                        Created {new Date(token.createdAt).toLocaleDateString()}
-                        · Expires {token.expiresAt
-                            ? new Date(token.expiresAt).toLocaleDateString()
-                            : 'Never'}{#if token.lastUsedAt}
-                            · Last used {new Date(
-                                token.lastUsedAt,
-                            ).toLocaleDateString()}{/if}
-                    </p>
-                </div>
-                <Button
-                    size="xs"
-                    color="red"
-                    onclick={() => deleteToken(token.id)}>Delete</Button
-                >
-            </div>
-        {/each}
-    </Card>
+	<Card class="p-0 overflow-hidden">
+		{#each $tokens as token, i (token.id)}
+			<div
+				class="flex items-center gap-3 px-4 py-3 {i < $tokens.length - 1
+					? 'border-b border-gray-100 dark:border-gray-700'
+					: ''}"
+			>
+				<div class="flex-1">
+					<p class="font-bold text-sm text-gray-900 dark:text-white m-0">
+						{token.name}
+						<Badge
+							color={token.scope === 'write' ? 'yellow' : 'gray'}
+							class="ml-2 align-middle"
+							data-testid="token-scope"
+							>{token.scope === 'write'
+								? $t('settings.tokens.badge.write')
+								: $t('settings.tokens.badge.read')}</Badge
+						>
+					</p>
+					<p class="text-xs text-gray-400 m-0">
+						{token.lastUsedAt
+							? $t('settings.tokens.metaUsed', {
+									created: $fmt.date(token.createdAt),
+									expires: expiresText(token.expiresAt),
+									used: $fmt.date(token.lastUsedAt)
+								})
+							: $t('settings.tokens.meta', {
+									created: $fmt.date(token.createdAt),
+									expires: expiresText(token.expiresAt)
+								})}
+					</p>
+				</div>
+				<Button size="xs" color="red" onclick={() => deleteToken(token.id)}>{$t('common.delete')}</Button>
+			</div>
+		{/each}
+	</Card>
 {:else}
-    <div class="text-center py-10 text-gray-400">
-        <ApiKeyOutline class="w-10 h-10 mx-auto mb-2" />
-        <p>No API tokens yet. Create one above.</p>
-    </div>
+	<div class="text-center py-10 text-gray-400">
+		<ApiKeyOutline class="w-10 h-10 mx-auto mb-2" />
+		<p>{$t('settings.tokens.empty')}</p>
+	</div>
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, type MessageKey } from '$lib/i18n';
 	import type { Component } from 'svelte';
 	import { authSession } from '$lib/auth';
 	import { isAdmin } from '$lib/roles';
@@ -13,7 +14,7 @@
 		LinkOutline,
 		ArrowDownToBracketOutline,
 		TrashBinOutline,
-		QuoteOutline,
+		QuoteOutline
 	} from 'flowbite-svelte-icons';
 
 	const me = $derived($authSession.user);
@@ -22,68 +23,68 @@
 		{
 			href: '/user/settings/general',
 			icon: UserCircleOutline,
-			label: 'General',
-			desc: 'Name, language, and preferences',
+			labelKey: 'settings.section.general',
+			descKey: 'settings.section.general.desc'
 		},
 		{
 			href: '/user/settings/avatar',
 			icon: CogOutline,
-			label: 'Avatar',
-			desc: 'Change your profile picture',
+			labelKey: 'settings.section.avatar',
+			descKey: 'settings.section.avatar.desc'
 		},
 		{
 			href: '/user/settings/email-update',
 			icon: EnvelopeOutline,
-			label: 'Email',
-			desc: 'Update your email address',
+			labelKey: 'settings.section.email',
+			descKey: 'settings.section.email.desc'
 		},
 		{
 			href: '/user/settings/password-update',
 			icon: LockOutline,
-			label: 'Password',
-			desc: 'Change your password',
+			labelKey: 'settings.section.password',
+			descKey: 'settings.section.password.desc'
 		},
 		{
 			href: '/user/settings/api-tokens',
 			icon: ApiKeyOutline,
-			label: 'API Tokens',
-			desc: 'Manage personal access tokens',
+			labelKey: 'settings.section.apiTokens',
+			descKey: 'settings.section.apiTokens.desc'
 		},
 		{
 			href: '/user/settings/sessions',
 			icon: DesktopPcOutline,
-			label: 'Active Sessions',
-			desc: 'View and revoke sessions',
+			labelKey: 'settings.section.sessions',
+			descKey: 'settings.section.sessions.desc'
 		},
 		{
 			href: '/user/settings/webhooks',
 			icon: LinkOutline,
-			label: 'Webhooks',
-			desc: 'Configure outgoing webhooks',
+			labelKey: 'settings.section.webhooks',
+			descKey: 'settings.section.webhooks.desc'
 		},
 		{
 			href: '/user/settings/data-export',
 			icon: ArrowDownToBracketOutline,
-			label: 'Data Export',
-			desc: 'Download your data',
+			labelKey: 'settings.section.dataExport',
+			descKey: 'settings.section.dataExport.desc'
 		},
 		{
 			href: '/user/settings/deletion',
 			icon: TrashBinOutline,
-			label: 'Account Deletion',
-			desc: 'Permanently delete your account',
-			danger: true,
-		},
+			labelKey: 'settings.section.deletion',
+			descKey: 'settings.section.deletion.desc',
+			danger: true
+		}
 	] satisfies {
 		href: string;
 		icon: Component<{ class?: string }>;
-		label: string;
-		desc: string;
+		labelKey: MessageKey;
+		descKey: MessageKey;
 		danger?: true;
 	}[];
 </script>
 
-<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Settings</h1>
+<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">{$t('settings.title')}</h1>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
 	{#each sections as s (s.href)}
@@ -94,20 +95,12 @@
 					: ''}"
 			>
 				<div class="flex items-center gap-3">
-					<s.icon
-						class="w-8 h-8 shrink-0 {s.danger
-							? 'text-red-600'
-							: 'text-primary-600'}"
-					/>
+					<s.icon class="w-8 h-8 shrink-0 {s.danger ? 'text-red-600' : 'text-primary-600'}" />
 					<div>
-						<p
-							class="font-semibold m-0 {s.danger
-								? 'text-red-600'
-								: 'text-gray-900 dark:text-white'}"
-						>
-							{s.label}
+						<p class="font-semibold m-0 {s.danger ? 'text-red-600' : 'text-gray-900 dark:text-white'}">
+							{$t(s.labelKey)}
 						</p>
-						<p class="text-sm text-gray-500 m-0">{s.desc}</p>
+						<p class="text-sm text-gray-500 m-0">{$t(s.descKey)}</p>
 					</div>
 				</div>
 			</Card>
@@ -116,28 +109,20 @@
 </div>
 
 {#if isAdmin(me)}
-	<h2
-		class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-8 mb-3"
-	>
-		Admin
+	<h2 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mt-8 mb-3">
+		{$t('settings.admin')}
 	</h2>
-	<div
-		class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch"
-	>
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
 		<a href="/admin/quotes" class="no-underline h-full">
-			<Card
-				class="hover:shadow-md transition-shadow cursor-pointer h-full"
-			>
+			<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
 				<div class="flex items-center gap-3">
 					<QuoteOutline class="w-8 h-8 shrink-0 text-primary-600" />
 					<div>
-						<p
-							class="font-semibold m-0 text-gray-900 dark:text-white"
-						>
-							Quotes
+						<p class="font-semibold m-0 text-gray-900 dark:text-white">
+							{$t('settings.quotes.title')}
 						</p>
 						<p class="text-sm text-gray-500 m-0">
-							Manage motivational quotes
+							{$t('settings.quotes.desc')}
 						</p>
 					</div>
 				</div>

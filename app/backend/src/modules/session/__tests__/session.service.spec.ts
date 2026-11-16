@@ -11,7 +11,11 @@ function fakeRepo() {
     rows,
     create: (x: any) => ({ ...x }),
     save: jest.fn(async (x: any) => {
-      if (!x.id) { x.id = seq++; x.createdAt = new Date(); rows.push(x); }
+      if (!x.id) {
+        x.id = seq++;
+        x.createdAt = new Date();
+        rows.push(x);
+      }
       x.updatedAt = new Date();
       return x;
     }),
@@ -22,7 +26,11 @@ function fakeRepo() {
     }),
     update: jest.fn(async (where: any, set: any) => {
       let affected = 0;
-      for (const r of rows) if (matches(r, where)) { Object.assign(r, set); affected++; }
+      for (const r of rows)
+        if (matches(r, where)) {
+          Object.assign(r, set);
+          affected++;
+        }
       return { affected };
     }),
     delete: jest.fn(async (where: any) => {
@@ -32,7 +40,10 @@ function fakeRepo() {
   };
 }
 
-const make = () => { const repo = fakeRepo(); return { repo, svc: new SessionService(repo as any) }; };
+const make = () => {
+  const repo = fakeRepo();
+  return { repo, svc: new SessionService(repo as any) };
+};
 
 describe('SessionService refresh-token rotation', () => {
   it('stores only the hash of the refresh token', async () => {

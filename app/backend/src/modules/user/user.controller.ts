@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Body, Param, Query, NotFoundException, ForbiddenException, BadRequestException, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  Query,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+  Request,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { User } from './user.entity';
 import { Throttle } from '@nestjs/throttler';
@@ -28,7 +40,10 @@ export class UserController {
    */
   @Get()
   @Throttle({ default: { ttl: 60000, limit: 30 } })
-  async search(@Query('q') q: unknown, @Request() req: any): Promise<Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>[]> {
+  async search(
+    @Query('q') q: unknown,
+    @Request() req: any,
+  ): Promise<Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>[]> {
     if (typeof q !== 'string' || q.trim().length < 3) {
       throw new BadRequestException('q is required (at least 3 characters)');
     }
@@ -59,7 +74,11 @@ export class UserController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() body: UpdateUserDto, @Request() req: any): Promise<Omit<User, 'password'>> {
+  async update(
+    @Param('id') id: number,
+    @Body() body: UpdateUserDto,
+    @Request() req: any,
+  ): Promise<Omit<User, 'password'>> {
     if (req.user.userId !== Number(id)) throw new ForbiddenException();
     const user = await this.userService.update(id, body);
     if (!user) throw new NotFoundException();

@@ -11,22 +11,32 @@ export type DuePreset = (typeof DUE_PRESETS)[number];
  * onto the /tasks query parameters.
  */
 export class FilterCriteriaDto {
-  @IsOptional() @IsEnum(NodeStatus)
+  @IsOptional()
+  @IsEnum(NodeStatus)
   status?: NodeStatus;
 
-  @IsOptional() @IsInt() @Min(0) @Max(5)
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(5)
   priority?: number;
 
-  @IsOptional() @IsInt() @Min(1)
+  @IsOptional()
+  @IsInt()
+  @Min(1)
   projectId?: number;
 
-  @IsOptional() @IsString() @MaxLength(100)
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
   search?: string;
 
-  @IsOptional() @IsIn(DUE_PRESETS as unknown as string[])
+  @IsOptional()
+  @IsIn(DUE_PRESETS as unknown as string[])
   due?: DuePreset;
 
   /** Leave out finished tasks. */
-  @IsOptional() @IsBoolean()
+  @IsOptional()
+  @IsBoolean()
   hideDone?: boolean;
 }

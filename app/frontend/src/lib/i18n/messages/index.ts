@@ -16,13 +16,37 @@ import * as errors from './errors';
 
 /** English is the source of truth: every key must exist here and in Czech (checked by svelte-check). */
 export const en = {
-	...common.en, ...layout.en, ...auth.en, ...dashboard.en, ...tasks.en, ...projects.en, ...views.en,
-	...filters.en, ...teams.en, ...labels.en, ...settings.en, ...admin.en, ...legal.en, ...errors.en,
+	...common.en,
+	...layout.en,
+	...auth.en,
+	...dashboard.en,
+	...tasks.en,
+	...projects.en,
+	...views.en,
+	...filters.en,
+	...teams.en,
+	...labels.en,
+	...settings.en,
+	...admin.en,
+	...legal.en,
+	...errors.en
 } as const;
 
 export type MessageKey = keyof typeof en;
 
 export const cs: Record<MessageKey, Message> = {
-	...common.cs, ...layout.cs, ...auth.cs, ...dashboard.cs, ...tasks.cs, ...projects.cs, ...views.cs,
-	...filters.cs, ...teams.cs, ...labels.cs, ...settings.cs, ...admin.cs, ...legal.cs, ...errors.cs,
+	...common.cs,
+	...layout.cs,
+	...auth.cs,
+	...dashboard.cs,
+	...tasks.cs,
+	...projects.cs,
+	...views.cs,
+	...filters.cs,
+	...teams.cs,
+	...labels.cs,
+	...settings.cs,
+	...admin.cs,
+	...legal.cs,
+	...errors.cs
 };

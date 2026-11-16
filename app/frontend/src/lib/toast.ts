@@ -24,12 +24,11 @@ export function dismissToast(id: number): void {
 	toasts.update((list) => list.filter((t) => t.id !== id));
 }
 
-export function showToast(
-	message: string,
-	type: ToastType = 'success',
-	duration = 3000,
-): void {
+export function showToast(message: string, type: ToastType = 'success', duration = 3000): void {
 	const id = ++nextId;
 	toasts.update((list) => [...list, { id, message, type, duration }]);
-	timers.set(id, setTimeout(() => dismissToast(id), duration));
+	timers.set(
+		id,
+		setTimeout(() => dismissToast(id), duration)
+	);
 }

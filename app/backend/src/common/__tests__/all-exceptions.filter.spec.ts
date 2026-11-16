@@ -4,11 +4,14 @@ import { AllExceptionsFilter } from '../all-exceptions.filter';
 
 function run(exception: unknown) {
   const res: any = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-  const host: any = { switchToHttp: () => ({ getResponse: () => res, getRequest: () => ({ method: 'POST', url: '/x' }) }) };
+  const host: any = {
+    switchToHttp: () => ({ getResponse: () => res, getRequest: () => ({ method: 'POST', url: '/x' }) }),
+  };
   new AllExceptionsFilter().catch(exception, host);
   return { status: res.status.mock.calls[0][0], body: res.json.mock.calls[0][0] };
 }
-const dbError = (code: string) => new QueryFailedError('SELECT 1', [], Object.assign(new Error('driver says: secret SQL details'), { code }) as any);
+const dbError = (code: string) =>
+  new QueryFailedError('SELECT 1', [], Object.assign(new Error('driver says: secret SQL details'), { code }) as any);
 
 describe('AllExceptionsFilter', () => {
   it('passes HTTP exceptions through unchanged', () => {

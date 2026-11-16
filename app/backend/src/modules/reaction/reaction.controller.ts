@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Body,
+  Query,
+  Request,
+  HttpCode,
+  HttpStatus,
+  BadRequestException,
+} from '@nestjs/common';
 import { NodeAccessService } from '../node/node-access.service';
 import { ReactionService } from './reaction.service';
 import { Reaction } from './reaction.entity';
@@ -12,7 +23,8 @@ export class ReactionController {
 
   /** Reactions are only supported on tasks and projects the caller can read. */
   private async check(userId: number, entityType: unknown, entityId: unknown): Promise<number> {
-    if (entityType !== 'task' && entityType !== 'project') throw new BadRequestException('entityType must be "task" or "project"');
+    if (entityType !== 'task' && entityType !== 'project')
+      throw new BadRequestException('entityType must be "task" or "project"');
     const id = Number(entityId);
     if (!Number.isInteger(id) || id < 1) throw new BadRequestException('Invalid entityId');
     await this.access.assertRead(userId, id);

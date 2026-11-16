@@ -13,7 +13,9 @@ describe('registration policy', () => {
     expect(registrationPolicy(env({ REGISTRATION_ENABLED: 'false' })).enabled).toBe(false);
     expect(() => assertMayRegister('anything', env({ REGISTRATION_ENABLED: 'false' }))).toThrow(ForbiddenException);
     // an invite code does not reopen a closed door
-    expect(() => assertMayRegister('abc', env({ REGISTRATION_ENABLED: 'false', REGISTRATION_INVITE_CODE: 'abc' }))).toThrow(/closed/);
+    expect(() =>
+      assertMayRegister('abc', env({ REGISTRATION_ENABLED: 'false', REGISTRATION_INVITE_CODE: 'abc' })),
+    ).toThrow(/closed/);
   });
 
   it('only the literal string "false" closes it (typos do not lock you out silently)', () => {

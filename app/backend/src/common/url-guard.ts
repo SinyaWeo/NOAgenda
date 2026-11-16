@@ -13,18 +13,31 @@ export function isPrivateAddress(ip: string): boolean {
   if (isIP(ip) === 4) {
     const [a, b] = ip.split('.').map(Number);
     return (
-      a === 0 || a === 10 || a === 127 ||
+      a === 0 ||
+      a === 10 ||
+      a === 127 ||
       (a === 100 && b >= 64 && b <= 127) ||
       (a === 169 && b === 254) ||
       (a === 172 && b >= 16 && b <= 31) ||
       (a === 192 && b === 168) ||
-      (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19)) ||
+      (a === 192 && b === 0) ||
+      (a === 198 && (b === 18 || b === 19)) ||
       a >= 224
     );
   }
   if (isIP(ip) === 6) {
     const x = ip.toLowerCase();
-    return x === '::' || x === '::1' || x.startsWith('fc') || x.startsWith('fd') || x.startsWith('fe8') || x.startsWith('fe9') || x.startsWith('fea') || x.startsWith('feb') || x.startsWith('ff');
+    return (
+      x === '::' ||
+      x === '::1' ||
+      x.startsWith('fc') ||
+      x.startsWith('fd') ||
+      x.startsWith('fe8') ||
+      x.startsWith('fe9') ||
+      x.startsWith('fea') ||
+      x.startsWith('feb') ||
+      x.startsWith('ff')
+    );
   }
   return true; // not an IP we understand: refuse
 }
@@ -38,8 +51,13 @@ export function isPrivateAddress(ip: string): boolean {
 export async function assertPublicHttpUrl(raw: string): Promise<void> {
   if (process.env.WEBHOOK_ALLOW_PRIVATE === 'true') return;
   let url: URL;
-  try { url = new URL(raw); } catch { throw new BadRequestException('url must be a valid http(s) URL'); }
-  if (url.protocol !== 'http:' && url.protocol !== 'https:') throw new BadRequestException('url must be a valid http(s) URL');
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new BadRequestException('url must be a valid http(s) URL');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:')
+    throw new BadRequestException('url must be a valid http(s) URL');
   if (url.username || url.password) throw new BadRequestException('url must not contain a username or password');
   const host = url.hostname.replace(/^\[|\]$/g, '');
   if (host.toLowerCase() === 'localhost' || host.toLowerCase().endsWith('.localhost')) {

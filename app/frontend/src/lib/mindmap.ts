@@ -10,7 +10,7 @@ import type { Node as FlowNode } from '@xyflow/svelte';
 export function findDropTarget(moved: FlowNode, all: FlowNode[]): FlowNode | null {
 	const size = (n: FlowNode) => ({
 		w: n.measured?.width ?? n.width ?? 150,
-		h: n.measured?.height ?? n.height ?? 40,
+		h: n.measured?.height ?? n.height ?? 40
 	});
 	const m = size(moved);
 	const cx = moved.position.x + m.w / 2;

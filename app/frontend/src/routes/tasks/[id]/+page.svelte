@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, tr, type MessageKey } from '$lib/i18n';
 	import { page } from '$app/state';
 	import {
 		apiGetAuth,
@@ -6,7 +7,7 @@
 		apiPutAuth,
 		apiDeleteAuth,
 		apiFetchAuth,
-		downloadAuthFile,
+		downloadAuthFile
 	} from '$lib/api';
 	import { authSession } from '$lib/auth';
 	import { errMessage } from '$lib/errors';
@@ -21,7 +22,7 @@
 		Task,
 		TaskAssignee,
 		TaskLabel,
-		TaskRelation,
+		TaskRelation
 	} from '$lib/types';
 	import TaskDetailsTab from '$lib/components/task/TaskDetailsTab.svelte';
 	import TaskWorkTab from '$lib/components/task/TaskWorkTab.svelte';
@@ -45,7 +46,7 @@
 	let activeTab = $state<Tab>(
 		(VALID_TABS.includes(page.url.searchParams.get('tab') as Tab)
 			? page.url.searchParams.get('tab')
-			: 'details') as Tab,
+			: 'details') as Tab
 	);
 
 	function setTab(tab: Tab) {
@@ -62,7 +63,7 @@
 			apiGetAuth<Attachment[]>(`/attachments?taskId=${id}`),
 			apiGetAuth<Reminder[]>(`/tasks/${id}/reminders`).catch(() => []),
 			apiGetAuth<TaskRelation[]>(`/tasks/${id}/relations`).catch(() => []),
-			apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`).catch(() => []),
+			apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`).catch(() => [])
 		]);
 		if (isStale()) return; // the user already moved on to another task
 		task = t;
@@ -88,7 +89,7 @@
 		try {
 			await downloadAuthFile(`/attachments/${id}/download`, filename);
 		} catch (e: unknown) {
-			showToast(errMessage(e, 'Download failed'), 'error');
+			showToast(errMessage(e, tr('tasks.toast.downloadFailed')), 'error');
 		}
 	}
 
@@ -96,7 +97,7 @@
 		const id = page.params.id;
 		try {
 			await apiPostAuth(`/tasks/${id}/reminders`, {
-				reminderDate: new Date(localDateTime).toISOString(),
+				reminderDate: new Date(localDateTime).toISOString()
 			});
 			reminders = await apiGetAuth<Reminder[]>(`/tasks/${id}/reminders`);
 			return true;
@@ -140,7 +141,7 @@
 			// The parent task is all the server needs; the project is found through the task tree.
 			await apiPostAuth('/tasks', { title, parentTaskId: Number(id) });
 			subtasks = await apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`);
-			showToast('Subtask added', 'success');
+			showToast(tr('tasks.toast.subtaskAdded'), 'success');
 			return true;
 		} catch (e: unknown) {
 			fail(e);
@@ -166,7 +167,7 @@
 		try {
 			await apiPostAuth('/comments', { content, taskId: Number(id) });
 			comments = await apiGetAuth<Comment[]>(`/comments?taskId=${id}`);
-			showToast('Comment posted', 'success');
+			showToast(tr('tasks.toast.commentPosted'), 'success');
 			return true;
 		} catch (e: unknown) {
 			fail(e);
@@ -192,14 +193,14 @@
 		try {
 			const up = await apiFetchAuth('/attachments/upload', {
 				method: 'POST',
-				body: fd,
+				body: fd
 			});
 			if (!up.ok) {
-				showToast('Upload failed', 'error');
+				showToast(tr('tasks.toast.uploadFailed'), 'error');
 				return;
 			}
 			attachments = await apiGetAuth<Attachment[]>(`/attachments?taskId=${id}`);
-			showToast('File uploaded', 'success');
+			showToast(tr('tasks.toast.fileUploaded'), 'success');
 		} catch (e: unknown) {
 			fail(e);
 		} finally {
@@ -209,7 +210,7 @@
 </script>
 
 {#if $loading}
-	<p class="text-gray-400">Loading…</p>
+	<p class="text-gray-400">{$t('common.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if task}
@@ -220,30 +221,31 @@
 					? `/${task.parent.type === 'project' ? 'projects' : 'tasks'}/${task.parent.id}`
 					: '/tasks'}
 				class="text-gray-400 hover:text-gray-600"
-				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
+				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('tasks.detail.back')}</a
 			>
 			<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
 				{task.title}
 			</h1>
 		</div>
-		<Button href="/tasks/{task.id}/edit" color="light" size="sm"
-			>Edit Task</Button
-		>
+		<Button href="/tasks/{task.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
 	</div>
 
 	<!-- Tabs navigation -->
-	<div role="tablist" aria-label="Task sections" class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700">
-		{#each [{ id: 'details', label: 'Details' }, { id: 'work', label: 'Work Items' }, { id: 'activity', label: 'Activity' }] as tab (tab.id)}
+	<div
+		role="tablist"
+		aria-label={$t('tasks.detail.tabsLabel')}
+		class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700"
+	>
+		{#each [{ id: 'details', label: 'tasks.tab.details' }, { id: 'work', label: 'tasks.tab.work' }, { id: 'activity', label: 'tasks.tab.activity' }] as tab (tab.id)}
 			<button
 				role="tab"
 				aria-selected={activeTab === tab.id}
 				onclick={() => setTab(tab.id as Tab)}
-				class="px-4 py-2 text-sm font-medium border-b-2 transition-colors {activeTab ===
-				tab.id
+				class="px-4 py-2 text-sm font-medium border-b-2 transition-colors {activeTab === tab.id
 					? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
 					: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 			>
-				{tab.label}
+				{$t(tab.label as MessageKey)}
 			</button>
 		{/each}
 	</div>
@@ -282,5 +284,5 @@
 		/>
 	{/if}
 {:else}
-	<p class="text-gray-400">Task not found.</p>
+	<p class="text-gray-400">{$t('tasks.detail.notFound')}</p>
 {/if}

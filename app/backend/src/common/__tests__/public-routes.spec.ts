@@ -9,8 +9,9 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 function controllerFiles(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
     const p = join(dir, name);
-    if (statSync(p).isDirectory()) { if (name !== '__tests__') controllerFiles(p, out); }
-    else if (/\.controller\.ts$/.test(name)) out.push(p);
+    if (statSync(p).isDirectory()) {
+      if (name !== '__tests__') controllerFiles(p, out);
+    } else if (/\.controller\.ts$/.test(name)) out.push(p);
   }
   return out;
 }

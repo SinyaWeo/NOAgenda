@@ -1,23 +1,17 @@
 <script lang="ts">
-  import { errMessage } from '$lib/errors';
+	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
 	import type { Project } from '$lib/types';
 	import type { FavoriteRow } from '$lib/types-misc';
 	import { writable } from 'svelte/store';
 	import { Alert, Badge, Button, Card, Progressbar } from 'flowbite-svelte';
-	import {
-		FolderOutline,
-		PlusOutline,
-		StarOutline,
-		StarSolid,
-	} from 'flowbite-svelte-icons';
+	import { t } from '$lib/i18n';
+	import { FolderOutline, PlusOutline, StarOutline, StarSolid } from 'flowbite-svelte-icons';
 
 	const projects = writable<Project[]>([]);
 	const favorites = writable<Set<number>>(new Set());
-	const taskStats = writable<Record<number, { total: number; done: number }>>(
-		{},
-	);
+	const taskStats = writable<Record<number, { total: number; done: number }>>({});
 	const loading = writable(true);
 	const error = writable('');
 
@@ -26,19 +20,11 @@
 			const [ps, favs, stats] = await Promise.all([
 				apiGetAuth<Project[]>('/projects'),
 				apiGetAuth<FavoriteRow[]>('/favorites').catch(() => [] as FavoriteRow[]),
-				apiGetAuth<Record<number, { total: number; done: number }>>(
-					'/projects/stats',
-				).catch(() => ({})),
+				apiGetAuth<Record<number, { total: number; done: number }>>('/projects/stats').catch(() => ({}))
 			]);
 			projects.set(ps);
 			taskStats.set(stats ?? {});
-			favorites.set(
-				new Set(
-					favs
-						.filter((f) => f.entityType === 'project')
-						.map((f) => f.entityId),
-				),
-			);
+			favorites.set(new Set(favs.filter((f) => f.entityType === 'project').map((f) => f.entityId)));
 		} catch (e: unknown) {
 			error.set(errMessage(e));
 		} finally {
@@ -59,7 +45,7 @@
 			} else {
 				await apiPostAuth('/favorites', {
 					entityType: 'project',
-					entityId: projectId,
+					entityId: projectId
 				});
 				favorites.update((s) => new Set([...s, projectId]));
 			}
@@ -69,21 +55,17 @@
 
 <div class="flex items-center justify-between mb-6">
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		Projects
+		{$t('projects.title')}
 	</h1>
-	<Button href="/projects/new"
-		><PlusOutline class="w-4 h-4 mr-1" />New Project</Button
-	>
+	<Button href="/projects/new"><PlusOutline class="w-4 h-4 mr-1" />{$t('projects.new')}</Button>
 </div>
 
 {#if $loading}
-	<p class="text-gray-400">Loading projects...</p>
+	<p class="text-gray-400">{$t('projects.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $projects.length}
-	<div
-		class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4 items-stretch"
-	>
+	<div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4 items-stretch">
 		{#each $projects as project (project.id)}
 			<Card class="flex flex-col gap-2 h-full">
 				<div class="flex items-start gap-2">
@@ -93,60 +75,45 @@
 							class="font-bold text-gray-900 dark:text-white hover:underline block truncate"
 							>{project.name ?? project.title}</a
 						>
-						{#if project.description}<p
-								class="text-sm text-gray-500 dark:text-gray-400 m-0 truncate"
-							>
+						{#if project.description}<p class="text-sm text-gray-500 dark:text-gray-400 m-0 truncate">
 								{project.description}
 							</p>{/if}
 					</div>
 					<button
 						onclick={() => toggleFavorite(project.id)}
 						class="p-1 text-gray-400 hover:text-amber-400 transition-colors shrink-0"
-						title={$favorites.has(project.id)
-							? 'Remove from favorites'
-							: 'Add to favorites'}
+						title={$favorites.has(project.id) ? $t('projects.favorite.remove') : $t('projects.favorite.add')}
 					>
-						{#if $favorites.has(project.id)}<StarSolid
-								class="w-4 h-4 text-amber-400"
-							/>{:else}<StarOutline class="w-4 h-4" />{/if}
+						{#if $favorites.has(project.id)}<StarSolid class="w-4 h-4 text-amber-400" />{:else}<StarOutline
+								class="w-4 h-4"
+							/>{/if}
 					</button>
 				</div>
-				{#if project.isArchived}<Badge color="gray">Archived</Badge
-					>{/if}
+				{#if project.isArchived}<Badge color="gray">{$t('projects.archived')}</Badge>{/if}
 				{@const stats = $taskStats[project.id]}
 				{#if stats && stats.total > 0}
 					<div class="mt-1">
 						<div class="flex justify-between items-center mb-1">
 							<span class="text-xs text-gray-400"
-								>{stats.done} / {stats.total} tasks</span
+								>{$t('projects.taskStats', { done: stats.done, count: stats.total })}</span
 							>
-							<span class="text-xs text-gray-400"
-								>{Math.round(
-									(stats.done / stats.total) * 100,
-								)}%</span
-							>
+							<span class="text-xs text-gray-400">{Math.round((stats.done / stats.total) * 100)}%</span>
 						</div>
 						<Progressbar
-							progress={Math.round(
-								(stats.done / stats.total) * 100,
-							)}
+							progress={Math.round((stats.done / stats.total) * 100)}
 							size="h-1.5"
 							color="indigo"
 						/>
 					</div>
 				{/if}
-				<div
-					class="flex items-center gap-3 mt-auto pt-2 border-t border-gray-100 dark:border-gray-700"
-				>
+				<div class="flex items-center gap-3 mt-auto pt-2 border-t border-gray-100 dark:border-gray-700">
 					<a
 						href="/projects/{project.id}"
 						class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
-						>Open</a
+						>{$t('projects.open')}</a
 					>
-					<a
-						href="/projects/{project.id}/edit"
-						class="text-sm text-gray-400 no-underline hover:underline"
-						>Settings</a
+					<a href="/projects/{project.id}/edit" class="text-sm text-gray-400 no-underline hover:underline"
+						>{$t('projects.settings')}</a
 					>
 				</div>
 			</Card>
@@ -156,10 +123,8 @@
 	<div class="text-center py-12 text-gray-400">
 		<FolderOutline class="w-12 h-12 mx-auto mb-3" />
 		<p>
-			No projects yet. <a
-				href="/projects/new"
-				class="text-primary-600 hover:underline">Create a project.</a
-			>
+			{$t('projects.empty.text')}
+			<a href="/projects/new" class="text-primary-600 hover:underline">{$t('projects.empty.link')}</a>
 		</p>
 	</div>
 {/if}

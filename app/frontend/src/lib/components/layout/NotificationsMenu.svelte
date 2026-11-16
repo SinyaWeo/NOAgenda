@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t, fmt } from '$lib/i18n';
 	import { apiGetAuth, apiPostAuth } from '$lib/api';
 	import type { AppNotification } from '$lib/types';
 	import { Badge, Dropdown } from 'flowbite-svelte';
@@ -32,7 +33,9 @@
 
 <button
 	id="notif-btn"
-	aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+	aria-label={unreadCount > 0
+		? $t('layout.notifications.withUnread', { count: unreadCount })
+		: $t('layout.notifications.title')}
 	class="relative bg-transparent border-0 cursor-pointer p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
 	onclick={loadNotifications}
 >
@@ -46,18 +49,16 @@
 	{/if}
 </button>
 <Dropdown triggeredBy="#notif-btn" placement="bottom-end" class="w-80 max-h-[420px] overflow-y-auto">
-	<div
-		class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-600"
-	>
-		<strong class="text-sm text-gray-900 dark:text-white">Notifications</strong>
+	<div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-600">
+		<strong class="text-sm text-gray-900 dark:text-white">{$t('layout.notifications.title')}</strong>
 		<button
 			onclick={markAllRead}
 			class="text-xs text-primary-600 dark:text-primary-400 bg-transparent border-0 cursor-pointer"
-			>Mark all read</button
+			>{$t('layout.notifications.markAllRead')}</button
 		>
 	</div>
 	{#if notifications.length === 0}
-		<p class="px-4 py-3 text-sm text-gray-500">No notifications.</p>
+		<p class="px-4 py-3 text-sm text-gray-500">{$t('layout.notifications.empty')}</p>
 	{:else}
 		{#each notifications as n (n.id)}
 			<div
@@ -66,9 +67,9 @@
 					: 'bg-primary-50 dark:bg-primary-900/20'}"
 			>
 				<p class="text-sm text-gray-800 dark:text-gray-200 m-0">
-					{n.message ?? `Notification #${n.id}`}
+					{n.message ?? $t('layout.notifications.fallback', { id: n.id })}
 				</p>
-				<small class="text-xs text-gray-400">{new Date(n.createdAt).toLocaleString()}</small>
+				<small class="text-xs text-gray-400">{$fmt.dateTime(n.createdAt)}</small>
 			</div>
 		{/each}
 	{/if}

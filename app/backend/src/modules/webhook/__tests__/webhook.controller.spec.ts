@@ -11,7 +11,17 @@ describe('WebhookController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [WebhookController],
       providers: [
-        { provide: NodeAccessService, useValue: { assertRead: jest.fn(), assertWrite: jest.fn(), assertAdmin: jest.fn(), assertCanModify: jest.fn(), assertCanUseAsParent: jest.fn(), sanitize: jest.fn((x) => x) } },
+        {
+          provide: NodeAccessService,
+          useValue: {
+            assertRead: jest.fn(),
+            assertWrite: jest.fn(),
+            assertAdmin: jest.fn(),
+            assertCanModify: jest.fn(),
+            assertCanUseAsParent: jest.fn(),
+            sanitize: jest.fn((x) => x),
+          },
+        },
         {
           provide: WebhookService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },

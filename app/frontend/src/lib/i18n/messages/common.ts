@@ -78,7 +78,7 @@ export const en = {
 	'common.theme.system': 'System',
 
 	'common.noun.task': { one: 'task', other: 'tasks' },
-	'common.noun.project': { one: 'project', other: 'projects' },
+	'common.noun.project': { one: 'project', other: 'projects' }
 } as const;
 
 export const cs: Record<keyof typeof en, Message> = {
@@ -158,5 +158,5 @@ export const cs: Record<keyof typeof en, Message> = {
 	'common.theme.system': 'Podle systému',
 
 	'common.noun.task': { one: 'úkol', few: 'úkoly', many: 'úkolu', other: 'úkolů' },
-	'common.noun.project': { one: 'projekt', few: 'projekty', many: 'projektu', other: 'projektů' },
+	'common.noun.project': { one: 'projekt', few: 'projekty', many: 'projektu', other: 'projektů' }
 };

@@ -21,7 +21,7 @@ let pass = 0, fail = 0;
 const ok = (name, cond, extra = '') => { cond ? pass++ : fail++; console.log((cond ? 'PASS ' : 'FAIL ') + name + (cond ? '' : `  ${extra}`)); };
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 1280, height: 900 }, acceptDownloads: true });
+const ctx = await browser.newContext({ ignoreHTTPSErrors: true, locale: 'en-US', timezoneId: 'Europe/Prague', viewport: { width: 1280, height: 900 }, acceptDownloads: true });
 const page = await ctx.newPage();
 const problems = [];
 const watch = (p) => {
@@ -171,8 +171,8 @@ ok('attachment uploaded and downloaded with auth (blob download)', fs.readFileSy
 
 // ---------- tasks list status change (used a non-existent PATCH route before)
 await page.goto(BASE + '/tasks');
-await page.waitForSelector('select');
-const sel = page.locator('select').first();
+await page.waitForSelector('select[aria-label="Change status"]');
+const sel = page.locator('select[aria-label="Change status"]').first(); // per-task status select (the page also has a saved-filter select)
 const options = await sel.locator('option').evaluateAll((os) => os.map((o) => o.value));
 const target = options.includes('done') ? 'done' : options[options.length - 1];
 await sel.selectOption(target);
@@ -263,7 +263,7 @@ await page.waitForFunction(() => document.body.innerText.toLowerCase().includes(
 ok('an admin can open the admin area', new URL(page.url()).pathname === '/admin/users');
 
 // ---------- mobile layout
-const mobile = await browser.newContext({ ignoreHTTPSErrors: true, viewport: { width: 375, height: 812 }, storageState: await ctx.storageState() });
+const mobile = await browser.newContext({ ignoreHTTPSErrors: true, locale: 'en-US', viewport: { width: 375, height: 812 }, storageState: await ctx.storageState() });
 const m = await mobile.newPage(); watch(m); m.setDefaultTimeout(15000);
 await m.goto(BASE + '/dashboard');
 await m.waitForSelector('button[aria-label="Open menu"]');

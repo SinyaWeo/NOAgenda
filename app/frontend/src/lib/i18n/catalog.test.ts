@@ -15,17 +15,25 @@ describe('message catalogs', () => {
 
 	it('no message is empty', () => {
 		for (const k of keys) {
-			for (const [lang, cat] of [['en', en], ['cs', cs]] as const) {
+			for (const [lang, cat] of [
+				['en', en],
+				['cs', cs]
+			] as const) {
 				const m = (cat as Record<string, Message>)[k];
 				const texts = typeof m === 'string' ? [m] : Object.values(m);
-				expect(texts.every((t) => t.trim().length > 0), `${lang}:${k} is empty`).toBe(true);
+				expect(
+					texts.every((t) => t.trim().length > 0),
+					`${lang}:${k} is empty`
+				).toBe(true);
 			}
 		}
 	});
 
 	it('both languages use the same {placeholders} for every key', () => {
 		for (const k of keys) {
-			expect(placeholders((cs as Record<string, Message>)[k]), `placeholders of ${k}`).toEqual(placeholders((en as Record<string, Message>)[k]));
+			expect(placeholders((cs as Record<string, Message>)[k]), `placeholders of ${k}`).toEqual(
+				placeholders((en as Record<string, Message>)[k])
+			);
 		}
 	});
 
@@ -33,9 +41,13 @@ describe('message catalogs', () => {
 		for (const k of keys) {
 			const e = (en as Record<string, Message>)[k];
 			const c = (cs as Record<string, Message>)[k];
-			if (typeof e !== 'string') expect(typeof e === 'object' && 'other' in e, `en:${k} needs "other"`).toBe(true);
+			if (typeof e !== 'string')
+				expect(typeof e === 'object' && 'other' in e, `en:${k} needs "other"`).toBe(true);
 			if (typeof c !== 'string') {
-				expect(['one', 'few', 'many', 'other'].every((f) => f in c), `cs:${k} needs one/few/many/other`).toBe(true);
+				expect(
+					['one', 'few', 'many', 'other'].every((f) => f in c),
+					`cs:${k} needs one/few/many/other`
+				).toBe(true);
 			}
 		}
 	});

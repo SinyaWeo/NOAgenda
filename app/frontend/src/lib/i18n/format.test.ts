@@ -25,6 +25,12 @@ describe('makeFormatters', () => {
 		expect(f.number(null)).toBe('');
 	});
 
+	it("treats the account default 'UTC' as not chosen (uses the browser's zone), but honours Etc/UTC", () => {
+		const f = (tz?: string) => makeFormatters('en', tz).date('2026-11-16T23:30:00Z');
+		expect(f('UTC')).toBe(f(undefined));
+		expect(f('Etc/UTC')).toBe('Nov 16, 2026');
+	});
+
 	it('survives an invalid time zone (falls back to the browser zone)', () => {
 		expect(() => makeFormatters('en', 'Mars/Olympus').date(instant)).not.toThrow();
 		expect(makeFormatters('en', 'Mars/Olympus').date(instant)).not.toBe('');

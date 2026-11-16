@@ -6,15 +6,19 @@ const meta = (metatype: any): ArgumentMetadata => ({ type: 'body', metatype });
 
 describe('user settings DTOs', () => {
   it('rejects role escalation through settings/general', async () => {
-    await expect(pipe.transform({ role: 'admin' }, meta(UpdateGeneralSettingsDto)))
-      .rejects.toBeInstanceOf(BadRequestException);
+    await expect(pipe.transform({ role: 'admin' }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it.each(['isEmailConfirmed', 'password', 'deletionScheduledAt', 'id', 'email'])(
-    'rejects forbidden field %s', async (field) => {
-      await expect(pipe.transform({ [field]: 'x' }, meta(UpdateGeneralSettingsDto)))
-        .rejects.toBeInstanceOf(BadRequestException);
-    });
+    'rejects forbidden field %s',
+    async (field) => {
+      await expect(pipe.transform({ [field]: 'x' }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    },
+  );
 
   it('accepts the fields the frontend actually sends', async () => {
     const out = await pipe.transform(
@@ -25,7 +29,11 @@ describe('user settings DTOs', () => {
   });
 
   it('rejects an invalid theme and an invalid email', async () => {
-    await expect(pipe.transform({ theme: 'neon' }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(BadRequestException);
-    await expect(pipe.transform({ email: 'nope', password: 'x' }, meta(UpdateEmailDto))).rejects.toBeInstanceOf(BadRequestException);
+    await expect(pipe.transform({ theme: 'neon' }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    await expect(pipe.transform({ email: 'nope', password: 'x' }, meta(UpdateEmailDto))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });

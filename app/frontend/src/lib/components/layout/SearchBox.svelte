@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
+	import { t } from '$lib/i18n';
 	import { apiGetAuth } from '$lib/api';
 	import type { SearchResults } from '$lib/types';
 	import { CheckCircleOutline, FolderOutline, SearchOutline } from 'flowbite-svelte-icons';
@@ -28,16 +29,16 @@
 			id: `search-opt-task-${t.id}`,
 			href: `/tasks/${t.id}`,
 			label: t.title ?? t.name ?? '',
-			kind: 'task',
-		})),
+			kind: 'task'
+		}))
 	);
 	const projectOptions = $derived<SearchOption[]>(
 		(results?.projects ?? []).map((p) => ({
 			id: `search-opt-project-${p.id}`,
 			href: `/projects/${p.id}`,
 			label: p.name ?? p.title ?? '',
-			kind: 'project',
-		})),
+			kind: 'project'
+		}))
 	);
 	const options = $derived([...taskOptions, ...projectOptions]);
 	const expanded = $derived(open && results !== null && options.length > 0);
@@ -129,8 +130,8 @@
 		aria-haspopup="listbox"
 		autocomplete="off"
 		class="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-200 dark:border-gray-600 rounded-full bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white outline-none focus:border-primary-500 dark:focus:border-primary-400"
-		placeholder="Search tasks & projects…"
-		aria-label="Search tasks and projects"
+		placeholder={$t('layout.search.placeholder')}
+		aria-label={$t('layout.search.label')}
 		value={query}
 		oninput={onInput}
 		onkeydown={onKeydown}
@@ -142,10 +143,10 @@
 		<div
 			id={LISTBOX_ID}
 			role="listbox"
-			aria-label="Search results"
+			aria-label={$t('layout.search.results')}
 			class="absolute top-full mt-1 left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[300] max-h-80 overflow-y-auto"
 		>
-			{#each [{ title: 'Tasks', items: taskOptions }, { title: 'Projects', items: projectOptions }] as group (group.title)}
+			{#each [{ key: 'tasks', title: $t('layout.search.tasks'), items: taskOptions }, { key: 'projects', title: $t('layout.search.projects'), items: projectOptions }] as group (group.key)}
 				{#if group.items.length > 0}
 					<div
 						role="presentation"
@@ -159,7 +160,11 @@
 							role="option"
 							aria-selected={options[activeIndex]?.id === opt.id}
 							href={opt.href}
-							class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 no-underline {options[activeIndex]?.id === opt.id ? 'bg-gray-100 dark:bg-gray-700' : ''}"
+							class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 no-underline {options[
+								activeIndex
+							]?.id === opt.id
+								? 'bg-gray-100 dark:bg-gray-700'
+								: ''}"
 							onclick={close}
 						>
 							{#if opt.kind === 'task'}

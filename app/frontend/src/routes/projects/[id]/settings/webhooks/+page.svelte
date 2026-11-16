@@ -1,106 +1,101 @@
 <script lang="ts">
-  import { errMessage } from '$lib/errors';
-    import { writable } from 'svelte/store';
-    import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-    import { loadOnParamChange } from '$lib/param-loader.svelte';
-    import type { WebhookInfo } from '$lib/types';
-    import { page } from '$app/state';
-    import { Alert, Button, Card, Input } from 'flowbite-svelte';
-    import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { errMessage } from '$lib/errors';
+	import { writable } from 'svelte/store';
+	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
+	import { loadOnParamChange } from '$lib/param-loader.svelte';
+	import type { WebhookInfo } from '$lib/types';
+	import { page } from '$app/state';
+	import { Alert, Button, Card, Input } from 'flowbite-svelte';
+	import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { t } from '$lib/i18n';
 
-    const webhooks = writable<WebhookInfo[]>([]);
-    const loading = writable(true);
-    const error = writable('');
-    let newUrl = $state('');
+	const webhooks = writable<WebhookInfo[]>([]);
+	const loading = writable(true);
+	const error = writable('');
+	let newUrl = $state('');
 
-    async function load() {
-        webhooks.set(
-            await apiGetAuth<WebhookInfo[]>(`/webhooks?projectId=${page.params.id}`),
-        );
-    }
+	async function load() {
+		webhooks.set(await apiGetAuth<WebhookInfo[]>(`/webhooks?projectId=${page.params.id}`));
+	}
 
-    async function addWebhook(e: Event) {
-        e.preventDefault();
-        try {
-            await apiPostAuth('/webhooks', {
-                url: newUrl,
-                projectId: Number(page.params.id),
-            });
-            newUrl = '';
-            await load();
-        } catch (e: unknown) {
-            error.set(errMessage(e));
-        }
-    }
+	async function addWebhook(e: Event) {
+		e.preventDefault();
+		try {
+			await apiPostAuth('/webhooks', {
+				url: newUrl,
+				projectId: Number(page.params.id)
+			});
+			newUrl = '';
+			await load();
+		} catch (e: unknown) {
+			error.set(errMessage(e));
+		}
+	}
 
-    async function deleteWebhook(id: number) {
-        try {
-            await apiDeleteAuth(`/webhooks/${id}`);
-            await load();
-        } catch (e: unknown) {
-            error.set(errMessage(e));
-        }
-    }
+	async function deleteWebhook(id: number) {
+		try {
+			await apiDeleteAuth(`/webhooks/${id}`);
+			await load();
+		} catch (e: unknown) {
+			error.set(errMessage(e));
+		}
+	}
 
-    loadOnParamChange(() => page.params.id ?? '', async (_id, isStale) => {
-        const list = await apiGetAuth<WebhookInfo[]>(`/webhooks?projectId=${page.params.id}`);
-        if (!isStale()) webhooks.set(list);
-    }, loading, error);
+	loadOnParamChange(
+		() => page.params.id ?? '',
+		async (_id, isStale) => {
+			const list = await apiGetAuth<WebhookInfo[]>(`/webhooks?projectId=${page.params.id}`);
+			if (!isStale()) webhooks.set(list);
+		},
+		loading,
+		error
+	);
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-    <a
-        href="/projects/{page.params.id}/edit"
-        class="text-gray-400 hover:text-gray-600"
-        ><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
-    >
-    <h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-        Webhooks
-    </h1>
+	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600"
+		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
+	>
+	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
+		{$t('projects.webhooks.title')}
+	</h1>
 </div>
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
 <Card class="mb-4">
-    <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-        Add Webhook
-    </h2>
-    <form onsubmit={addWebhook} class="flex gap-2">
-        <Input
-            type="url"
-            bind:value={newUrl}
-            placeholder="https://your-url.example.com/hook"
-            required
-            class="flex-1"
-        />
-        <Button type="submit">Add</Button>
-    </form>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+		{$t('projects.webhooks.add')}
+	</h2>
+	<form onsubmit={addWebhook} class="flex gap-2">
+		<Input
+			type="url"
+			bind:value={newUrl}
+			placeholder="https://your-url.example.com/hook"
+			required
+			class="flex-1"
+		/>
+		<Button type="submit">{$t('common.add')}</Button>
+	</form>
 </Card>
 
 {#if $loading}
-    <p class="text-gray-400">Loading…</p>
+	<p class="text-gray-400">{$t('common.loading')}</p>
 {:else if $webhooks.length}
-    <Card class="p-0 overflow-hidden">
-        {#each $webhooks as wh, i (wh.id)}
-            <div
-                class="flex items-center gap-3 p-4 {i < $webhooks.length - 1
-                    ? 'border-b border-gray-100 dark:border-gray-700'
-                    : ''}"
-            >
-                <span
-                    class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate"
-                    >{wh.url}</span
-                >
-                <Button
-                    size="sm"
-                    color="red"
-                    onclick={() => deleteWebhook(wh.id)}>Delete</Button
-                >
-            </div>
-        {/each}
-    </Card>
+	<Card class="p-0 overflow-hidden">
+		{#each $webhooks as wh, i (wh.id)}
+			<div
+				class="flex items-center gap-3 p-4 {i < $webhooks.length - 1
+					? 'border-b border-gray-100 dark:border-gray-700'
+					: ''}"
+			>
+				<span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{wh.url}</span>
+				<Button size="sm" color="red" onclick={() => deleteWebhook(wh.id)}>{$t('common.delete')}</Button>
+			</div>
+		{/each}
+	</Card>
 {:else}
-    <div class="text-center py-10 text-gray-400">
-        <LinkOutline class="w-10 h-10 mx-auto mb-2" />
-        <p>No webhooks configured yet.</p>
-    </div>
+	<div class="text-center py-10 text-gray-400">
+		<LinkOutline class="w-10 h-10 mx-auto mb-2" />
+		<p>{$t('projects.webhooks.empty')}</p>
+	</div>
 {/if}

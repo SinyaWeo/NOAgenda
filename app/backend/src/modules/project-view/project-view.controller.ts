@@ -1,9 +1,20 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  NotFoundException,
+  ForbiddenException,
+  Request,
+} from '@nestjs/common';
 import { CreateViewDto, UpdateViewDto } from './dto/project-view.dto';
 import { ProjectViewService } from './project-view.service';
 import { ProjectService } from '../project/project.service';
 import { Access, NodeAccessService } from '../node/node-access.service';
-import { ProjectView, ViewType } from './project-view.entity';
+import { ProjectView } from './project-view.entity';
 
 @Controller('projects/:projectId/views')
 export class ProjectViewController {
@@ -25,7 +36,11 @@ export class ProjectViewController {
   }
 
   @Get(':id')
-  async findById(@Param('projectId') projectId: number, @Param('id') id: number, @Request() req: any): Promise<ProjectView> {
+  async findById(
+    @Param('projectId') projectId: number,
+    @Param('id') id: number,
+    @Request() req: any,
+  ): Promise<ProjectView> {
     await this.assertAccess(projectId, req);
     const view = await this.projectViewService.findById(id);
     if (!view) throw new NotFoundException();
@@ -60,11 +75,7 @@ export class ProjectViewController {
   }
 
   @Delete(':id')
-  async remove(
-    @Param('projectId') projectId: number,
-    @Param('id') id: number,
-    @Request() req: any,
-  ): Promise<void> {
+  async remove(@Param('projectId') projectId: number, @Param('id') id: number, @Request() req: any): Promise<void> {
     await this.assertAccess(projectId, req, true);
     const view = await this.projectViewService.findById(id);
     if (!view) throw new NotFoundException();

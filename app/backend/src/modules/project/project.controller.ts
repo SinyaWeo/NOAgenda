@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  NotFoundException,
+  ForbiddenException,
+  Request,
+} from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { Node } from '../node/node.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
@@ -13,10 +26,7 @@ export class ProjectController {
   ) {}
 
   @Get()
-  async findAll(
-    @Request() req: any,
-    @Query('includeArchived') includeArchived?: string,
-  ): Promise<Node[]> {
+  async findAll(@Request() req: any, @Query('includeArchived') includeArchived?: string): Promise<Node[]> {
     return this.projectService.findAll(req.user.userId, includeArchived === 'true');
   }
 

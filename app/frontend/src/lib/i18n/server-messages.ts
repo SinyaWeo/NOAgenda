@@ -46,13 +46,19 @@ const EXACT: Record<string, MessageKey> = {
 	'A value is too long': 'errors.server.valueTooLong',
 	'This item is still in use and cannot be removed': 'errors.server.inUse',
 	'Internal server error': 'errors.server.generic',
-	'q is required (at least 3 characters)': 'errors.server.queryTooShort',
+	'q is required (at least 3 characters)': 'errors.server.queryTooShort'
 };
 
 /** class-validator messages: "<field> must be ...". The field name stays as the API calls it. */
 const PATTERNS: [RegExp, (m: RegExpExecArray) => [MessageKey, Params]][] = [
-	[/^(\w+) must be longer than or equal to (\d+) characters$/, (m) => ['errors.validation.minLength', { field: m[1], n: m[2] }]],
-	[/^(\w+) must be shorter than or equal to (\d+) characters$/, (m) => ['errors.validation.maxLength', { field: m[1], n: m[2] }]],
+	[
+		/^(\w+) must be longer than or equal to (\d+) characters$/,
+		(m) => ['errors.validation.minLength', { field: m[1], n: m[2] }]
+	],
+	[
+		/^(\w+) must be shorter than or equal to (\d+) characters$/,
+		(m) => ['errors.validation.maxLength', { field: m[1], n: m[2] }]
+	],
 	[/^(\w+) must be at most (\d+) bytes/, (m) => ['errors.validation.maxBytes', { field: m[1], n: m[2] }]],
 	[/^(\w+) must be an email$/, (m) => ['errors.validation.email', { field: m[1] }]],
 	[/^(\w+) should not be empty$/, (m) => ['errors.validation.notEmpty', { field: m[1] }]],
@@ -62,9 +68,12 @@ const PATTERNS: [RegExp, (m: RegExpExecArray) => [MessageKey, Params]][] = [
 	[/^(\w+) must not be less than (\d+)$/, (m) => ['errors.validation.min', { field: m[1], n: m[2] }]],
 	[/^(\w+) must not be greater than (\d+)$/, (m) => ['errors.validation.max', { field: m[1], n: m[2] }]],
 	[/^(\w+) must be a valid time zone/, (m) => ['errors.validation.timezone', { field: m[1] }]],
-	[/^(\w+) must be one of the following values: (.+)$/, (m) => ['errors.validation.oneOf', { field: m[1], values: m[2] }]],
+	[
+		/^(\w+) must be one of the following values: (.+)$/,
+		(m) => ['errors.validation.oneOf', { field: m[1], values: m[2] }]
+	],
 	[/^(\w+) must be a valid ISO 8601 date string$/, (m) => ['errors.validation.date', { field: m[1] }]],
-	[/^property (\w+) should not exist$/, (m) => ['errors.validation.unknownField', { field: m[1] }]],
+	[/^property (\w+) should not exist$/, (m) => ['errors.validation.unknownField', { field: m[1] }]]
 ];
 
 /** One server message (or several joined with ", ") in the current language. */

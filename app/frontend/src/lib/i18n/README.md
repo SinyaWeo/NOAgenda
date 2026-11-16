@@ -2,24 +2,25 @@
 
 The UI is available in English (`en`, the source) and Czech (`cs`). Everything lives in `src/lib/i18n/`.
 
-| File | What it is |
-|---|---|
-| `messages/<area>.ts` | The texts, one file per area: `common`, `layout`, `auth`, `dashboard`, `tasks`, `projects`, `views`, `filters`, `teams`, `labels`, `settings`, `admin`, `legal`, `errors`. Each exports `en` and `cs`. |
-| `messages/index.ts` | Merges the areas. **English defines the keys; Czech must have exactly the same ones** (enforced by `svelte-check` and by `catalog.test.ts`). |
-| `index.ts` | What components import: `t`, `fmt`, `locale`, `setLocale`, `LOCALES`, `tr`. |
-| `translate.ts`, `locale-store.ts`, `core.ts`, `format.ts` | Plumbing (plural rules, interpolation, language detection, date/number formatting). |
-| `server-messages.ts` | Turns the backend's English error messages into the current language. Unknown messages are shown as the server sent them. |
+| File                                                      | What it is                                                                                                                                                                                             |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `messages/<area>.ts`                                      | The texts, one file per area: `common`, `layout`, `auth`, `dashboard`, `tasks`, `projects`, `views`, `filters`, `teams`, `labels`, `settings`, `admin`, `legal`, `errors`. Each exports `en` and `cs`. |
+| `messages/index.ts`                                       | Merges the areas. **English defines the keys; Czech must have exactly the same ones** (enforced by `svelte-check` and by `catalog.test.ts`).                                                           |
+| `index.ts`                                                | What components import: `t`, `fmt`, `locale`, `setLocale`, `LOCALES`, `tr`.                                                                                                                            |
+| `translate.ts`, `locale-store.ts`, `core.ts`, `format.ts` | Plumbing (plural rules, interpolation, language detection, date/number formatting).                                                                                                                    |
+| `server-messages.ts`                                      | Turns the backend's English error messages into the current language. Unknown messages are shown as the server sent them.                                                                              |
 
 ## Using it
 
 ```svelte
 <script lang="ts">
-  import { t, fmt } from '$lib/i18n';
+	import { t, fmt } from '$lib/i18n';
 </script>
 
 <h1>{$t('tasks.title')}</h1>
 <input placeholder={$t('tasks.search.placeholder')} aria-label={$t('tasks.search.label')} />
-<p>{$t('tasks.count', { count: tasks.length })}</p>   <!-- plural forms chosen from `count` -->
+<p>{$t('tasks.count', { count: tasks.length })}</p>
+<!-- plural forms chosen from `count` -->
 <p>{$t('tasks.dueOn', { date: $fmt.date(task.dueDate) })}</p>
 ```
 
@@ -48,28 +49,28 @@ the time zone saved in the user's settings**. Never call `toLocaleDateString()` 
 Natural, neutral, polite (formal "vy" only where a sentence needs a pronoun; most UI text is imperative or nominal):
 "Uložit", "Zrušit", "Nemáte oprávnění". Glossary, so every page says the same thing:
 
-| English | Czech | English | Czech |
-|---|---|---|---|
-| task | úkol | project | projekt |
-| subtask | podúkol | team | tým |
-| label | štítek | comment | komentář |
-| attachment | příloha | reminder | připomínka |
-| due date | termín | assignee | řešitel |
-| filter / saved filter | filtr / uložený filtr | view | pohled |
-| mind map | myšlenková mapa | dashboard | Přehled |
-| upcoming | Nadcházející | settings | Nastavení |
-| sign in / sign out | přihlásit se / odhlásit se | account | účet |
-| profile | profil | session | přihlášení (relace) |
-| API token | API token | webhook | webhook |
-| administration | Správa | member | člen |
-| permission read/write/admin | čtení / zápis / správce | in progress | probíhá |
+| English                     | Czech                      | English     | Czech               |
+| --------------------------- | -------------------------- | ----------- | ------------------- |
+| task                        | úkol                       | project     | projekt             |
+| subtask                     | podúkol                    | team        | tým                 |
+| label                       | štítek                     | comment     | komentář            |
+| attachment                  | příloha                    | reminder    | připomínka          |
+| due date                    | termín                     | assignee    | řešitel             |
+| filter / saved filter       | filtr / uložený filtr      | view        | pohled              |
+| mind map                    | myšlenková mapa            | dashboard   | Přehled             |
+| upcoming                    | Nadcházející               | settings    | Nastavení           |
+| sign in / sign out          | přihlásit se / odhlásit se | account     | účet                |
+| profile                     | profil                     | session     | přihlášení (relace) |
+| API token                   | API token                  | webhook     | webhook             |
+| administration              | Správa                     | member      | člen                |
+| permission read/write/admin | čtení / zápis / správce    | in progress | probíhá             |
 
 ## What is not translated
 
-* Terms of Service and Privacy Policy bodies: they are templates the operator replaces with their own legal text, in their
+- Terms of Service and Privacy Policy bodies: they are templates the operator replaces with their own legal text, in their
   own language. Only the page chrome around them is translated.
-* The names of keys and fields in API validation messages (`password must be ...` becomes `password: minimální délka je 8 znaků`).
-* Names the user typed (projects, tasks, labels).
+- The names of keys and fields in API validation messages (`password must be ...` becomes `password: minimální délka je 8 znaků`).
+- Names the user typed (projects, tasks, labels).
 
 ## Language choice
 

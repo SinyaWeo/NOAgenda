@@ -1,6 +1,6 @@
-import type { DuePreset, FilterCriteria } from '$lib/types';
-import { PRIORITY_LABELS, STATUS_LABELS } from '$lib/constants';
-
+import type { FilterCriteria } from '$lib/types';
+import { tr } from '$lib/i18n/translate';
+import type { MessageKey } from '$lib/i18n/messages';
 
 /** Midnight (local time) at the start of the day that contains `d`. */
 function startOfDay(d: Date): Date {
@@ -13,14 +13,6 @@ function endOfDayPlus(d: Date, days: number): Date {
 	return new Date(s.getFullYear(), s.getMonth(), s.getDate() + days, 23, 59, 59, 999);
 }
 
-export const DUE_LABELS: Record<DuePreset, string> = {
-	overdue: 'overdue',
-	today: 'today',
-	week: 'this week',
-	month: 'this month',
-	none: 'no due date',
-};
-
 /**
  * Map saved-filter criteria to GET /tasks query parameters.
  *
@@ -31,8 +23,10 @@ export const DUE_LABELS: Record<DuePreset, string> = {
 export function criteriaToQuery(criteria: FilterCriteria, now: Date = new Date()): URLSearchParams {
 	const q = new URLSearchParams();
 	if (criteria.status) q.set('status', criteria.status);
-	if (criteria.priority !== undefined && criteria.priority !== null) q.set('priority', String(criteria.priority));
-	if (criteria.projectId !== undefined && criteria.projectId !== null) q.set('projectId', String(criteria.projectId));
+	if (criteria.priority !== undefined && criteria.priority !== null)
+		q.set('priority', String(criteria.priority));
+	if (criteria.projectId !== undefined && criteria.projectId !== null)
+		q.set('projectId', String(criteria.projectId));
 	if (criteria.search && criteria.search.trim()) q.set('search', criteria.search.trim());
 	if (criteria.hideDone) q.set('excludeDone', 'true');
 	switch (criteria.due) {
@@ -63,16 +57,32 @@ export function needsClientDueFilter(criteria: FilterCriteria): boolean {
 	return criteria.due === 'none';
 }
 
-/** Short human-readable chips for the criteria, e.g. ["Status: Open", "Due: this week"]. */
-export function describeCriteria(c: FilterCriteria | null | undefined): string[] {
+/** Translated text for a dynamic key; unknown values (e.g. a status added later) fall back to the raw value. */
+function lookup(key: string, fallback: string): string {
+	const text = tr(key as MessageKey);
+	return text === key ? fallback : text;
+}
+
+/**
+ * Short human-readable chips for the criteria (in the current language; pass the `$t` store value as the second
+ * argument from a template so the chips are recomputed when the language changes), e.g. ["Status: Open", "Due: this week"]. */
+export function describeCriteria(
+	c: FilterCriteria | null | undefined,
+	_languageDependency?: unknown
+): string[] {
 	if (!c) return [];
 	const chips: string[] = [];
-	if (c.status) chips.push(`Status: ${STATUS_LABELS[c.status] ?? c.status}`);
-	if (c.priority !== undefined && c.priority !== null) chips.push(`Priority: ${PRIORITY_LABELS[c.priority] ?? c.priority}`);
-	if (c.projectId !== undefined && c.projectId !== null) chips.push(`Project #${c.projectId}`);
-	if (c.search && c.search.trim()) chips.push(`Search: ${c.search.trim()}`);
-	if (c.due) chips.push(`Due: ${DUE_LABELS[c.due] ?? c.due}`);
-	if (c.hideDone) chips.push('Hide done');
+	if (c.status)
+		chips.push(tr('filters.chip.status', { value: lookup(`common.status.${c.status}`, c.status) }));
+	if (c.priority !== undefined && c.priority !== null)
+		chips.push(
+			tr('filters.chip.priority', { value: lookup(`common.priority.${c.priority}`, String(c.priority)) })
+		);
+	if (c.projectId !== undefined && c.projectId !== null)
+		chips.push(tr('filters.chip.project', { id: c.projectId }));
+	if (c.search && c.search.trim()) chips.push(tr('filters.chip.search', { value: c.search.trim() }));
+	if (c.due) chips.push(tr('filters.chip.due', { value: lookup(`filters.due.${c.due}`, c.due) }));
+	if (c.hideDone) chips.push(tr('filters.chip.hideDone'));
 	return chips;
 }
 
@@ -81,10 +91,10 @@ export function cleanCriteria(c: FilterCriteria): FilterCriteria {
 	const out: FilterCriteria = {};
 	if (c.status) out.status = c.status;
 	if (c.priority !== undefined && c.priority !== null && !Number.isNaN(c.priority)) out.priority = c.priority;
-	if (c.projectId !== undefined && c.projectId !== null && !Number.isNaN(c.projectId)) out.projectId = c.projectId;
+	if (c.projectId !== undefined && c.projectId !== null && !Number.isNaN(c.projectId))
+		out.projectId = c.projectId;
 	if (c.search && c.search.trim()) out.search = c.search.trim();
 	if (c.due) out.due = c.due;
 	if (c.hideDone) out.hideDone = true;
 	return out;
 }
-

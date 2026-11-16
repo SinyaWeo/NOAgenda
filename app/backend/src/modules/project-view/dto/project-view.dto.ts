@@ -2,17 +2,24 @@ import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-valid
 import { ViewType } from '../project-view.entity';
 
 export class CreateViewDto {
-  @IsString() @IsNotEmpty() @MaxLength(255)
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
   title!: string;
 
-  @IsOptional() @IsEnum(ViewType)
+  @IsOptional()
+  @IsEnum(ViewType)
   viewType?: ViewType;
 }
 
 export class UpdateViewDto {
-  @IsOptional() @IsString() @IsNotEmpty() @MaxLength(255)
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
   title?: string;
 
-  @IsOptional() @IsEnum(ViewType)
+  @IsOptional()
+  @IsEnum(ViewType)
   viewType?: ViewType;
 }

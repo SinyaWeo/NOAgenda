@@ -10,7 +10,8 @@ function build(nodes: N[], grants: Record<number, string[]> = {}) {
     manager: {
       // args: [projectId, userId, projectId, userId]
       query: jest.fn(async (_sql: string, args: any[]) =>
-        (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission }))),
+        (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission })),
+      ),
     },
   };
   return new NodeAccessService(repo);
@@ -19,8 +20,12 @@ function build(nodes: N[], grants: Record<number, string[]> = {}) {
 const ME = 1;
 const OTHER = 2;
 const project = (id: number, ownerId: number | null): N => ({ id, type: NodeType.PROJECT, ownerId });
-const task = (id: number, parentId: number | null, createdBy: number | null): N =>
-  ({ id, type: NodeType.TASK, parentId, createdBy });
+const task = (id: number, parentId: number | null, createdBy: number | null): N => ({
+  id,
+  type: NodeType.TASK,
+  parentId,
+  createdBy,
+});
 
 describe('NodeAccessService', () => {
   it('owner has ADMIN on project and on its tasks/subtasks', async () => {
@@ -30,7 +35,7 @@ describe('NodeAccessService', () => {
     expect(await svc.level(ME, 12)).toBe(Access.ADMIN);
   });
 
-  it('a stranger has NONE on someone else\'s project, tasks and subtasks', async () => {
+  it("a stranger has NONE on someone else's project, tasks and subtasks", async () => {
     const svc = build([project(10, OTHER), task(11, 10, OTHER), task(12, 11, OTHER)]);
     for (const id of [10, 11, 12]) expect(await svc.level(ME, id)).toBe(Access.NONE);
     await expect(svc.assertRead(ME, 11)).rejects.toBeInstanceOf(ForbiddenException);
@@ -55,7 +60,7 @@ describe('NodeAccessService', () => {
     await expect(svc.assertAdmin(ME, 10)).rejects.toBeInstanceOf(ForbiddenException);
   });
 
-  it('a task creator gets no extra access inside someone else\'s project', async () => {
+  it("a task creator gets no extra access inside someone else's project", async () => {
     const svc = build([project(10, OTHER), task(11, 10, ME)]);
     expect(await svc.level(ME, 11)).toBe(Access.NONE);
     expect(await svc.level(ME, 10)).toBe(Access.NONE);
@@ -91,7 +96,16 @@ describe('NodeAccessService', () => {
 
   it('sanitize strips identity and ownership fields', () => {
     const svc = build([]);
-    const out = svc.sanitize({ id: 5, ownerId: 9, createdBy: 9, parent: {}, children: [], createdAt: 1, updatedAt: 2, title: 'ok' });
+    const out = svc.sanitize({
+      id: 5,
+      ownerId: 9,
+      createdBy: 9,
+      parent: {},
+      children: [],
+      createdAt: 1,
+      updatedAt: 2,
+      title: 'ok',
+    });
     expect(out).toEqual({ title: 'ok' });
   });
 

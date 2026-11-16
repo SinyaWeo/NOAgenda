@@ -11,7 +11,7 @@ type AuthSession = {
 
 export const authSession = writable<AuthSession>({
 	status: 'loading',
-	user: null,
+	user: null
 });
 
 let refreshPromise: Promise<User | null> | null = null;

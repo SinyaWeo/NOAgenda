@@ -6,7 +6,9 @@ const node = (id: string, x: number, y: number, w = 100, h = 40): Node =>
 	({ id, position: { x, y }, data: {}, measured: { width: w, height: h } }) as Node;
 
 describe('findDropTarget', () => {
-	const a = node('a', 0, 0), b = node('b', 200, 0), c = node('c', 0, 200);
+	const a = node('a', 0, 0),
+		b = node('b', 200, 0),
+		c = node('c', 0, 200);
 
 	it('returns the node whose box contains the centre of the dragged node', () => {
 		expect(findDropTarget(node('a', 190, 5), [a, b, c])?.id).toBe('b'); // centre (240,25) is inside b

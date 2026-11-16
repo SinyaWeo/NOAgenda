@@ -62,7 +62,7 @@ export const en = {
 	'errors.validation.timezone': '{field} must be a valid time zone such as Europe/Prague',
 	'errors.validation.oneOf': '{field} must be one of: {values}',
 	'errors.validation.date': '{field} must be a valid date',
-	'errors.validation.unknownField': 'The field {field} is not allowed',
+	'errors.validation.unknownField': 'The field {field} is not allowed'
 } as const;
 
 export const cs: Record<keyof typeof en, Message> = {
@@ -80,7 +80,8 @@ export const cs: Record<keyof typeof en, Message> = {
 	'errors.server.usernameOrEmailTaken': 'Uživatelské jméno nebo e‑mail už se používá',
 	'errors.server.registrationClosed': 'Registrace je uzavřena',
 	'errors.server.inviteRequired': 'K registraci je potřeba platný pozvánkový kód',
-	'errors.server.termsRequired': 'K registraci musíte souhlasit s Podmínkami použití a Zásadami ochrany osobních údajů',
+	'errors.server.termsRequired':
+		'K registraci musíte souhlasit s Podmínkami použití a Zásadami ochrany osobních údajů',
 	'errors.server.wrongCurrentPassword': 'Nesprávné stávající heslo',
 	'errors.server.wrongPassword': 'Nesprávné heslo',
 	'errors.server.resetTokenInvalid': 'Odkaz pro obnovení hesla je neplatný nebo vypršel',
@@ -115,7 +116,8 @@ export const cs: Record<keyof typeof en, Message> = {
 
 	'errors.validation.minLength': '{field}: minimální délka je {n} znaků',
 	'errors.validation.maxLength': '{field}: maximální délka je {n} znaků',
-	'errors.validation.maxBytes': '{field} je příliš dlouhé (nejvýše {n} bajtů; znaky s diakritikou zabírají víc)',
+	'errors.validation.maxBytes':
+		'{field} je příliš dlouhé (nejvýše {n} bajtů; znaky s diakritikou zabírají víc)',
 	'errors.validation.email': '{field}: zadejte platnou e‑mailovou adresu',
 	'errors.validation.notEmpty': '{field}: nesmí být prázdné',
 	'errors.validation.string': '{field}: musí být text',
@@ -126,5 +128,5 @@ export const cs: Record<keyof typeof en, Message> = {
 	'errors.validation.timezone': '{field}: zadejte platné časové pásmo, např. Europe/Prague',
 	'errors.validation.oneOf': '{field}: povolené hodnoty jsou {values}',
 	'errors.validation.date': '{field}: zadejte platné datum',
-	'errors.validation.unknownField': 'Pole {field} není povoleno',
+	'errors.validation.unknownField': 'Pole {field} není povoleno'
 };

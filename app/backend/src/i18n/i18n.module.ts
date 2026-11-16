@@ -11,10 +11,7 @@ import * as path from 'path';
         path: path.join(__dirname, '/locales/'),
         watch: process.env.NODE_ENV !== 'production',
       },
-      resolvers: [
-        { use: QueryResolver, options: ['lang', 'locale', 'l'] },
-        new HeaderResolver(['x-custom-lang']),
-      ],
+      resolvers: [{ use: QueryResolver, options: ['lang', 'locale', 'l'] }, new HeaderResolver(['x-custom-lang'])],
     }),
   ],
   exports: [I18nModule],

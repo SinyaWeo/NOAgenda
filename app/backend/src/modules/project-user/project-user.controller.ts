@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, Request } from '@nestjs/common';
 import { AddProjectUserDto, SetPermissionDto } from './dto/project-sharing.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { ProjectUserService } from './project-user.service';
 import { ProjectService } from '../project/project.service';
-import { ProjectUser, Permission } from './project-user.entity';
+import { ProjectUser } from './project-user.entity';
 
 @Controller('projects/:projectId/users')
 export class ProjectUserController {
@@ -41,7 +41,11 @@ export class ProjectUserController {
   }
 
   @Delete(':userId')
-  async remove(@Param('projectId') projectId: number, @Param('userId') userId: number, @Request() req: any): Promise<void> {
+  async remove(
+    @Param('projectId') projectId: number,
+    @Param('userId') userId: number,
+    @Request() req: any,
+  ): Promise<void> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectUserService.remove(projectId, userId);
   }

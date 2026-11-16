@@ -4,7 +4,9 @@ describe('LoginThrottle', () => {
   let t = 1_000_000;
   const now = () => t;
   const make = () => new LoginThrottle(5, 15 * 60_000, now, 50);
-  beforeEach(() => { t = 1_000_000; });
+  beforeEach(() => {
+    t = 1_000_000;
+  });
 
   it('locks a (username, IP) pair after the limit, and only that pair', () => {
     const th = make();
@@ -42,7 +44,10 @@ describe('LoginThrottle', () => {
 
   it('a successful sign-in clears the pair; a reset clears every address of the account', () => {
     const th = make();
-    for (let i = 0; i < 5; i++) { th.recordFailure('ann', '1.1.1.1'); th.recordFailure('ann', '3.3.3.3'); }
+    for (let i = 0; i < 5; i++) {
+      th.recordFailure('ann', '1.1.1.1');
+      th.recordFailure('ann', '3.3.3.3');
+    }
     th.clear('ann', '1.1.1.1');
     expect(th.isLocked('ann', '1.1.1.1')).toBe(false);
     expect(th.isLocked('ann', '3.3.3.3')).toBe(true);

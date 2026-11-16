@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { apiGetAuth, API_BASE } from '$lib/api';
 	import type { UserSummary } from '$lib/types';
+	import { t } from '$lib/i18n';
 
 	let {
 		id = 'user-picker',
-		label = 'Find a user',
+		label,
 		selected = $bindable<UserSummary | null>(null),
 		excludeIds = [],
-		onselect,
+		onselect
 	}: {
 		id?: string;
+		/** Visible label; defaults to a translated "Find a user". */
 		label?: string;
 		/** The user the person picked (null until one is chosen). */
 		selected?: UserSummary | null;
@@ -34,6 +36,7 @@
 	const trimmed = $derived(query.trim());
 	const shown = $derived(results.filter((u) => !excludeIds.includes(u.id)));
 	const tooShort = $derived(trimmed.length < MIN_CHARS);
+	const labelText = $derived(label ?? $t('projects.userPicker.label'));
 	const listId = $derived(`${id}-listbox`);
 
 	function resolveUrl(path: string): string {
@@ -137,11 +140,13 @@
 	}
 
 	const showList = $derived(open && !tooShort && !searching && !failed && shown.length > 0);
-	const showEmpty = $derived(open && !tooShort && !searching && !failed && searchedFor === trimmed && shown.length === 0);
+	const showEmpty = $derived(
+		open && !tooShort && !searching && !failed && searchedFor === trimmed && shown.length === 0
+	);
 </script>
 
 <div class="relative flex-1 min-w-48" {onfocusout}>
-	<label for={id} class="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-300">{label}</label>
+	<label for={id} class="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-300">{labelText}</label>
 	<input
 		{id}
 		type="text"
@@ -156,28 +161,28 @@
 		{oninput}
 		{onkeydown}
 		onfocus={() => (open = true)}
-		placeholder="Type a username or name"
+		placeholder={$t('projects.userPicker.placeholder')}
 		class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 	/>
 	<p id="{id}-hint" class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0" role="status">
 		{#if selected}
-			Selected: {selected.name || selected.username}
+			{$t('projects.userPicker.selected', { name: selected.name || selected.username })}
 		{:else if tooShort}
-			Type at least {MIN_CHARS} characters to search.
+			{$t('projects.userPicker.tooShort', { min: MIN_CHARS })}
 		{:else if searching}
-			Searching…
+			{$t('projects.userPicker.searching')}
 		{:else if failed}
-			Search failed. Try again.
+			{$t('projects.userPicker.failed')}
 		{:else if showEmpty}
-			No matches.
+			{$t('projects.userPicker.noMatches')}
 		{:else}
-			Pick a user from the list.
+			{$t('projects.userPicker.pick')}
 		{/if}
 	</p>
 	<ul
 		id={listId}
 		role="listbox"
-		aria-label="{label} results"
+		aria-label={$t('projects.userPicker.results', { label: labelText })}
 		class="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800 p-0 list-none"
 		hidden={!showList}
 	>

@@ -20,9 +20,7 @@ const PERMISSION_LEVEL: Record<string, Access> = {
 const MAX_DEPTH = 32;
 
 /** Fields a client may never set directly on a node (identity / ownership / bookkeeping). */
-const PROTECTED_NODE_FIELDS = [
-  'id', 'ownerId', 'createdBy', 'parent', 'children', 'createdAt', 'updatedAt',
-] as const;
+const PROTECTED_NODE_FIELDS = ['id', 'ownerId', 'createdBy', 'parent', 'children', 'createdAt', 'updatedAt'] as const;
 
 /**
  * Single source of truth for "who may do what to a node (project or task)".
@@ -91,9 +89,15 @@ export class NodeAccessService {
     if ((await this.level(userId, node.id)) < needed) throw new ForbiddenException();
   }
 
-  assertRead(userId: number, nodeId: number) { return this.assert(userId, nodeId, Access.READ); }
-  assertWrite(userId: number, nodeId: number) { return this.assert(userId, nodeId, Access.WRITE); }
-  assertAdmin(userId: number, nodeId: number) { return this.assert(userId, nodeId, Access.ADMIN); }
+  assertRead(userId: number, nodeId: number) {
+    return this.assert(userId, nodeId, Access.READ);
+  }
+  assertWrite(userId: number, nodeId: number) {
+    return this.assert(userId, nodeId, Access.WRITE);
+  }
+  assertAdmin(userId: number, nodeId: number) {
+    return this.assert(userId, nodeId, Access.ADMIN);
+  }
 
   /**
    * Needed access to modify/delete/archive a node: ADMIN for a project (owner),
@@ -129,7 +133,10 @@ export class NodeAccessService {
       if (cur === nodeId) throw new BadRequestException('A node cannot be moved under its own descendant');
       if (seen.has(cur) || depth >= MAX_DEPTH - 1) throw new BadRequestException('Invalid or too deeply nested parent');
       seen.add(cur);
-      const n: Pick<Node, 'id' | 'parentId'> | null = await this.nodeRepository.findOne({ where: { id: cur }, select: ['id', 'parentId'] });
+      const n: Pick<Node, 'id' | 'parentId'> | null = await this.nodeRepository.findOne({
+        where: { id: cur },
+        select: ['id', 'parentId'],
+      });
       cur = n?.parentId ?? null;
     }
   }

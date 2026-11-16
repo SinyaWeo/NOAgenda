@@ -21,9 +21,15 @@ function toDate(v: string | Date | null | undefined): Date | null {
 	return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** An unknown/typo'd zone must never break rendering: fall back to the browser's own. */
+/**
+ * A zone to format in, or undefined for "the browser's own".
+ * - An unknown/typo'd zone must never break rendering.
+ * - Every account starts with the zone 'UTC' as a database default, which nobody chose. Treating it as a
+ *   real choice would show everyone's dates and reminder times shifted to UTC, so it means "not set".
+ *   (People who really want UTC can pick 'Etc/UTC'.)
+ */
 function safeZone(timeZone: string | undefined): string | undefined {
-	if (!timeZone) return undefined;
+	if (!timeZone || timeZone === 'UTC') return undefined;
 	try {
 		new Intl.DateTimeFormat('en', { timeZone });
 		return timeZone;
@@ -36,12 +42,24 @@ export function makeFormatters(locale: Locale, timeZone?: string): Formatters {
 	const tz = safeZone(timeZone);
 	const date = new Intl.DateTimeFormat(locale, { timeZone: tz, dateStyle: 'medium' });
 	const dateTime = new Intl.DateTimeFormat(locale, { timeZone: tz, dateStyle: 'medium', timeStyle: 'short' });
-	const dateLong = new Intl.DateTimeFormat(locale, { timeZone: tz, weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+	const dateLong = new Intl.DateTimeFormat(locale, {
+		timeZone: tz,
+		weekday: 'long',
+		year: 'numeric',
+		month: 'long',
+		day: 'numeric'
+	});
 	const num = new Intl.NumberFormat(locale);
 	return {
-		date: (v) => { const d = toDate(v); return d ? date.format(d) : ''; },
-		dateTime: (v) => { const d = toDate(v); return d ? dateTime.format(d) : ''; },
+		date: (v) => {
+			const d = toDate(v);
+			return d ? date.format(d) : '';
+		},
+		dateTime: (v) => {
+			const d = toDate(v);
+			return d ? dateTime.format(d) : '';
+		},
 		dateLong: (v) => dateLong.format(toDate(v) ?? new Date()),
-		number: (v) => (v === null || v === undefined ? '' : num.format(v)),
+		number: (v) => (v === null || v === undefined ? '' : num.format(v))
 	};
 }
