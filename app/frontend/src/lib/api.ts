@@ -1,5 +1,8 @@
 // Centralized API utility for SvelteKit frontend
 // Set your backend base URL here or use an environment variable
+import { tr } from './i18n/translate';
+import { localizeServerMessage } from './i18n/server-messages';
+
 export const API_BASE: string = (import.meta.env.VITE_API_BASE as string) || 'http://localhost:3000';
 
 function extractApiErrorMessage(rawText: string, fallback = 'Request failed'): string {
@@ -29,31 +32,35 @@ export class ApiError extends Error {
  * server are shown as they are (they say what to fix); permission, rate-limit and
  * server errors get one consistent, friendly wording.
  */
-export async function apiError(res: Response, fallback = 'Request failed'): Promise<ApiError> {
+export async function apiError(res: Response, fallback?: string): Promise<ApiError> {
 	const raw = await res.text().catch(() => '');
 	// A specific server message ("A valid invite code is required...", "Registration is closed") beats
-	// our generic wording; only the framework's bare defaults are replaced.
+	// our generic wording; only the framework's bare defaults are replaced. Known server messages are
+	// translated into the current language, unknown ones are shown as sent.
 	const server = extractApiErrorMessage(raw, '');
-	const isGeneric = !server || /^(forbidden( resource)?|not found|unauthorized|bad request)$/i.test(server.trim());
+	const isGeneric = !server || /^(forbidden( resource)?|not found|unauthorized|bad request|payload too large)$/i.test(server.trim());
+	const specific = () => localizeServerMessage(server);
 	let message: string;
 	switch (res.status) {
 		case 403:
-			message = isGeneric ? 'You do not have permission to do that.' : server;
+			message = isGeneric ? tr('errors.forbidden') : specific();
 			break;
 		case 404:
-			message = isGeneric ? 'That item could not be found. It may have been deleted.' : server;
+			message = isGeneric ? tr('errors.notFound') : specific();
 			break;
 		case 413:
-			message = 'That is too large to upload.';
+			message = isGeneric ? tr('errors.tooLarge') : specific();
 			break;
 		case 429:
-			message = 'Too many attempts. Please wait a minute and try again.';
+			message = tr('errors.rateLimited');
 			break;
 		default:
 			message =
 				res.status >= 500
-					? 'Something went wrong on our side. Please try again in a moment.'
-					: extractApiErrorMessage(raw, fallback);
+					? tr('errors.serverError')
+					: server
+						? specific()
+						: (fallback ?? tr('errors.requestFailed'));
 	}
 	return new ApiError(message, res.status);
 }
@@ -68,7 +75,7 @@ export function sessionExpired(): Error {
 			? '/user/login'
 			: `/user/login?reason=expired&redirect=${encodeURIComponent(here)}`;
 	}
-	return new ApiError('Your session has expired. Please sign in again.', 401);
+	return new ApiError(tr('errors.sessionExpired'), 401);
 }
 
 const ABSOLUTE = /^https?:\/\//i;
@@ -115,7 +122,7 @@ async function call<T>(auth: boolean, method: string, path: string, body?: unkno
 	}
 	const res = auth ? await apiFetchAuth(path, init) : await apiFetch(path, init);
 	if (auth && res.status === 401) throw sessionExpired();
-	if (!res.ok) throw await apiError(res, 'Request failed');
+	if (!res.ok) throw await apiError(res);
 	return readBody<T>(res);
 }
 
@@ -230,7 +237,7 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
 export async function downloadAuthFile(path: string, filename: string): Promise<void> {
 	const res = await apiFetchAuth(path);
 	if (res.status === 401) throw sessionExpired();
-	if (!res.ok) throw await apiError(res, 'Download failed');
+	if (!res.ok) throw await apiError(res);
 	const blob = await res.blob();
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');

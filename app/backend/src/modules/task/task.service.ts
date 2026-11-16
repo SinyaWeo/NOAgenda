@@ -21,6 +21,11 @@ export interface TaskFilter {
   order?: 'ASC' | 'DESC';
   page?: number;
   limit?: number;
+  priority?: number;
+  dueBefore?: Date;
+  dueAfter?: Date;
+  includeUndated?: boolean;
+  excludeDone?: boolean;
 }
 
 @Injectable()
@@ -42,6 +47,11 @@ export class TaskService {
     if (filter?.order) nodeFilter.order = filter.order;
     if (filter?.page) nodeFilter.page = filter.page;
     if (filter?.limit) nodeFilter.limit = filter.limit;
+    if (filter?.priority !== undefined) nodeFilter.priority = filter.priority;
+    if (filter?.dueBefore) nodeFilter.dueBefore = filter.dueBefore;
+    if (filter?.dueAfter) nodeFilter.dueAfter = filter.dueAfter;
+    if (filter?.includeUndated) nodeFilter.includeUndated = true;
+    if (filter?.excludeDone) nodeFilter.excludeDone = true;
     return this.nodeService.findAll(nodeFilter);
   }
 

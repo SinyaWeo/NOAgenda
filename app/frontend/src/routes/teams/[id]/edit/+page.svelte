@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPutAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import {
@@ -11,52 +10,48 @@
     Card,
     Input,
     Label,
-    Select,
     Textarea,
   } from 'flowbite-svelte';
   import {
     ExclamationCircleOutline,
     CaretLeftSolid,
   } from 'flowbite-svelte-icons';
+  import UserPicker from '$lib/components/UserPicker.svelte';
+  import { errMessage } from '$lib/errors';
+  import { showToast } from '$lib/toast';
+  import type { Team, TeamMember, UserSummary } from '$lib/types';
 
-  const team = writable<any>(null);
-  const members = writable<any[]>([]);
-  const allUsers = writable<any[]>([]);
+  const team = writable<Team | null>(null);
+  const members = writable<TeamMember[]>([]);
   const name = writable('');
   const description = writable('');
   const loading = writable(true);
   const error = writable('');
   const saving = writable(false);
-  let newMemberUserId = $state('');
+  let newMember = $state<UserSummary | null>(null);
+  let picker: UserPicker | undefined = $state();
 
-  async function loadTeam() {
-    const id = page.params.id;
-    const [t, m, users] = await Promise.all([
-      apiGetAuth<any>(`/teams/${id}`),
-      apiGetAuth<any[]>(`/team-members?teamId=${id}`),
-      apiGetAuth<any[]>('/users').catch(() => []),
+  const memberIds = $derived(
+    $members.map((m) => m.user?.id).filter((id): id is number => id != null),
+  );
+
+  async function fetchMembers(id: string | undefined) {
+    members.set(await apiGetAuth<TeamMember[]>(`/team-members?teamId=${id}`));
+  }
+
+  async function loadTeam(id: string, isStale: () => boolean) {
+    const [t, m] = await Promise.all([
+      apiGetAuth<Team>(`/teams/${id}`),
+      apiGetAuth<TeamMember[]>(`/team-members?teamId=${id}`),
     ]);
+    if (isStale()) return;
     team.set(t);
     name.set(t.name ?? '');
     description.set(t.description ?? '');
     members.set(m);
-    allUsers.set(users);
   }
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      await loadTeam();
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  loadOnParamChange(() => page.params.id ?? '', loadTeam, loading, error);
 
   async function handleSave(e: Event) {
     e.preventDefault();
@@ -67,8 +62,8 @@
         description: $description,
       });
       goto(`/teams/${page.params.id}`);
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     } finally {
       saving.set(false);
     }
@@ -76,25 +71,25 @@
 
   async function addMember(e: SubmitEvent) {
     e.preventDefault();
-    if (!newMemberUserId.trim()) return;
+    if (!newMember) return;
     try {
       await apiPostAuth('/team-members', {
         teamId: Number(page.params.id),
-        userId: Number(newMemberUserId),
+        userId: newMember.id,
       });
-      newMemberUserId = '';
-      await loadTeam();
-    } catch (e: any) {
-      error.set(e.message);
+      picker?.reset();
+      await fetchMembers(page.params.id);
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     }
   }
 
   async function removeMember(memberId: number) {
     try {
       await apiDeleteAuth(`/team-members/${memberId}`);
-      await loadTeam();
-    } catch (e: any) {
-      error.set(e.message);
+      await fetchMembers(page.params.id);
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     }
   }
 
@@ -103,8 +98,8 @@
     try {
       await apiDeleteAuth(`/teams/${page.params.id}`);
       goto('/teams');
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     }
   }
 </script>
@@ -149,26 +144,18 @@
     <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
       Members
     </h2>
-    <form onsubmit={addMember} class="flex gap-2 mb-4">
-      {#if $allUsers.length}
-        <Select bind:value={newMemberUserId} class="flex-1">
-          <option value="">Select user…</option>
-          {#each $allUsers as u}<option value={String(u.id)}
-              >{u.name || u.username || `User #${u.id}`}</option
-            >{/each}
-        </Select>
-      {:else}
-        <Input
-          type="number"
-          bind:value={newMemberUserId}
-          placeholder="User ID"
-          class="w-28"
-        />
-      {/if}
-      <Button type="submit" size="sm">Add</Button>
+    <form onsubmit={addMember} class="flex gap-2 mb-4 items-start">
+      <UserPicker
+        id="team-member-picker"
+        label="Add a member"
+        bind:selected={newMember}
+        excludeIds={memberIds}
+        bind:this={picker}
+      />
+      <Button type="submit" size="sm" disabled={!newMember} class="self-start mt-6">Add</Button>
     </form>
     {#if $members.length}
-      {#each $members as member, i}
+      {#each $members as member, i (member.id)}
         <div
           class="flex items-center gap-3 py-2 {i < $members.length - 1
             ? 'border-b border-gray-100 dark:border-gray-700'

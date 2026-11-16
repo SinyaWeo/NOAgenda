@@ -1,9 +1,7 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiPostAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
@@ -12,11 +10,6 @@
   const error = writable('');
   const success = writable('');
   const saving = writable(false);
-
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) goto('/user/login');
-  });
 
   async function handleSave(e: Event) {
     e.preventDefault();
@@ -28,8 +21,8 @@
       success.set('Email updated. We sent a link to the new address: confirm it to keep signing in.');
       email = '';
       password = '';
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       saving.set(false);
     }

@@ -1,36 +1,31 @@
 <script lang="ts">
-  import { STATUS_LABELS, PRIORITY_LABELS, PRIORITY_SHORT } from '$lib/constants';
+  import { untrack } from 'svelte';
   import { onMount } from 'svelte';
-  import { apiGetAuth, apiPutAuth } from '$lib/api';
+  import { apiGetAuth, apiPostAuth, apiPutAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
+  import { errMessage } from '$lib/errors';
+  import { cleanCriteria, criteriaToQuery, describeCriteria, needsClientDueFilter } from '$lib/filters';
   import { loadProjectNames } from '$lib/project-names';
   import { writable } from 'svelte/store';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { showToast } from '$lib/toast';
+  import type { FilterCriteria, NodeStatus, SavedFilter, Task } from '$lib/types';
+  import type { KanbanColumn, ProjectOption, TaskViewMode } from '$lib/types-views';
+  import TaskListView from '$lib/components/views/TaskListView.svelte';
+  import StatusKanbanView from '$lib/components/views/StatusKanbanView.svelte';
+  import TableView from '$lib/components/views/TableView.svelte';
+  import GanttView from '$lib/components/views/GanttView.svelte';
+  import CriteriaEditor from '$lib/components/views/CriteriaEditor.svelte';
+  import { Alert, Badge, Button, ButtonGroup, Input, Select } from 'flowbite-svelte';
   import {
-    Alert,
-    Button,
-    ButtonGroup,
-    Card,
-    Progressbar,
-    Table,
-    TableBody,
-    TableBodyCell,
-    TableBodyRow,
-    TableHead,
-    TableHeadCell,
-  } from 'flowbite-svelte';
-  import {
-    CalendarMonthOutline,
     CheckCircleOutline,
     ChevronLeftOutline,
     ChevronRightOutline,
-    ExclamationCircleOutline,
     PlusOutline,
   } from 'flowbite-svelte-icons';
 
-  const tasks = writable<any[]>([]);
+  const tasks = writable<Task[]>([]);
   let projectNames = $state<Record<number, string>>({});
   const loading = writable(true);
   const error = writable('');
@@ -40,50 +35,132 @@
   const limit = 20;
   const hasMore = writable(false);
 
+  // Saved filters / applied criteria
+  let savedFilters = $state<SavedFilter[]>([]);
+  let filtersLoaded = false;
+  let criteria = $state<FilterCriteria>({});
+  let selectedFilterId = $state('');
+  let showRefine = $state(false);
+  let draftCriteria = $state<FilterCriteria>({});
+  let showSave = $state(false);
+  let saveName = $state('');
+  let saving = $state(false);
+  let lastFilterParam: string | null | undefined = undefined;
+  let loadSeq = 0;
 
-  const VIEWS = [
+  const projectOptions = $derived<ProjectOption[]>(
+    Object.entries(projectNames).map(([id, name]) => ({ id: Number(id), name })),
+  );
+  const chips = $derived(describeCriteria(criteria));
+
+  const VIEWS: { id: TaskViewMode; label: string }[] = [
     { id: 'list', label: 'List' },
     { id: 'kanban', label: 'Kanban' },
     { id: 'table', label: 'Table' },
     { id: 'gantt', label: 'Gantt' },
   ];
 
-  const KANBAN_COLS = [
+  const KANBAN_COLS: KanbanColumn[] = [
     { key: 'open', label: 'Open' },
     { key: 'in_progress', label: 'In Progress' },
     { key: 'done', label: 'Done' },
   ];
 
-  const validViews = new Set(['list', 'kanban', 'table', 'gantt']);
-  const viewMode = $derived(
+  const validViews = new Set<string>(['list', 'kanban', 'table', 'gantt']);
+  const viewMode = $derived<TaskViewMode>(
     validViews.has(page.url.searchParams.get('view') ?? '')
-      ? (page.url.searchParams.get('view') as
-          | 'list'
-          | 'kanban'
-          | 'table'
-          | 'gantt')
+      ? (page.url.searchParams.get('view') as TaskViewMode)
       : 'list',
   );
 
-  function setView(v: string) {
-    goto(`${page.url.pathname}?view=${v}`, { replaceState: true });
+  /** Navigate to the same page with some query params changed (others, e.g. ?view=, are kept). */
+  function setParams(changes: Record<string, string | null>) {
+    const params = new URLSearchParams(page.url.searchParams);
+    for (const [k, v] of Object.entries(changes)) {
+      if (v === null) params.delete(k);
+      else params.set(k, v);
+    }
+    const qs = params.toString();
+    goto(`${page.url.pathname}${qs ? `?${qs}` : ''}`, { replaceState: true, keepFocus: true, noScroll: true });
+  }
+
+  function setView(v: TaskViewMode) {
+    setParams({ view: v });
   }
 
   async function loadTasks() {
+    const seq = ++loadSeq;
     loading.set(true);
     error.set('');
     try {
-      const list = await apiGetAuth<any[]>(
-        `/tasks?sort=${$sort}&order=${$order}&page=${$currentPage}&limit=${limit + 1}`,
-      );
-      hasMore.set(list.length > limit);
-      tasks.set(list.slice(0, limit));
-    } catch (e: any) {
-      error.set(e.message);
+      const q = criteriaToQuery(criteria);
+      q.set('sort', $sort);
+      q.set('order', $order);
+      let rows: Task[];
+      let more: boolean;
+      if (needsClientDueFilter(criteria)) {
+        // No server parameter for "no due date": fetch a large page and filter + page here.
+        q.set('limit', '500');
+        const all = (await apiGetAuth<Task[]>(`/tasks?${q}`)).filter((t) => !t.dueDate);
+        const start = ($currentPage - 1) * limit;
+        rows = all.slice(start, start + limit);
+        more = all.length > start + limit;
+      } else {
+        q.set('page', String($currentPage));
+        q.set('limit', String(limit + 1));
+        const list = await apiGetAuth<Task[]>(`/tasks?${q}`);
+        more = list.length > limit;
+        rows = list.slice(0, limit);
+      }
+      if (seq !== loadSeq) return;
+      hasMore.set(more);
+      tasks.set(rows);
+    } catch (e: unknown) {
+      if (seq === loadSeq) error.set(errMessage(e));
     } finally {
-      loading.set(false);
+      if (seq === loadSeq) loading.set(false);
     }
   }
+
+  async function ensureFilters() {
+    if (filtersLoaded) return;
+    try {
+      savedFilters = await apiGetAuth<SavedFilter[]>('/filters');
+      filtersLoaded = true;
+    } catch (e: unknown) {
+      showToast(errMessage(e, 'Could not load saved filters'), 'error');
+    }
+  }
+
+  /** The ?filter= param changed (or this is the first load): apply that saved filter, then load. */
+  async function syncFromUrl(param: string | null) {
+    if (param === lastFilterParam) return;
+    lastFilterParam = param;
+    if (param) {
+      await ensureFilters();
+      const f = savedFilters.find((x) => String(x.id) === param);
+      if (f) {
+        criteria = { ...(f.filters ?? {}) };
+        selectedFilterId = String(f.id);
+      } else {
+        showToast('Saved filter not found', 'error');
+        criteria = {};
+        selectedFilterId = '';
+        lastFilterParam = null;
+        setParams({ filter: null });
+      }
+    } else {
+      criteria = {};
+      selectedFilterId = '';
+    }
+    currentPage.set(1);
+    await loadTasks();
+  }
+
+  $effect(() => {
+    const param = page.url.searchParams.get('filter');
+    untrack(() => void syncFromUrl(param));
+  });
 
   onMount(async () => {
     const me = await getCurrentUser();
@@ -92,8 +169,67 @@
       return;
     }
     void loadProjectNames().then((n) => (projectNames = n));
-    await loadTasks();
+    void ensureFilters();
   });
+
+  function chooseSavedFilter(id: string) {
+    selectedFilterId = id;
+    setParams({ filter: id || null });
+  }
+
+  function clearFilter() {
+    showSave = false;
+    showRefine = false;
+    if (lastFilterParam) {
+      setParams({ filter: null }); // the URL change reloads
+    } else {
+      criteria = {};
+      selectedFilterId = '';
+      currentPage.set(1);
+      void loadTasks();
+    }
+  }
+
+  function openRefine() {
+    draftCriteria = { ...criteria };
+    showRefine = !showRefine;
+  }
+
+  /** Apply hand-edited criteria; they are no longer the saved filter named in the URL. */
+  function applyRefine() {
+    criteria = cleanCriteria(draftCriteria);
+    selectedFilterId = '';
+    showRefine = false;
+    currentPage.set(1);
+    if (lastFilterParam) {
+      lastFilterParam = null; // so the URL change below does not reload a second time
+      setParams({ filter: null });
+    }
+    void loadTasks();
+  }
+
+  async function saveCurrentFilters(e: Event) {
+    e.preventDefault();
+    if (!saveName.trim() || saving) return;
+    saving = true;
+    try {
+      const created = await apiPostAuth<SavedFilter>('/filters', {
+        name: saveName.trim(),
+        filters: cleanCriteria(criteria),
+      });
+      savedFilters = [...savedFilters, created];
+      saveName = '';
+      showSave = false;
+      selectedFilterId = String(created.id);
+      lastFilterParam = String(created.id); // criteria are already applied: no reload needed
+      setParams({ filter: String(created.id) });
+      showToast('Filter saved', 'success');
+    } catch (e: unknown) {
+      showToast(errMessage(e, 'Could not save the filter'), 'error');
+    } finally {
+      saving = false;
+    }
+  }
 
   async function changeSort(field: string) {
     if ($sort === field) {
@@ -118,15 +254,15 @@
     }
   }
 
-  async function updateTaskStatus(taskId: number, status: string) {
+  async function updateTaskStatus(taskId: number, status: NodeStatus) {
     try {
-      const updated = await apiPutAuth<any>(`/tasks/${taskId}`, { status });
+      const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, { status });
       tasks.update((list) =>
         list.map((t) => (t.id === taskId ? { ...t, ...updated } : t)),
       );
       showToast('Status updated', 'success');
-    } catch (e: any) {
-      showToast(e.message ?? 'Failed to update status', 'error');
+    } catch (e: unknown) {
+      showToast(errMessage(e, 'Failed to update status'), 'error');
     }
   }
 </script>
@@ -139,7 +275,7 @@
 </div>
 
 <ButtonGroup class="mb-4 *:ring-primary-700!">
-  {#each VIEWS as v}
+  {#each VIEWS as v (v.id)}
     <Button
       size="sm"
       color={viewMode === v.id ? 'primary' : 'light'}
@@ -148,11 +284,52 @@
   {/each}
 </ButtonGroup>
 
+<div class="flex items-center gap-2 mb-3 flex-wrap">
+  <label for="saved-filter" class="text-sm text-gray-500">Saved filter:</label>
+  <Select
+    id="saved-filter"
+    class="w-auto"
+    value={selectedFilterId}
+    onchange={(e) => chooseSavedFilter((e.target as HTMLSelectElement).value)}
+  >
+    <option value="">None</option>
+    {#each savedFilters as f (f.id)}<option value={String(f.id)}>{f.name}</option>{/each}
+  </Select>
+  <Button size="sm" color="light" onclick={openRefine}>{showRefine ? 'Hide filter editor' : 'Edit filters'}</Button>
+  <a href="/filters" class="text-xs text-primary-600 hover:underline">Manage saved filters</a>
+</div>
+
+{#if showRefine}
+  <div class="mb-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+    <CriteriaEditor bind:criteria={draftCriteria} projects={projectOptions} idPrefix="tasks-crit" />
+    <div class="mt-3 flex gap-2">
+      <Button size="sm" onclick={applyRefine}>Apply filters</Button>
+      <Button size="sm" color="light" onclick={() => (showRefine = false)}>Cancel</Button>
+    </div>
+  </div>
+{/if}
+
+{#if chips.length}
+  <div class="flex items-center gap-2 mb-3 flex-wrap" aria-label="Active filters">
+    {#each chips as chip (chip)}<Badge color="indigo">{chip}</Badge>{/each}
+    <Button size="xs" color="light" onclick={clearFilter}>Clear</Button>
+    {#if !showSave}
+      <Button size="xs" color="light" onclick={() => (showSave = true)}>Save current filters</Button>
+    {:else}
+      <form onsubmit={saveCurrentFilters} class="flex items-center gap-2">
+        <Input type="text" size="sm" bind:value={saveName} placeholder="Filter name" required class="w-44" aria-label="Filter name" />
+        <Button type="submit" size="xs" disabled={saving || !saveName.trim()}>Save</Button>
+        <Button type="button" size="xs" color="light" onclick={() => (showSave = false)}>Cancel</Button>
+      </form>
+    {/if}
+  </div>
+{/if}
+
 {#if viewMode !== 'kanban'}
   <div class="flex items-center gap-2 mb-4 flex-wrap">
     <span class="text-sm text-gray-500">Sort:</span>
     <ButtonGroup class="*:ring-primary-700!">
-      {#each [['createdAt', 'Created'], ['dueDate', 'Due Date'], ['priority', 'Priority'], ['title', 'Title'], ['status', 'Status']] as [field, label]}
+      {#each [['createdAt', 'Created'], ['dueDate', 'Due Date'], ['priority', 'Priority'], ['title', 'Title'], ['status', 'Status']] as [field, label] (field)}
         <Button
           size="sm"
           color={$sort === field ? 'primary' : 'light'}
@@ -165,118 +342,30 @@
   </div>
 {/if}
 
+{#snippet pager(extraClass: string)}
+  <div class="flex items-center gap-3 justify-center {extraClass}">
+    <Button
+      size="sm"
+      color="light"
+      disabled={$currentPage === 1}
+      onclick={prevPage}
+      ><ChevronLeftOutline class="w-4 h-4 mr-1" />Prev</Button
+    >
+    <span class="text-sm text-gray-400">Page {$currentPage}</span>
+    <Button size="sm" color="light" disabled={!$hasMore} onclick={nextPage}
+      >Next<ChevronRightOutline class="w-4 h-4 ml-1" /></Button
+    >
+  </div>
+{/snippet}
+
 {#if $loading}
   <p class="text-gray-400">Loading tasks...</p>
 {:else if $error}
   <Alert color="red">{$error}</Alert>
 {:else if viewMode === 'list'}
   {#if $tasks.length}
-    <div class="flex flex-col gap-2 mb-4">
-      {#each $tasks as task}
-        {@const due = task.dueDate ? new Date(task.dueDate) : null}
-        {@const isOverdue =
-          due !== null && due < new Date() && task.status !== 'done'}
-        <Card
-          class="flex flex-col gap-2 p-3.5 {isOverdue
-            ? 'border-red-300 dark:bg-gray-800 dark:border-red-700'
-            : ''}"
-        >
-          <div class="flex items-center gap-3">
-            <div class="flex-1 min-w-0">
-              <a
-                href="/tasks/{task.id}"
-                class="font-medium text-gray-900 dark:text-white hover:underline {task.status ===
-                'done'
-                  ? 'line-through text-gray-400'
-                  : ''}">{task.title}</a
-              >
-              {#if projectNames[task.parentId]}<span class="text-xs text-gray-400 ml-2"
-                  >{projectNames[task.parentId]}</span
-                >{/if}
-            </div>
-            <div class="shrink-0 text-right flex flex-col gap-1">
-              <div>
-                <div
-                  class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
-                >
-                  Due date
-                </div>
-                <span
-                  class="text-xs flex items-center justify-end gap-0.5 {isOverdue
-                    ? 'text-red-500'
-                    : due !== null
-                      ? 'text-gray-600 dark:text-gray-300'
-                      : 'text-gray-400'}"
-                >
-                  {#if isOverdue}<ExclamationCircleOutline
-                      class="w-3.5 h-3.5 shrink-0"
-                    />{/if}
-                  {due !== null ? due.toLocaleDateString() : 'Not set'}
-                </span>
-              </div>
-              <div>
-                <div
-                  class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
-                >
-                  Priority
-                </div>
-                <span
-                  class="text-xs dark:text-gray-400"
-                  data-priority={task.priority}
-                >
-                  {task.priority && task.priority > 0
-                    ? PRIORITY_LABELS[task.priority]
-                    : '—'}
-                </span>
-              </div>
-              <div>
-                <div
-                  class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5"
-                >
-                  Status
-                </div>
-                <select
-                  class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent dark:text-white"
-                  data-status={task.status}
-                  value={task.status}
-                  onchange={(e) =>
-                    updateTaskStatus(
-                      task.id,
-                      (e.target as HTMLSelectElement).value,
-                    )}
-                  aria-label="Change status"
-                >
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="done">Done</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          {#if task.percentDone && task.percentDone > 0}
-            <Progressbar
-              progress={task.percentDone}
-              size="h-4"
-              color="indigo"
-              labelInside
-            />
-          {/if}
-        </Card>
-      {/each}
-    </div>
-    <div class="flex items-center gap-3 justify-center">
-      <Button
-        size="sm"
-        color="light"
-        disabled={$currentPage === 1}
-        onclick={prevPage}
-        ><ChevronLeftOutline class="w-4 h-4 mr-1" />Prev</Button
-      >
-      <span class="text-sm text-gray-400">Page {$currentPage}</span>
-      <Button size="sm" color="light" disabled={!$hasMore} onclick={nextPage}
-        >Next<ChevronRightOutline class="w-4 h-4 ml-1" /></Button
-      >
-    </div>
+    <TaskListView tasks={$tasks} {projectNames} onStatusChange={updateTaskStatus} />
+    {@render pager('')}
   {:else}
     <div class="text-center py-12 text-gray-400">
       <CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />
@@ -289,166 +378,10 @@
     </div>
   {/if}
 {:else if viewMode === 'kanban'}
-  <div class="board-cols">
-    {#each KANBAN_COLS as col}
-      {@const colTasks = $tasks.filter((t) => t.status === col.key)}
-      <div class="board-col">
-        <div class="board-col-header">
-          <h3
-            class="text-sm font-semibold text-gray-700 dark:text-gray-300 m-0"
-          >
-            {col.label}
-          </h3>
-          <span class="text-xs text-gray-400">{colTasks.length}</span>
-        </div>
-        <div class="board-col-body">
-          {#each colTasks as task}
-            <div class="board-card mb-2">
-              <a
-                href="/tasks/{task.id}"
-                class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline"
-                >{task.title}</a
-              >
-              {#if task.dueDate}
-                {@const overdue =
-                  new Date(task.dueDate) < new Date() && task.status !== 'done'}
-                <div
-                  class="text-xs {overdue
-                    ? 'text-red-500'
-                    : 'text-gray-400'} mt-1"
-                >
-                  {new Date(task.dueDate).toLocaleDateString()}
-                </div>
-              {/if}
-              {#if task.priority && task.priority > 0}<div
-                  class="text-xs text-gray-400 mt-0.5"
-                >
-                  {PRIORITY_SHORT[task.priority]}
-                </div>{/if}
-            </div>
-          {/each}
-          {#if !colTasks.length}
-            <p class="text-xs text-gray-400 text-center m-0">Empty</p>
-          {/if}
-        </div>
-      </div>
-    {/each}
-  </div>
+  <StatusKanbanView tasks={$tasks} columns={KANBAN_COLS} />
 {:else if viewMode === 'table'}
-  {#if $tasks.length}
-    <Table>
-      <TableHead>
-        <TableHeadCell>#</TableHeadCell>
-        <TableHeadCell>Title</TableHeadCell>
-        <TableHeadCell>Status</TableHeadCell>
-        <TableHeadCell>Priority</TableHeadCell>
-        <TableHeadCell>Due Date</TableHeadCell>
-        <TableHeadCell>Created</TableHeadCell>
-      </TableHead>
-      <TableBody>
-        {#each $tasks as task}
-          <TableBodyRow>
-            <TableBodyCell class="text-gray-400">{task.id}</TableBodyCell>
-            <TableBodyCell
-              ><a
-                href="/tasks/{task.id}"
-                class="font-medium text-gray-800 dark:text-gray-200 hover:underline"
-                >{task.title}</a
-              ></TableBodyCell
-            >
-            <TableBodyCell
-              ><span
-                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
-                data-status={task.status}
-                >{STATUS_LABELS[task.status] ?? task.status}</span
-              ></TableBodyCell
-            >
-            <TableBodyCell class="text-gray-400"
-              >{PRIORITY_SHORT[task.priority] ?? '—'}</TableBodyCell
-            >
-            <TableBodyCell
-              class={task.dueDate &&
-              new Date(task.dueDate) < new Date() &&
-              task.status !== 'done'
-                ? 'text-red-500'
-                : 'text-gray-400'}
-              >{task.dueDate
-                ? new Date(task.dueDate).toLocaleDateString()
-                : '—'}</TableBodyCell
-            >
-            <TableBodyCell class="text-gray-400"
-              >{task.createdAt
-                ? new Date(task.createdAt).toLocaleDateString()
-                : '—'}</TableBodyCell
-            >
-          </TableBodyRow>
-        {/each}
-      </TableBody>
-    </Table>
-    <div class="flex items-center gap-3 justify-center mt-4">
-      <Button
-        size="sm"
-        color="light"
-        disabled={$currentPage === 1}
-        onclick={prevPage}
-        ><ChevronLeftOutline class="w-4 h-4 mr-1" />Prev</Button
-      >
-      <span class="text-sm text-gray-400">Page {$currentPage}</span>
-      <Button size="sm" color="light" disabled={!$hasMore} onclick={nextPage}
-        >Next<ChevronRightOutline class="w-4 h-4 ml-1" /></Button
-      >
-    </div>
-  {:else}
-    <div class="text-center py-12 text-gray-400">
-      <CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />
-      <p>No tasks found.</p>
-    </div>
-  {/if}
+  <TableView tasks={$tasks} friendlyStatus large />
+  {#if $tasks.length}{@render pager('mt-4')}{/if}
 {:else if viewMode === 'gantt'}
-  {@const dated = $tasks
-    .filter((t) => t.dueDate)
-    .sort(
-      (a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
-    )}
-  {#if dated.length}
-    <Card class="p-0 overflow-hidden">
-      {#each dated as task, i}
-        {@const overdue =
-          new Date(task.dueDate) < new Date() && task.status !== 'done'}
-        <div
-          class="flex items-center gap-3 px-4 py-3 {i < dated.length - 1
-            ? 'border-b border-gray-100 dark:border-gray-700'
-            : ''}"
-        >
-          <span
-            class="w-2 h-2 rounded-full shrink-0"
-            data-status={overdue ? 'overdue' : task.status}
-          ></span>
-          <a
-            href="/tasks/{task.id}"
-            class="flex-1 font-medium text-gray-800 dark:text-gray-200 hover:underline {task.status ===
-            'done'
-              ? 'line-through text-gray-400'
-              : ''}">{task.title}</a
-          >
-          <span
-            class="text-sm shrink-0 {overdue
-              ? 'text-red-500'
-              : 'text-gray-400'}"
-            >{new Date(task.dueDate).toLocaleDateString()}</span
-          >
-          <span
-            class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
-            data-status={task.status}
-            >{STATUS_LABELS[task.status] ?? task.status}</span
-          >
-        </div>
-      {/each}
-    </Card>
-  {:else}
-    <div class="text-center py-12 text-gray-400">
-      <CalendarMonthOutline class="w-12 h-12 mx-auto mb-3" />
-      <p>No tasks with due dates to display on the timeline.</p>
-    </div>
-  {/if}
+  <GanttView tasks={$tasks} large />
 {/if}

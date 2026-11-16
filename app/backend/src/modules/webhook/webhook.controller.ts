@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import { Webhook } from './webhook.entity';
-import { AuthGuard } from '@nestjs/passport';
 import { NodeAccessService } from '../node/node-access.service';
 import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
+import { assertPublicHttpUrl } from '../../common/url-guard';
 
 /** The signing secret is write-only: responses say whether one is set, never what it is. */
 function maskSecret(w: Webhook): Webhook {
@@ -28,7 +28,6 @@ export class WebhookController {
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(
     @Request() req: any,
     @Query('projectId') projectId?: string,
@@ -42,7 +41,6 @@ export class WebhookController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Webhook | null> {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
@@ -51,10 +49,10 @@ export class WebhookController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(@Request() req: any, @Body() body: CreateWebhookDto): Promise<Webhook> {
     const projectId = body.projectId;
     if (projectId !== undefined) await this.access.assertAdmin(req.user.userId, projectId);
+    await assertPublicHttpUrl(body.url);
     return maskSecret(await this.webhookService.create({
       url: body.url,
       event: body.event ?? '*',
@@ -67,17 +65,16 @@ export class WebhookController {
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: number, @Body() body: UpdateWebhookDto, @Request() req: any): Promise<Webhook | null> {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);
+    if (body.url !== undefined) await assertPublicHttpUrl(body.url);
     const updated = await this.webhookService.update(id, { ...body });
     return updated ? maskSecret(updated) : null;
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();

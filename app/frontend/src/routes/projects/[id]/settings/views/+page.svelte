@@ -1,21 +1,21 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
+  import type { ProjectView, ViewType } from '$lib/types';
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
   import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
   import { TableColumnOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
-  const views = writable<any[]>([]);
+  const views = writable<ProjectView[]>([]);
   const loading = writable(true);
   const error = writable('');
   let newViewTitle = $state('');
-  let newViewType = $state('list');
+  let newViewType = $state<ViewType>('list');
 
   async function load() {
-    views.set(await apiGetAuth<any[]>(`/projects/${page.params.id}/views`));
+    views.set(await apiGetAuth<ProjectView[]>(`/projects/${page.params.id}/views`));
   }
 
   async function addView(e: Event) {
@@ -27,8 +27,8 @@
       });
       newViewTitle = '';
       await load();
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     }
   }
 
@@ -36,25 +36,15 @@
     try {
       await apiDeleteAuth(`/projects/${page.params.id}/views/${viewId}`);
       await load();
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     }
   }
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      await load();
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  loadOnParamChange(() => page.params.id ?? '', async (id, isStale) => {
+    const list = await apiGetAuth<ProjectView[]>(`/projects/${id}/views`);
+    if (!isStale()) views.set(list);
+  }, loading, error);
 </script>
 
 <div class="flex items-center gap-3 mb-6">
@@ -100,7 +90,7 @@
   <p class="text-gray-400">Loading…</p>
 {:else if $views.length}
   <Card class="max-w-xl p-0 overflow-hidden">
-    {#each $views as view, i}
+    {#each $views as view, i (view.id)}
       <div
         class="flex items-center gap-3 p-4 {i < $views.length - 1
           ? 'border-b border-gray-100 dark:border-gray-700'

@@ -1,11 +1,9 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Put, Delete, Body, Param, Request } from '@nestjs/common';
 import { CreateFilterDto, UpdateFilterDto } from './dto/saved-filter.dto';
 import { SavedFilterService } from './saved-filter.service';
 import { SavedFilter } from './saved-filter.entity';
 
 @Controller('filters')
-@UseGuards(AuthGuard('jwt'))
 export class SavedFilterController {
   constructor(private readonly service: SavedFilterService) {}
 

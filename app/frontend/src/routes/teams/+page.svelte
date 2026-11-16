@@ -1,28 +1,24 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
   import { apiGetAuth } from '$lib/api';
-  import { authSession, getCurrentUser } from '$lib/auth';
+  import { authSession } from '$lib/auth';
+  import type { TeamWithMembers } from '$lib/types-misc';
   import { derived, writable } from 'svelte/store';
   import { ownsTeam } from '$lib/roles';
-  import { goto } from '$app/navigation';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { UsersGroupOutline, PlusOutline } from 'flowbite-svelte-icons';
 
-  const teams = writable<any[]>([]);
+  const teams = writable<TeamWithMembers[]>([]);
   const loading = writable(true);
   const error = writable('');
   const currentUser = derived(authSession, ($s) => $s.user);
 
   onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
     try {
-      teams.set(await apiGetAuth<any[]>('/teams'));
-    } catch (e: any) {
-      error.set(e.message);
+      teams.set(await apiGetAuth<TeamWithMembers[]>('/teams'));
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       loading.set(false);
     }
@@ -43,7 +39,7 @@
   <div
     class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch"
   >
-    {#each $teams as team}
+    {#each $teams as team (team.id)}
       <Card class="h-full">
         <div class="flex flex-col gap-3 h-full">
           <div class="flex items-start justify-between gap-2">

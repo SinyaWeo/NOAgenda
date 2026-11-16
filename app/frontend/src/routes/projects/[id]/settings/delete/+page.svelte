@@ -1,10 +1,9 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiDeleteAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import { Alert, Button } from 'flowbite-svelte';
   import {
     ExclamationCircleOutline,
@@ -13,10 +12,6 @@
 
   const error = writable('');
   const loading = writable(false);
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) goto('/user/login');
-  });
 
   async function handleDelete() {
     if (!confirm('Permanently delete this project and all its tasks?')) return;
@@ -24,8 +19,8 @@
     try {
       await apiDeleteAuth(`/projects/${page.params.id}`);
       goto('/projects');
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
       loading.set(false);
     }
   }

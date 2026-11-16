@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { LabelService } from './label.service';
 import { Label } from './label.entity';
-import { AuthGuard } from '@nestjs/passport';
 import { CreateLabelDto, UpdateLabelDto } from './dto/label.dto';
 
 @Controller('labels')
@@ -9,13 +8,11 @@ export class LabelController {
   constructor(private readonly labelService: LabelService) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Request() req: any): Promise<Label[]> {
     return this.labelService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
@@ -27,14 +24,12 @@ export class LabelController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: CreateLabelDto, @Request() req: any): Promise<Label> {
     const data = { ...body };
     return this.labelService.create({ ...data, createdBy: req.user.userId });
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: number, @Body() body: UpdateLabelDto, @Request() req: any): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
@@ -45,7 +40,6 @@ export class LabelController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();

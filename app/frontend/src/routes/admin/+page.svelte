@@ -1,6 +1,4 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { requireAdmin } from '$lib/guards';
     import { Card } from 'flowbite-svelte';
     import {
         UsersGroupOutline,
@@ -8,9 +6,6 @@
         CogOutline,
     } from 'flowbite-svelte-icons';
 
-    onMount(async () => {
-        await requireAdmin();
-    });
 </script>
 
 <svelte:head>

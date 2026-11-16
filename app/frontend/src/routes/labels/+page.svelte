@@ -1,13 +1,13 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
-  import { goto } from '$app/navigation';
+  import type { Label } from '$lib/types';
   import { Alert, Button, Card, Input } from 'flowbite-svelte';
   import { TagOutline } from 'flowbite-svelte-icons';
 
-  const labels = writable<any[]>([]);
+  const labels = writable<Label[]>([]);
   const loading = writable(true);
   const error = writable('');
   let newTitle = $state('');
@@ -17,31 +17,31 @@
   let editTitle = $state('');
   let editColor = $state('');
 
-  async function loadLabels() { labels.set(await apiGetAuth<any[]>('/labels')); }
+  async function loadLabels() { labels.set(await apiGetAuth<Label[]>('/labels')); }
 
   async function createLabel() {
     if (!newTitle.trim()) return;
     creating = true;
     try { await apiPostAuth('/labels', { title: newTitle, color: newColor }); newTitle = ''; await loadLabels(); }
-    catch (e: any) { error.set(e.message); } finally { creating = false; }
+    catch (e: unknown) { error.set(errMessage(e)); } finally { creating = false; }
   }
 
   async function saveEdit(id: number) {
     try { await apiPutAuth(`/labels/${id}`, { title: editTitle, color: editColor }); editId = null; await loadLabels(); }
-    catch (e: any) { error.set(e.message); }
+    catch (e: unknown) { error.set(errMessage(e)); }
   }
 
   async function deleteLabel(id: number) {
     if (!confirm('Delete this label?')) return;
     try { await apiDeleteAuth(`/labels/${id}`); await loadLabels(); }
-    catch (e: any) { error.set(e.message); }
+    catch (e: unknown) { error.set(errMessage(e)); }
   }
 
-  function startEdit(label: any) { editId = label.id; editTitle = label.title; editColor = label.color ?? '#6366f1'; }
+  function startEdit(label: Label) { editId = label.id; editTitle = label.title; editColor = label.color ?? '#6366f1'; }
 
   onMount(async () => {
-    const me = await getCurrentUser(); if (!me) { goto('/user/login'); return; }
-    await loadLabels(); loading.set(false);
+    try { await loadLabels(); } catch (e: unknown) { error.set(errMessage(e)); }
+    loading.set(false);
   });
 </script>
 
@@ -65,7 +65,7 @@
   </div>
 {:else}
   <Card class="p-0 overflow-hidden">
-    {#each $labels as label, i}
+    {#each $labels as label, i (label.id)}
       <div class="flex items-center gap-3 p-4 {i < $labels.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}">
         {#if editId === label.id}
           <Input type="text" bind:value={editTitle} class="flex-1" />

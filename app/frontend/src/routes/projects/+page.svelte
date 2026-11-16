@@ -1,9 +1,10 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
+	import type { Project } from '$lib/types';
+	import type { FavoriteRow } from '$lib/types-misc';
 	import { writable } from 'svelte/store';
-	import { goto } from '$app/navigation';
 	import { Alert, Badge, Button, Card, Progressbar } from 'flowbite-svelte';
 	import {
 		FolderOutline,
@@ -12,7 +13,7 @@
 		StarSolid,
 	} from 'flowbite-svelte-icons';
 
-	const projects = writable<any[]>([]);
+	const projects = writable<Project[]>([]);
 	const favorites = writable<Set<number>>(new Set());
 	const taskStats = writable<Record<number, { total: number; done: number }>>(
 		{},
@@ -21,15 +22,10 @@
 	const error = writable('');
 
 	onMount(async () => {
-		const me = await getCurrentUser();
-		if (!me) {
-			goto('/user/login');
-			return;
-		}
 		try {
 			const [ps, favs, stats] = await Promise.all([
-				apiGetAuth<any[]>('/projects'),
-				apiGetAuth<any[]>('/favorites').catch(() => []),
+				apiGetAuth<Project[]>('/projects'),
+				apiGetAuth<FavoriteRow[]>('/favorites').catch(() => [] as FavoriteRow[]),
 				apiGetAuth<Record<number, { total: number; done: number }>>(
 					'/projects/stats',
 				).catch(() => ({})),
@@ -38,13 +34,13 @@
 			taskStats.set(stats ?? {});
 			favorites.set(
 				new Set(
-					(favs as any[])
-						.filter((f: any) => f.entityType === 'project')
-						.map((f: any) => f.entityId),
+					favs
+						.filter((f) => f.entityType === 'project')
+						.map((f) => f.entityId),
 				),
 			);
-		} catch (e: any) {
-			error.set(e.message);
+		} catch (e: unknown) {
+			error.set(errMessage(e));
 		} finally {
 			loading.set(false);
 		}
@@ -88,7 +84,7 @@
 	<div
 		class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4 items-stretch"
 	>
-		{#each $projects as project}
+		{#each $projects as project (project.id)}
 			<Card class="flex flex-col gap-2 h-full">
 				<div class="flex items-start gap-2">
 					<div class="flex-1 min-w-0">

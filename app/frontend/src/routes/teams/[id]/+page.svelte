@@ -3,18 +3,19 @@
   import { apiGetAuth } from '$lib/api';
   import { loadOnParamChange } from '$lib/param-loader.svelte';
   import { writable } from 'svelte/store';
+  import type { Team, TeamMember } from '$lib/types';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
-  const team = writable<any>(null);
-  const members = writable<any[]>([]);
+  const team = writable<Team | null>(null);
+  const members = writable<TeamMember[]>([]);
   const loading = writable(true);
   const error = writable('');
 
   async function loadTeam(id: string, isStale: () => boolean) {
     const [t, m] = await Promise.all([
-      apiGetAuth<any>(`/teams/${id}`),
-      apiGetAuth<any[]>(`/team-members?teamId=${id}`),
+      apiGetAuth<Team>(`/teams/${id}`),
+      apiGetAuth<TeamMember[]>(`/team-members?teamId=${id}`),
     ]);
     if (isStale()) return;
     team.set(t);
@@ -51,7 +52,7 @@
       Members
     </h2>
     {#if $members.length}
-      {#each $members as member, i}
+      {#each $members as member, i (member.id)}
         <div
           class="flex items-center gap-3 py-2 {i < $members.length - 1
             ? 'border-b border-gray-100 dark:border-gray-700'
@@ -67,7 +68,7 @@
           <span class="text-sm text-gray-800 dark:text-gray-200"
             >{member.user?.name ||
               member.user?.username ||
-              `User #${member.userId}`}</span
+              `User #${member.user?.id ?? member.id}`}</span
           >
         </div>
       {/each}

@@ -16,6 +16,8 @@
   } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
+  import { errMessage } from '$lib/errors';
+  import type { Task } from '$lib/types';
 
   const title = writable('');
   const description = writable('');
@@ -30,7 +32,7 @@
   const saving = writable(false);
 
   async function loadTask(id: string, isStale: () => boolean) {
-    const task = await apiGetAuth<any>(`/tasks/${id}`);
+    const task = await apiGetAuth<Task>(`/tasks/${id}`);
     if (isStale()) return;
     title.set(task.title ?? '');
     description.set(task.description ?? '');
@@ -61,8 +63,8 @@
       });
       showToast('Task saved', 'success');
       goto(`/tasks/${page.params.id}`);
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       saving.set(false);
     }
@@ -115,7 +117,7 @@
         <div>
           <Label for="edit-percent" class="mb-1">Percent Done</Label>
           <Select id="edit-percent" bind:value={$percentDone}>
-            {#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p}<option
+            {#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p (p)}<option
                 value={p}>{p}%</option
               >{/each}
           </Select>

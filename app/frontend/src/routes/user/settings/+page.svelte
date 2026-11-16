@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { getCurrentUser } from '$lib/auth';
-	import { goto } from '$app/navigation';
+	import type { Component } from 'svelte';
+	import { authSession } from '$lib/auth';
 	import { isAdmin } from '$lib/roles';
-	import type { User } from '$lib/types';
 	import { Card } from 'flowbite-svelte';
 	import {
 		UserCircleOutline,
@@ -18,12 +16,7 @@
 		QuoteOutline,
 	} from 'flowbite-svelte-icons';
 
-	let me: User | null = $state(null);
-
-	onMount(async () => {
-		me = await getCurrentUser();
-		if (!me) goto('/user/login');
-	});
+	const me = $derived($authSession.user);
 
 	const sections = [
 		{
@@ -83,7 +76,7 @@
 		},
 	] satisfies {
 		href: string;
-		icon: any;
+		icon: Component<{ class?: string }>;
 		label: string;
 		desc: string;
 		danger?: true;
@@ -93,7 +86,7 @@
 <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">Settings</h1>
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 items-stretch">
-	{#each sections as s}
+	{#each sections as s (s.href)}
 		<a href={s.href} class="no-underline h-full">
 			<Card
 				class="hover:shadow-md transition-shadow cursor-pointer h-full {s.danger

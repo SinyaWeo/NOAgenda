@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { apiPost } from '$lib/api';
@@ -17,9 +18,9 @@
     try {
       await apiPost('/auth/email/verify', { token });
       status = 'ok';
-    } catch (e: any) {
+    } catch (e: unknown) {
       status = 'error';
-      message = e?.message ?? 'Could not confirm your email address.';
+      message = errMessage(e, 'Could not confirm your email address.');
     }
   });
 </script>

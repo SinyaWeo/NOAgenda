@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiPost } from '$lib/api';
   import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
@@ -17,8 +18,8 @@
     try {
       await apiPost('/auth/password/token', { email: $email });
       success.set(true);
-    } catch (e: any) {
-      error.set(e.message ?? 'Request failed');
+    } catch (e: unknown) {
+      error.set(errMessage(e, 'Request failed'));
     } finally {
       loading.set(false);
     }

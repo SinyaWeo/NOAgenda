@@ -2,33 +2,30 @@
     import { onMount } from 'svelte';
     import { writable } from 'svelte/store';
     import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-    import { getCurrentUser } from '$lib/auth';
-    import { goto } from '$app/navigation';
-    import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
+    import { Alert, Badge, Button, Card, Input, Label, Select } from 'flowbite-svelte';
     import { ApiKeyOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+    import { errMessage } from '$lib/errors';
+    import { showToast } from '$lib/toast';
+    import type { ApiTokenInfo, TokenScope } from '$lib/types';
+    import type { CreatedApiToken } from '$lib/types-misc';
 
-    const tokens = writable<any[]>([]);
+    const tokens = writable<ApiTokenInfo[]>([]);
     const loading = writable(true);
     const error = writable('');
-    const success = writable('');
     let newTokenName = $state('');
     let newTokenExpiry = $state('');
+    let newTokenScope = $state<TokenScope>('read');
     let createdToken = $state('');
 
     async function loadTokens() {
-        tokens.set(await apiGetAuth<any[]>('/tokens'));
+        tokens.set(await apiGetAuth<ApiTokenInfo[]>('/tokens'));
     }
 
     onMount(async () => {
-        const me = await getCurrentUser();
-        if (!me) {
-            goto('/user/login');
-            return;
-        }
         try {
             await loadTokens();
-        } catch (e: any) {
-            error.set(e.message);
+        } catch (e: unknown) {
+            error.set(errMessage(e));
         } finally {
             loading.set(false);
         }
@@ -36,11 +33,11 @@
 
     async function createToken(e: Event) {
         e.preventDefault();
-        error.set('');
         createdToken = '';
         try {
-            const result = await apiPostAuth<any>('/tokens', {
+            const result = await apiPostAuth<CreatedApiToken>('/tokens', {
                 name: newTokenName,
+                scope: newTokenScope,
                 expiresAt: newTokenExpiry
                     ? new Date(newTokenExpiry).toISOString()
                     : null,
@@ -48,9 +45,10 @@
             createdToken = result.rawToken ?? '';
             newTokenName = '';
             newTokenExpiry = '';
+            newTokenScope = 'read';
             await loadTokens();
-        } catch (e: any) {
-            error.set(e.message);
+        } catch (e: unknown) {
+            showToast(errMessage(e), 'error');
         }
     }
 
@@ -58,8 +56,8 @@
         try {
             await apiDeleteAuth(`/tokens/${id}`);
             await loadTokens();
-        } catch (e: any) {
-            error.set(e.message);
+        } catch (e: unknown) {
+            showToast(errMessage(e), 'error');
         }
     }
 </script>
@@ -107,15 +105,31 @@
             >
             <Input id="token-expiry" type="date" bind:value={newTokenExpiry} />
         </div>
+        <div>
+            <Label for="token-scope" class="mb-1">Access</Label>
+            <Select
+                id="token-scope"
+                bind:value={newTokenScope}
+                items={[
+                    { value: 'read', name: 'Read only (can only view data)' },
+                    { value: 'write', name: 'Read & write' },
+                ]}
+            />
+        </div>
         <Button type="submit">Create</Button>
     </form>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mt-3 mb-0">
+        API tokens can never use admin actions or account-security actions (changing your
+        password or email, managing sessions or tokens, deleting your account), whatever
+        access you choose.
+    </p>
 </Card>
 
 {#if $loading}
     <p class="text-gray-400">Loading…</p>
 {:else if $tokens.length}
     <Card class="p-0 overflow-hidden">
-        {#each $tokens as token, i}
+        {#each $tokens as token, i (token.id)}
             <div
                 class="flex items-center gap-3 px-4 py-3 {i < $tokens.length - 1
                     ? 'border-b border-gray-100 dark:border-gray-700'
@@ -126,6 +140,12 @@
                         class="font-bold text-sm text-gray-900 dark:text-white m-0"
                     >
                         {token.name}
+                        <Badge
+                            color={token.scope === 'write' ? 'yellow' : 'gray'}
+                            class="ml-2 align-middle"
+                            data-testid="token-scope"
+                            >{token.scope === 'write' ? 'Read & write' : 'Read only'}</Badge
+                        >
                     </p>
                     <p class="text-xs text-gray-400 m-0">
                         Created {new Date(token.createdAt).toLocaleDateString()}

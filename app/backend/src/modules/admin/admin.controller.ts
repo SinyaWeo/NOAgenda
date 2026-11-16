@@ -9,7 +9,6 @@ import {
   ForbiddenException,
   Request,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -17,7 +16,7 @@ import { UserRole } from '../user/user-role.enum';
 import { User } from '../user/user.entity';
 
 @Controller('admin')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
   constructor(private readonly userService: UserService) {}

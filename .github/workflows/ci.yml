@@ -15,8 +15,8 @@ jobs:
       run:
         working-directory: app/backend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -34,14 +34,15 @@ jobs:
       run:
         working-directory: app/frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: app/frontend/package-lock.json
       - run: npm ci
       - run: npm run check
+      - run: npm test
       - run: npm run build
         env:
           VITE_API_BASE: /api
@@ -53,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       mariadb:
-        image: mariadb:11.3
+        image: mariadb:11.8
         env:
           MARIADB_ROOT_PASSWORD: ci-root-password
           MARIADB_DATABASE: noagenda_ci
@@ -74,8 +75,8 @@ jobs:
       LOGIN_RATE_LIMIT: 100
       ACCOUNT_PURGE_INTERVAL_SECONDS: 3
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -99,13 +100,62 @@ jobs:
       - if: failure()
         run: cat app/backend/api.log
 
+  # Default-deny routes, API-token scopes, search-only user lookup, upload checks and quota, webhook
+  # SSRF guard, per-address login lockout and join-table uniqueness. Needs its own API process: it
+  # registers users (10 per hour per process) and wants TRUST_PROXY=1 + a 1 MB upload quota.
+  hardening:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root-password
+          MARIADB_DATABASE: noagenda_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: ci-root-password
+      DB_DATABASE: noagenda_ci
+      JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      CORS_ORIGIN: http://localhost:5173
+      PORT: 3000
+      LOGIN_RATE_LIMIT: 100
+      TRUST_PROXY: 1
+      USER_STORAGE_QUOTA_MB: 1
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/backend/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: app/backend
+      - name: Start API
+        working-directory: app/backend
+        run: |
+          nohup node dist/main.js > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3000/health && exit 0; sleep 2; done
+          cat api.log; exit 1
+      - name: Hardening smoke test
+        working-directory: app/backend
+        run: BASE_URL=http://127.0.0.1:3000 python3 scripts/hardening-smoke.py
+      - if: failure()
+        run: cat app/backend/api.log
+
   # Email verification, sessions, refresh rotation/theft detection, lockout, password
   # reset and API tokens, with real SMTP delivery into a Mailpit sink.
   auth-lifecycle:
     runs-on: ubuntu-latest
     services:
       mariadb:
-        image: mariadb:11.3
+        image: mariadb:11.8
         env:
           MARIADB_ROOT_PASSWORD: ci-root-password
           MARIADB_DATABASE: noagenda_ci
@@ -132,8 +182,8 @@ jobs:
       SMTP_PORT: 1025
       LOGIN_RATE_LIMIT: 100
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -158,8 +208,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -168,7 +218,7 @@ jobs:
         run: e2e/run.sh
       - name: Keep screenshots and logs of a failed run
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: browser-test-artifacts
           path: e2e/artifacts/
@@ -178,7 +228,7 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Build images
         run: |
           docker build -t noagenda-backend app/backend

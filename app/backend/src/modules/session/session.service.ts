@@ -146,6 +146,16 @@ export class SessionService implements OnModuleInit, OnModuleDestroy {
     return rows[0] ?? null;
   }
 
+  /** True when the user has a live session that was opened from this IP (their own, known address). */
+  async hasActiveSessionFromIp(userId: number, ip: string | undefined): Promise<boolean> {
+    if (!ip) return false;
+    const rows: unknown[] = await this.repo.manager.query(
+      'SELECT 1 FROM user_sessions WHERE userId = ? AND ipAddress = ? AND (expiresAt IS NULL OR expiresAt > ?) LIMIT 1',
+      [userId, ip.slice(0, 45), new Date()],
+    );
+    return rows.length > 0;
+  }
+
   async revokeByRefreshToken(presented: string): Promise<void> {
     await this.repo.delete({ tokenHash: sha256(presented) });
   }

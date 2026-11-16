@@ -10,14 +10,15 @@
     CaretRightSolid,
   } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
-  import type { Quote } from '$lib/types';
+  import { errMessage } from '$lib/errors';
+  import type { Project, Quote, Task } from '$lib/types';
 
   const user = derived(authSession, ($authSession) => $authSession.user);
-  const projects = writable<any[]>([]);
+  const projects = writable<Project[]>([]);
   const projectCount = writable(0); // total, not just the few shown below
   const error = writable('');
-  const upcomingTasks = writable<any[]>([]);
-  const overdueTasks = writable<any[]>([]);
+  const upcomingTasks = writable<Task[]>([]);
+  const overdueTasks = writable<Task[]>([]);
   const loading = writable(true);
   const quote = writable<Quote | null>(null);
 
@@ -46,42 +47,34 @@
 
   async function refresh() {
     try {
-      const [p, t] = await Promise.all([
-        apiGetAuth<any[]>('/projects'),
-        apiGetAuth<any[]>('/tasks'),
+      const now = new Date();
+      // The server does the filtering and sorting: only the few rows the page shows are fetched.
+      const overdueQuery = new URLSearchParams({
+        excludeDone: 'true',
+        dueBefore: now.toISOString(),
+        sort: 'dueDate',
+        order: 'ASC',
+        limit: '5',
+      });
+      const upcomingQuery = new URLSearchParams({
+        excludeDone: 'true',
+        sort: 'dueDate',
+        order: 'ASC',
+        limit: '8',
+      });
+      const [p, overdue, upcoming] = await Promise.all([
+        apiGetAuth<Project[]>('/projects'),
+        apiGetAuth<Task[]>(`/tasks?${overdueQuery}`),
+        apiGetAuth<Task[]>(`/tasks?${upcomingQuery}`),
       ]);
       projectCount.set(p.length);
       projects.set(p.slice(0, 5));
       error.set('');
-      const now = new Date();
-      const pending = t.filter((task: any) => task.status !== 'done');
-      overdueTasks.set(
-        pending
-          .filter((task: any) => task.dueDate && new Date(task.dueDate) < now)
-          .sort(
-            (a: any, b: any) =>
-              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime(),
-          )
-          .slice(0, 5),
-      );
-      upcomingTasks.set(
-        pending
-          .sort((a: any, b: any) => {
-            const aOver = a.dueDate && new Date(a.dueDate) < now;
-            const bOver = b.dueDate && new Date(b.dueDate) < now;
-            if (aOver && !bOver) return -1;
-            if (!aOver && bOver) return 1;
-            if (!a.dueDate) return 1;
-            if (!b.dueDate) return -1;
-            return (
-              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-            );
-          })
-          .slice(0, 8),
-      );
-    } catch (e: any) {
+      overdueTasks.set(overdue);
+      upcomingTasks.set(upcoming);
+    } catch (e: unknown) {
       // Do not pretend an empty dashboard: say that loading failed.
-      error.set(e?.message ?? 'Could not load your dashboard.');
+      error.set(errMessage(e, 'Could not load your dashboard.'));
     } finally {
       loading.set(false);
     }
@@ -97,8 +90,8 @@
       });
       quickTitle = '';
       await refresh();
-    } catch (e: any) {
-      showToast(e?.message ?? 'Could not add the task', 'error');
+    } catch (e: unknown) {
+      showToast(errMessage(e, 'Could not add the task'), 'error');
     } finally {
       addingTask = false;
     }
@@ -214,7 +207,7 @@
         />
         <Select bind:value={quickProjectId} class="flex-1 min-w-36">
           <option value="">Select project…</option>
-          {#each $projects as p}<option value={p.id}>{p.name}</option>{/each}
+          {#each $projects as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
         </Select>
         <Button
           type="submit"
@@ -238,7 +231,7 @@
             Overdue
           </h2>
         </div>
-        {#each $overdueTasks as task}
+        {#each $overdueTasks as task (task.id)}
           <div
             class="flex justify-between items-center py-1.5 border-b border-red-100 dark:border-red-800 last:border-0"
           >
@@ -248,7 +241,7 @@
               >{task.title}</a
             >
             <span class="text-xs text-red-500 shrink-0 ml-2"
-              >{new Date(task.dueDate).toLocaleDateString()}</span
+              >{new Date(task.dueDate as string).toLocaleDateString()}</span
             >
           </div>
         {/each}
@@ -270,14 +263,14 @@
       {#if $upcomingTasks.length === 0}
         <p class="text-gray-400 text-sm m-0">No pending tasks.</p>
       {:else}
-        {#each $upcomingTasks as task}
+        {#each $upcomingTasks as task (task.id)}
           {@const isOverdue =
             task.dueDate && new Date(task.dueDate) < new Date()}
           <div
             class="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0"
           >
             <span
-              class="w-2 h-2 rounded-full shrink-0 {STATUS_DOTS[task.status] ??
+              class="w-2 h-2 rounded-full shrink-0 {STATUS_DOTS[task.status ?? ''] ??
                 'bg-gray-400'}"
             ></span>
             <a
@@ -317,7 +310,7 @@
         </p>
       {:else}
         <div class="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
-          {#each $projects as project}
+          {#each $projects as project (project.id)}
             <a
               href="/projects/{project.id}"
               class="block p-3 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200 font-medium no-underline hover:border-primary-500 transition-colors"

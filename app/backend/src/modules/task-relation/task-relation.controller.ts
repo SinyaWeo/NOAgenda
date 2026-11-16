@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Delete, Param, Body, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AddRelationDto } from '../task-assignee/dto/task-links.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { TaskRelationService } from './task-relation.service';
@@ -15,7 +14,6 @@ export class TaskRelationController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Param('taskId') taskId: number, @Request() req: any): Promise<TaskRelation[]> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
@@ -30,7 +28,6 @@ export class TaskRelationController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(
     @Param('taskId') taskId: number,
     @Body() body: AddRelationDto,
@@ -44,7 +41,6 @@ export class TaskRelationController {
   }
 
   @Delete(':kind/:relatedTaskId')
-  @UseGuards(AuthGuard('jwt'))
   async remove(
     @Param('taskId') taskId: number,
     @Param('relatedTaskId') relatedTaskId: number,

@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { Node } from '../node/node.entity';
-import { AuthGuard } from '@nestjs/passport';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { normalizeParentRefs } from '../node/node-payload';
 import { ProjectCreateDto, ProjectUpdateDto } from '../node/dto/node.dto';
@@ -14,7 +13,6 @@ export class ProjectController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(
     @Request() req: any,
     @Query('includeArchived') includeArchived?: string,
@@ -23,7 +21,6 @@ export class ProjectController {
   }
 
   @Get('stats')
-  @UseGuards(AuthGuard('jwt'))
   async getStats(@Request() req: any): Promise<Record<number, { total: number; done: number }>> {
     const projects = await this.projectService.findAll(req.user.userId);
     const ids = projects.map((p) => p.id);
@@ -31,7 +28,6 @@ export class ProjectController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {
     await this.access.assertProject(req.user.userId, Number(id), Access.READ);
     const project = await this.projectService.findById(id);
@@ -40,7 +36,6 @@ export class ProjectController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: ProjectCreateDto, @Request() req: any): Promise<Node> {
     // sanitize() strips id/ownerId/etc. so a client cannot overwrite someone else's node.
     const data = normalizeParentRefs(this.access.sanitize(body));
@@ -50,7 +45,6 @@ export class ProjectController {
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: number, @Body() body: ProjectUpdateDto, @Request() req: any): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
@@ -67,7 +61,6 @@ export class ProjectController {
   }
 
   @Put(':id/duplicate')
-  @UseGuards(AuthGuard('jwt'))
   async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
     await this.access.assertProject(req.user.userId, Number(id), Access.READ);
     const source = await this.projectService.findById(id);
@@ -80,7 +73,6 @@ export class ProjectController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
@@ -89,7 +81,6 @@ export class ProjectController {
   }
 
   @Patch(':id/archive')
-  @UseGuards(AuthGuard('jwt'))
   async archive(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
@@ -100,7 +91,6 @@ export class ProjectController {
   }
 
   @Patch(':id/unarchive')
-  @UseGuards(AuthGuard('jwt'))
   async unarchive(@Param('id') id: number, @Request() req: any): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();

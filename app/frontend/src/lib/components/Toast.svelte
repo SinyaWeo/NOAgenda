@@ -1,9 +1,5 @@
 <script lang="ts">
-    import { toasts, type ToastItem } from '$lib/toast';
-
-    function dismiss(id: number) {
-        toasts.update((list) => list.filter((t) => t.id !== id));
-    }
+    import { toasts, dismissToast, type ToastItem } from '$lib/toast';
 
     const colorClasses: Record<ToastItem['type'], string> = {
         success:
@@ -72,7 +68,7 @@
 
             <!-- Close button -->
             <button
-                onclick={() => dismiss(toast.id)}
+                onclick={() => dismissToast(toast.id)}
                 class="shrink-0 ml-1 opacity-60 hover:opacity-100 transition-opacity bg-transparent border-0 cursor-pointer p-0 leading-none"
                 aria-label="Dismiss"
             >

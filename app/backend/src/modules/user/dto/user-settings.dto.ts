@@ -1,4 +1,5 @@
 import { MaxBytes } from '../../../common/max-bytes';
+import { IsTimeZone } from '../../../common/is-time-zone';
 import {
   IsString, IsEmail, IsOptional, IsIn, IsInt, Min, Max, MinLength, MaxLength,
 } from 'class-validator';
@@ -8,13 +9,15 @@ export class UpdateGeneralSettingsDto {
   @IsOptional() @IsString() @MaxLength(255)
   name?: string;
 
-  @IsOptional() @IsString() @MaxLength(16)
+  /** Interface language: the UI is translated into these. */
+  @IsOptional() @IsIn(['en', 'cs'])
   language?: string;
 
-  @IsOptional() @IsString() @MaxLength(64)
+  @IsOptional() @IsString() @MaxLength(64) @IsTimeZone()
   timezone?: string;
 
-  @IsOptional() @IsIn(['light', 'dark'])
+  /** 'system' follows the device's light/dark setting. */
+  @IsOptional() @IsIn(['light', 'dark', 'system'])
   theme?: string;
 
   @IsOptional() @IsInt() @Min(0) @Max(6)

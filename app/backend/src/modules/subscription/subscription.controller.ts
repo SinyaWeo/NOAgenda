@@ -1,11 +1,9 @@
-import { Controller, Get, Put, Delete, Param, UseGuards, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Put, Delete, Param, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { NodeAccessService } from '../node/node-access.service';
 import { SubscriptionService } from './subscription.service';
 import { Subscription, SubscriptionEntityType } from './subscription.entity';
 
 @Controller('subscriptions')
-@UseGuards(AuthGuard('jwt'))
 export class SubscriptionController {
   constructor(
     private readonly service: SubscriptionService,

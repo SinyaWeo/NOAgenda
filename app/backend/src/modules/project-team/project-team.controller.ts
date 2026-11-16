@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Put, Delete, Param, Body, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AddProjectTeamDto, SetPermissionDto } from '../project-user/dto/project-sharing.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { ProjectTeamService } from './project-team.service';
@@ -16,14 +15,12 @@ export class ProjectTeamController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Param('projectId') projectId: number, @Request() req: any): Promise<ProjectTeam[]> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.READ);
     return this.projectTeamService.findByProject(projectId);
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async add(
     @Param('projectId') projectId: number,
     @Body() body: AddProjectTeamDto,
@@ -35,7 +32,6 @@ export class ProjectTeamController {
   }
 
   @Put(':teamId')
-  @UseGuards(AuthGuard('jwt'))
   async update(
     @Param('projectId') projectId: number,
     @Param('teamId') teamId: number,
@@ -47,7 +43,6 @@ export class ProjectTeamController {
   }
 
   @Delete(':teamId')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('projectId') projectId: number, @Param('teamId') teamId: number, @Request() req: any): Promise<void> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectTeamService.remove(projectId, teamId);

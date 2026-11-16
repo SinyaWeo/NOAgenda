@@ -8,12 +8,10 @@ import {
   Body,
   Param,
   Query,
-  UseGuards,
   NotFoundException,
   BadRequestException,
   Request,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { NodeService, NodeFilter } from './node.service';
 import { NodeAccessService } from './node-access.service';
 import { normalizeParentRefs } from './node-payload';
@@ -21,7 +19,6 @@ import { NodeCreateDto, NodeUpdateDto, NodeMoveDto, NodeListQueryDto } from './d
 import { Node, NodeType, NodeStatus } from './node.entity';
 
 @Controller('nodes')
-@UseGuards(AuthGuard('jwt'))
 export class NodeController {
   constructor(
     private readonly nodeService: NodeService,

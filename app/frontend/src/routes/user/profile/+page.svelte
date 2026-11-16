@@ -3,8 +3,9 @@
   import { writable } from 'svelte/store';
   import { apiGetAuth, API_BASE } from '$lib/api';
   import { Alert, Button, Card } from 'flowbite-svelte';
+  import type { User } from '$lib/types';
 
-  const user = writable<any>(null);
+  const user = writable<User | null>(null);
   const loading = writable(true);
   const error = writable('');
 
@@ -12,7 +13,7 @@
     if (!path) return '';
     return path.startsWith('http') ? path : `${API_BASE}${path}`;
   }
-  function getInitials(u: any): string {
+  function getInitials(u: User): string {
     const name: string = u.name ?? u.username ?? 'U';
     return name
       .split(' ')
@@ -32,8 +33,8 @@
 
   onMount(async () => {
     try {
-      user.set(await apiGetAuth<any>('/users/me'));
-    } catch (e: any) {
+      user.set(await apiGetAuth<User>('/users/me'));
+    } catch (e: unknown) {
       error.set('Failed to load profile.');
     } finally {
       loading.set(false);

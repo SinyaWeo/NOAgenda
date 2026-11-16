@@ -20,7 +20,7 @@ trap cleanup EXIT
 echo "Backup: $DUMP ($(du -h "$DUMP" | cut -f1), $(stat -c %y "$DUMP" | cut -d. -f1))"
 gzip -t "$DUMP" || { echo "FAIL: the file is not a valid gzip archive"; exit 1; }
 
-docker run -d --name "$NAME" -e MARIADB_ROOT_PASSWORD="$PW" -e MARIADB_DATABASE=verify mariadb:11.3 >/dev/null
+docker run -d --name "$NAME" -e MARIADB_ROOT_PASSWORD="$PW" -e MARIADB_DATABASE=verify mariadb:11.8 >/dev/null
 for i in $(seq 1 60); do
   docker exec "$NAME" mariadb -uroot -p"$PW" -e 'SELECT 1' >/dev/null 2>&1 && break
   [ "$i" -eq 60 ] && { echo "FAIL: scratch database did not start" >&2; exit 1; }

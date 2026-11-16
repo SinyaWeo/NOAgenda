@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { TeamService } from './team.service';
 import { Team } from './team.entity';
-import { AuthGuard } from '@nestjs/passport';
 import { CreateTeamDto, UpdateTeamDto } from './dto/team.dto';
 
 @Controller('teams')
@@ -9,13 +8,11 @@ export class TeamController {
   constructor(private readonly teamService: TeamService) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Request() req: any): Promise<Team[]> {
     return this.teamService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Team> {
     const team = await this.teamService.findById(id);
     if (!team) throw new NotFoundException();
@@ -26,14 +23,12 @@ export class TeamController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: CreateTeamDto, @Request() req: any): Promise<Team> {
     const data = { ...body };
     return this.teamService.create({ ...data, ownerId: req.user.userId });
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: number, @Body() body: UpdateTeamDto, @Request() req: any): Promise<Team> {
     const team = await this.teamService.findById(id);
     if (!team) throw new NotFoundException();
@@ -44,7 +39,6 @@ export class TeamController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const team = await this.teamService.findById(id);
     if (!team) throw new NotFoundException();

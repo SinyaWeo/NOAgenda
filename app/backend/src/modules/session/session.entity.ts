@@ -1,8 +1,10 @@
-import { Entity, Column, Index } from 'typeorm';
+import { Entity, Column, Index, ForeignKey } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
+import { User } from '../user/user.entity';
 
 @Entity('user_sessions')
 export class UserSession extends BaseEntity {
+  @ForeignKey(() => User, { name: 'FK_user_sessions_userId', onDelete: 'CASCADE' })
   @Column()
   userId!: number;
 

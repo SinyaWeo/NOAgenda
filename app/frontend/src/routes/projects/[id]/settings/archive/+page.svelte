@@ -1,33 +1,23 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { errMessage } from '$lib/errors';
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
   import { apiGetAuth, apiPatchAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
+  import type { Project } from '$lib/types';
   import { writable } from 'svelte/store';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
-  const project = writable<any>(null);
+  const project = writable<Project | null>(null);
   const loading = writable(true);
   const saving = writable(false);
   const error = writable('');
   const success = writable('');
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      project.set(await apiGetAuth<any>(`/projects/${page.params.id}`));
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  loadOnParamChange(() => page.params.id ?? '', async (id, isStale) => {
+    const p = await apiGetAuth<Project>(`/projects/${id}`);
+    if (!isStale()) project.set(p);
+  }, loading, error);
 
   async function toggleArchive() {
     const p = $project;
@@ -39,13 +29,13 @@
       const endpoint = p.isArchived
         ? `/projects/${p.id}/unarchive`
         : `/projects/${p.id}/archive`;
-      const updated = await apiPatchAuth<any>(endpoint, {});
+      const updated = await apiPatchAuth<Project>(endpoint, {});
       project.set(updated);
       success.set(
         updated.isArchived ? 'Project archived.' : 'Project restored.',
       );
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       saving.set(false);
     }

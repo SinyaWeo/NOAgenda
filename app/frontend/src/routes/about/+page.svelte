@@ -1,15 +1,17 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiGetAuth } from '$lib/api';
   import { Alert, Card } from 'flowbite-svelte';
+  import type { AppInfo } from '$lib/types-misc';
 
-  const info = writable<any>(null);
+  const info = writable<AppInfo | null>(null);
   const error = writable('');
 
   onMount(async () => {
-    try { info.set(await apiGetAuth<any>('/info')); }
-    catch (e: any) { error.set(e.message); }
+    try { info.set(await apiGetAuth<AppInfo>('/info')); }
+    catch (e: unknown) { error.set(errMessage(e)); }
   });
 </script>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiError, apiFetch, setToken } from '$lib/api';
@@ -65,7 +66,7 @@
       if (!me) throw new Error('Unable to load your account');
       goto(safeRedirect(page.url.searchParams.get('redirect')), { replaceState: true });
     } catch (e) {
-      error.set(e instanceof Error ? e.message : 'Unknown error');
+      error.set(e instanceof Error ? errMessage(e) : 'Unknown error');
     } finally {
       loading.set(false);
     }

@@ -1,5 +1,7 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, ForeignKey } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
+import { User } from '../user/user.entity';
+import { KanbanBucket } from '../kanban-bucket/kanban-bucket.entity';
 
 export enum NodeType {
   PROJECT = 'project',
@@ -30,6 +32,7 @@ export class Node extends BaseEntity {
   @Column({ default: false })
   isArchived!: boolean;
 
+  @ForeignKey(() => User, { name: 'FK_nodes_ownerId', onDelete: 'SET NULL' })
   @Index('IDX_nodes_ownerId')
   @Column({ nullable: true, type: 'int' })
   ownerId?: number;
@@ -65,10 +68,12 @@ export class Node extends BaseEntity {
   @Column({ nullable: true, type: 'int', default: 0 })
   percentDone?: number;
 
+  @ForeignKey(() => User, { name: 'FK_nodes_createdBy', onDelete: 'SET NULL' })
   @Index('IDX_nodes_createdBy')
   @Column({ nullable: true, type: 'int' })
   createdBy?: number;
 
+  @ForeignKey(() => KanbanBucket, { name: 'FK_nodes_bucketId', onDelete: 'SET NULL' })
   @Column({ nullable: true, type: 'int' })
   bucketId?: number;
 

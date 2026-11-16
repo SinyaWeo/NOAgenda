@@ -1,21 +1,21 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+  import { errMessage } from '$lib/errors';
     import { writable } from 'svelte/store';
     import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-    import { getCurrentUser } from '$lib/auth';
+    import { loadOnParamChange } from '$lib/param-loader.svelte';
+    import type { WebhookInfo } from '$lib/types';
     import { page } from '$app/state';
-    import { goto } from '$app/navigation';
     import { Alert, Button, Card, Input } from 'flowbite-svelte';
     import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
-    const webhooks = writable<any[]>([]);
+    const webhooks = writable<WebhookInfo[]>([]);
     const loading = writable(true);
     const error = writable('');
     let newUrl = $state('');
 
     async function load() {
         webhooks.set(
-            await apiGetAuth<any[]>(`/webhooks?projectId=${page.params.id}`),
+            await apiGetAuth<WebhookInfo[]>(`/webhooks?projectId=${page.params.id}`),
         );
     }
 
@@ -28,8 +28,8 @@
             });
             newUrl = '';
             await load();
-        } catch (e: any) {
-            error.set(e.message);
+        } catch (e: unknown) {
+            error.set(errMessage(e));
         }
     }
 
@@ -37,25 +37,15 @@
         try {
             await apiDeleteAuth(`/webhooks/${id}`);
             await load();
-        } catch (e: any) {
-            error.set(e.message);
+        } catch (e: unknown) {
+            error.set(errMessage(e));
         }
     }
 
-    onMount(async () => {
-        const me = await getCurrentUser();
-        if (!me) {
-            goto('/user/login');
-            return;
-        }
-        try {
-            await load();
-        } catch (e: any) {
-            error.set(e.message);
-        } finally {
-            loading.set(false);
-        }
-    });
+    loadOnParamChange(() => page.params.id ?? '', async (_id, isStale) => {
+        const list = await apiGetAuth<WebhookInfo[]>(`/webhooks?projectId=${page.params.id}`);
+        if (!isStale()) webhooks.set(list);
+    }, loading, error);
 </script>
 
 <div class="flex items-center gap-3 mb-6">
@@ -90,7 +80,7 @@
     <p class="text-gray-400">Loading…</p>
 {:else if $webhooks.length}
     <Card class="p-0 overflow-hidden">
-        {#each $webhooks as wh, i}
+        {#each $webhooks as wh, i (wh.id)}
             <div
                 class="flex items-center gap-3 p-4 {i < $webhooks.length - 1
                     ? 'border-b border-gray-100 dark:border-gray-700'

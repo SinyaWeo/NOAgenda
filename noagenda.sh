@@ -13,7 +13,7 @@ APP_FRONTEND_DIR="$ROOT/app/frontend"
 # Helper to start DB container
 start_db() {
   echo "Starting database container..."
-  (docker compose -f "$DOCKER_DIR/docker-compose.yml" up -d)
+  (docker compose -f "$DOCKER_DIR/docker-compose.yml" --profile tools up -d)
 }
 
 # Helper to start backend
@@ -44,7 +44,7 @@ stop_frontend() {
 # Helper to stop DB container
 stop_db() {
   echo "Stopping database container..."
-  (docker compose -f "$DOCKER_DIR/docker-compose.yml" down)
+  (docker compose -f "$DOCKER_DIR/docker-compose.yml" --profile tools down)
 }
 
 # Helper to run tests

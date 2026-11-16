@@ -28,6 +28,7 @@ class JwtOrApiTokenStrategy extends Strategy {
                 username: u.username,
                 role: u.role as UserRole,
                 apiTokenId: u.tokenId,
+                apiTokenScope: u.scope,
                 viaApiToken: true,
               })
             : (this as any).fail('Invalid API token', 401),

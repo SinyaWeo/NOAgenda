@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from 'bcrypt'; // native: runs on libuv worker threads, never blocks the event loop
 
 /** bcrypt work factor. Existing hashes with a lower cost are upgraded on the next successful login. */
 export const BCRYPT_COST = 12;

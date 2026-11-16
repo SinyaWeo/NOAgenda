@@ -1,13 +1,13 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
-  import { goto } from '$app/navigation';
   import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import type { WebhookInfo } from '$lib/types';
   import { writable } from 'svelte/store';
   import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
   import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
-  const webhooks = writable<any[]>([]);
+  const webhooks = writable<WebhookInfo[]>([]);
   const loading = writable(true);
   const error = writable('');
   const success = writable('');
@@ -25,21 +25,14 @@
     'comment.created',
   ];
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    await load();
-  });
+  onMount(load);
 
   async function load() {
     loading.set(true);
     try {
-      webhooks.set(await apiGetAuth<any[]>('/webhooks'));
-    } catch (e: any) {
-      error.set(e.message);
+      webhooks.set(await apiGetAuth<WebhookInfo[]>('/webhooks'));
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       loading.set(false);
     }
@@ -62,8 +55,8 @@
       newSecret = '';
       success.set('Webhook created.');
       await load();
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       saving.set(false);
     }
@@ -74,8 +67,8 @@
     try {
       await apiDeleteAuth(`/webhooks/${id}`);
       await load();
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     }
   }
 </script>
@@ -141,7 +134,7 @@
   <p class="text-gray-400">Loading…</p>
 {:else if $webhooks.length}
   <Card class="p-0 overflow-hidden">
-    {#each $webhooks as wh, i}
+    {#each $webhooks as wh, i (wh.id)}
       <div
         class="flex items-center gap-3 px-4 py-3 {i < $webhooks.length - 1
           ? 'border-b border-gray-100 dark:border-gray-700'

@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
-import { AuthService, MAX_FAILED_LOGINS } from '../auth.service';
+import { AuthService, MAX_FAILED_LOGINS, ACCOUNT_LOCK_THRESHOLD } from '../auth.service';
 import * as password from '../../../common/password';
 import { sha256 } from '../../../common/tokens';
 
@@ -32,6 +32,7 @@ function build(over: { user?: any; verificationRequired?: boolean } = {}) {
   const sessions: any = {
     create: jest.fn(async () => ({ session: { id: 55 }, refreshToken: 'rt' })),
     rotate: jest.fn(), revokeAllForUser: jest.fn(), revokeById: jest.fn(), revokeByRefreshToken: jest.fn(),
+    hasActiveSessionFromIp: jest.fn(async () => false),
   };
   const verification: any = { required: over.verificationRequired ?? false };
   const mail: any = { send: jest.fn(async () => true), link: jest.fn((p, q) => `https://app${p}?token=${q.token}`) };
@@ -68,7 +69,7 @@ describe('AuthService.login', () => {
     pw.verifyPassword.mockResolvedValue(false);
     const err = await svc.login('ann', 'bad').catch((e) => e);
     expect(err).toBeInstanceOf(UnauthorizedException);
-    expect(users.recordFailedLogin).toHaveBeenCalledWith(7, MAX_FAILED_LOGINS, expect.any(Date));
+    expect(users.recordFailedLogin).toHaveBeenCalledWith(7, ACCOUNT_LOCK_THRESHOLD, expect.any(Date));
     const unknown = await build({ user: null }).svc.login('x', 'bad').catch((e) => e);
     expect(unknown.message).toBe(err.message);
   });
@@ -78,6 +79,47 @@ describe('AuthService.login', () => {
     await expect(svc.login('ann', 'right')).rejects.toBeInstanceOf(UnauthorizedException);
     expect(sessions.create).not.toHaveBeenCalled();
     expect(users.recordFailedLogin).not.toHaveBeenCalled(); // lock is not extended by guessing
+  });
+
+  describe('lockout cannot be used to shut the real owner out', () => {
+    const ATTACKER = { ip: '6.6.6.6' };
+    const OWNER = { ip: '1.2.3.4' };
+
+    it('an attacker locks only their own address after MAX_FAILED_LOGINS wrong passwords', async () => {
+      const { svc, sessions } = build();
+      pw.verifyPassword.mockImplementation(async (plain: string) => plain === 'right');
+      for (let i = 0; i < MAX_FAILED_LOGINS; i++) await svc.login('ann', 'guess', ATTACKER).catch(() => undefined);
+      // the attacker is now refused even with the right password ...
+      await expect(svc.login('ann', 'right', ATTACKER)).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(sessions.create).not.toHaveBeenCalled();
+      // ... but the owner, from another address, signs in normally
+      await expect(svc.login('ann', 'right', OWNER)).resolves.toMatchObject({ refreshToken: 'rt' });
+    });
+
+    it('a locked-out attacker cannot lock other accounts or extend the lock by guessing', async () => {
+      const { svc, users } = build();
+      pw.verifyPassword.mockResolvedValue(false);
+      for (let i = 0; i < MAX_FAILED_LOGINS; i++) await svc.login('ann', 'guess', ATTACKER).catch(() => undefined);
+      users.recordFailedLogin.mockClear();
+      await svc.login('ann', 'guess', ATTACKER).catch(() => undefined);
+      expect(users.recordFailedLogin).not.toHaveBeenCalled();
+    });
+
+    it('a distributed attack that locks the account still lets the owner in from an address they are signed in on', async () => {
+      const locked = { ...USER, lockedUntil: new Date(Date.now() + 60_000) };
+      const { svc, sessions } = build({ user: locked });
+      sessions.hasActiveSessionFromIp.mockImplementation(async (_id: number, ip: string) => ip === OWNER.ip);
+      await expect(svc.login('ann', 'right', OWNER)).resolves.toMatchObject({ refreshToken: 'rt' });
+      await expect(svc.login('ann', 'right', { ip: '9.9.9.9' })).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('a wrong password from the owner\'s own address is still rejected while the account is locked', async () => {
+      const locked = { ...USER, lockedUntil: new Date(Date.now() + 60_000) };
+      const { svc, sessions } = build({ user: locked });
+      sessions.hasActiveSessionFromIp.mockResolvedValue(true);
+      pw.verifyPassword.mockResolvedValue(false);
+      await expect(svc.login('ann', 'wrong', OWNER)).rejects.toBeInstanceOf(UnauthorizedException);
+    });
   });
 
   it('lets a user back in once the lock has expired and clears the counters', async () => {
@@ -131,7 +173,7 @@ describe('AuthService password reset', () => {
 
   it('resets the password, is single use, and signs the user out everywhere', async () => {
     const { svc, resets, users, sessions } = build();
-    resets.findOne.mockResolvedValue({ id: 1, user: { id: 7 }, expiresAt: new Date(Date.now() + 60_000) });
+    resets.findOne.mockResolvedValue({ id: 1, user: { id: 7, username: 'ann' }, expiresAt: new Date(Date.now() + 60_000) });
     await svc.resetPassword('rawtoken', 'new-password-1');
     expect(resets.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { token: sha256('rawtoken') } }));
     expect(users.update).toHaveBeenCalledWith(7, { password: 'new-password-1', isEmailConfirmed: true });

@@ -1,20 +1,13 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { downloadAuthFile } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
-  import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
   const error = writable('');
   const success = writable('');
   const loading = writable(false);
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) goto('/user/login');
-  });
-
   async function downloadExport() {
     loading.set(true);
     error.set('');
@@ -23,8 +16,8 @@
       const day = new Date().toISOString().slice(0, 10);
       await downloadAuthFile('/user/export', `noagenda-export-${day}.json`);
       success.set('Your export was downloaded.');
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       loading.set(false);
     }

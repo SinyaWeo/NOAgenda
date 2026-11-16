@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiFetch, apiPost } from '$lib/api';
   import { goto } from '$app/navigation';
@@ -46,8 +47,8 @@
       } else {
         goto('/user/login');
       }
-    } catch (e: any) {
-      error.set(e.message ?? 'Registration failed');
+    } catch (e: unknown) {
+      error.set(errMessage(e, 'Registration failed'));
     } finally {
       loading.set(false);
     }

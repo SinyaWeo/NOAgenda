@@ -16,6 +16,12 @@ export interface NodeFilter {
   page?: number;
   limit?: number;
   includeArchived?: boolean;
+  priority?: number;
+  dueBefore?: Date;
+  dueAfter?: Date;
+  /** With dueBefore: tasks without a due date match too. */
+  includeUndated?: boolean;
+  excludeDone?: boolean;
 }
 
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
@@ -77,6 +83,12 @@ export class NodeService {
     if (filter.status) {
       qb.andWhere('node.status = :status', { status: filter.status });
     }
+    if (filter.excludeDone) qb.andWhere("(node.status IS NULL OR node.status != 'done')");
+    if (filter.priority !== undefined) qb.andWhere('node.priority = :priority', { priority: filter.priority });
+    if (filter.dueBefore) {
+      qb.andWhere(filter.includeUndated ? '(node.dueDate IS NULL OR node.dueDate <= :dueBefore)' : 'node.dueDate <= :dueBefore', { dueBefore: filter.dueBefore });
+    }
+    if (filter.dueAfter) qb.andWhere('node.dueDate >= :dueAfter', { dueAfter: filter.dueAfter });
 
     if (filter.search) {
       qb.andWhere('(node.name LIKE :s OR node.title LIKE :s OR node.description LIKE :s)', {
@@ -88,7 +100,7 @@ export class NodeService {
       : filter.sort === 'name' ? 'node.name'
       : filter.sort === 'priority' ? 'node.priority'
       : filter.sort === 'status' ? 'node.status'
-      : filter.sort === 'dueDate' ? 'node.dueDate'
+      : filter.sort === 'dueDate' ? (filter.order === 'DESC' ? "COALESCE(node.dueDate, '1000-01-01')" : "COALESCE(node.dueDate, '9999-12-31')")
       : filter.sort === 'createdAt' ? 'node.createdAt'
       : filter.sort === 'updatedAt' ? 'node.updatedAt'
       : 'node.position';

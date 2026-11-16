@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Delete, Body, Param, Query, Request, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { NodeAccessService } from '../node/node-access.service';
 import { ReactionService } from './reaction.service';
 import { Reaction } from './reaction.entity';
@@ -21,7 +20,6 @@ export class ReactionController {
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(
     @Query('entityType') entityType: string,
     @Query('entityId') entityId: number,
@@ -32,7 +30,6 @@ export class ReactionController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async upsert(
     @Body() body: { entityType: string; entityId: number; reaction: string },
     @Request() req: any,
@@ -45,7 +42,6 @@ export class ReactionController {
   }
 
   @Delete()
-  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Body() body: { entityType: string; entityId: number; reaction: string },

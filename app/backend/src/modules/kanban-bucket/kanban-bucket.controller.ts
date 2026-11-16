@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, HttpCode, HttpStatus, ForbiddenException, NotFoundException, Request } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, ForbiddenException, NotFoundException, Request } from '@nestjs/common';
 import { KanbanBucketService } from './kanban-bucket.service';
 import { KanbanBucket } from './kanban-bucket.entity';
 import { ProjectService } from '../project/project.service';
@@ -7,7 +6,6 @@ import { Access, NodeAccessService } from '../node/node-access.service';
 import { CreateBucketDto, UpdateBucketDto } from './dto/kanban-bucket.dto';
 
 @Controller('projects/:projectId/views/:viewId/buckets')
-@UseGuards(AuthGuard('jwt'))
 export class KanbanBucketController {
   constructor(
     private readonly service: KanbanBucketService,

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiPost } from '$lib/api';
   import { page } from '$app/state';
@@ -25,8 +26,8 @@
       await apiPost('/auth/password/reset', { token, password: $password });
       success.set(true);
       setTimeout(() => goto('/user/login'), 2000);
-    } catch (e: any) {
-      error.set(e.message ?? 'Reset failed');
+    } catch (e: unknown) {
+      error.set(errMessage(e, 'Reset failed'));
     } finally {
       loading.set(false);
     }

@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiPostAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import type { Team } from '$lib/types';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
@@ -12,23 +12,18 @@
   const error = writable('');
   const loading = writable(false);
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) goto('/user/login');
-  });
-
   async function handleSubmit(e: Event) {
     e.preventDefault();
     loading.set(true);
     error.set('');
     try {
-      const team = await apiPostAuth<any>('/teams', {
+      const team = await apiPostAuth<Team>('/teams', {
         name: $name,
         description: $description,
       });
       goto(`/teams/${team.id}`);
-    } catch (err: any) {
-      error.set(err.message ?? 'Failed to create team');
+    } catch (err: unknown) {
+      error.set(errMessage(err, 'Failed to create team'));
     } finally {
       loading.set(false);
     }

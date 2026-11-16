@@ -1,30 +1,25 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
     import { onMount } from 'svelte';
     import { writable } from 'svelte/store';
     import { apiGetAuth, apiDeleteAuth } from '$lib/api';
-    import { getCurrentUser } from '$lib/auth';
-    import { goto } from '$app/navigation';
+    import type { SessionRow } from '$lib/types-misc';
     import { Alert, Button, Card } from 'flowbite-svelte';
     import { DesktopPcOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
-    const sessions = writable<any[]>([]);
+    const sessions = writable<SessionRow[]>([]);
     const loading = writable(true);
     const error = writable('');
 
     async function loadSessions() {
-        sessions.set(await apiGetAuth<any[]>('/user/sessions'));
+        sessions.set(await apiGetAuth<SessionRow[]>('/user/sessions'));
     }
 
     onMount(async () => {
-        const me = await getCurrentUser();
-        if (!me) {
-            goto('/user/login');
-            return;
-        }
         try {
             await loadSessions();
-        } catch (e: any) {
-            error.set(e.message);
+        } catch (e: unknown) {
+            error.set(errMessage(e));
         } finally {
             loading.set(false);
         }
@@ -34,8 +29,8 @@
         try {
             await apiDeleteAuth(`/user/sessions/${id}`);
             await loadSessions();
-        } catch (e: any) {
-            error.set(e.message);
+        } catch (e: unknown) {
+            error.set(errMessage(e));
         }
     }
 </script>
@@ -55,7 +50,7 @@
     <p class="text-gray-400">Loading…</p>
 {:else if $sessions.length}
     <Card class="p-0 overflow-hidden">
-        {#each $sessions as session, i}
+        {#each $sessions as session, i (session.id)}
             <div
                 class="flex items-center gap-3 px-4 py-3 {i <
                 $sessions.length - 1

@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiPostAuth } from '$lib/api';
-  import { getCurrentUser, refreshCurrentUser } from '$lib/auth';
-  import { goto } from '$app/navigation';
+  import { authSession, refreshCurrentUser } from '$lib/auth';
+  import { get } from 'svelte/store';
   import { onMount } from 'svelte';
   import { Alert, Button, Input, Label } from 'flowbite-svelte';
   import {
@@ -16,14 +17,10 @@
   let password = $state('');
   let scheduledAt = $state<string | null>(null);
   let graceDays = $state(7);
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
+  onMount(() => {
+    const me = get(authSession).user;
     // A request made earlier (or in another tab) is still pending: show it instead of the bare form.
-    scheduledAt = me.isDeletionRequested ? (me.deletionScheduledAt ?? null) : null;
+    scheduledAt = me?.isDeletionRequested ? (me.deletionScheduledAt ?? null) : null;
   });
 
   async function requestDeletion() {
@@ -49,8 +46,8 @@
       success.set(
         `Deletion scheduled for ${new Date(r.scheduledAt).toLocaleString()}. You can still sign in and cancel until then.`,
       );
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       loading.set(false);
     }
@@ -64,8 +61,8 @@
       scheduledAt = null;
       void refreshCurrentUser();
       success.set('Deletion request cancelled. Your account stays as it is.');
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       loading.set(false);
     }

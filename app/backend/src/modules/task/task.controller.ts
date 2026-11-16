@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { TaskService, TaskFilter } from './task.service';
 import { Node, NodeStatus, NodeType } from '../node/node.entity';
-import { AuthGuard } from '@nestjs/passport';
 import { NodeAccessService } from '../node/node-access.service';
 import { TaskCreateDto, TaskUpdateDto, BulkTaskUpdateDto, TaskListQueryDto, TaskPositionDto } from '../node/dto/node.dto';
 
@@ -20,7 +19,6 @@ export class TaskController {
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Request() req: any, @Query() q: TaskListQueryDto): Promise<Node[]> {
     const filter: TaskFilter = { userId: req.user.userId };
     if (q.projectId) filter.projectId = q.projectId;
@@ -31,11 +29,15 @@ export class TaskController {
     if (q.order) filter.order = q.order;
     if (q.page) filter.page = q.page;
     if (q.limit) filter.limit = q.limit;
+    if (q.priority !== undefined) filter.priority = q.priority;
+    if (q.dueBefore) filter.dueBefore = new Date(q.dueBefore);
+    if (q.dueAfter) filter.dueAfter = new Date(q.dueAfter);
+    if (q.includeUndated === 'true') filter.includeUndated = true;
+    if (q.excludeDone === 'true') filter.excludeDone = true;
     return this.taskService.findAll(filter);
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {
     await this.access.assertRead(req.user.userId, Number(id));
     const task = await this.taskService.findById(Number(id));
@@ -44,7 +46,6 @@ export class TaskController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(@Body() body: TaskCreateDto, @Request() req: any): Promise<Node> {
     const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
@@ -52,7 +53,6 @@ export class TaskController {
   }
 
   @Post('bulk')
-  @UseGuards(AuthGuard('jwt'))
   async bulkUpdate(@Body() body: BulkTaskUpdateDto, @Request() req: any): Promise<Node[]> {
     const ids = body.ids;
     // Every task must be writable by the caller before anything is changed.
@@ -70,7 +70,6 @@ export class TaskController {
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: number, @Body() body: TaskUpdateDto, @Request() req: any): Promise<Node> {
     const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);
@@ -86,7 +85,6 @@ export class TaskController {
   }
 
   @Put(':id/duplicate')
-  @UseGuards(AuthGuard('jwt'))
   async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
     await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, Number(id));
@@ -96,7 +94,6 @@ export class TaskController {
   }
 
   @Post(':id/position')
-  @UseGuards(AuthGuard('jwt'))
   async updatePosition(@Param('id') id: number, @Body() body: TaskPositionDto, @Request() req: any): Promise<Node> {
     const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);
@@ -106,7 +103,6 @@ export class TaskController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);

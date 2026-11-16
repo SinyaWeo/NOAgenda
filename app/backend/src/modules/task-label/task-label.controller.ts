@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Delete, Param, Body, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AddTaskLabelDto } from '../task-assignee/dto/task-links.dto';
 import { NodeAccessService } from '../node/node-access.service';
 import { TaskLabelService } from './task-label.service';
@@ -17,7 +16,6 @@ export class TaskLabelController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Param('taskId') taskId: number, @Request() req: any): Promise<TaskLabel[]> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
@@ -26,7 +24,6 @@ export class TaskLabelController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async add(@Param('taskId') taskId: number, @Body() body: AddTaskLabelDto, @Request() req: any): Promise<TaskLabel> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
@@ -38,7 +35,6 @@ export class TaskLabelController {
   }
 
   @Delete(':labelId')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('taskId') taskId: number, @Param('labelId') labelId: number, @Request() req: any): Promise<void> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();

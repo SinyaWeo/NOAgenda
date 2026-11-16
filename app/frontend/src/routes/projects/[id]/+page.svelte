@@ -11,10 +11,12 @@
     ExclamationCircleOutline,
   } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
+  import { errMessage } from '$lib/errors';
+  import type { Project, ProjectView, Task } from '$lib/types';
 
-  const project = writable<any>(null);
-  const tasks = writable<any[]>([]);
-  const views = writable<any[]>([]);
+  const project = writable<Project | null>(null);
+  const tasks = writable<Task[]>([]);
+  const views = writable<ProjectView[]>([]);
   const loading = writable(true);
   const error = writable('');
   let newTaskTitle = $state('');
@@ -26,7 +28,7 @@
   const filteredTasks = derived(
     [tasks, filterStatus, filterPriority],
     ([$tasks, $status, $priority]) =>
-      $tasks.filter((t: any) => {
+      $tasks.filter((t) => {
         if ($status && t.status !== $status) return false;
         if ($priority && String(t.priority ?? 0) !== $priority) return false;
         return true;
@@ -36,9 +38,9 @@
   async function loadProject(id: string, isStale: () => boolean) {
     newTaskTitle = '';
     const [p, t, v] = await Promise.all([
-      apiGetAuth<any>(`/projects/${id}`),
-      apiGetAuth<any[]>(`/tasks?projectId=${id}`),
-      apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => []),
+      apiGetAuth<Project>(`/projects/${id}`),
+      apiGetAuth<Task[]>(`/tasks?projectId=${id}`),
+      apiGetAuth<ProjectView[]>(`/projects/${id}/views`).catch((): ProjectView[] => []),
     ]);
     if (isStale()) return; // navigated to another project meanwhile
     project.set(p);
@@ -60,9 +62,9 @@
         project: { id: Number(id) },
       });
       newTaskTitle = '';
-      tasks.set(await apiGetAuth<any[]>(`/tasks?projectId=${id}`));
-    } catch (e: any) {
-      showToast(e.message ?? 'Failed to add task', 'error');
+      tasks.set(await apiGetAuth<Task[]>(`/tasks?projectId=${id}`));
+    } catch (e: unknown) {
+      showToast(errMessage(e, 'Failed to add task'), 'error');
     } finally {
       addingTask = false;
     }
@@ -76,22 +78,22 @@
           ? 'done'
           : 'open';
     try {
-      const updated = await apiPutAuth<any>(`/tasks/${taskId}`, {
+      const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, {
         status: next,
       });
       tasks.update((list) => list.map((t) => (t.id === taskId ? updated : t)));
-    } catch (e: any) {
-      showToast(e.message ?? 'Failed to update status', 'error');
+    } catch (e: unknown) {
+      showToast(errMessage(e, 'Failed to update status'), 'error');
     }
   }
 
   async function updateTaskStatus(taskId: number, status: string) {
     try {
-      const updated = await apiPutAuth<any>(`/tasks/${taskId}`, { status });
+      const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, { status });
       tasks.update((list) => list.map((t) => (t.id === taskId ? updated : t)));
       showToast('Status updated', 'success');
-    } catch (e: any) {
-      showToast(e.message ?? 'Failed to update status', 'error');
+    } catch (e: unknown) {
+      showToast(errMessage(e, 'Failed to update status'), 'error');
     }
   }
 </script>
@@ -117,7 +119,7 @@
 
   {#if $views.length}
     <nav class="flex gap-2 mb-4 flex-wrap">
-      {#each $views as v}
+      {#each $views as v (v.id)}
         <a
           href="/projects/{$project.id}/{v.id}"
           class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 no-underline hover:bg-primary-200"
@@ -181,7 +183,7 @@
     <p class="text-gray-400">No tasks match the current filters.</p>
   {:else}
     <Card class="p-0 overflow-hidden">
-      {#each $filteredTasks as task, i}
+      {#each $filteredTasks as task, i (task.id)}
         <div
           class="flex items-center gap-2.5 px-4 py-3 {i <
           $filteredTasks.length - 1

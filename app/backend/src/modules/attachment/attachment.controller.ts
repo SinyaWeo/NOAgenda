@@ -1,14 +1,14 @@
-import { Controller, Get, Post, Delete, Body, Param, Query, Res, UploadedFile, UseInterceptors, UseGuards, Request, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, Query, Res, UploadedFile, UseInterceptors, Request, NotFoundException, BadRequestException, ForbiddenException, PayloadTooLargeException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
 import { AttachmentService } from './attachment.service';
-import { AuthGuard } from '@nestjs/passport';
 import { Attachment } from './attachment.entity';
 import { diskStorage } from 'multer';
 import { extname, resolve, basename } from 'path';
 import { existsSync, unlink } from 'fs';
 import { NodeAccessService } from '../node/node-access.service';
 import { randomUUID } from 'crypto';
+import { sniffFile } from '../../common/file-sniff';
 
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
 
@@ -27,6 +27,10 @@ const ALLOWED_MIME_TYPES = [
   'application/json',
 ];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+/** Total upload allowance per user (USER_STORAGE_QUOTA_MB, default 200 MB). */
+const USER_QUOTA_BYTES = Number(process.env.USER_STORAGE_QUOTA_MB || 200) * 1024 * 1024;
+/** Declared types whose content we can verify from the first bytes. */
+const SNIFFABLE = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']);
 
 @Controller('attachments')
 export class AttachmentController {
@@ -47,7 +51,6 @@ export class AttachmentController {
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Query('taskId') taskId?: number, @Request() req?: any): Promise<Attachment[]> {
     if (taskId) {
       // Everyone who can read the task may list its attachments.
@@ -59,7 +62,6 @@ export class AttachmentController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Attachment> {
     const attachment = await this.attachmentService.findById(id);
     if (!attachment) throw new NotFoundException();
@@ -68,7 +70,6 @@ export class AttachmentController {
   }
 
   @Get(':id/download')
-  @UseGuards(AuthGuard('jwt'))
   async download(@Param('id') id: number, @Res() res: Response, @Request() req: any): Promise<void> {
     const attachment = await this.attachmentService.findById(id);
     if (!attachment) throw new NotFoundException();
@@ -89,7 +90,6 @@ export class AttachmentController {
   }
 
   @Post('upload')
-  @UseGuards(AuthGuard('jwt'))
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
       destination: './uploads',
@@ -115,6 +115,12 @@ export class AttachmentController {
       if (taskId === undefined) throw new BadRequestException('taskId is required');
       if (!Number.isInteger(taskId) || taskId < 1) throw new BadRequestException('Invalid taskId');
       await this.access.assertWrite(req.user.userId, taskId);
+      if (SNIFFABLE.has(file.mimetype) && (await sniffFile(file.path).catch(() => null)) !== file.mimetype) {
+        throw new BadRequestException(`The file is not a valid ${file.mimetype} (its content does not match its type)`);
+      }
+      if ((await this.attachmentService.usedBytes(req.user.userId)) + file.size > USER_QUOTA_BYTES) {
+        throw new PayloadTooLargeException('Your storage quota is full: delete some attachments first');
+      }
     } catch (err) {
       // multer already wrote the file to disk; do not keep it.
       unlink(file.path, () => undefined);
@@ -123,13 +129,13 @@ export class AttachmentController {
     return this.attachmentService.create({
       filename: file.originalname,
       path: resolve(file.path),
+      size: file.size,
       node: { id: taskId } as any,
       uploader: { id: req.user.userId } as any,
     });
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const attachment = await this.attachmentService.findById(id);
     if (!attachment) throw new NotFoundException();

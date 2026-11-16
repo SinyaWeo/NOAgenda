@@ -1,9 +1,10 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
+  import type { GeneralSettings } from '$lib/types-misc';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPostAuth } from '$lib/api';
-  import { getCurrentUser, refreshCurrentUser } from '$lib/auth';
-  import { goto } from '$app/navigation';
+  import { refreshCurrentUser } from '$lib/auth';
   import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
@@ -18,20 +19,15 @@
   const saving = writable(false);
 
   onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
     try {
-      const s = await apiGetAuth<any>('/user/settings/general');
+      const s = await apiGetAuth<GeneralSettings>('/user/settings/general');
       name.set(s.name ?? '');
       language.set(s.language ?? 'en');
       timezone.set(s.timezone ?? 'UTC');
       theme.set(s.theme ?? 'light');
       weekStart.set(s.weekStart ?? 1);
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       loading.set(false);
     }
@@ -51,8 +47,8 @@
       });
       await refreshCurrentUser(); // header name, avatar and theme follow at once
       success.set('Settings saved.');
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       saving.set(false);
     }

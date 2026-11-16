@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne } from 'typeorm';
+import { Entity, Column, ManyToOne, Index } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
 import { Node } from '../node/node.entity';
 
@@ -11,6 +11,7 @@ export enum RelationKind {
   DUPLICATED_BY = 'duplicated_by',
 }
 
+@Index('UQ_task_relations_pair_kind', ['node', 'relatedNode', 'kind'], { unique: true })
 @Entity('task_relations')
 export class TaskRelation extends BaseEntity {
   @ManyToOne(() => Node, { onDelete: 'CASCADE', nullable: false })

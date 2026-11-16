@@ -10,8 +10,19 @@ export interface ToastItem {
 }
 
 let nextId = 0;
+const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
 export const toasts = writable<ToastItem[]>([]);
+
+/** Remove a toast now and cancel its pending auto-dismiss timer. */
+export function dismissToast(id: number): void {
+	const timer = timers.get(id);
+	if (timer !== undefined) {
+		clearTimeout(timer);
+		timers.delete(id);
+	}
+	toasts.update((list) => list.filter((t) => t.id !== id));
+}
 
 export function showToast(
 	message: string,
@@ -20,7 +31,5 @@ export function showToast(
 ): void {
 	const id = ++nextId;
 	toasts.update((list) => [...list, { id, message, type, duration }]);
-	setTimeout(() => {
-		toasts.update((list) => list.filter((t) => t.id !== id));
-	}, duration);
+	timers.set(id, setTimeout(() => dismissToast(id), duration));
 }

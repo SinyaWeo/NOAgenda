@@ -1,9 +1,10 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiFetchAuth, API_BASE } from '$lib/api';
-  import { getCurrentUser, refreshCurrentUser } from '$lib/auth';
-  import { goto } from '$app/navigation';
+  import { refreshCurrentUser } from '$lib/auth';
+  import type { AvatarSettings } from '$lib/types-misc';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { UserCircleOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
@@ -12,16 +13,11 @@
   const success = writable('');
 
   onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
     try {
-      const data = await apiGetAuth<any>('/user/settings/avatar');
+      const data = await apiGetAuth<AvatarSettings>('/user/settings/avatar');
       avatarUrl.set(data.avatarUrl ?? '');
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     }
   });
 
@@ -34,15 +30,15 @@
     let res: Response;
     try {
       res = await apiFetchAuth('/user/settings/avatar/upload', { method: 'PUT', body: fd });
-    } catch (e: any) {
-      error.set(e?.message ?? 'Upload failed');
+    } catch (e: unknown) {
+      error.set(errMessage(e, 'Upload failed'));
       return;
     }
     if (!res.ok) {
       error.set('Upload failed');
       return;
     }
-    const data = await res.json();
+    const data: AvatarSettings = await res.json();
     avatarUrl.set(data.avatarUrl ?? '');
     await refreshCurrentUser(); // the header shows the new picture straight away
     success.set('Avatar updated.');

@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { CreateViewDto, UpdateViewDto } from './dto/project-view.dto';
 import { ProjectViewService } from './project-view.service';
 import { ProjectService } from '../project/project.service';
@@ -20,14 +19,12 @@ export class ProjectViewController {
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Param('projectId') projectId: number, @Request() req: any): Promise<ProjectView[]> {
     await this.assertAccess(projectId, req);
     return this.projectViewService.findByProject(projectId);
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('projectId') projectId: number, @Param('id') id: number, @Request() req: any): Promise<ProjectView> {
     await this.assertAccess(projectId, req);
     const view = await this.projectViewService.findById(id);
@@ -37,7 +34,6 @@ export class ProjectViewController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(
     @Param('projectId') projectId: number,
     @Body() body: CreateViewDto,
@@ -48,7 +44,6 @@ export class ProjectViewController {
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   async update(
     @Param('projectId') projectId: number,
     @Param('id') id: number,
@@ -65,7 +60,6 @@ export class ProjectViewController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(
     @Param('projectId') projectId: number,
     @Param('id') id: number,

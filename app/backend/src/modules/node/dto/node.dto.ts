@@ -1,8 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import {
-  IsBoolean, IsDateString, IsEnum, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional,
-  IsString, Matches, Max, MaxLength, Min, ValidateNested, ArrayMaxSize, ArrayMinSize, IsArray,
-} from 'class-validator';
+import { IsBoolean, IsDateString, IsEnum, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested, ArrayMaxSize, ArrayMinSize, IsArray } from 'class-validator';
 import { NodeStatus, NodeType, RepeatMode } from '../node.entity';
 
 /** `{ id: 5 }` reference, the shape the UI uses for `project`. */
@@ -156,6 +153,25 @@ export class NodeListQueryDto extends PagedQueryDto {
 export class TaskListQueryDto extends PagedQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   projectId?: number;
+
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(5)
+  priority?: number;
+
+  /** Due on or before this moment (ISO 8601). */
+  @IsOptional() @IsDateString()
+  dueBefore?: string;
+
+  /** Due on or after this moment (ISO 8601). */
+  @IsOptional() @IsDateString()
+  dueAfter?: string;
+
+  /** With dueBefore: also return tasks that have no due date at all. */
+  @IsOptional() @IsIn(['true', 'false'])
+  includeUndated?: string;
+
+  /** Leave out tasks that are done. */
+  @IsOptional() @IsIn(['true', 'false'])
+  excludeDone?: string;
 
   @IsOptional() @Type(() => Number) @IsInt() @Min(0)
   parentTaskId?: number;

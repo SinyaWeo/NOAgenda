@@ -2,6 +2,25 @@
 # With DOMAIN=localhost Caddy issues a local self-signed certificate (for testing).
 # {$SITE_ADDRESS} defaults to the domain. Set it to http://<domain> when another reverse proxy
 # (Apache/nginx) terminates TLS in front of Caddy: Caddy then serves plain HTTP only.
+{
+	servers {
+		# Keep the client address that a proxy in front of us (Apache/nginx on the same host or
+		# network) puts in X-Forwarded-For. Without this Caddy REPLACES it with the proxy's own
+		# address, so the backend would see every visitor as one IP and its rate limits and
+		# login lockouts would hit all users together. Traffic from the public internet is not
+		# trusted, so a visitor still cannot forge their address.
+		trusted_proxies static private_ranges
+
+		# Slow-client protection (slowloris): bounded header/body/idle times.
+		timeouts {
+			read_header 10s
+			read_body 2m
+			write 2m
+			idle 2m
+		}
+	}
+}
+
 {$SITE_ADDRESS} {
 	encode zstd gzip
 

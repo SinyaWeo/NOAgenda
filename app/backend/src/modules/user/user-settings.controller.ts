@@ -2,7 +2,6 @@ import {
   Controller, Get, Post, Put, Body, UseGuards, Request,
   NotFoundException, BadRequestException, ConflictException, UploadedFile, UseInterceptors, Res,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
 import { diskStorage } from 'multer';
@@ -24,12 +23,12 @@ import { EmailVerificationService } from '../email-verification/email-verificati
 import { SessionService } from '../session/session.service';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
 import { UpdateGeneralSettingsDto, UpdateEmailDto, UpdatePasswordDto, DeletionRequestDto } from './dto/user-settings.dto';
+import { sniffFile } from '../../common/file-sniff';
 import { AccountService } from '../account/account.service';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 
 @Controller('user')
-@UseGuards(AuthGuard('jwt'))
 export class UserSettingsController {
   constructor(
     private readonly userService: UserService,
@@ -109,6 +108,11 @@ export class UserSettingsController {
   }))
   async uploadAvatar(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
+    // multer trusted the Content-Type header; check what was actually written to disk.
+    if ((await sniffFile(file.path).catch(() => null)) !== file.mimetype) {
+      unlink(file.path, () => undefined);
+      throw new BadRequestException('The file is not a valid JPEG, PNG, GIF or WebP image');
+    }
     const previous = (await this.userService.findByIdSafe(req.user.userId))?.avatarUrl;
     const avatarUrl = `/uploads/avatars/${file.filename}`;
     await this.userService.update(req.user.userId, { avatarUrl });

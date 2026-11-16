@@ -1,38 +1,29 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
+  import type { Project } from '$lib/types';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
 
-  const project = writable<any>(null);
+  const project = writable<Project | null>(null);
   const name = writable('');
   const description = writable('');
   const error = writable('');
   const loading = writable(true);
   const saving = writable(false);
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      const p = await apiGetAuth<any>(`/projects/${page.params.id}`);
-      project.set(p);
-      name.set(p.name ?? '');
-      description.set(p.description ?? '');
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  loadOnParamChange(() => page.params.id ?? '', async (id, isStale) => {
+    const p = await apiGetAuth<Project>(`/projects/${id}`);
+    if (isStale()) return;
+    project.set(p);
+    name.set(p.name ?? '');
+    description.set(p.description ?? '');
+  }, loading, error);
 
   async function handleSave(e: SubmitEvent) {
     e.preventDefault();
@@ -45,8 +36,8 @@
       });
       showToast('Project saved', 'success');
       goto(`/projects/${page.params.id}`);
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       saving.set(false);
     }
@@ -60,8 +51,8 @@
     try {
       await apiDeleteAuth(`/projects/${page.params.id}`);
       goto('/projects');
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     }
   }
 </script>

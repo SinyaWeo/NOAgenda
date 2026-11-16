@@ -17,6 +17,8 @@
   } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
+  import { errMessage } from '$lib/errors';
+  import type { Project, Task } from '$lib/types';
 
   const title = writable('');
   const description = writable('');
@@ -25,7 +27,7 @@
   const priority = writable(0);
   const error = writable('');
   const loading = writable(false);
-  const projects = writable<any[]>([]);
+  const projects = writable<Project[]>([]);
 
   onMount(async () => {
     const me = await getCurrentUser();
@@ -36,8 +38,10 @@
     const pid = page.url.searchParams.get('projectId');
     if (pid) projectId.set(Number(pid));
     try {
-      projects.set(await apiGetAuth<any[]>('/projects'));
-    } catch (_) {}
+      projects.set(await apiGetAuth<Project[]>('/projects'));
+    } catch {
+      // the project list is optional; the select just stays empty
+    }
   });
 
   async function handleCreate(event: Event) {
@@ -46,7 +50,7 @@
     error.set('');
     try {
       const pid = get(projectId);
-      const task = await apiPostAuth<any>('/tasks', {
+      const task = await apiPostAuth<Task>('/tasks', {
         title: get(title),
         description: get(description),
         ...(pid ? { project: { id: pid } } : {}),
@@ -55,8 +59,8 @@
       });
       showToast('Task created!', 'success');
       goto(`/tasks/${task.id}`);
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
     } finally {
       loading.set(false);
     }
@@ -109,7 +113,7 @@
         >
         <Select id="task-project" bind:value={$projectId} required>
           <option value={undefined}>Select a project…</option>
-          {#each $projects as p}<option value={p.id}>{p.name ?? p.title}</option
+          {#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option
             >{/each}
         </Select>
       </div>

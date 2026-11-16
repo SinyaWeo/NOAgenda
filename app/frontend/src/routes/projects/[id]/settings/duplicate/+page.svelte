@@ -1,44 +1,35 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { errMessage } from '$lib/errors';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { apiGetAuth, apiPutAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
+  import type { Project } from '$lib/types';
   import { writable } from 'svelte/store';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
-  const project = writable<any>(null);
+  const project = writable<Project | null>(null);
   const loading = writable(true);
   const saving = writable(false);
   const error = writable('');
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      project.set(await apiGetAuth<any>(`/projects/${page.params.id}`));
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  loadOnParamChange(() => page.params.id ?? '', async (id, isStale) => {
+    const p = await apiGetAuth<Project>(`/projects/${id}`);
+    if (!isStale()) project.set(p);
+  }, loading, error);
 
   async function duplicate() {
     saving.set(true);
     error.set('');
     try {
-      const newProject = await apiPutAuth<any>(
+      const newProject = await apiPutAuth<Project>(
         `/projects/${page.params.id}/duplicate`,
         {},
       );
       goto(`/projects/${newProject.id}`);
-    } catch (e: any) {
-      error.set(e.message);
+    } catch (e: unknown) {
+      error.set(errMessage(e));
       saving.set(false);
     }
   }

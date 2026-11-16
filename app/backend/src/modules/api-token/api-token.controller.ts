@@ -1,12 +1,11 @@
 import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
 import { CreateApiTokenDto } from './dto/api-token.dto';
 import { ApiTokenService } from './api-token.service';
 import { ApiToken } from './api-token.entity';
 
 @Controller('tokens')
-@UseGuards(AuthGuard('jwt'), NoApiTokenGuard)
+@UseGuards(NoApiTokenGuard)
 export class ApiTokenController {
   constructor(private readonly service: ApiTokenService) {}
 
@@ -21,7 +20,7 @@ export class ApiTokenController {
     @Body() body: CreateApiTokenDto,
     @Request() req: any,
   ): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
-    return this.service.create(req.user.userId, body.name, body.expiresAt ? new Date(body.expiresAt) : undefined);
+    return this.service.create(req.user.userId, body.name, body.scope ?? 'read', body.expiresAt ? new Date(body.expiresAt) : undefined);
   }
 
   @Delete(':id')

@@ -9,33 +9,34 @@ import {
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { CreateQuoteDto, UpdateQuoteDto } from './dto/quote.dto';
 import { QuoteService } from './quote.service';
 import { Quote } from './quote.entity';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/user-role.enum';
+import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('quotes')
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 
   /** Public — no auth required */
+  @Public()
   @Get('random')
   async getRandom(): Promise<Quote | null> {
     return this.quoteService.findRandom();
   }
 
   @Get()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   async findAll(): Promise<Quote[]> {
     return this.quoteService.findAll();
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   async create(
     @Body() body: CreateQuoteDto,
@@ -44,7 +45,7 @@ export class QuoteController {
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   async update(
     @Param('id') id: number,
@@ -56,7 +57,7 @@ export class QuoteController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
   async remove(@Param('id') id: number): Promise<void> {
     const quote = await this.quoteService.findById(id);

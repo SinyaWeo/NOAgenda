@@ -1,8 +1,7 @@
 import {
-  Controller, Get, Post, Body, UseGuards, Request, Res, HttpCode, HttpStatus,
+  Controller, Get, Post, Body, Request, Res, HttpCode, HttpStatus,
   Logger, UnauthorizedException, ForbiddenException,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import { AuthService, AuthResult } from './auth.service';
@@ -13,6 +12,7 @@ import { VerifyEmailDto, ResendVerificationDto } from './dto/email-verification.
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { SessionMeta } from '../session/session.service';
 import { registrationPolicy } from '../user/registration';
+import { Public } from '../../common/decorators/public.decorator';
 
 const COOKIE_NAME = 'noa_rt';
 const isProd = () => process.env.NODE_ENV === 'production';
@@ -34,6 +34,8 @@ function readCookie(req: any, name: string): string | undefined {
   return undefined;
 }
 
+/** Every route here is reachable without a session: sign-in, cookie refresh, reset and verification flows. */
+@Public()
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);

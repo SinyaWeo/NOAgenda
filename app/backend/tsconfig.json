@@ -6,7 +6,11 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "es2017",
+    "target": "es2022",
+    // es2022 would define class fields with [[Define]] semantics, which shadows the properties TypeORM
+    // and class-validator install on entities/DTOs. Keep the classic assignment behaviour.
+    "useDefineForClassFields": false,
+    "skipLibCheck": true,
     "sourceMap": true,
     "incremental": true,
     "strict": true,

@@ -1,56 +1,74 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
   import { Alert, Button, Card, Input, Select } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
+  import UserPicker from '$lib/components/UserPicker.svelte';
+  import { errMessage } from '$lib/errors';
+  import { showToast } from '$lib/toast';
+  import type { Permission, ProjectMember, Team, UserSummary } from '$lib/types';
+  import type { ProjectTeamMember } from '$lib/types-misc';
 
   const projectId = () => page.params.id;
-  const users = writable<any[]>([]);
-  const teams = writable<any[]>([]);
-  const allUsers = writable<any[]>([]);
-  const allTeams = writable<any[]>([]);
+  const users = writable<ProjectMember[]>([]);
+  const teams = writable<ProjectTeamMember[]>([]);
+  const allTeams = writable<Team[]>([]);
   const loading = writable(true);
   const error = writable('');
-  let newUserId = $state('');
+  let newUser = $state<UserSummary | null>(null);
+  let picker: ReturnType<typeof UserPicker> | undefined = $state();
   let newTeamId = $state('');
-  let newPermission = $state('read');
+  let newPermission = $state<Permission>('read');
 
-  async function load() {
-    const [u, t, au, at] = await Promise.all([
-      apiGetAuth<any[]>(`/projects/${projectId()}/users`),
-      apiGetAuth<any[]>(`/projects/${projectId()}/teams`),
-      apiGetAuth<any[]>('/users').catch(() => []),
-      apiGetAuth<any[]>('/teams').catch(() => []),
+  const memberIds = $derived(
+    $users.map((m) => m.user?.id).filter((id): id is number => id != null),
+  );
+
+  async function reload() {
+    const [u, t] = await Promise.all([
+      apiGetAuth<ProjectMember[]>(`/projects/${projectId()}/users`),
+      apiGetAuth<ProjectTeamMember[]>(`/projects/${projectId()}/teams`),
     ]);
     users.set(u);
     teams.set(t);
-    allUsers.set(au);
+  }
+
+  async function load(id: string, isStale: () => boolean) {
+    const [u, t, at] = await Promise.all([
+      apiGetAuth<ProjectMember[]>(`/projects/${id}/users`),
+      apiGetAuth<ProjectTeamMember[]>(`/projects/${id}/teams`),
+      apiGetAuth<Team[]>('/teams').catch(() => [] as Team[]),
+    ]);
+    if (isStale()) return;
+    users.set(u);
+    teams.set(t);
     allTeams.set(at);
   }
 
+  loadOnParamChange(() => page.params.id ?? '', load, loading, error);
+
   async function addUser(e: Event) {
     e.preventDefault();
+    if (!newUser) return;
     try {
       await apiPostAuth(`/projects/${projectId()}/users`, {
-        userId: Number(newUserId),
+        userId: newUser.id,
         permission: newPermission,
       });
-      newUserId = '';
-      await load();
-    } catch (e: any) {
-      error.set(e.message);
+      picker?.reset();
+      await reload();
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     }
   }
   async function removeUser(userId: number) {
     try {
       await apiDeleteAuth(`/projects/${projectId()}/users/${userId}`);
-      await load();
-    } catch (e: any) {
-      error.set(e.message);
+      await reload();
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     }
   }
   async function addTeam(e: Event) {
@@ -61,34 +79,19 @@
         permission: newPermission,
       });
       newTeamId = '';
-      await load();
-    } catch (e: any) {
-      error.set(e.message);
+      await reload();
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     }
   }
   async function removeTeam(teamId: number) {
     try {
       await apiDeleteAuth(`/projects/${projectId()}/teams/${teamId}`);
-      await load();
-    } catch (e: any) {
-      error.set(e.message);
+      await reload();
+    } catch (e: unknown) {
+      showToast(errMessage(e), 'error');
     }
   }
-
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      await load();
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
 </script>
 
 <div class="flex items-center gap-3 mb-6">
@@ -110,32 +113,22 @@
     <h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
       Users
     </h2>
-    <form onsubmit={addUser} class="flex gap-2 mb-4 flex-wrap">
-      {#if $allUsers.length}
-        <Select bind:value={newUserId} required class="flex-1 min-w-36">
-          <option value="">Select user…</option>
-          {#each $allUsers as u}<option value={String(u.id)}
-              >{u.name || u.username || `User #${u.id}`}</option
-            >{/each}
-        </Select>
-      {:else}
-        <Input
-          type="number"
-          bind:value={newUserId}
-          placeholder="User ID"
-          required
-          min="1"
-          class="w-28"
-        />
-      {/if}
-      <Select bind:value={newPermission} class="w-auto">
+    <form onsubmit={addUser} class="flex gap-2 mb-4 flex-wrap items-start">
+      <UserPicker
+        id="project-member-picker"
+        label="Add a user"
+        bind:selected={newUser}
+        excludeIds={memberIds}
+        bind:this={picker}
+      />
+      <Select bind:value={newPermission} class="w-auto self-start mt-6" aria-label="Permission">
         <option value="read">Read</option><option value="write">Write</option
         ><option value="admin">Admin</option>
       </Select>
-      <Button type="submit">Add User</Button>
+      <Button type="submit" disabled={!newUser} class="self-start mt-6">Add User</Button>
     </form>
     {#if $users.length}
-      {#each $users as u, i}
+      {#each $users as u, i (u.id)}
         <div
           class="flex items-center gap-3 py-2 {i < $users.length - 1
             ? 'border-b border-gray-100 dark:border-gray-700'
@@ -165,7 +158,7 @@
       {#if $allTeams.length}
         <Select bind:value={newTeamId} required class="flex-1 min-w-36">
           <option value="">Select team…</option>
-          {#each $allTeams as t}<option value={String(t.id)}>{t.name}</option
+          {#each $allTeams as t (t.id)}<option value={String(t.id)}>{t.name}</option
             >{/each}
         </Select>
       {:else}
@@ -185,7 +178,7 @@
       <Button type="submit">Add Team</Button>
     </form>
     {#if $teams.length}
-      {#each $teams as t, i}
+      {#each $teams as t, i (t.id)}
         <div
           class="flex items-center gap-3 py-2 {i < $teams.length - 1
             ? 'border-b border-gray-100 dark:border-gray-700'

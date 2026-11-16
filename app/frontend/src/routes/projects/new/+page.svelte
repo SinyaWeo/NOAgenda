@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
   import { writable } from 'svelte/store';
   import { apiPostAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import type { Project } from '$lib/types';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
   import { showToast } from '$lib/toast';
@@ -13,24 +13,19 @@
   const error = writable('');
   const loading = writable(false);
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) goto('/user/login');
-  });
-
   async function handleSubmit(e: Event) {
     e.preventDefault();
     loading.set(true);
     error.set('');
     try {
-      const project = await apiPostAuth<any>('/projects', {
+      const project = await apiPostAuth<Project>('/projects', {
         name: $name,
         description: $description,
       });
       showToast('Project created!', 'success');
       goto(`/projects/${project.id}`);
-    } catch (err: any) {
-      error.set(err.message ?? 'Failed to create project');
+    } catch (err: unknown) {
+      error.set(errMessage(err, 'Failed to create project'));
     } finally {
       loading.set(false);
     }

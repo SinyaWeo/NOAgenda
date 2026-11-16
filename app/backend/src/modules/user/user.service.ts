@@ -25,9 +25,17 @@ export class UserService {
     return this.withPassword().where('u.email = :email', { email }).getOne();
   }
 
-  async findAll(): Promise<Omit<User, 'password'>[]> {
-    // Only expose public fields — email and internal flags are not needed for member autocomplete
-    return this.userRepository.find({ select: ['id', 'username', 'name', 'avatarUrl', 'createdAt'] as any });
+  /** Public fields of users whose username or display name contains `q` (the caller is left out). */
+  async search(q: string, exceptUserId: number): Promise<Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>[]> {
+    const like = `%${q.replace(/[\\%_]/g, (c) => '\\' + c)}%`;
+    return this.userRepository
+      .createQueryBuilder('u')
+      .select(['u.id', 'u.username', 'u.name', 'u.avatarUrl'])
+      .where('u.id != :me', { me: exceptUserId })
+      .andWhere('(u.username LIKE :like OR u.name LIKE :like)', { like })
+      .orderBy('u.username', 'ASC')
+      .limit(10)
+      .getMany();
   }
 
   async findAllAdmin(): Promise<Omit<User, 'password'>[]> {
@@ -53,13 +61,13 @@ export class UserService {
     if (user.email) {
       const existingByEmail = await this.findByEmail(user.email);
       if (existingByEmail) {
-        throw new ConflictException('Email is already in use');
+        throw new ConflictException('Username or email is already in use');
       }
     }
     if (user.username) {
       const existingByUsername = await this.findByUsername(user.username);
       if (existingByUsername) {
-        throw new ConflictException('Username is already in use');
+        throw new ConflictException('Username or email is already in use');
       }
     }
 

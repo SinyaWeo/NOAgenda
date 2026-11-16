@@ -1,9 +1,11 @@
 services:
   mariadb:
-    image: mariadb:11.3
+    image: mariadb:11.8
     container_name: mariadb
     restart: unless-stopped
     environment:
+      # Upgrades an existing data directory (e.g. from 11.3) on first start with a newer image.
+      MARIADB_AUTO_UPGRADE: "1"
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-noagenda}
       MYSQL_USER: ${MYSQL_USER:-noagenda}
@@ -13,12 +15,15 @@ services:
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      # (the 11.x image has no mysqladmin; this script ships with it)
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   adminer:
+    # Database admin UI: opt-in. `docker compose --profile tools up -d` (noagenda.sh start does this).
+    profiles: [tools]
     image: adminer:4
     container_name: adminer
     restart: unless-stopped

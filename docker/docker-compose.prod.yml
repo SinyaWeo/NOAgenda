@@ -7,6 +7,15 @@ name: noagenda
 
 # Container logs rotate (3 x 10 MB per service). Without this, Docker keeps them forever and
 # they eventually fill the disk.
+# Least privilege for the stateless containers: no new privileges, no Linux capabilities, a
+# read-only root filesystem (writable places are volumes or tmpfs) and a process cap.
+x-hardened: &hardened
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  read_only: true
+  tmpfs: ["/tmp"]
+  pids_limit: 256
+
 x-logging: &default-logging
   driver: json-file
   options:
@@ -16,9 +25,12 @@ x-logging: &default-logging
 services:
   mariadb:
     logging: *default-logging
-    image: mariadb:11.3
+    image: mariadb:11.8
     restart: unless-stopped
     environment:
+      # Upgrades the data directory on the first start of a newer image. TAKE A BACKUP BEFORE
+      # changing the image tag: a data directory cannot be downgraded (see docs/DEPLOYMENT.md).
+      MARIADB_AUTO_UPGRADE: "1"
       MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MARIADB_DATABASE: ${MYSQL_DATABASE:-noagenda}
       MARIADB_USER: ${MYSQL_USER:-noagenda}
@@ -34,6 +46,8 @@ services:
     networks: [internal]
 
   backend:
+    <<: *hardened
+    mem_limit: ${BACKEND_MEM_LIMIT:-768m}
     logging: *default-logging
     build:
       context: ../app/backend
@@ -73,6 +87,8 @@ services:
     networks: [internal]
 
   frontend:
+    <<: *hardened
+    mem_limit: ${FRONTEND_MEM_LIMIT:-512m}
     logging: *default-logging
     build:
       context: ../app/frontend
@@ -89,6 +105,10 @@ services:
     networks: [internal]
 
   caddy:
+    <<: *hardened
+    # Needs to bind ports 80/443 inside the container: that one capability, nothing else.
+    cap_add: [NET_BIND_SERVICE]
+    mem_limit: ${CADDY_MEM_LIMIT:-256m}
     logging: *default-logging
     image: caddy:2-alpine
     restart: unless-stopped
@@ -104,9 +124,18 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+    healthcheck:
+      # Caddy's admin API listens on localhost inside the container.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - backend
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     networks: [internal]
 
 volumes:

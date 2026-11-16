@@ -9,8 +9,12 @@ import { EmailVerificationService } from '../email-verification/email-verificati
 import { MailService } from '../mail/mail.service';
 import { hashPassword, needsRehash, verifyPassword } from '../../common/password';
 import { randomToken, sha256 } from '../../common/tokens';
+import { LoginThrottle } from '../../common/login-throttle';
 
+/** Wrong passwords from ONE address for ONE account before that address is locked out. */
 export const MAX_FAILED_LOGINS = Number(process.env.MAX_FAILED_LOGINS || 5);
+/** Wrong passwords for one account from ALL addresses together before the account is locked (distributed guessing). */
+export const ACCOUNT_LOCK_THRESHOLD = Number(process.env.ACCOUNT_LOCK_THRESHOLD || 20);
 export const LOCKOUT_MINUTES = Number(process.env.LOCKOUT_MINUTES || 15);
 const RESET_TTL_MS = 60 * 60 * 1000;
 
@@ -26,6 +30,8 @@ export interface AuthResult {
 
 @Injectable()
 export class AuthService {
+  private readonly throttle = new LoginThrottle(MAX_FAILED_LOGINS, LOCKOUT_MINUTES * 60 * 1000);
+
   constructor(
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
@@ -49,17 +55,28 @@ export class AuthService {
     // Always do one bcrypt comparison, user or no user, so timing does not reveal which usernames exist.
     const passwordOk = await verifyPassword(password, user?.password);
 
-    const locked = !!user?.lockedUntil && user.lockedUntil.getTime() > Date.now();
-    if (!user || locked || !passwordOk) {
-      if (user && !locked) {
-        await this.userService.recordFailedLogin(
-          user.id,
-          MAX_FAILED_LOGINS,
-          new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000),
-        );
+    // 1) This address has already failed too often for this account: refuse, even a correct password.
+    const addressLocked = this.throttle.isLocked(username, meta.ip);
+    // 2) Many addresses together have been guessing at this account: it is locked, EXCEPT for an
+    //    address the owner is already signed in from. So a botnet cannot lock the real owner out.
+    const accountLocked = !!user?.lockedUntil && user.lockedUntil.getTime() > Date.now();
+    const trustedAddress = accountLocked && !!user && (await this.sessions.hasActiveSessionFromIp(user.id, meta.ip));
+    const blocked = addressLocked || (accountLocked && !trustedAddress);
+
+    if (!user || blocked || !passwordOk) {
+      if (!blocked) {
+        this.throttle.recordFailure(username, meta.ip);
+        if (user && !accountLocked) {
+          await this.userService.recordFailedLogin(
+            user.id,
+            ACCOUNT_LOCK_THRESHOLD,
+            new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000),
+          );
+        }
       }
       throw new UnauthorizedException(INVALID_CREDENTIALS);
     }
+    this.throttle.clear(username, meta.ip);
 
     if (this.emailVerification.required && !user.isEmailConfirmed) {
       // Only reachable with the correct password, so this does not disclose accounts.
@@ -93,8 +110,13 @@ export class AuthService {
 
   async requestPasswordReset(email: string): Promise<void> {
     const user = await this.userService.findByEmail(email);
-    // Always succeeds from the caller's point of view (no email enumeration).
-    if (!user) return;
+    // Always succeeds from the caller's point of view (no email enumeration), and takes about as
+    // long for an unknown address: do the same kind of database + hashing work before returning.
+    if (!user) {
+      sha256(randomToken(32));
+      await this.resetTokenRepository.delete({ user: { id: 0 } }).catch(() => undefined);
+      return;
+    }
     await this.resetTokenRepository.delete({ user: { id: user.id } });
 
     const token = randomToken(32);
@@ -133,6 +155,7 @@ export class AuthService {
     if (!claimed?.affected) throw new BadRequestException('Invalid or expired reset token');
     await this.userService.update(record.user.id, { password: newPassword, isEmailConfirmed: true });
     await this.userService.resetLoginState(record.user.id);
+    this.throttle.clearUser(record.user.username);
     await this.resetTokenRepository.delete({ user: { id: record.user.id } }); // any other outstanding tokens
     await this.sessions.revokeAllForUser(record.user.id); // sign out everywhere
   }

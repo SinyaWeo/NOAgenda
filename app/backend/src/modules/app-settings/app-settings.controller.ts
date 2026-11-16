@@ -1,12 +1,11 @@
 import { Controller, Get, Patch, Body, UseGuards, BadRequestException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { AppSettingsService } from './app-settings.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/user-role.enum';
 
 @Controller('admin/settings')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AppSettingsController {
   constructor(private readonly appSettingsService: AppSettingsService) {}

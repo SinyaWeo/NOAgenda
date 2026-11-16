@@ -14,6 +14,8 @@
     import { apiGetAuth, apiPatchAuth } from '$lib/api';
     import { findDropTarget } from '$lib/mindmap';
     import { showToast } from '$lib/toast';
+    import { errMessage } from '$lib/errors';
+    import type { Node as AppNode } from '$lib/types';
 
     let loading = $state(true);
     let error = $state('');
@@ -21,7 +23,7 @@
     let nodes = $state<FlowNode[]>([]);
     let edges = $state<Edge[]>([]);
 
-    function toFlowNode(n: any, x: number, y: number): FlowNode {
+    function toFlowNode(n: AppNode, x: number, y: number): FlowNode {
         return {
             id: String(n.id),
             position: { x, y },
@@ -36,11 +38,11 @@
     async function loadGraph() {
         try {
             const [projects, tasks] = await Promise.all([
-                apiGetAuth<any[]>('/nodes?type=project'),
-                apiGetAuth<any[]>('/tasks').catch(() => []),
+                apiGetAuth<AppNode[]>('/nodes?type=project'),
+                apiGetAuth<AppNode[]>('/tasks').catch((): AppNode[] => []),
             ]);
 
-            const byParent = new Map<number, any[]>();
+            const byParent = new Map<number, AppNode[]>();
             for (const t of tasks) {
                 if (t.parentId === undefined || t.parentId === null) continue;
                 if (!byParent.has(t.parentId)) byParent.set(t.parentId, []);
@@ -91,8 +93,8 @@
 
             nodes = graphNodes;
             edges = graphEdges;
-        } catch (e: any) {
-            error = e.message ?? 'Failed to load';
+        } catch (e: unknown) {
+            error = errMessage(e, 'Failed to load');
         } finally {
             loading = false;
         }
@@ -127,8 +129,8 @@
                 },
             ];
             showToast('Moved', 'success');
-        } catch (e: any) {
-            showToast(e?.message ?? 'Could not move it there', 'error');
+        } catch (e: unknown) {
+            showToast(errMessage(e, 'Could not move it there'), 'error');
             await loadGraph(); // put the map back as the server has it
         }
     }

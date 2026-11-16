@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { errMessage } from '$lib/errors';
     import { onMount } from 'svelte';
     import { apiGetAuth, apiPatchAuth } from '$lib/api';
     import { authSession } from '$lib/auth';
@@ -47,9 +48,9 @@
             users.update((list) =>
                 list.map((u) => (u.id === updated.id ? updated : u)),
             );
-        } catch (e: any) {
+        } catch (e: unknown) {
             select.value = user.role; // the change did not happen: show the role the user really has
-            error.set(`Could not update the role for ${user.username}: ${e?.message ?? 'unknown error'}`);
+            error.set(`Could not update the role for ${user.username}: ${errMessage(e, 'unknown error')}`);
         } finally {
             saving.set(null);
         }
@@ -86,7 +87,7 @@
             <TableHeadCell></TableHeadCell>
         </TableHead>
         <TableBody>
-            {#each $users as u}
+            {#each $users as u (u.id)}
                 <TableBodyRow>
                     <TableBodyCell>
                         <span class="font-medium">{u.username}</span>

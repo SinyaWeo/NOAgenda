@@ -6,6 +6,8 @@
   import { getCurrentUser } from '$lib/auth';
   import { loadProjectNames } from '$lib/project-names';
   import { goto } from '$app/navigation';
+  import { errMessage } from '$lib/errors';
+  import type { Task } from '$lib/types';
   import {
     Alert,
     Badge,
@@ -20,7 +22,7 @@
     ExclamationCircleOutline,
   } from 'flowbite-svelte-icons';
 
-  const tasks = writable<any[]>([]);
+  const tasks = writable<Task[]>([]);
   let projectNames = $state<Record<number, string>>({});
   const loading = writable(true);
   const error = writable('');
@@ -28,34 +30,40 @@
   let daysAhead = $state(7);
 
 
+  let loadSeq = 0;
+
   async function loadTasks() {
+    const seq = ++loadSeq;
     loading.set(true);
+    error.set('');
     try {
-      const all = await apiGetAuth<any[]>('/tasks');
       const now = new Date();
       const cutoff = new Date(now.getTime() + daysAhead * 86400000);
-      tasks.set(
-        all
-          .filter((t: any) => {
-            if (t.status === 'done') return false;
-            if (!t.dueDate) return true; // no due date → always upcoming
-            const due = new Date(t.dueDate);
-            if (due < now) return showOverdue; // overdue: only if opted in
-            return due <= cutoff; // future: within selected window
-          })
-          .sort((a: any, b: any) => {
-            if (!a.dueDate && !b.dueDate) return 0;
-            if (!a.dueDate) return 1; // no-date tasks go to the bottom
-            if (!b.dueDate) return -1;
-            return (
-              new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
-            );
-          }),
-      );
-    } catch (e: any) {
-      error.set(e.message);
+      // Not done, and (no due date or due before the cutoff); overdue ones only on request.
+      const q = new URLSearchParams({
+        excludeDone: 'true',
+        dueBefore: cutoff.toISOString(),
+        includeUndated: 'true',
+        sort: 'dueDate',
+        order: 'ASC',
+        limit: '200',
+      });
+      if (!showOverdue) q.set('dueAfter', now.toISOString());
+      const list = await apiGetAuth<Task[]>(`/tasks?${q}`);
+      // dueAfter would also hide the undated tasks (they must stay): fetch them separately.
+      let rows = list;
+      if (!showOverdue) {
+        const undated = await apiGetAuth<Task[]>(
+          `/tasks?${new URLSearchParams({ excludeDone: 'true', dueBefore: new Date(0).toISOString(), includeUndated: 'true', limit: '200' })}`,
+        );
+        rows = [...list, ...undated.filter((t) => !t.dueDate)];
+      }
+      if (seq !== loadSeq) return;
+      tasks.set(rows.slice(0, 200));
+    } catch (e: unknown) {
+      if (seq === loadSeq) error.set(errMessage(e));
     } finally {
-      loading.set(false);
+      if (seq === loadSeq) loading.set(false);
     }
   }
 
@@ -110,7 +118,7 @@
   </div>
 {:else}
   <div class="flex flex-col gap-2">
-    {#each $tasks as task}
+    {#each $tasks as task (task.id)}
       {@const due = task.dueDate ? new Date(task.dueDate) : null}
       {@const isOverdue = due !== null && due < new Date()}
       <Card
@@ -125,7 +133,7 @@
               class="font-medium text-gray-900 dark:text-white hover:underline"
               >{task.title}</a
             >
-            {#if projectNames[task.parentId]}<span class="text-xs text-gray-400 ml-2"
+            {#if task.parentId != null && projectNames[task.parentId]}<span class="text-xs text-gray-400 ml-2"
                 >{projectNames[task.parentId]}</span
               >{/if}
           </div>
@@ -173,7 +181,7 @@
               <span
                 class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
                 data-status={task.status}
-                >{STATUS_LABELS[task.status] ?? task.status}</span
+                >{(task.status && STATUS_LABELS[task.status]) ?? task.status}</span
               >
             </div>
           </div>

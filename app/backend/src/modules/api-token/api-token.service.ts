@@ -12,6 +12,7 @@ export interface ApiTokenUser {
   username: string;
   role: string;
   tokenId: number;
+  scope: 'read' | 'write';
 }
 
 @Injectable()
@@ -28,10 +29,10 @@ export class ApiTokenService {
   }
 
   /** The raw token is returned once and only its hash is stored. */
-  async create(userId: number, name: string, expiresAt?: Date): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
+  async create(userId: number, name: string, scope: 'read' | 'write' = 'read', expiresAt?: Date): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
     const rawToken = API_TOKEN_PREFIX + randomToken(32);
     const saved = await this.repo.save(
-      this.repo.create({ userId, name, token: sha256(rawToken), tokenPrefix: rawToken.slice(0, 8), expiresAt }),
+      this.repo.create({ userId, name, token: sha256(rawToken), tokenPrefix: rawToken.slice(0, 8), scope, expiresAt }),
     );
     const { token: _hash, ...safe } = saved;
     return { ...safe, rawToken };
@@ -47,7 +48,7 @@ export class ApiTokenService {
   async authenticate(raw: string): Promise<ApiTokenUser | null> {
     if (!raw.startsWith(API_TOKEN_PREFIX)) return null;
     const rows: (ApiTokenUser & { lastUsedAt: Date | null })[] = await this.repo.manager.query(
-      `SELECT u.id AS id, u.username AS username, u.role AS role, t.id AS tokenId, t.lastUsedAt AS lastUsedAt
+      `SELECT u.id AS id, u.username AS username, u.role AS role, t.id AS tokenId, t.scope AS scope, t.lastUsedAt AS lastUsedAt
          FROM api_tokens t JOIN users u ON u.id = t.userId
         WHERE t.token = ? AND (t.expiresAt IS NULL OR t.expiresAt > ?)`,
       [sha256(raw), new Date()],
@@ -58,6 +59,6 @@ export class ApiTokenService {
     if (!row.lastUsedAt || Date.now() - new Date(row.lastUsedAt).getTime() > 60_000) {
       await this.repo.update(row.tokenId, { lastUsedAt: new Date() });
     }
-    return { id: row.id, username: row.username, role: row.role, tokenId: row.tokenId };
+    return { id: row.id, username: row.username, role: row.role, tokenId: row.tokenId, scope: row.scope === 'write' ? 'write' : 'read' };
   }
 }

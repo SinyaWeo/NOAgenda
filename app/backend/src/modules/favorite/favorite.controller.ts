@@ -1,5 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, BadRequestException } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Post, Delete, Param, Body, Request, BadRequestException } from '@nestjs/common';
 import { NodeAccessService } from '../node/node-access.service';
 import { FavoriteService } from './favorite.service';
 import { Favorite, FavoriteEntityType } from './favorite.entity';
@@ -12,13 +11,11 @@ export class FavoriteController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Request() req: any): Promise<Favorite[]> {
     return this.favoriteService.findByUser(req.user.userId);
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async add(
     @Request() req: any,
     @Body() body: { entityType: FavoriteEntityType; entityId: number },
@@ -32,7 +29,6 @@ export class FavoriteController {
   }
 
   @Delete(':entityType/:entityId')
-  @UseGuards(AuthGuard('jwt'))
   async remove(
     @Request() req: any,
     @Param('entityType') entityType: FavoriteEntityType,

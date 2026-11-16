@@ -24,6 +24,16 @@ export class AttachmentService {
     });
   }
 
+  /** Total bytes the user has uploaded (for the storage quota). */
+  async usedBytes(userId: number): Promise<number> {
+    const row = await this.attachmentRepository
+      .createQueryBuilder('a')
+      .select('COALESCE(SUM(a.size), 0)', 'total')
+      .where('a.uploaderId = :userId', { userId })
+      .getRawOne();
+    return Number(row?.total ?? 0);
+  }
+
   async findById(id: number): Promise<Attachment | null> {
     return this.attachmentRepository.findOne({ where: { id }, relations: ['node', 'uploader'] });
   }

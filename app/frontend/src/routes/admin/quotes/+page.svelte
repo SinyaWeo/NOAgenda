@@ -159,7 +159,7 @@
                 <TableHeadCell></TableHeadCell>
             </TableHead>
             <TableBody>
-                {#each $quotes as q}
+                {#each $quotes as q (q.id)}
                     <TableBodyRow>
                         <TableBodyCell class="max-w-sm">
                             <p class="line-clamp-2 text-sm">{q.text}</p>

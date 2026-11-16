@@ -1,10 +1,9 @@
 import { Controller, Get, Delete, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { SessionService, SafeSession } from './session.service';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
 
 @Controller('user/sessions')
-@UseGuards(AuthGuard('jwt'), NoApiTokenGuard)
+@UseGuards(NoApiTokenGuard)
 export class SessionController {
   constructor(private readonly service: SessionService) {}
 

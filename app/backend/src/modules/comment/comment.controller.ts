@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, BadRequestException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, NotFoundException, ForbiddenException, BadRequestException, Request } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { Comment } from './comment.entity';
-import { AuthGuard } from '@nestjs/passport';
 import { NodeAccessService } from '../node/node-access.service';
 
 @Controller('comments')
@@ -12,7 +11,6 @@ export class CommentController {
   ) {}
 
   @Get()
-  @UseGuards(AuthGuard('jwt'))
   async findAll(@Query('taskId') taskId: number | undefined, @Request() req: any): Promise<Comment[]> {
     if (!taskId) throw new BadRequestException('taskId query parameter is required');
     await this.access.assertRead(req.user.userId, Number(taskId));
@@ -20,7 +18,6 @@ export class CommentController {
   }
 
   @Get(':id')
-  @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Comment> {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
@@ -30,7 +27,6 @@ export class CommentController {
   }
 
   @Post()
-  @UseGuards(AuthGuard('jwt'))
   async create(
     @Body() body: { content: string; taskId: number },
     @Request() req: any,
@@ -49,7 +45,6 @@ export class CommentController {
   }
 
   @Put(':id')
-  @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: number, @Body() body: Partial<Comment>, @Request() req: any): Promise<Comment> {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
@@ -64,7 +59,6 @@ export class CommentController {
   }
 
   @Delete(':id')
-  @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
