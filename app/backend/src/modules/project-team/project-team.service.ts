@@ -15,6 +15,16 @@ export class ProjectTeamService {
     return this.repo.find({ where: { project: { id: projectId } }, relations: ['team', 'project'] });
   }
 
+  /** True when the user owns the team or is one of its members. */
+  async canUseTeam(userId: number, teamId: number): Promise<boolean> {
+    const rows: unknown[] = await this.repo.manager.query(
+      `SELECT 1 FROM teams t
+        WHERE t.id = ? AND (t.ownerId = ? OR EXISTS (SELECT 1 FROM team_members tm WHERE tm.teamId = t.id AND tm.userId = ?))`,
+      [teamId, userId, userId],
+    );
+    return rows.length > 0;
+  }
+
   async add(projectId: number, teamId: number, permission: Permission = Permission.READ): Promise<ProjectTeam> {
     const entry = this.repo.create({
       project: { id: projectId } as any,

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
-  import { apiFetch, setToken } from '$lib/api';
-  import { refreshCurrentUser } from '$lib/auth';
+  import { apiError, apiFetch, setToken } from '$lib/api';
+  import { authSession, refreshCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
@@ -26,6 +26,13 @@
 
   const expired = page.url.searchParams.get('reason') === 'expired';
 
+  // Someone who is already signed in has no business on this page.
+  $effect(() => {
+    if ($authSession.status === 'authenticated' && !$loading) {
+      goto(safeRedirect(page.url.searchParams.get('redirect')), { replaceState: true });
+    }
+  });
+
   let registrationEnabled = $state(true);
   onMount(async () => {
     const cfg: { registrationEnabled?: boolean } = await apiFetch('/auth/config')
@@ -47,9 +54,10 @@
         body: JSON.stringify({ username: $username, password: $password }),
       });
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
+        const data = await response.clone().json().catch(() => ({}));
         if (data.code === 'EMAIL_NOT_VERIFIED') needsVerification = true;
-        throw new Error(data.message ?? 'Login failed');
+        // Same wording as everywhere else: friendly 429, validation arrays joined, no raw 5xx text.
+        throw await apiError(response, 'Login failed');
       }
       const data = await response.json();
       setToken(data.access_token);

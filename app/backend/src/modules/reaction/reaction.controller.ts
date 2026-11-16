@@ -52,6 +52,9 @@ export class ReactionController {
     @Request() req: any,
   ): Promise<void> {
     const id = await this.check(req.user.userId, body?.entityType, body?.entityId);
+    if (typeof body.reaction !== 'string' || !body.reaction.trim()) {
+      throw new BadRequestException('reaction is required');
+    }
     return this.service.remove(req.user.userId, body.entityType, id, body.reaction);
   }
 }

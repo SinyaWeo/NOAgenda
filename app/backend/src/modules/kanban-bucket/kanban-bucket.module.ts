@@ -1,3 +1,4 @@
+import { NodeModule } from '../node/node.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { KanbanBucket } from './kanban-bucket.entity';
@@ -6,7 +7,7 @@ import { KanbanBucketController } from './kanban-bucket.controller';
 import { ProjectModule } from '../project/project.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([KanbanBucket]), ProjectModule],
+  imports: [NodeModule, TypeOrmModule.forFeature([KanbanBucket]), ProjectModule],
   providers: [KanbanBucketService],
   controllers: [KanbanBucketController],
 })

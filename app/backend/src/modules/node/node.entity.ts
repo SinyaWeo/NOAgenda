@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
 
 export enum NodeType {
@@ -30,6 +30,7 @@ export class Node extends BaseEntity {
   @Column({ default: false })
   isArchived!: boolean;
 
+  @Index('IDX_nodes_ownerId')
   @Column({ nullable: true, type: 'int' })
   ownerId?: number;
 
@@ -64,6 +65,7 @@ export class Node extends BaseEntity {
   @Column({ nullable: true, type: 'int', default: 0 })
   percentDone?: number;
 
+  @Index('IDX_nodes_createdBy')
   @Column({ nullable: true, type: 'int' })
   createdBy?: number;
 

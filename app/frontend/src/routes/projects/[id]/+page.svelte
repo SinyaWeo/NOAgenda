@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { PRIORITY_LABELS } from '$lib/constants';
   import { page } from '$app/state';
   import { apiGetAuth, apiPostAuth, apiPutAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
   import { writable, derived } from 'svelte/store';
-  import { goto } from '$app/navigation';
   import { Alert, Badge, Button, Card, Input, Select } from 'flowbite-svelte';
   import {
     CheckCircleOutline,
@@ -23,7 +22,6 @@
   const filterStatus = writable('');
   const filterPriority = writable('');
 
-  const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
 
   const filteredTasks = derived(
     [tasks, filterStatus, filterPriority],
@@ -35,28 +33,21 @@
       }),
   );
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    const id = page.params.id;
-    try {
-      const [p, t, v] = await Promise.all([
-        apiGetAuth<any>(`/projects/${id}`),
-        apiGetAuth<any[]>(`/tasks?projectId=${id}`),
-        apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => []),
-      ]);
-      project.set(p);
-      tasks.set(t);
-      views.set(v);
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  async function loadProject(id: string, isStale: () => boolean) {
+    newTaskTitle = '';
+    const [p, t, v] = await Promise.all([
+      apiGetAuth<any>(`/projects/${id}`),
+      apiGetAuth<any[]>(`/tasks?projectId=${id}`),
+      apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => []),
+    ]);
+    if (isStale()) return; // navigated to another project meanwhile
+    project.set(p);
+    tasks.set(t);
+    views.set(v);
+  }
+
+  // Reloads when only the project id changes, not just on first mount.
+  loadOnParamChange(() => page.params.id ?? '', loadProject, loading, error);
 
   async function quickAdd(e: SubmitEvent) {
     e.preventDefault();
@@ -71,7 +62,7 @@
       newTaskTitle = '';
       tasks.set(await apiGetAuth<any[]>(`/tasks?projectId=${id}`));
     } catch (e: any) {
-      error.set(e.message);
+      showToast(e.message ?? 'Failed to add task', 'error');
     } finally {
       addingTask = false;
     }
@@ -90,7 +81,7 @@
       });
       tasks.update((list) => list.map((t) => (t.id === taskId ? updated : t)));
     } catch (e: any) {
-      error.set(e.message);
+      showToast(e.message ?? 'Failed to update status', 'error');
     }
   }
 

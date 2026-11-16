@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiFetchAuth, API_BASE } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { getCurrentUser, refreshCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { UserCircleOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
@@ -31,16 +31,20 @@
     if (!file) return;
     const fd = new FormData();
     fd.append('avatar', file);
-    const res = await apiFetchAuth('/user/settings/avatar/upload', {
-      method: 'PUT',
-      body: fd,
-    });
+    let res: Response;
+    try {
+      res = await apiFetchAuth('/user/settings/avatar/upload', { method: 'PUT', body: fd });
+    } catch (e: any) {
+      error.set(e?.message ?? 'Upload failed');
+      return;
+    }
     if (!res.ok) {
       error.set('Upload failed');
       return;
     }
     const data = await res.json();
     avatarUrl.set(data.avatarUrl ?? '');
+    await refreshCurrentUser(); // the header shows the new picture straight away
     success.set('Avatar updated.');
     input.value = '';
   }

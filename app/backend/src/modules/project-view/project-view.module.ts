@@ -1,3 +1,4 @@
+import { NodeModule } from '../node/node.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProjectView } from './project-view.entity';
@@ -6,7 +7,7 @@ import { ProjectViewController } from './project-view.controller';
 import { ProjectModule } from '../project/project.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ProjectView]), ProjectModule],
+  imports: [NodeModule, TypeOrmModule.forFeature([ProjectView]), ProjectModule],
   providers: [ProjectViewService],
   controllers: [ProjectViewController],
   exports: [ProjectViewService],

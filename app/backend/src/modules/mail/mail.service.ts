@@ -49,7 +49,9 @@ export class MailService {
   /** Never throws: callers must not leak (or fail on) delivery problems. Returns success. */
   async send(msg: MailMessage): Promise<boolean> {
     if (!this.transport) {
-      this.logger.log(`[mail disabled] To: ${msg.to} | ${msg.subject}\n${msg.text}`);
+      // The body holds single-use reset/verification links: log it only outside production.
+      const body = process.env.NODE_ENV === 'production' ? '' : `\n${msg.text}`;
+      this.logger.log(`[mail disabled] To: ${msg.to} | ${msg.subject}${body}`);
       return false;
     }
     try {

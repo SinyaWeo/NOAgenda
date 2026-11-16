@@ -92,8 +92,9 @@ check_remote() {
   local base="${url%/}"
   C() { curl -sS $insecure -m 15 "$@"; }
 
-  if ! C -o /dev/null "$base/" 2>/tmp/preflight.err; then
-    fail "cannot connect or the certificate is not trusted: $(head -1 /tmp/preflight.err)"; return
+  local errf; errf="$(mktemp)"; trap 'rm -f "$errf"' RETURN
+  if ! C -o /dev/null "$base/" 2>"$errf"; then
+    fail "cannot connect or the certificate is not trusted: $(head -1 "$errf")"; return
   fi
   pass "site reachable${insecure:+ (certificate NOT verified: --insecure)}"
 

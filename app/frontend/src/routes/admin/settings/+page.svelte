@@ -58,6 +58,11 @@
         >
     </div>
 
+    <Alert color="yellow" class="mb-4">
+        These values are stored, but the server does not read them yet, so changing them has
+        no effect. Registration is controlled by the <code>REGISTRATION_ENABLED</code> and
+        <code>REGISTRATION_INVITE_CODE</code> environment variables on the server.
+    </Alert>
     {#if $error}
         <Alert color="red" class="mb-4">{$error}</Alert>
     {/if}

@@ -7,6 +7,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UserService } from './user.service';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'crypto';
+import { unlink } from 'fs';
+import { basename, resolve, sep } from 'path';
+
+/** Where avatar files live (the multer destination below is relative to the working directory). */
+const AVATARS_DIR = resolve(process.cwd(), 'uploads', 'avatars');
 
 const AVATAR_MIME_EXT: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -103,8 +108,15 @@ export class UserSettingsController {
     limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
   }))
   async uploadAvatar(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('No file uploaded');
+    const previous = (await this.userService.findByIdSafe(req.user.userId))?.avatarUrl;
     const avatarUrl = `/uploads/avatars/${file.filename}`;
     await this.userService.update(req.user.userId, { avatarUrl });
+    // Only the newest avatar is kept: remove the file it replaces (never anything outside avatars/).
+    if (previous && previous !== avatarUrl) {
+      const old = resolve(AVATARS_DIR, basename(previous));
+      if (old.startsWith(AVATARS_DIR + sep)) unlink(old, () => undefined);
+    }
     return { avatarUrl };
   }
 

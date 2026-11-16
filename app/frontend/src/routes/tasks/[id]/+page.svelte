@@ -1,6 +1,6 @@
 <script lang="ts">
+	import { PRIORITY_LABELS } from '$lib/constants';
 	import { page } from '$app/state';
-	import { onMount } from 'svelte';
 	import {
 		apiGetAuth,
 		apiPostAuth,
@@ -9,7 +9,8 @@
 		apiFetchAuth,
 		downloadAuthFile,
 	} from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
+	import { authSession } from '$lib/auth';
+	import { loadOnParamChange } from '$lib/param-loader.svelte';
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { showToast } from '$lib/toast';
@@ -63,7 +64,6 @@
 		'duplicate_of',
 		'duplicated_by',
 	];
-	const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
 
 	async function downloadAttachment(id: number, filename: string) {
 		try {
@@ -73,7 +73,13 @@
 		}
 	}
 
-	async function loadTask(id: string) {
+	async function loadTask(id: string, isStale: () => boolean) {
+		// Per-task input must not leak from the task we just left.
+		newComment = '';
+		newReminderDate = '';
+		newRelatedTaskId = '';
+		newRelationKind = 'related';
+		newSubtaskTitle = '';
 		const [t, c, a, l, att, rem, rel, sub] = await Promise.all([
 			apiGetAuth<any>(`/tasks/${id}`),
 			apiGetAuth<any[]>(`/comments?taskId=${id}`),
@@ -84,6 +90,7 @@
 			apiGetAuth<any[]>(`/tasks/${id}/relations`).catch(() => []),
 			apiGetAuth<any[]>(`/tasks?parentTaskId=${id}`).catch(() => []),
 		]);
+		if (isStale()) return; // the user already moved on to another task
 		task.set(t);
 		comments.set(c);
 		assignees.set(a);
@@ -94,20 +101,19 @@
 		subtasks.set(sub);
 	}
 
-	onMount(async () => {
-		const me = await getCurrentUser();
-		if (!me) {
-			goto('/user/login');
-			return;
-		}
-		try {
-			await loadTask(page.params.id ?? '');
-		} catch (e: any) {
-			error.set(e.message);
-		} finally {
-			loading.set(false);
-		}
-	});
+	// Reloads when only the id changes (subtask / relation links keep this component mounted).
+	loadOnParamChange(() => page.params.id ?? '', loadTask, loading, error);
+
+	/** Failures of user actions are toasts: `error` is for load failures and replaces the page. */
+	function fail(e: any) {
+		showToast(e?.message ?? 'Something went wrong', 'error');
+	}
+
+	/** The API only lets a comment's author delete it. */
+	function canDeleteComment(comment: any): boolean {
+		const me = $authSession.user?.id;
+		return me != null && comment.author?.id === me;
+	}
 
 	async function addReminder() {
 		const id = page.params.id;
@@ -119,7 +125,7 @@
 			reminders.set(await apiGetAuth<any[]>(`/tasks/${id}/reminders`));
 			newReminderDate = '';
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function deleteReminder(reminderId: number) {
@@ -128,7 +134,7 @@
 			await apiDeleteAuth(`/tasks/${id}/reminders/${reminderId}`);
 			reminders.set(await apiGetAuth<any[]>(`/tasks/${id}/reminders`));
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function addRelation() {
@@ -142,7 +148,7 @@
 			relations.set(await apiGetAuth<any[]>(`/tasks/${id}/relations`));
 			newRelatedTaskId = '';
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function deleteRelation(kind: string, relatedTaskId: number) {
@@ -153,7 +159,7 @@
 			);
 			relations.set(await apiGetAuth<any[]>(`/tasks/${id}/relations`));
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function addSubtask(e: SubmitEvent) {
@@ -170,7 +176,7 @@
 			newSubtaskTitle = '';
 			showToast('Subtask added', 'success');
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function updatePercentDone(value: number) {
@@ -181,7 +187,7 @@
 			});
 			task.set(updated);
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function updateStatus(status: string) {
@@ -190,7 +196,7 @@
 			const updated = await apiPutAuth<any>(`/tasks/${id}`, { status });
 			task.set(updated);
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function deferDueDate(days: number) {
@@ -204,7 +210,7 @@
 			});
 			task.set(updated);
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function postComment(e: SubmitEvent) {
@@ -221,7 +227,7 @@
 			comments.set(await apiGetAuth<any[]>(`/comments?taskId=${id}`));
 			showToast('Comment posted', 'success');
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		} finally {
 			addingComment = false;
 		}
@@ -233,7 +239,7 @@
 				await apiGetAuth<any[]>(`/comments?taskId=${page.params.id}`),
 			);
 		} catch (e: any) {
-			error.set(e.message);
+			fail(e);
 		}
 	}
 	async function uploadAttachment(e: Event) {
@@ -244,18 +250,22 @@
 		const fd = new FormData();
 		fd.append('file', file);
 		fd.append('taskId', id);
-		const up = await apiFetchAuth('/attachments/upload', {
-			method: 'POST',
-			body: fd,
-		});
-		if (!up.ok) {
-			showToast('Upload failed', 'error');
+		try {
+			const up = await apiFetchAuth('/attachments/upload', {
+				method: 'POST',
+				body: fd,
+			});
+			if (!up.ok) {
+				showToast('Upload failed', 'error');
+				return;
+			}
+			attachments.set(await apiGetAuth<any[]>(`/attachments?taskId=${id}`));
+			showToast('File uploaded', 'success');
+		} catch (e: any) {
+			fail(e);
+		} finally {
 			input.value = '';
-			return;
 		}
-		attachments.set(await apiGetAuth<any[]>(`/attachments?taskId=${id}`));
-		showToast('File uploaded', 'success');
-		input.value = '';
 	}
 </script>
 
@@ -267,7 +277,9 @@
 	<div class="flex items-start justify-between gap-4 mb-4">
 		<div class="flex items-center gap-3">
 			<a
-				href="/projects/{$task.project?.id ?? ''}"
+				href={$task.parent
+					? `/${$task.parent.type === 'project' ? 'projects' : 'tasks'}/${$task.parent.id}`
+					: '/tasks'}
 				class="text-gray-400 hover:text-gray-600"
 				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> Back</a
 			>
@@ -281,9 +293,11 @@
 	</div>
 
 	<!-- Tabs navigation -->
-	<div class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700">
-		{#each [{ id: 'details', label: 'Details' }, { id: 'work', label: 'Work Items' }, { id: 'activity', label: 'Activity' }] as tab}
+	<div role="tablist" aria-label="Task sections" class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700">
+		{#each [{ id: 'details', label: 'Details' }, { id: 'work', label: 'Work Items' }, { id: 'activity', label: 'Activity' }] as tab (tab.id)}
 			<button
+				role="tab"
+				aria-selected={activeTab === tab.id}
 				onclick={() => setTab(tab.id as Tab)}
 				class="px-4 py-2 text-sm font-medium border-b-2 transition-colors {activeTab ===
 				tab.id
@@ -468,7 +482,7 @@
 			</h2>
 			{#if $subtasks.length}
 				<div class="mb-3">
-					{#each $subtasks as sub, i}
+					{#each $subtasks as sub, i (sub.id)}
 						<div
 							class="flex items-center gap-3 py-2 {i <
 							$subtasks.length - 1
@@ -537,7 +551,8 @@
 										rel.kind,
 										rel.relatedTask?.id ??
 											rel.relatedTaskId,
-									)}>✕</Button
+									)}
+									aria-label="Remove relation">✕</Button
 							>
 						</div>
 					{/each}
@@ -570,7 +585,7 @@
 			</h2>
 			{#if $reminders.length}
 				<div class="mb-3">
-					{#each $reminders as rem, i}
+					{#each $reminders as rem, i (rem.id)}
 						<div
 							class="flex items-center gap-3 py-2 {i <
 							$reminders.length - 1
@@ -586,7 +601,8 @@
 							<Button
 								size="xs"
 								color="light"
-								onclick={() => deleteReminder(rem.id)}>✕</Button
+								onclick={() => deleteReminder(rem.id)}
+									aria-label="Remove reminder">✕</Button
 							>
 						</div>
 					{/each}
@@ -613,7 +629,7 @@
 			</h2>
 			{#if $attachments.length}
 				<div class="mb-3">
-					{#each $attachments as att, i}
+					{#each $attachments as att, i (att.id)}
 						<div
 							class="flex items-center gap-2 py-2 {i <
 							$attachments.length - 1
@@ -656,7 +672,7 @@
 			</h2>
 			{#if $comments.length}
 				<div class="mb-4">
-					{#each $comments as comment, i}
+					{#each $comments as comment, i (comment.id)}
 						<div
 							class="flex flex-col gap-1 py-3 {i <
 							$comments.length - 1
@@ -675,13 +691,15 @@
 											comment.createdAt,
 										).toLocaleString()}</span
 									>
-									<Button
-										size="xs"
-										color="light"
-										onclick={() =>
-											deleteComment(comment.id)}
-										>Delete</Button
-									>
+									{#if canDeleteComment(comment)}
+										<Button
+											size="xs"
+											color="light"
+											onclick={() =>
+												deleteComment(comment.id)}
+											>Delete</Button
+										>
+									{/if}
 								</div>
 							</div>
 							<p

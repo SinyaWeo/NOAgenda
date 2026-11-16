@@ -62,7 +62,10 @@ export class TaskController {
     }
     const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body.data ?? {}));
     delete (data as any).type;
-    if (data.parentId !== undefined) await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
+    if (data.parentId !== undefined) {
+      await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
+      for (const id of ids) await this.access.assertNoCycle(id, Number(data.parentId));
+    }
     return this.taskService.bulkUpdate(ids, data, req.user.userId);
   }
 
@@ -75,7 +78,7 @@ export class TaskController {
     const safeBody = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
     delete (safeBody as any).type;
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
-      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId);
+      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, existing.id);
     }
     const task = await this.taskService.update(id, safeBody);
     if (!task) throw new NotFoundException();
@@ -98,17 +101,6 @@ export class TaskController {
     const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);
     const task = await this.taskService.updatePosition(id, body.position);
-    if (!task) throw new NotFoundException();
-    return task;
-  }
-
-  @Post(':id/read')
-  @UseGuards(AuthGuard('jwt'))
-  async markRead(@Param('id') id: number, @Request() req: any): Promise<Node> {
-    const existing = await this.taskService.findById(id);
-    if (!existing) throw new NotFoundException();
-    await this.access.assertRead(req.user.userId, existing.id);
-    const task = await this.taskService.update(id, { isUnread: false } as any);
     if (!task) throw new NotFoundException();
     return task;
   }

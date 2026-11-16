@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AddProjectTeamDto, SetPermissionDto } from '../project-user/dto/project-sharing.dto';
-import { NodeAccessService } from '../node/node-access.service';
+import { Access, NodeAccessService } from '../node/node-access.service';
 import { ProjectTeamService } from './project-team.service';
 import { ProjectService } from '../project/project.service';
 import { ProjectTeam } from './project-team.entity';
@@ -18,10 +18,7 @@ export class ProjectTeamController {
   @Get()
   @UseGuards(AuthGuard('jwt'))
   async findAll(@Param('projectId') projectId: number, @Request() req: any): Promise<ProjectTeam[]> {
-    const project = await this.projectService.findById(projectId);
-    if (!project) throw new NotFoundException();
-    const accessible = await this.projectService.findAll(req.user.userId);
-    if (!accessible.some((p) => p.id === Number(projectId))) throw new ForbiddenException();
+    await this.access.assertProject(req.user.userId, Number(projectId), Access.READ);
     return this.projectTeamService.findByProject(projectId);
   }
 
@@ -32,9 +29,8 @@ export class ProjectTeamController {
     @Body() body: AddProjectTeamDto,
     @Request() req: any,
   ): Promise<ProjectTeam> {
-    const project = await this.projectService.findById(projectId);
-    if (!project) throw new NotFoundException();
-    await this.access.assertAdmin(req.user.userId, Number(projectId));
+    await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
+    if (!(await this.projectTeamService.canUseTeam(req.user.userId, Number(body.teamId)))) throw new ForbiddenException();
     return this.projectTeamService.add(projectId, body.teamId, body.permission);
   }
 
@@ -46,18 +42,14 @@ export class ProjectTeamController {
     @Body() body: SetPermissionDto,
     @Request() req: any,
   ): Promise<void> {
-    const project = await this.projectService.findById(projectId);
-    if (!project) throw new NotFoundException();
-    await this.access.assertAdmin(req.user.userId, Number(projectId));
+    await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectTeamService.update(projectId, teamId, body.permission);
   }
 
   @Delete(':teamId')
   @UseGuards(AuthGuard('jwt'))
   async remove(@Param('projectId') projectId: number, @Param('teamId') teamId: number, @Request() req: any): Promise<void> {
-    const project = await this.projectService.findById(projectId);
-    if (!project) throw new NotFoundException();
-    await this.access.assertAdmin(req.user.userId, Number(projectId));
+    await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectTeamService.remove(projectId, teamId);
   }
 }

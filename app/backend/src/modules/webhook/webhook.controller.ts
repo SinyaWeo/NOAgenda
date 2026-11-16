@@ -5,6 +5,12 @@ import { AuthGuard } from '@nestjs/passport';
 import { NodeAccessService } from '../node/node-access.service';
 import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
 
+/** The signing secret is write-only: responses say whether one is set, never what it is. */
+function maskSecret(w: Webhook): Webhook {
+  const { secret, ...rest } = w as any;
+  return { ...rest, hasSecret: !!secret } as Webhook;
+}
+
 @Controller('webhooks')
 export class WebhookController {
   constructor(
@@ -29,10 +35,10 @@ export class WebhookController {
   ): Promise<Webhook[]> {
     if (projectId) {
       await this.access.assertAdmin(req.user.userId, Number(projectId));
-      return this.webhookService.findAll({ projectId: Number(projectId) });
+      return (await this.webhookService.findAll({ projectId: Number(projectId) })).map(maskSecret);
     }
     // user-level webhooks: no projectId
-    return this.webhookService.findAll({ userId: req.user.userId });
+    return (await this.webhookService.findAll({ userId: req.user.userId })).map(maskSecret);
   }
 
   @Get(':id')
@@ -41,7 +47,7 @@ export class WebhookController {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);
-    return webhook;
+    return maskSecret(webhook);
   }
 
   @Post()
@@ -49,7 +55,7 @@ export class WebhookController {
   async create(@Request() req: any, @Body() body: CreateWebhookDto): Promise<Webhook> {
     const projectId = body.projectId;
     if (projectId !== undefined) await this.access.assertAdmin(req.user.userId, projectId);
-    return this.webhookService.create({
+    return maskSecret(await this.webhookService.create({
       url: body.url,
       event: body.event ?? '*',
       secret: body.secret,
@@ -57,7 +63,7 @@ export class WebhookController {
       config: body.config,
       projectId,
       userId: projectId !== undefined ? undefined : req.user.userId,
-    });
+    }));
   }
 
   @Put(':id')
@@ -66,7 +72,8 @@ export class WebhookController {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);
-    return this.webhookService.update(id, { ...body });
+    const updated = await this.webhookService.update(id, { ...body });
+    return updated ? maskSecret(updated) : null;
   }
 
   @Delete(':id')

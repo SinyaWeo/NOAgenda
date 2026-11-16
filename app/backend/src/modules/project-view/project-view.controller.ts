@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { CreateViewDto, UpdateViewDto } from './dto/project-view.dto';
 import { ProjectViewService } from './project-view.service';
 import { ProjectService } from '../project/project.service';
+import { Access, NodeAccessService } from '../node/node-access.service';
 import { ProjectView, ViewType } from './project-view.entity';
 
 @Controller('projects/:projectId/views')
@@ -10,14 +11,12 @@ export class ProjectViewController {
   constructor(
     private readonly projectViewService: ProjectViewService,
     private readonly projectService: ProjectService,
+    private readonly access: NodeAccessService,
   ) {}
 
   private async assertAccess(projectId: number, req: any, requireOwner = false): Promise<void> {
-    const project = await this.projectService.findById(projectId);
-    if (!project) throw new NotFoundException();
-    const accessible = await this.projectService.findAll(req.user.userId);
-    if (!accessible.some((p) => p.id === Number(projectId))) throw new ForbiddenException();
-    if (requireOwner && project.ownerId !== req.user.userId) throw new ForbiddenException();
+    // Owner or ADMIN grant to manage views/buckets; any grant (user or team) to read them.
+    await this.access.assertProject(req.user.userId, Number(projectId), requireOwner ? Access.ADMIN : Access.READ);
   }
 
   @Get()

@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "NOAgenda backend (NestJS + TypeORM + MariaDB)",
   "main": "dist/main.js",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node dist/main.js",
     "start:dev": "nest start --watch",

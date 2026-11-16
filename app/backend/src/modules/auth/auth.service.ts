@@ -126,9 +126,14 @@ export class AuthService {
       if (record) await this.resetTokenRepository.delete(record.id);
       throw new BadRequestException('Invalid or expired reset token');
     }
+    // Claim the token first. The delete is atomic, so of two concurrent requests with the same
+    // token only one gets affected=1 (single use), and a crash after this point cannot leave a
+    // still-valid token behind.
+    const claimed = await this.resetTokenRepository.delete(record.id);
+    if (!claimed?.affected) throw new BadRequestException('Invalid or expired reset token');
     await this.userService.update(record.user.id, { password: newPassword, isEmailConfirmed: true });
     await this.userService.resetLoginState(record.user.id);
-    await this.resetTokenRepository.delete({ user: { id: record.user.id } }); // single use
+    await this.resetTokenRepository.delete({ user: { id: record.user.id } }); // any other outstanding tokens
     await this.sessions.revokeAllForUser(record.user.id); // sign out everywhere
   }
 }

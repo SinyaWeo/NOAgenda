@@ -2,7 +2,7 @@ import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuard
 import { ProjectService } from './project.service';
 import { Node } from '../node/node.entity';
 import { AuthGuard } from '@nestjs/passport';
-import { NodeAccessService } from '../node/node-access.service';
+import { Access, NodeAccessService } from '../node/node-access.service';
 import { normalizeParentRefs } from '../node/node-payload';
 import { ProjectCreateDto, ProjectUpdateDto } from '../node/dto/node.dto';
 
@@ -33,11 +33,9 @@ export class ProjectController {
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
   async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    await this.access.assertProject(req.user.userId, Number(id), Access.READ);
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
-    // Verify the caller owns or is a member of this project
-    const accessible = await this.projectService.findAll(req.user.userId);
-    if (!accessible.some((p) => p.id === Number(id))) throw new ForbiddenException();
     return project;
   }
 
@@ -61,7 +59,7 @@ export class ProjectController {
     const safeBody = normalizeParentRefs(this.access.sanitize(body));
     delete (safeBody as any).type;
     if (safeBody.parentId !== undefined && safeBody.parentId !== project.parentId) {
-      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId);
+      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, project.id);
     }
     const updated = await this.projectService.update(id, safeBody);
     if (!updated) throw new NotFoundException();
@@ -71,7 +69,11 @@ export class ProjectController {
   @Put(':id/duplicate')
   @UseGuards(AuthGuard('jwt'))
   async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
-    await this.access.assertRead(req.user.userId, Number(id));
+    await this.access.assertProject(req.user.userId, Number(id), Access.READ);
+    const source = await this.projectService.findById(id);
+    if (!source) throw new NotFoundException();
+    // The copy lands under the same parent, so the caller must be allowed to put things there.
+    await this.access.assertCanUseAsParent(req.user.userId, source.parentId);
     const project = await this.projectService.duplicate(id, req.user.userId);
     if (!project) throw new NotFoundException();
     return project;

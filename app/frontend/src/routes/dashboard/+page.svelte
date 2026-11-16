@@ -9,10 +9,13 @@
     ExclamationCircleOutline,
     CaretRightSolid,
   } from 'flowbite-svelte-icons';
+  import { showToast } from '$lib/toast';
   import type { Quote } from '$lib/types';
 
   const user = derived(authSession, ($authSession) => $authSession.user);
   const projects = writable<any[]>([]);
+  const projectCount = writable(0); // total, not just the few shown below
+  const error = writable('');
   const upcomingTasks = writable<any[]>([]);
   const overdueTasks = writable<any[]>([]);
   const loading = writable(true);
@@ -47,7 +50,9 @@
         apiGetAuth<any[]>('/projects'),
         apiGetAuth<any[]>('/tasks'),
       ]);
+      projectCount.set(p.length);
       projects.set(p.slice(0, 5));
+      error.set('');
       const now = new Date();
       const pending = t.filter((task: any) => task.status !== 'done');
       overdueTasks.set(
@@ -74,7 +79,9 @@
           })
           .slice(0, 8),
       );
-    } catch (_) {
+    } catch (e: any) {
+      // Do not pretend an empty dashboard: say that loading failed.
+      error.set(e?.message ?? 'Could not load your dashboard.');
     } finally {
       loading.set(false);
     }
@@ -90,7 +97,8 @@
       });
       quickTitle = '';
       await refresh();
-    } catch (_) {
+    } catch (e: any) {
+      showToast(e?.message ?? 'Could not add the task', 'error');
     } finally {
       addingTask = false;
     }
@@ -100,6 +108,7 @@
 {#if $loading}
   <p class="text-gray-400">Loading…</p>
 {:else}
+  {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
   <!-- Header row: welcome text left, stat cards right -->
   <div
     class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6"
@@ -134,7 +143,7 @@
             Projects
           </p>
           <p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
-            {$projects.length}
+            {$projectCount}
           </p>
         </Card>
       </a>

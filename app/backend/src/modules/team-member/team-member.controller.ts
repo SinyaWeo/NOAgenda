@@ -22,14 +22,10 @@ export class TeamMemberController {
       const accessibleTeams = await this.teamService.findAll(req.user.userId);
       if (!accessibleTeams.some((t) => t.id === Number(teamId))) throw new ForbiddenException();
     }
-    const members = await this.teamMemberService.findAll(teamId ? Number(teamId) : undefined);
-    // Without a teamId filter, scope to teams the caller owns or belongs to
-    if (!teamId) {
-      const accessibleTeams = await this.teamService.findAll(req.user.userId);
-      const accessibleIds = new Set(accessibleTeams.map((t) => t.id));
-      return members.filter((m) => accessibleIds.has(m.team?.id));
-    }
-    return members;
+    if (teamId) return this.teamMemberService.findAll(Number(teamId));
+    // Without a teamId filter, scope to teams the caller owns or belongs to (filtered in SQL)
+    const accessibleTeams = await this.teamService.findAll(req.user.userId);
+    return this.teamMemberService.findByTeamIds(accessibleTeams.map((t) => t.id));
   }
 
   @Post()

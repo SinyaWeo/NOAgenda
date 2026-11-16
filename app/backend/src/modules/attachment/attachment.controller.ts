@@ -55,8 +55,7 @@ export class AttachmentController {
       return this.attachmentService.findAll(Number(taskId));
     }
     // Without a task, only the caller's own uploads.
-    const results = await this.attachmentService.findAll();
-    return results.filter((a) => a.uploader?.id === req.user.userId);
+    return this.attachmentService.findByUploader(req.user.userId);
   }
 
   @Get(':id')
@@ -113,10 +112,9 @@ export class AttachmentController {
     if (!file) throw new BadRequestException('No file uploaded');
     const taskId = body?.taskId ? Number(body.taskId) : undefined;
     try {
-      if (taskId !== undefined) {
-        if (!Number.isInteger(taskId) || taskId < 1) throw new BadRequestException('Invalid taskId');
-        await this.access.assertWrite(req.user.userId, taskId);
-      }
+      if (taskId === undefined) throw new BadRequestException('taskId is required');
+      if (!Number.isInteger(taskId) || taskId < 1) throw new BadRequestException('Invalid taskId');
+      await this.access.assertWrite(req.user.userId, taskId);
     } catch (err) {
       // multer already wrote the file to disk; do not keep it.
       unlink(file.path, () => undefined);
@@ -125,7 +123,7 @@ export class AttachmentController {
     return this.attachmentService.create({
       filename: file.originalname,
       path: resolve(file.path),
-      node: taskId !== undefined ? { id: taskId } as any : undefined,
+      node: { id: taskId } as any,
       uploader: { id: req.user.userId } as any,
     });
   }

@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Node, NodeType } from './node.entity';
@@ -29,8 +29,10 @@ const PROTECTED_NODE_FIELDS = [
  *
  * - A project: owner => ADMIN; otherwise the best permission granted through
  *   `project_users` or through a team (`project_teams` + `team_members`).
- * - A task: its creator => ADMIN on that task; otherwise the access the user
- *   has on the project the task (transitively) lives in.
+ * - A task inside a project: exactly the access the user has on that project
+ *   (being the task's creator adds nothing, so removing someone from a project
+ *   also removes their access to what they created there).
+ * - A personal task (no project above it): its creator => ADMIN.
  * - Anything else (including nodes with no owner / creator and no grant): NONE.
  *   Missing ownership information never grants access.
  */
@@ -46,22 +48,18 @@ export class NodeAccessService {
     const start = await this.nodeRepository.findOne({ where: { id: nodeId } });
     if (!start) return Access.NONE;
 
-    let best = Access.NONE;
-    if (start.type === NodeType.TASK && start.createdBy != null && start.createdBy === userId) {
-      best = Access.ADMIN;
-    }
-
-    // Climb to the closest project.
+    // Climb to the closest project; its grants decide. Creator-ADMIN applies only
+    // to personal tasks whose chain verifiably ends at a root without a project.
     let cur: Node | null = start;
     for (let depth = 0; cur && depth < MAX_DEPTH; depth++) {
-      if (cur.type === NodeType.PROJECT) {
-        const projectLevel = await this.projectLevel(userId, cur);
-        return Math.max(best, projectLevel) as Access;
+      if (cur.type === NodeType.PROJECT) return this.projectLevel(userId, cur);
+      if (cur.parentId == null) {
+        const personal = start.type === NodeType.TASK && start.createdBy != null && start.createdBy === userId;
+        return personal ? Access.ADMIN : Access.NONE;
       }
-      if (cur.parentId == null) break;
       cur = await this.nodeRepository.findOne({ where: { id: cur.parentId } });
     }
-    return best;
+    return Access.NONE; // broken or over-deep chain: fail closed
   }
 
   private async projectLevel(userId: number, project: Node): Promise<Access> {
@@ -86,6 +84,13 @@ export class NodeAccessService {
     if ((await this.level(userId, nodeId)) < needed) throw new ForbiddenException();
   }
 
+  /** Like assert(), but the node must be a *project* (404 for tasks / unknown ids). */
+  async assertProject(userId: number, projectId: number, needed: Access): Promise<void> {
+    const node = await this.nodeRepository.findOne({ where: { id: Number(projectId) }, select: ['id', 'type'] });
+    if (!node || node.type !== NodeType.PROJECT) throw new NotFoundException();
+    if ((await this.level(userId, node.id)) < needed) throw new ForbiddenException();
+  }
+
   assertRead(userId: number, nodeId: number) { return this.assert(userId, nodeId, Access.READ); }
   assertWrite(userId: number, nodeId: number) { return this.assert(userId, nodeId, Access.WRITE); }
   assertAdmin(userId: number, nodeId: number) { return this.assert(userId, nodeId, Access.ADMIN); }
@@ -102,9 +107,31 @@ export class NodeAccessService {
    * Check the caller may place a node under `parentId` (create / move / re-parent).
    * `null`/`undefined` parent is allowed (top level, owned by the caller).
    */
-  async assertCanUseAsParent(userId: number, parentId: number | null | undefined): Promise<void> {
+  async assertCanUseAsParent(
+    userId: number,
+    parentId: number | null | undefined,
+    movingNodeId?: number,
+  ): Promise<void> {
     if (parentId === null || parentId === undefined) return;
     await this.assertWrite(userId, Number(parentId));
+    if (movingNodeId !== undefined) await this.assertNoCycle(Number(movingNodeId), Number(parentId));
+  }
+
+  /**
+   * Reject a re-parenting that would make a node its own ancestor (or that sits
+   * deeper than access checks can follow). Walks up from the new parent.
+   */
+  async assertNoCycle(nodeId: number, newParentId: number): Promise<void> {
+    if (newParentId === nodeId) throw new BadRequestException('A node cannot be its own parent');
+    const seen = new Set<number>();
+    let cur: number | null = newParentId;
+    for (let depth = 0; cur != null; depth++) {
+      if (cur === nodeId) throw new BadRequestException('A node cannot be moved under its own descendant');
+      if (seen.has(cur) || depth >= MAX_DEPTH - 1) throw new BadRequestException('Invalid or too deeply nested parent');
+      seen.add(cur);
+      const n: Pick<Node, 'id' | 'parentId'> | null = await this.nodeRepository.findOne({ where: { id: cur }, select: ['id', 'parentId'] });
+      cur = n?.parentId ?? null;
+    }
   }
 
   /** Remove identity/ownership fields a client must not control. */

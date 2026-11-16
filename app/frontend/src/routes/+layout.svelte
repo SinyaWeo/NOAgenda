@@ -2,7 +2,7 @@
 	import '../assets/app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
-	import { authSession, initializeAuth, logout as signOut } from '$lib/auth';
+	import { authSession, clearAuthSession, initializeAuth, logout as signOut } from '$lib/auth';
 	import { isAdmin } from '$lib/roles';
 	import ToastContainer from '$lib/components/Toast.svelte';
 	import { derived, writable } from 'svelte/store';
@@ -64,7 +64,8 @@
 	let showSearch = $state(false);
 	let searchQuery = $state('');
 	let searchTimer: ReturnType<typeof setTimeout>;
-	let hydratedUserId = $state<number | null>(null);
+	let searchSeq = 0; // answers to older keystrokes must not overwrite newer ones
+	let hydratedUserId: number | null = null; // bookkeeping for the effect below, not reactive state
 	const currentPath = $derived(page.url.pathname);
 
 	// Pages anyone may open without being signed in. Everything else needs a session.
@@ -128,14 +129,28 @@
 		sync();
 		mq.addEventListener('change', sync);
 
+		// Sign-in state is shared between tabs through localStorage: follow a logout (or login)
+		// done in another tab instead of staying "signed in" until the next failing request.
+		const onStorage = (e: StorageEvent) => {
+			if (e.key !== 'access_token') return;
+			if (!e.newValue && $authSession.status === 'authenticated') clearAuthSession();
+			else if (e.newValue && $authSession.status === 'unauthenticated') void initializeAuth();
+		};
+		window.addEventListener('storage', onStorage);
+
 		initializeAuth();
-		return () => mq.removeEventListener('change', sync);
+		return () => {
+			mq.removeEventListener('change', sync);
+			window.removeEventListener('storage', onStorage);
+			clearTimeout(searchTimer);
+		};
 	});
 
 	// Close the drawer after navigating.
 	$effect(() => {
 		currentPath;
 		mobileNavOpen = false;
+		showSearch = false;
 	});
 
 	// Central route guard: no session on a protected page -> sign in, then come back here.
@@ -155,10 +170,12 @@
 			return;
 		}
 
+		const theme = session.user.theme ?? 'light';
 		document.documentElement.classList.toggle(
 			'dark',
-			(session.user.theme ?? 'light') === 'dark',
+			theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches),
 		);
+		try { localStorage.setItem('theme', theme); } catch (_) {} // read by app.html before first paint
 
 		if (hydratedUserId === session.user.id) return;
 		hydratedUserId = session.user.id;
@@ -192,9 +209,12 @@
 
 	async function logout() {
 		signingOut = true; // an explicit logout should not be remembered as a "come back here" redirect
-		await signOut();
-		await goto('/user/login');
-		signingOut = false;
+		try {
+			await signOut();
+			await goto('/user/login');
+		} finally {
+			signingOut = false;
+		}
 	}
 
 	function isActive(path: string): boolean {
@@ -229,6 +249,7 @@
 				: session.user,
 		}));
 		document.documentElement.classList.toggle('dark', next === 'dark');
+		try { localStorage.setItem('theme', next); } catch (_) {}
 		try {
 			await apiPostAuth('/user/settings/general', { theme: next });
 		} catch (_) {}
@@ -238,23 +259,34 @@
 		const q = (e.target as HTMLInputElement).value;
 		searchQuery = q;
 		clearTimeout(searchTimer);
+		searchSeq++; // also invalidates a request that is already in flight
 		if (!q.trim()) {
 			searchResults.set(null);
 			showSearch = false;
 			return;
 		}
+		const seq = ++searchSeq;
 		searchTimer = setTimeout(async () => {
 			try {
 				const result = await apiGetAuth<{
 					tasks: any[];
 					projects: any[];
 				}>(`/search?q=${encodeURIComponent(q)}`);
+				if (seq !== searchSeq) return; // a newer search superseded this one
 				searchResults.set(result);
 				showSearch = result.tasks.length + result.projects.length > 0;
 			} catch (_) {}
 		}, 300);
 	}
 </script>
+
+<!-- Outside click / Escape close the search dropdown (clicks inside it stop propagating). -->
+<svelte:window
+	onclick={() => (showSearch = false)}
+	onkeydown={(e) => {
+		if (e.key === 'Escape') showSearch = false;
+	}}
+/>
 
 <svelte:head>
 	<link rel="icon" type="image/svg+xml" href={favicon} />
@@ -467,11 +499,7 @@
 							class:active={isActive('/teams')}
 						>
 							<span class="nav-icon">
-								{#if isActive('/teams')}<UsersGroupOutline
-										class="w-5 h-5"
-									/>{:else}<UsersGroupOutline
-										class="w-5 h-5"
-									/>{/if}
+								<UsersGroupOutline class="w-5 h-5" />
 							</span>
 							{#if !compact}<span>Teams</span>{/if}
 						</a>
@@ -483,9 +511,7 @@
 							class:active={isActive('/labels')}
 						>
 							<span class="nav-icon">
-								{#if isActive('/labels')}<TagOutline
-										class="w-5 h-5"
-									/>{:else}<TagOutline class="w-5 h-5" />{/if}
+								<TagOutline class="w-5 h-5" />
 							</span>
 							{#if !compact}<span>Labels</span>{/if}
 						</a>
@@ -625,6 +651,7 @@
 					<div class="flex items-center gap-1 ml-auto">
 						<!-- Quick-add -->
 						<button
+							type="button"
 							id="quick-add-btn"
 							class="w-7 h-7 rounded-full bg-primary-600 text-white border-0 cursor-pointer flex items-center justify-content-center hover:opacity-85 transition-opacity"
 							title="Create new…"
@@ -806,7 +833,6 @@
 				</div>
 			</main>
 		</div>
-		<ToastContainer />
 	{:else if isPublicRoute}
 		{@render children?.()}
 	{:else}
@@ -819,4 +845,5 @@
 			<p>{$authSession.status === 'loading' ? 'Loading…' : 'Redirecting to sign in…'}</p>
 		</div>
 	{/if}
+	<ToastContainer />
 </ThemeProvider>

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { In, Repository, Like } from 'typeorm';
+import { existsSync, unlink } from 'fs';
+import { resolve } from 'path';
 import { Node, NodeType, NodeStatus } from './node.entity';
 
 export interface NodeFilter {
@@ -16,26 +18,19 @@ export interface NodeFilter {
   includeArchived?: boolean;
 }
 
+const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
+const CHUNK = 500;
+const MAX_TREE_DEPTH = 64;
+/** Safety ceiling for list endpoints that did not ask for a page size. */
+const MAX_LIST = 1000;
+const marks = (n: number) => Array(n).fill('?').join(',');
+
 @Injectable()
 export class NodeService {
   constructor(
     @InjectRepository(Node)
     private readonly nodeRepository: Repository<Node>,
   ) {}
-
-  /**
-   * Build a base query that scopes results to nodes the user can access.
-   * Projects: owned by user OR user listed in project_users.
-   * Tasks: belong to a project accessible by the user.
-   */
-  private accessibleProjectIds(userId: number) {
-    return this.nodeRepository
-      .createQueryBuilder('n')
-      .select('n.id')
-      .leftJoin('project_users', 'pu', 'pu.projectId = n.id AND pu.userId = :uid', { uid: userId })
-      .where('n.type = :t', { t: NodeType.PROJECT })
-      .andWhere('(n.ownerId = :uid OR pu.userId = :uid)', { uid: userId });
-  }
 
   async findAll(filter: NodeFilter = {}): Promise<Node[]> {
     const qb = this.nodeRepository.createQueryBuilder('node');
@@ -45,45 +40,26 @@ export class NodeService {
     }
 
     if (filter.userId !== undefined) {
-      if (filter.type === NodeType.PROJECT || filter.type === undefined) {
-        // Join project_users for project-level access
-        qb.leftJoin(
-          'project_users',
-          'pu',
-          'pu.projectId = node.id AND pu.userId = :uid AND node.type = :pt',
-          { uid: filter.userId, pt: NodeType.PROJECT },
-        );
-      }
-
-      if (filter.type === NodeType.PROJECT) {
-        qb.andWhere('(node.ownerId = :uid OR pu.userId = :uid)', { uid: filter.userId });
-      } else if (filter.type === NodeType.TASK) {
-        // Tasks are accessible when either:
-        // 1) their direct parent is an accessible project, or
-        // 2) their parent is a task whose parent is an accessible project.
-        qb.leftJoin('nodes', 'parentTask', 'parentTask.id = node.parentId');
-        qb.andWhere(
-          `EXISTS (
-            SELECT 1
-            FROM nodes proj
-            LEFT JOIN project_users pu2 ON pu2.projectId = proj.id AND pu2.userId = :uid2
-            WHERE proj.type = :pt2
-              AND (proj.ownerId = :uid2 OR pu2.userId = :uid2)
-              AND (proj.id = node.parentId OR proj.id = parentTask.parentId)
-          )`,
-          { uid2: filter.userId, pt2: NodeType.PROJECT },
-        );
-      } else {
-        // No type filter — return both projects and tasks accessible to user
-        qb.andWhere(
-          `(
-            (node.type = :pt AND (node.ownerId = :uid OR pu.userId = :uid))
-            OR
-            (node.type = :tt AND node.createdBy = :uid)
-          )`,
-          { pt: NodeType.PROJECT, tt: NodeType.TASK, uid: filter.userId },
-        );
-      }
+      // Same rules as NodeAccessService.level(): a node is visible when it sits at or
+      // below a project the user owns or was granted (directly or via a team), or
+      // below a personal top-level task they created. Any depth; cycle-safe (UNION).
+      qb.andWhere(
+        `node.id IN (
+          WITH RECURSIVE tree (id) AS (
+            SELECT p.id FROM nodes p
+             WHERE (p.type = 'project' AND (
+                      p.ownerId = :uid
+                      OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.projectId = p.id AND pu.userId = :uid)
+                      OR EXISTS (SELECT 1 FROM project_teams pt JOIN team_members tm ON tm.teamId = pt.teamId
+                                  WHERE pt.projectId = p.id AND tm.userId = :uid)))
+                OR (p.type = 'task' AND p.parentId IS NULL AND p.createdBy = :uid)
+            UNION
+            SELECT c.id FROM nodes c JOIN tree t ON c.parentId = t.id
+          )
+          SELECT id FROM tree
+        )`,
+        { uid: filter.userId },
+      );
     }
 
     if (!filter.includeArchived && (filter.type === NodeType.PROJECT || filter.type === undefined)) {
@@ -119,10 +95,10 @@ export class NodeService {
     const sortOrder = filter.order === 'DESC' ? 'DESC' : 'ASC';
     qb.orderBy(sortField, sortOrder).addOrderBy('node.createdAt', 'DESC');
 
-    if (filter.limit) {
-      const page = filter.page ?? 1;
-      qb.skip((page - 1) * filter.limit).take(filter.limit);
-    }
+    // Always bounded: an explicit limit is honoured, otherwise a generous safety ceiling.
+    const limit = Math.min(filter.limit ?? MAX_LIST, MAX_LIST);
+    const page = filter.limit ? (filter.page ?? 1) : 1;
+    qb.skip((page - 1) * limit).take(limit);
 
     return qb.getMany();
   }
@@ -143,10 +119,13 @@ export class NodeService {
     return root;
   }
 
-  private async loadChildrenRecursive(parentId: number): Promise<Node[]> {
-    const children = await this.findChildren(parentId);
+  /** Depth- and cycle-safe: each node is visited once, nesting is capped. */
+  private async loadChildrenRecursive(parentId: number, seen = new Set<number>([parentId]), depth = 0): Promise<Node[]> {
+    if (depth >= MAX_TREE_DEPTH) return [];
+    const children = (await this.findChildren(parentId)).filter((c) => !seen.has(c.id));
+    for (const child of children) seen.add(child.id);
     for (const child of children) {
-      child.children = await this.loadChildrenRecursive(child.id);
+      child.children = await this.loadChildrenRecursive(child.id, seen, depth + 1);
     }
     return children;
   }
@@ -161,13 +140,59 @@ export class NodeService {
     return this.findById(id);
   }
 
+  /** Apply the same changes to many nodes atomically: all of them or none. */
+  async updateMany(ids: number[], data: Partial<Node>): Promise<Node[]> {
+    await this.nodeRepository.manager.transaction(async (m) => {
+      await m.getRepository(Node).update(ids, data);
+    });
+    return this.nodeRepository.find({ where: { id: In(ids) }, relations: ['parent', 'children'] });
+  }
+
   async move(id: number, parentId: number | null): Promise<Node | null> {
     await this.nodeRepository.update(id, { parentId: parentId as any }); // null = top level
     return this.findById(id);
   }
 
+  /**
+   * Delete a node together with its whole subtree and everything hanging off it,
+   * in one transaction. (parentId is ON DELETE SET NULL, so deleting only the row
+   * would leave the children behind as orphaned top-level nodes.)
+   * Rows without a foreign key to nodes are removed explicitly; attachment files
+   * are unlinked only after the commit.
+   */
   async remove(id: number): Promise<void> {
-    await this.nodeRepository.delete(id);
+    const files: string[] = [];
+    await this.nodeRepository.manager.transaction(async (m) => {
+      const q = (sql: string, p: any[] = []): Promise<any[]> => m.query(sql, p);
+      const all = new Set<number>([id]);
+      let frontier = [id];
+      while (frontier.length) {
+        const next: number[] = [];
+        for (let i = 0; i < frontier.length; i += CHUNK) {
+          const part = frontier.slice(i, i + CHUNK);
+          for (const r of await q(`SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`, part)) {
+            if (!all.has(r.id)) { all.add(r.id); next.push(r.id); }
+          }
+        }
+        frontier = next;
+      }
+      const ids = [...all];
+      for (let i = 0; i < ids.length; i += CHUNK) {
+        const part = ids.slice(i, i + CHUNK);
+        const inList = marks(part.length);
+        (await q(`SELECT path FROM attachments WHERE nodeId IN (${inList})`, part)).forEach((a) => files.push(a.path));
+        await q(`DELETE FROM webhook WHERE projectId IN (${inList})`, part);
+        await q(`DELETE FROM kanban_buckets WHERE projectId IN (${inList})`, part);
+        for (const table of ['favorites', 'subscriptions', 'reactions']) {
+          await q(`DELETE FROM ${table} WHERE entityType IN ('project','task') AND entityId IN (${inList})`, part);
+        }
+        await q(`DELETE FROM nodes WHERE id IN (${inList})`, part);
+      }
+    });
+    for (const f of files) {
+      const abs = resolve(f);
+      if (abs.startsWith(UPLOADS_DIR + '/') && existsSync(abs)) unlink(abs, () => undefined);
+    }
   }
 
   async archive(id: number): Promise<Node | null> {

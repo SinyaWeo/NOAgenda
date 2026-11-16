@@ -15,7 +15,16 @@ function fakeRepo() {
       x.updatedAt = new Date();
       return x;
     }),
-    findOne: jest.fn(async ({ where }: any) => rows.find((r) => matches(r, where)) ?? null),
+    // Like a real database, hand out copies: two concurrent readers must not share one object.
+    findOne: jest.fn(async ({ where }: any) => {
+      const r = rows.find((x) => matches(x, where));
+      return r ? { ...r } : null;
+    }),
+    update: jest.fn(async (where: any, set: any) => {
+      let affected = 0;
+      for (const r of rows) if (matches(r, where)) { Object.assign(r, set); affected++; }
+      return { affected };
+    }),
     delete: jest.fn(async (where: any) => {
       const w = typeof where === 'number' ? { id: where } : where;
       for (let i = rows.length - 1; i >= 0; i--) if (matches(rows[i], w)) rows.splice(i, 1);
@@ -59,6 +68,15 @@ describe('SessionService refresh-token rotation', () => {
     await expect(svc.rotate(first.refreshToken)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(repo.rows).toHaveLength(0);
     await expect(svc.rotate(second.refreshToken!)).rejects.toBeInstanceOf(UnauthorizedException); // thief AND victim are out
+  });
+
+  it('two parallel rotations: exactly one wins, the loser does not overwrite it', async () => {
+    const { repo, svc } = make();
+    const first = await svc.create(1);
+    const [a, b] = await Promise.all([svc.rotate(first.refreshToken), svc.rotate(first.refreshToken)]);
+    const winners = [a, b].filter((r) => r.refreshToken !== null);
+    expect(winners).toHaveLength(1);
+    expect(repo.rows[0].tokenHash).toBe(sha256(winners[0].refreshToken!)); // the winner's token is the live one
   });
 
   it('rejects unknown tokens and expired sessions', async () => {

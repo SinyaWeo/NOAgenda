@@ -1,3 +1,4 @@
+import { MaxBytes } from '../../../common/max-bytes';
 import { IsString, IsNotEmpty, MinLength, MaxLength } from 'class-validator';
 
 export class ResetPasswordDto {
@@ -10,5 +11,6 @@ export class ResetPasswordDto {
   @IsNotEmpty()
   @MinLength(8)
   @MaxLength(255)
+  @MaxBytes(72)
   password!: string;
 }

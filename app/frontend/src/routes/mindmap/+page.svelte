@@ -12,6 +12,8 @@
     import '@xyflow/svelte/dist/style.css';
     import { authSession } from '$lib/auth';
     import { apiGetAuth, apiPatchAuth } from '$lib/api';
+    import { findDropTarget } from '$lib/mindmap';
+    import { showToast } from '$lib/toast';
 
     let loading = $state(true);
     let error = $state('');
@@ -103,11 +105,14 @@
         targetNode: FlowNode | null;
         nodes: FlowNode[];
     }) {
-        if (!targetNode || !draggedNodes.length) return;
-        const movedNode = draggedNodes[0];
-        if (movedNode.id === targetNode.id) return;
+        // `targetNode` is the node that was dragged; the new parent is the node it was dropped on.
+        const movedNode = targetNode ?? draggedNodes[0];
+        if (!movedNode) return;
+        const parent = findDropTarget(movedNode, nodes);
+        if (!parent) return; // just repositioned, not dropped on anything
+        if (edges.some((e) => e.source === parent.id && e.target === movedNode.id)) return; // already its parent
         const nodeId = Number(movedNode.id);
-        const newParentId = Number(targetNode.id);
+        const newParentId = Number(parent.id);
         try {
             await apiPatchAuth(`/nodes/${nodeId}/move`, {
                 parentId: newParentId,
@@ -121,7 +126,11 @@
                     target: movedNode.id,
                 },
             ];
-        } catch (_) {}
+            showToast('Moved', 'success');
+        } catch (e: any) {
+            showToast(e?.message ?? 'Could not move it there', 'error');
+            await loadGraph(); // put the map back as the server has it
+        }
     }
 
     onMount(async () => {

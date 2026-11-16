@@ -88,7 +88,7 @@ export class NodeController {
     const safeBody: Partial<Node> = normalizeParentRefs(this.access.sanitize(body));
     delete (safeBody as any).type; // a node's type is immutable
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
-      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId);
+      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, existing.id);
     }
     const node = await this.nodeService.update(Number(id), safeBody);
     if (!node) throw new NotFoundException();
@@ -102,6 +102,7 @@ export class NodeController {
     // A copy of a task lands in the same project, so it needs write access there.
     if (source.type === NodeType.PROJECT) await this.access.assertRead(req.user.userId, source.id);
     else await this.access.assertWrite(req.user.userId, source.id);
+    await this.access.assertCanUseAsParent(req.user.userId, source.parentId);
     const node = await this.nodeService.duplicate(Number(id), req.user.userId);
     if (!node) throw new NotFoundException();
     return node;
@@ -116,7 +117,7 @@ export class NodeController {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
-    await this.access.assertCanUseAsParent(req.user.userId, body.parentId);
+    await this.access.assertCanUseAsParent(req.user.userId, body.parentId, existing.id);
     const node = await this.nodeService.move(Number(id), body.parentId ?? null);
     if (!node) throw new NotFoundException();
     return node;

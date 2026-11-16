@@ -7,7 +7,7 @@
   import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 
   const password = writable('');
-  const confirm = writable('');
+  const confirmPassword = writable('');
   const error = writable('');
   const success = writable(false);
   const loading = writable(false);
@@ -15,7 +15,7 @@
 
   async function handleReset(event: SubmitEvent) {
     event.preventDefault();
-    if ($password !== $confirm) { error.set('Passwords do not match'); return; }
+    if ($password !== $confirmPassword) { error.set('Passwords do not match'); return; }
     loading.set(true);
     error.set('');
     success.set(false);
@@ -62,7 +62,7 @@
         </div>
         <div>
           <Label for="confirm-password" class="mb-1">Confirm Password</Label>
-          <Input id="confirm-password" type="password" bind:value={$confirm} required minlength={8} />
+          <Input id="confirm-password" type="password" bind:value={$confirmPassword} required minlength={8} />
         </div>
         <Button type="submit" disabled={$loading} class="w-full">{$loading ? 'Resetting…' : 'Reset password'}</Button>
       </form>

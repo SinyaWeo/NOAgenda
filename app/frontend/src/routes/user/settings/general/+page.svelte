@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPostAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { getCurrentUser, refreshCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
@@ -49,6 +49,7 @@
         theme: $theme,
         weekStart: $weekStart,
       });
+      await refreshCurrentUser(); // header name, avatar and theme follow at once
       success.set('Settings saved.');
     } catch (e: any) {
       error.set(e.message);

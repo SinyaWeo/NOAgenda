@@ -27,7 +27,7 @@ function build(over: { user?: any; verificationRequired?: boolean } = {}) {
     decode: jest.fn(() => ({ iat: 100, exp: 1000 })),
   };
   const resets: any = {
-    delete: jest.fn(), save: jest.fn(async (x) => x), create: jest.fn((x) => x), findOne: jest.fn(),
+    delete: jest.fn(async () => ({ affected: 1 })), save: jest.fn(async (x) => x), create: jest.fn((x) => x), findOne: jest.fn(),
   };
   const sessions: any = {
     create: jest.fn(async () => ({ session: { id: 55 }, refreshToken: 'rt' })),
@@ -138,6 +138,14 @@ describe('AuthService password reset', () => {
     expect(users.resetLoginState).toHaveBeenCalledWith(7);
     expect(resets.delete).toHaveBeenCalledWith({ user: { id: 7 } });
     expect(sessions.revokeAllForUser).toHaveBeenCalledWith(7);
+  });
+
+  it('a token already claimed by a concurrent request is rejected', async () => {
+    const { svc, resets, users } = build();
+    resets.findOne.mockResolvedValue({ id: 1, user: { id: 7 }, expiresAt: new Date(Date.now() + 60_000) });
+    resets.delete.mockResolvedValueOnce({ affected: 0 });
+    await expect(svc.resetPassword('raw', 'new-password-1')).rejects.toBeInstanceOf(BadRequestException);
+    expect(users.update).not.toHaveBeenCalled();
   });
 
   it('rejects unknown and expired tokens', async () => {

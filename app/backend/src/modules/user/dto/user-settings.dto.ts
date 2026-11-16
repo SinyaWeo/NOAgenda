@@ -1,3 +1,4 @@
+import { MaxBytes } from '../../../common/max-bytes';
 import {
   IsString, IsEmail, IsOptional, IsIn, IsInt, Min, Max, MinLength, MaxLength,
 } from 'class-validator';
@@ -37,7 +38,7 @@ export class UpdatePasswordDto {
   @IsString() @MaxLength(255)
   oldPassword!: string;
 
-  @IsString() @MinLength(8) @MaxLength(255)
+  @IsString() @MinLength(8) @MaxLength(255) @MaxBytes(72)
   newPassword!: string;
 }
 

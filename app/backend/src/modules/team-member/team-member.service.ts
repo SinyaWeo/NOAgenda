@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { TeamMember } from './team-member.entity';
 
 @Injectable()
@@ -13,6 +13,11 @@ export class TeamMemberService {
   async findAll(teamId?: number): Promise<TeamMember[]> {
     const where = teamId ? { team: { id: teamId } } : {};
     return this.teamMemberRepository.find({ where, relations: ['user', 'team'] });
+  }
+
+  async findByTeamIds(teamIds: number[]): Promise<TeamMember[]> {
+    if (!teamIds.length) return [];
+    return this.teamMemberRepository.find({ where: { team: { id: In(teamIds) } }, relations: ['user', 'team'] });
   }
 
   async findById(id: number): Promise<TeamMember | null> {

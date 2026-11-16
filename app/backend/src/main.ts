@@ -1,19 +1,17 @@
+import 'dotenv/config'; // must run first: several modules read process.env when they are imported
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { NumericParamPipe } from './common/numeric-param.pipe';
+import { validateJwtSecret } from './common/env-check';
 import { join } from 'path';
 
 async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
 
-  if (!process.env.JWT_SECRET) {
-    throw new Error('JWT_SECRET environment variable is required but not set.');
-  }
-  if (isProd && process.env.JWT_SECRET.length < 32) {
-    throw new Error('JWT_SECRET must be at least 32 characters in production.');
-  }
+  validateJwtSecret(process.env.JWT_SECRET, isProd);
   if (isProd && !process.env.CORS_ORIGIN) {
     throw new Error('CORS_ORIGIN must be set in production.');
   }
@@ -49,6 +47,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.useGlobalPipes(
+    new NumericParamPipe(),
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
   await app.listen(Number(process.env.PORT ?? 3000));

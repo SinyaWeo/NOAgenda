@@ -8,8 +8,8 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get()
-  async search(@Query('q') q: string, @Request() req: any) {
-    if (!q || q.trim().length < 2) return { tasks: [], projects: [] };
+  async search(@Query('q') q: unknown, @Request() req: any) {
+    if (typeof q !== 'string' || q.trim().length < 2) return { tasks: [], projects: [] };
     return this.searchService.search(req.user.userId, q.trim().slice(0, 100));
   }
 }

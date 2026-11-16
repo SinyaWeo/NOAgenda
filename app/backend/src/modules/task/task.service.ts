@@ -2,7 +2,7 @@
  * Compatibility shim — delegates to NodeService filtering by type='task'.
  * All existing TaskController routes continue to work unchanged.
  */
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { NodeService, NodeFilter } from '../node/node.service';
 import { Node, NodeType, NodeStatus } from '../node/node.entity';
 import { normalizeParentRefs } from '../node/node-payload';
@@ -67,8 +67,8 @@ export class TaskService {
 
   async bulkUpdate(ids: number[], data: Partial<Node>, _userId?: number): Promise<Node[]> {
     const normalizedData = this.normalizeTaskPayload(data);
-    const results = await Promise.all(ids.map((id) => this.nodeService.update(id, normalizedData)));
-    return results.filter(Boolean) as Node[];
+    if (!Object.keys(normalizedData).length) throw new BadRequestException('No fields to update');
+    return this.nodeService.updateMany(ids, normalizedData);
   }
 
   async remove(id: number): Promise<void> {

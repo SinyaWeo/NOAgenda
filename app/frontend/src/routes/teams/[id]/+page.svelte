@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { apiGetAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
   import { writable } from 'svelte/store';
-  import { goto } from '$app/navigation';
   import { Alert, Button, Card } from 'flowbite-svelte';
   import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
@@ -13,26 +11,17 @@
   const loading = writable(true);
   const error = writable('');
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    const id = page.params.id;
-    try {
-      const [t, m] = await Promise.all([
-        apiGetAuth<any>(`/teams/${id}`),
-        apiGetAuth<any[]>(`/team-members?teamId=${id}`),
-      ]);
-      team.set(t);
-      members.set(m);
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  async function loadTeam(id: string, isStale: () => boolean) {
+    const [t, m] = await Promise.all([
+      apiGetAuth<any>(`/teams/${id}`),
+      apiGetAuth<any[]>(`/team-members?teamId=${id}`),
+    ]);
+    if (isStale()) return;
+    team.set(t);
+    members.set(m);
+  }
+
+  loadOnParamChange(() => page.params.id ?? '', loadTeam, loading, error);
 </script>
 
 {#if $loading}

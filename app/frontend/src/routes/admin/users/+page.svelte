@@ -36,7 +36,8 @@
         }
     }
 
-    async function changeRole(user: User, newRole: string) {
+    async function changeRole(user: User, select: HTMLSelectElement) {
+        const newRole = select.value;
         saving.set(user.id);
         try {
             const updated = await apiPatchAuth<User>(
@@ -46,8 +47,9 @@
             users.update((list) =>
                 list.map((u) => (u.id === updated.id ? updated : u)),
             );
-        } catch (_) {
-            error.set(`Failed to update role for ${user.username}.`);
+        } catch (e: any) {
+            select.value = user.role; // the change did not happen: show the role the user really has
+            error.set(`Could not update the role for ${user.username}: ${e?.message ?? 'unknown error'}`);
         } finally {
             saving.set(null);
         }
@@ -110,10 +112,7 @@
                                 value={u.role}
                                 disabled={$saving === u.id}
                                 onchange={(e) =>
-                                    changeRole(
-                                        u,
-                                        (e.target as HTMLSelectElement).value,
-                                    )}
+                                    changeRole(u, e.target as HTMLSelectElement)}
                             />
                         {:else}
                             <span class="text-xs text-gray-400">You</span>

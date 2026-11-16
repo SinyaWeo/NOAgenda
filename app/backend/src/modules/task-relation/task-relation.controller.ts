@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AddRelationDto } from '../task-assignee/dto/task-links.dto';
-import { NodeAccessService } from '../node/node-access.service';
+import { Access, NodeAccessService } from '../node/node-access.service';
 import { TaskRelationService } from './task-relation.service';
 import { TaskService } from '../task/task.service';
 import { TaskRelation, RelationKind } from './task-relation.entity';
@@ -20,7 +20,13 @@ export class TaskRelationController {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertRead(req.user.userId, Number(taskId));
-    return this.taskRelationService.findByTask(taskId);
+    const relations = await this.taskRelationService.findByTask(taskId);
+    const visible: TaskRelation[] = [];
+    for (const r of relations) {
+      const otherId = Number(r.node?.id) === Number(taskId) ? r.relatedNode?.id : r.node?.id;
+      if (otherId != null && (await this.access.level(req.user.userId, otherId)) >= Access.READ) visible.push(r);
+    }
+    return visible;
   }
 
   @Post()

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { writable } from 'svelte/store';
   import { apiPostAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { getCurrentUser, refreshCurrentUser } from '$lib/auth';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   import { Alert, Button, Input, Label } from 'flowbite-svelte';
@@ -18,7 +18,12 @@
   let graceDays = $state(7);
   onMount(async () => {
     const me = await getCurrentUser();
-    if (!me) goto('/user/login');
+    if (!me) {
+      goto('/user/login');
+      return;
+    }
+    // A request made earlier (or in another tab) is still pending: show it instead of the bare form.
+    scheduledAt = me.isDeletionRequested ? (me.deletionScheduledAt ?? null) : null;
   });
 
   async function requestDeletion() {
@@ -38,6 +43,7 @@
     try {
       const r = await apiPostAuth<{ scheduledAt: string; graceDays: number }>('/user/deletion/request', { password });
       scheduledAt = r.scheduledAt;
+      void refreshCurrentUser();
       graceDays = r.graceDays ?? graceDays;
       password = '';
       success.set(
@@ -56,6 +62,7 @@
     try {
       await apiPostAuth('/user/deletion/cancel', {});
       scheduledAt = null;
+      void refreshCurrentUser();
       success.set('Deletion request cancelled. Your account stays as it is.');
     } catch (e: any) {
       error.set(e.message);
@@ -76,6 +83,13 @@
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 {#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
+{#if scheduledAt}
+  <Alert color="yellow" class="mb-4">
+    Your account is scheduled for deletion on
+    <strong>{new Date(scheduledAt).toLocaleString()}</strong>. You can still sign in and cancel
+    until then.
+  </Alert>
+{/if}
 
 <div
   class="max-w-md border-2 border-red-200 dark:border-red-900 rounded-lg p-5"
@@ -101,11 +115,14 @@
     <Input id="del-password" type="password" autocomplete="current-password" bind:value={password} />
   </div>
   <div class="flex gap-3 flex-wrap">
-    <Button color="red" onclick={requestDeletion} disabled={$loading}
-      >{$loading ? 'Processing…' : 'Request Account Deletion'}</Button
-    >
-    <Button color="light" onclick={cancelDeletion} disabled={$loading}
-      >Cancel Deletion Request</Button
-    >
+    {#if scheduledAt}
+      <Button color="light" onclick={cancelDeletion} disabled={$loading}
+        >Cancel Deletion Request</Button
+      >
+    {:else}
+      <Button color="red" onclick={requestDeletion} disabled={$loading}
+        >{$loading ? 'Processing…' : 'Request Account Deletion'}</Button
+      >
+    {/if}
   </div>
 </div>

@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Usage: ./start-all.sh [start|stop|test]
-# Default is 'all' if no argument is provided.
+# Usage: ./noagenda.sh start|stop|test
 
 set -e
 
-# Set working directories
-DOCKER_DIR="$(dirname "$0")/docker"
-APP_BACKEND_DIR="$(dirname "$0")/app/backend"
-APP_FRONTEND_DIR="$(dirname "$0")/app/frontend"
+# Absolute paths, so the stop commands below match only THIS project's processes
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+DOCKER_DIR="$ROOT/docker"
+APP_BACKEND_DIR="$ROOT/app/backend"
+APP_FRONTEND_DIR="$ROOT/app/frontend"
 
 # Helper to start DB container
 start_db() {
@@ -28,16 +28,17 @@ start_frontend() {
   (cd "$APP_FRONTEND_DIR" && npm install && npm run dev &)
 }
 
-# Helper to stop backend
+# Helper to stop backend: start_backend runs `nest start --watch`, which spawns `node dist/main`
 stop_backend() {
   echo "Stopping backend..."
-  pkill -f "node dist/main.js" || true
+  pkill -f "$APP_BACKEND_DIR/node_modules/.bin/nest start" || true
+  pkill -f "$APP_BACKEND_DIR/dist/main" || true
 }
 
-# Helper to stop frontend
+# Helper to stop frontend: start_frontend runs `vite dev`
 stop_frontend() {
   echo "Stopping frontend..."
-  pkill -f "svelte-kit dev" || true
+  pkill -f "$APP_FRONTEND_DIR/node_modules/.bin/vite" || true
 }
 
 # Helper to stop DB container
@@ -50,10 +51,12 @@ stop_db() {
 run_tests() {
   echo "Running backend tests..."
   (cd "$APP_BACKEND_DIR" && npm install && npm run test)
+  echo "Checking frontend (svelte-check)..."
+  (cd "$APP_FRONTEND_DIR" && npm install && npm run check)
 }
 
 # Main logic
-case "${1:-all}" in
+case "${1:-}" in
   start)
     start_db
     start_backend
@@ -68,7 +71,7 @@ case "${1:-all}" in
     run_tests
     ;;
   *)
-    echo "Usage: $0 [start|stop|test]"
+    echo "Usage: $0 start|stop|test"
     exit 1
     ;;
 esac

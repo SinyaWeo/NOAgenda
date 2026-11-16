@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { apiGetAuth, apiPutAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
+  import { dateInputToIso, isoToDateInput } from '$lib/dates';
   import { writable } from 'svelte/store';
   import {
     Alert,
@@ -29,28 +29,20 @@
   const loading = writable(true);
   const saving = writable(false);
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      const task = await apiGetAuth<any>(`/tasks/${page.params.id}`);
-      title.set(task.title ?? '');
-      description.set(task.description ?? '');
-      dueDate.set(task.dueDate ? task.dueDate.substring(0, 10) : '');
-      startDate.set(task.startDate ? task.startDate.substring(0, 10) : '');
-      priority.set(task.priority ?? 0);
-      percentDone.set(task.percentDone ?? 0);
-      repeatAfter.set(task.repeatAfter ?? 0);
-      repeatMode.set(task.repeatMode ?? 'default');
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  async function loadTask(id: string, isStale: () => boolean) {
+    const task = await apiGetAuth<any>(`/tasks/${id}`);
+    if (isStale()) return;
+    title.set(task.title ?? '');
+    description.set(task.description ?? '');
+    dueDate.set(isoToDateInput(task.dueDate));
+    startDate.set(isoToDateInput(task.startDate));
+    priority.set(task.priority ?? 0);
+    percentDone.set(task.percentDone ?? 0);
+    repeatAfter.set(task.repeatAfter ?? 0);
+    repeatMode.set(task.repeatMode ?? 'default');
+  }
+
+  loadOnParamChange(() => page.params.id ?? '', loadTask, loading, error);
 
   async function handleEdit(event: Event) {
     event.preventDefault();
@@ -60,8 +52,8 @@
       await apiPutAuth(`/tasks/${page.params.id}`, {
         title: $title,
         description: $description,
-        dueDate: $dueDate ? new Date($dueDate).toISOString() : null,
-        startDate: $startDate ? new Date($startDate).toISOString() : null,
+        dueDate: dateInputToIso($dueDate),
+        startDate: dateInputToIso($startDate),
         priority: $priority,
         percentDone: $percentDone,
         repeatAfter: $repeatAfter || null,

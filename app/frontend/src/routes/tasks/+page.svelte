@@ -1,7 +1,9 @@
 <script lang="ts">
+  import { STATUS_LABELS, PRIORITY_LABELS, PRIORITY_SHORT } from '$lib/constants';
   import { onMount } from 'svelte';
   import { apiGetAuth, apiPutAuth } from '$lib/api';
   import { getCurrentUser } from '$lib/auth';
+  import { loadProjectNames } from '$lib/project-names';
   import { writable } from 'svelte/store';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
@@ -29,6 +31,7 @@
   } from 'flowbite-svelte-icons';
 
   const tasks = writable<any[]>([]);
+  let projectNames = $state<Record<number, string>>({});
   const loading = writable(true);
   const error = writable('');
   const sort = writable('createdAt');
@@ -37,13 +40,6 @@
   const limit = 20;
   const hasMore = writable(false);
 
-  const STATUS_LABELS: Record<string, string> = {
-    open: 'Open',
-    in_progress: 'In Progress',
-    done: 'Done',
-  };
-  const PRIORITY_LABELS = ['—', 'Low', 'Medium', 'High', 'Urgent', 'Do Now'];
-  const PRIORITY_SHORT = ['', 'Low', 'Med', 'High', 'Urgent', 'Now'];
 
   const VIEWS = [
     { id: 'list', label: 'List' },
@@ -95,6 +91,7 @@
       goto('/user/login');
       return;
     }
+    void loadProjectNames().then((n) => (projectNames = n));
     await loadTasks();
   });
 
@@ -193,8 +190,8 @@
                   ? 'line-through text-gray-400'
                   : ''}">{task.title}</a
               >
-              {#if task.project?.name}<span class="text-xs text-gray-400 ml-2"
-                  >{task.project.name}</span
+              {#if projectNames[task.parentId]}<span class="text-xs text-gray-400 ml-2"
+                  >{projectNames[task.parentId]}</span
                 >{/if}
             </div>
             <div class="shrink-0 text-right flex flex-col gap-1">

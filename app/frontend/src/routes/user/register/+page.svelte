@@ -14,17 +14,19 @@
   let showPassword = $state(false);
   let checkEmail = $state(false);
   let acceptTerms = $state(false);
+  let emailVerificationRequired = $state(false); // from the same /auth/config call as the other flags
   let registrationEnabled = $state(true);
   let inviteRequired = $state(false);
   let inviteCode = $state('');
 
   // The operator may close registration or require an invite code for a soft launch.
   onMount(async () => {
-    const cfg: { registrationEnabled?: boolean; inviteRequired?: boolean } = await apiFetch('/auth/config')
+    const cfg: { registrationEnabled?: boolean; inviteRequired?: boolean; emailVerificationRequired?: boolean } = await apiFetch('/auth/config')
       .then((r) => (r.ok ? r.json() : {}))
       .catch(() => ({}));
     registrationEnabled = cfg.registrationEnabled !== false;
     inviteRequired = cfg.inviteRequired === true;
+    emailVerificationRequired = cfg.emailVerificationRequired === true;
   });
 
   async function handleRegister(event: SubmitEvent) {
@@ -39,10 +41,7 @@
         acceptTerms,
         ...(inviteRequired ? { inviteCode: inviteCode.trim() } : {}),
       });
-      const cfg: { emailVerificationRequired?: boolean } = await apiFetch('/auth/config')
-        .then((r) => (r.ok ? r.json() : {}))
-        .catch(() => ({}));
-      if (cfg.emailVerificationRequired) {
+      if (emailVerificationRequired) {
         checkEmail = true;
       } else {
         goto('/user/login');

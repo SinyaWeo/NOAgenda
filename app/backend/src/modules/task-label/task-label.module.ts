@@ -1,3 +1,4 @@
+import { LabelModule } from '../label/label.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TaskLabel } from './task-label.entity';
@@ -8,7 +9,7 @@ import { TaskModule } from '../task/task.module';
 import { NodeModule } from '../node/node.module';
 
 @Module({
-  imports: [NodeModule, TypeOrmModule.forFeature([TaskLabel]), TaskModule],
+  imports: [NodeModule, LabelModule, TypeOrmModule.forFeature([TaskLabel]), TaskModule],
   providers: [TaskLabelService],
   controllers: [TaskLabelController],
   exports: [TaskLabelService],

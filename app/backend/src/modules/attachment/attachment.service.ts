@@ -15,6 +15,15 @@ export class AttachmentService {
     return this.attachmentRepository.find({ where, relations: ['node', 'uploader'], order: { createdAt: 'DESC' } });
   }
 
+  /** Attachments uploaded by one user (database-side filter). */
+  async findByUploader(userId: number): Promise<Attachment[]> {
+    return this.attachmentRepository.find({
+      where: { uploader: { id: userId } },
+      relations: ['node', 'uploader'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async findById(id: number): Promise<Attachment | null> {
     return this.attachmentRepository.findOne({ where: { id }, relations: ['node', 'uploader'] });
   }

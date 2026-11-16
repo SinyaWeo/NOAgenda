@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { dateInputToIso } from '$lib/dates';
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import { apiPostAuth, apiGetAuth } from '$lib/api';
@@ -49,9 +50,7 @@
         title: get(title),
         description: get(description),
         ...(pid ? { project: { id: pid } } : {}),
-        dueDate: get(dueDate)
-          ? new Date(get(dueDate)).toISOString()
-          : undefined,
+        dueDate: dateInputToIso(get(dueDate)) ?? undefined,
         priority: Number(get(priority)),
       });
       showToast('Task created!', 'success');

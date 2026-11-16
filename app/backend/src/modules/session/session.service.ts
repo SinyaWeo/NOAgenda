@@ -111,15 +111,28 @@ export class SessionService implements OnModuleInit, OnModuleDestroy {
       throw new UnauthorizedException('Session expired');
     }
 
+    // Compare-and-swap on the token we just read: of two parallel rotations exactly one
+    // wins; the loser is then handled like a benign replay instead of overwriting the winner.
     const refreshToken = randomToken(48);
-    current.prevTokenHash = current.tokenHash;
-    current.tokenHash = sha256(refreshToken);
-    current.lastUsedAt = new Date();
-    current.rotatedAt = new Date();
-    current.expiresAt = this.expiry();
-    if (meta.userAgent) current.userAgent = this.clip(meta.userAgent, 512);
-    if (meta.ip) current.ipAddress = this.clip(meta.ip, 45);
-    return { session: await this.repo.save(current), refreshToken };
+    const changes: Partial<UserSession> = {
+      prevTokenHash: current.tokenHash,
+      tokenHash: sha256(refreshToken),
+      lastUsedAt: new Date(),
+      rotatedAt: new Date(),
+      expiresAt: this.expiry(),
+    };
+    if (meta.userAgent) changes.userAgent = this.clip(meta.userAgent, 512);
+    if (meta.ip) changes.ipAddress = this.clip(meta.ip, 45);
+    const res = await this.repo.update({ id: current.id, tokenHash: current.tokenHash }, changes);
+    if (!res.affected) {
+      const fresh = await this.repo.findOne({ where: { id: current.id } });
+      const recent = !!fresh?.rotatedAt && Date.now() - fresh.rotatedAt.getTime() < ROTATION_GRACE_MS;
+      if (fresh && fresh.prevTokenHash === hash && recent) return { session: fresh, refreshToken: null };
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    const session = await this.repo.findOne({ where: { id: current.id } });
+    if (!session) throw new UnauthorizedException('Invalid refresh token');
+    return { session, refreshToken };
   }
 
   /** Resolve a live session to its user (one query). Used on every authenticated request. */

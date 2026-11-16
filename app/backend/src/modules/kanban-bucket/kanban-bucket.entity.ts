@@ -1,8 +1,9 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
 
 @Entity('kanban_buckets')
 export class KanbanBucket extends BaseEntity {
+  @Index('IDX_kanban_buckets_projectId')
   @Column()
   projectId!: number;
 

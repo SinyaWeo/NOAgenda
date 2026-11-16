@@ -1,10 +1,11 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { PRIORITY_SHORT } from '$lib/constants';
   import { writable } from 'svelte/store';
   import { apiGetAuth, apiPutAuth, apiPatchAuth } from '$lib/api';
-  import { getCurrentUser } from '$lib/auth';
+  import { findDropTarget } from '$lib/mindmap';
+  import { showToast } from '$lib/toast';
+  import { loadOnParamChange } from '$lib/param-loader.svelte';
   import { page } from '$app/state';
-  import { goto } from '$app/navigation';
   import {
     Alert,
     Badge,
@@ -40,7 +41,6 @@
   const error = writable('');
   const views = writable<any[]>([]);
 
-  const PRIORITY_SHORT = ['', 'Low', 'Med', 'High', 'Urgent', 'Now'];
 
   // MindMap state (only used when viewType === 'mindmap')
   let mmNodes = $state<FlowNode[]>([]);
@@ -117,23 +117,29 @@
     targetNode: FlowNode | null;
     nodes: FlowNode[];
   }) {
-    if (!targetNode || !draggedNodes.length) return;
-    const node = draggedNodes[0];
-    if (targetNode.id === node.id) return;
+    // `targetNode` is the node that was dragged; the new parent is the node it was dropped on.
+    const node = targetNode ?? draggedNodes[0];
+    if (!node) return;
+    const parent = findDropTarget(node, mmNodes);
+    if (!parent) return;
+    if (mmEdges.some((e) => e.source === parent.id && e.target === node.id)) return;
     try {
       await apiPatchAuth(`/nodes/${node.id}/move`, {
-        parentId: Number(targetNode.id),
+        parentId: Number(parent.id),
       });
       mmEdges = mmEdges.filter((e) => e.target !== node.id);
       mmEdges = [
         ...mmEdges,
         {
-          id: `e-${targetNode.id}-${node.id}`,
-          source: targetNode.id,
+          id: `e-${parent.id}-${node.id}`,
+          source: parent.id,
           target: node.id,
         },
       ];
-    } catch (_) {}
+      showToast('Moved', 'success');
+    } catch (e: any) {
+      showToast(e?.message ?? 'Could not move it there', 'error');
+    }
   }
 
   async function moveTaskToBucket(taskId: number, bucketId: number) {
@@ -143,40 +149,37 @@
     } catch (_) {}
   }
 
-  async function load() {
-    const { id, viewId } = page.params;
+  async function load(key: string, isStale: () => boolean) {
+    const [id, viewId] = key.split('/');
     const [v, t, vs] = await Promise.all([
       apiGetAuth<any>(`/projects/${id}/views/${viewId}`),
       apiGetAuth<any[]>(`/tasks?projectId=${id}`),
       apiGetAuth<any[]>(`/projects/${id}/views`).catch(() => []),
     ]);
+    const b =
+      v.viewType === 'kanban'
+        ? await apiGetAuth<any[]>(`/projects/${id}/views/${viewId}/buckets`)
+        : [];
+    if (isStale()) return; // a newer view/project was requested meanwhile
     view.set(v);
     tasks.set(t);
     views.set(vs);
-    if (v.viewType === 'kanban') {
-      buckets.set(
-        await apiGetAuth<any[]>(`/projects/${id}/views/${viewId}/buckets`),
-      );
-    }
-    if (v.viewType === 'mindmap') {
-      await loadMindmapTree(id ?? '');
-    }
+    buckets.set(b);
+    // Mind map: start from a clean canvas for this view.
+    expandedMmIds.clear();
+    mmNodes = [];
+    mmEdges = [];
+    if (v.viewType === 'mindmap') await loadMindmapTree(id);
   }
 
-  onMount(async () => {
-    const me = await getCurrentUser();
-    if (!me) {
-      goto('/user/login');
-      return;
-    }
-    try {
-      await load();
-    } catch (e: any) {
-      error.set(e.message);
-    } finally {
-      loading.set(false);
-    }
-  });
+  // The view pills only change the URL, so the component stays mounted: reload on every
+  // project/view change instead of loading once on mount.
+  loadOnParamChange(
+    () => `${page.params.id}/${page.params.viewId}`,
+    load,
+    loading,
+    error,
+  );
 </script>
 
 {#if $loading}

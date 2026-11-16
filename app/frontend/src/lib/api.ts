@@ -71,16 +71,28 @@ export function sessionExpired(): Error {
 	return new ApiError('Your session has expired. Please sign in again.', 401);
 }
 
+const ABSOLUTE = /^https?:\/\//i;
+
+/** True when `path` is for our own API (a relative path, or an absolute URL on the API's origin). */
+function isApiUrl(path: string): boolean {
+	if (!ABSOLUTE.test(path)) return true;
+	try {
+		return new URL(path).origin === new URL(API_BASE, typeof window !== 'undefined' ? window.location.origin : undefined).origin;
+	} catch {
+		return false;
+	}
+}
+
 export async function apiFetch(path: string, options: RequestInit = {}) {
-	const url = path.startsWith('http') ? path : `${API_BASE}${path.startsWith('/') ? path : '/' + path}`;
+	const url = ABSOLUTE.test(path) ? path : `${API_BASE}${path.startsWith('/') ? path : '/' + path}`;
 	try {
 		const response = await fetch(url, {
 			credentials: 'include', // send cookies if needed
 			...options
 		});
-		if (!response.ok) {
-			console.error('API error:', response.status, response.statusText, url);
-		}
+		// 4xx are normal outcomes (validation, permission, expired token that is retried): callers handle
+		// them. Only server errors are worth a console line.
+		if (response.status >= 500) console.error('API error:', response.status, response.statusText, url);
 		return response;
 	} catch (err) {
 		// Never log request options/body: they can contain credentials.
@@ -89,41 +101,32 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 	}
 }
 
-/** Helper: POST JSON and return parsed response or throw */
-export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-	const res = await apiFetch(path, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	if (!res.ok) throw await apiError(res, 'Request failed');
+async function readBody<T>(res: Response): Promise<T> {
 	const text = await res.text();
 	return text ? JSON.parse(text) : ({} as T);
 }
 
+/** One JSON request: attaches the Bearer token when `auth`, and turns failures into ApiError. */
+async function call<T>(auth: boolean, method: string, path: string, body?: unknown): Promise<T> {
+	const init: RequestInit = { method };
+	if (body !== undefined) {
+		init.headers = { 'Content-Type': 'application/json' };
+		init.body = JSON.stringify(body);
+	}
+	const res = auth ? await apiFetchAuth(path, init) : await apiFetch(path, init);
+	if (auth && res.status === 401) throw sessionExpired();
+	if (!res.ok) throw await apiError(res, 'Request failed');
+	return readBody<T>(res);
+}
+
+/** Helper: POST JSON and return parsed response or throw */
+export const apiPost = <T>(path: string, body: unknown) => call<T>(false, 'POST', path, body);
 /** Helper: PUT JSON and return parsed response or throw */
-export async function apiPut<T>(path: string, body: unknown): Promise<T> {
-	const res = await apiFetch(path, {
-		method: 'PUT',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	if (!res.ok) throw await apiError(res, 'Request failed');
-	return res.json();
-}
-
+export const apiPut = <T>(path: string, body: unknown) => call<T>(false, 'PUT', path, body);
 /** Helper: DELETE and return void or throw */
-export async function apiDelete(path: string): Promise<void> {
-	const res = await apiFetch(path, { method: 'DELETE' });
-	if (!res.ok) throw await apiError(res, 'Request failed');
-}
-
+export const apiDelete = async (path: string): Promise<void> => void (await call(false, 'DELETE', path));
 /** Helper: GET and return parsed JSON or throw */
-export async function apiGet<T>(path: string): Promise<T> {
-	const res = await apiFetch(path);
-	if (!res.ok) throw await apiError(res, 'Request failed');
-	return res.json();
-}
+export const apiGet = <T>(path: string) => call<T>(false, 'GET', path);
 
 // --- Auth token storage ---
 /** Store the (short-lived) access token in localStorage so it survives reloads. */
@@ -209,8 +212,9 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
 	const isAuthEndpoint = path.startsWith('/auth/');
 	const send = () => {
 		const token = getToken();
-		const headers: Record<string, string> = { ...(options.headers as Record<string, string>) };
-		if (token) headers['Authorization'] = `Bearer ${token}`;
+		const headers = new Headers(options.headers); // accepts plain objects, arrays and Headers
+		// The access token belongs to our API only: never send it to some other origin.
+		if (token && isApiUrl(path)) headers.set('Authorization', `Bearer ${token}`);
 		return apiFetch(path, { ...options, headers });
 	};
 	if (!getToken() && !isAuthEndpoint) await refreshAccessToken();
@@ -238,50 +242,8 @@ export async function downloadAuthFile(path: string, filename: string): Promise<
 	setTimeout(() => URL.revokeObjectURL(url), 10_000);
 }
 
-export async function apiGetAuth<T>(path: string): Promise<T> {
-	const res = await apiFetchAuth(path);
-	if (res.status === 401) throw sessionExpired();
-	if (!res.ok) throw await apiError(res, 'Request failed');
-	return res.json();
-}
-
-export async function apiPostAuth<T>(path: string, body: unknown): Promise<T> {
-	const res = await apiFetchAuth(path, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	if (res.status === 401) throw sessionExpired();
-	if (!res.ok) throw await apiError(res, 'Request failed');
-	const text = await res.text();
-	return text ? JSON.parse(text) : ({} as T);
-}
-
-export async function apiPutAuth<T>(path: string, body: unknown): Promise<T> {
-	const res = await apiFetchAuth(path, {
-		method: 'PUT',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	if (res.status === 401) throw sessionExpired();
-	if (!res.ok) throw await apiError(res, 'Request failed');
-	return res.json();
-}
-
-export async function apiDeleteAuth(path: string): Promise<void> {
-	const res = await apiFetchAuth(path, { method: 'DELETE' });
-	if (res.status === 401) throw sessionExpired();
-	if (!res.ok) throw await apiError(res, 'Request failed');
-}
-
-export async function apiPatchAuth<T>(path: string, body: unknown): Promise<T> {
-	const res = await apiFetchAuth(path, {
-		method: 'PATCH',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify(body),
-	});
-	if (res.status === 401) throw sessionExpired();
-	if (!res.ok) throw await apiError(res, 'Request failed');
-	return res.json();
-}
-
+export const apiGetAuth = <T>(path: string) => call<T>(true, 'GET', path);
+export const apiPostAuth = <T>(path: string, body: unknown) => call<T>(true, 'POST', path, body);
+export const apiPutAuth = <T>(path: string, body: unknown) => call<T>(true, 'PUT', path, body);
+export const apiPatchAuth = <T>(path: string, body: unknown) => call<T>(true, 'PATCH', path, body);
+export const apiDeleteAuth = async (path: string): Promise<void> => void (await call(true, 'DELETE', path));
