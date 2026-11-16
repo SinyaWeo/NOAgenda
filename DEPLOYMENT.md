@@ -55,6 +55,41 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 ```
 (`--demote <username>` reverses it.) The user must log in again to get a token carrying the new role.
 
+### Behind an existing Apache (ports 80/443 already in use)
+If the server already runs Apache (or nginx) on 80/443, keep it as the public HTTPS front door and let it proxy
+to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:8080` -> backend/frontend.
+
+1. In `docker/.env.production` add (see the example file):
+   ```
+   BIND_ADDR=127.0.0.1
+   HTTP_PORT=8080
+   HTTPS_PORT=8443
+   SITE_ADDRESS=http://noagenda.app
+   TRUST_PROXY=2
+   ```
+   Keep `DOMAIN=noagenda.app`; the public origin stays `https://noagenda.app`. Start the stack as usual and check
+   `curl -H 'Host: noagenda.app' http://127.0.0.1:8080/api/health`.
+2. Apache: `a2enmod proxy proxy_http headers ssl rewrite`, then a vhost, e.g.
+   `/etc/apache2/sites-available/noagenda.app.conf`:
+   ```apache
+   <VirtualHost *:80>
+       ServerName noagenda.app
+       RewriteEngine On
+       RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+   </VirtualHost>
+   <VirtualHost *:443>
+       ServerName noagenda.app
+       # certbot --apache -d noagenda.app adds the SSLCertificate lines
+       ProxyPreserveHost On
+       RequestHeader set X-Forwarded-Proto "https"
+       LimitRequestBody 12582912
+       ProxyPass / http://127.0.0.1:8080/
+       ProxyPassReverse / http://127.0.0.1:8080/
+   </VirtualHost>
+   ```
+   Then `a2ensite noagenda.app`, `certbot --apache -d noagenda.app`, `apachectl configtest`, `systemctl reload apache2`.
+   Other vhosts are unaffected. Make sure they all serve HTTPS with a valid certificate too (`certbot certificates`).
+
 ## Updating
 ```bash
 git pull

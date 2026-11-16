@@ -48,7 +48,8 @@ services:
       DB_DATABASE: ${MYSQL_DATABASE:-noagenda}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required (>= 32 chars)}
       CORS_ORIGIN: ${PUBLIC_ORIGIN:-https://${DOMAIN}}
-      TRUST_PROXY: 1
+      # Number of proxies in front of the backend: 1 = Caddy only; 2 = Apache -> Caddy.
+      TRUST_PROXY: ${TRUST_PROXY:-1}
       PUBLIC_URL: ${PUBLIC_ORIGIN:-https://${DOMAIN}}
       # The browser sees the API under /api, so the refresh cookie is scoped to /api/auth.
       REFRESH_COOKIE_PATH: /api/auth
@@ -93,9 +94,12 @@ services:
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN:?DOMAIN is required}
+      # Defaults to the domain (Caddy terminates TLS itself). Behind an existing reverse proxy
+      # (e.g. Apache) set SITE_ADDRESS=http://<domain>, BIND_ADDR=127.0.0.1, HTTP_PORT=8080.
+      SITE_ADDRESS: ${SITE_ADDRESS:-${DOMAIN}}
     ports:
-      - "${HTTP_PORT:-80}:80"
-      - "${HTTPS_PORT:-443}:443"
+      - "${BIND_ADDR:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${BIND_ADDR:-0.0.0.0}:${HTTPS_PORT:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

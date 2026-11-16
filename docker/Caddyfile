@@ -1,6 +1,8 @@
 # Reverse proxy + automatic HTTPS (Let's Encrypt). {$DOMAIN} comes from the compose env.
 # With DOMAIN=localhost Caddy issues a local self-signed certificate (for testing).
-{$DOMAIN} {
+# {$SITE_ADDRESS} defaults to the domain. Set it to http://<domain> when another reverse proxy
+# (Apache/nginx) terminates TLS in front of Caddy: Caddy then serves plain HTTP only.
+{$SITE_ADDRESS} {
 	encode zstd gzip
 
 	header {
