@@ -10,11 +10,21 @@ Internet ──443──> Caddy (automatic HTTPS) ──/api/*──> backend (N
 ```
 
 Only Caddy publishes ports (80/443). MariaDB, the API and the UI live on an internal Docker network.
+
+**Server already running Apache/nginx on 80/443?** Keep it as the HTTPS front door and put Caddy behind it on loopback
+(see [Behind an existing Apache](#behind-an-existing-apache-ports-80443-already-in-use)):
+
+```
+Internet ──443──> Apache (certbot HTTPS) ──> Caddy 127.0.0.1:8080 (plain HTTP, loopback only) ──> backend / frontend
+```
+
 The UI and API share one origin (the API is under `/api`), so there is no CORS to configure.
 
 ## Requirements
 - A Linux server with Docker + the Compose plugin
 - A DNS name pointing at it, with ports **80 and 443** reachable (Let's Encrypt certificate)
+- If 80/443 are already taken by another web server, use the Apache/nginx proxy mode below instead of freeing the ports.
+  Either way, every public site on the machine should be HTTPS-only.
 
 ## First deployment
 ```bash
@@ -87,6 +97,8 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
        ProxyPassReverse / http://127.0.0.1:8080/
    </VirtualHost>
    ```
+   Add `Header always set Strict-Transport-Security "max-age=31536000"` to the 443 vhost only if Caddy's header is not
+   reaching clients (it normally is: `docker/preflight.sh remote` checks it).
    Then `a2ensite noagenda.app`, `certbot --apache -d noagenda.app`, `apachectl configtest`, `systemctl reload apache2`.
    Other vhosts are unaffected. Make sure they all serve HTTPS with a valid certificate too (`certbot certificates`).
 
@@ -161,7 +173,9 @@ advice, so have them reviewed before you accept real users.
 | `JWT_SECRET` | `.env.production` | Required, **>= 32 chars** (backend refuses to start otherwise) |
 | `PUBLIC_ORIGIN` | optional | Only for a non-default origin, e.g. a non-standard port |
 | `DB_SYNCHRONIZE` / `DB_MIGRATIONS_RUN` | backend | Defaults: sync off + migrations on in production |
-| `TRUST_PROXY` | backend | Reverse-proxy hops (compose sets 1) so rate limits see real client IPs |
+| `TRUST_PROXY` | `.env.production` | Reverse-proxy hops in front of the backend so rate limits see real client IPs. Default 1 (Caddy); use 2 for Apache -> Caddy |
+| `BIND_ADDR`, `HTTP_PORT`, `HTTPS_PORT` | optional | Where Caddy publishes. Defaults `0.0.0.0` / 80 / 443; proxy mode: `127.0.0.1` / 8080 / 8443 |
+| `SITE_ADDRESS` | optional | Caddy site address. Default `DOMAIN` (Caddy does HTTPS itself); proxy mode: `http://<DOMAIN>` (plain HTTP, no certificate) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `.env.production` | Outgoing mail (see above) |
 | `REQUIRE_EMAIL_VERIFICATION` | `.env.production` | Default: on if `SMTP_HOST` is set |
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL_DAYS` | backend | Defaults `15m` / `30` |

@@ -28,11 +28,25 @@ docker/preflight.sh remote https://your.domain           # is the LIVE site corr
 - [ ] A Linux server with Docker + the Compose plugin. 2 GB RAM is comfortable for a small group; plan disk for
       uploads + backups.
 - [ ] **DNS**: an `A` (and `AAAA` if you have IPv6) record for your domain pointing at the server.
-- [ ] **Firewall**: allow only SSH (22), 80, 443. (The compose file publishes only Caddy's 80/443; the database and
+- [ ] **Ports 80/443 already used** by Apache/nginx (e.g. other sites on the same VPS)? Do **not** replace it (PHP apps
+      such as Leantime would break). Use the proxy mode: web server terminates HTTPS, Caddy listens on `127.0.0.1:8080`.
+      Follow "Behind an existing Apache" in [DEPLOYMENT.md](DEPLOYMENT.md) and tick the **Shared server** items below.
+- [ ] **Firewall**: allow only SSH (22), 80, 443. (The compose file publishes only Caddy's 80/443 (in proxy mode only `127.0.0.1:8080`); the database and
       app are on an internal network. Note Docker bypasses `ufw` for published ports, which is why that matters.)
 - [ ] **SSH**: keys only, no root login, no password auth.
 - [ ] **Time sync** (`timedatectl status` shows "synchronized: yes"): certificates and tokens depend on the clock.
 - [ ] **Automatic security updates** (`unattended-upgrades` on Debian/Ubuntu).
+
+### Shared server (Apache/nginx already on 80/443)
+
+- [ ] **Inventory first**: `apachectl -S` and `certbot certificates`: list every vhost and its certificate.
+- [ ] **Every site is HTTPS-only**: each vhost has a valid certificate and its `:80` side 301-redirects to https;
+      `certbot renew --dry-run` succeeds. Fix the existing sites too, not just the new one.
+- [ ] Apache modules `proxy proxy_http headers ssl rewrite` enabled; a new vhost for your domain forwarding to
+      `http://127.0.0.1:8080/` with `X-Forwarded-Proto https`. The other vhosts are untouched.
+- [ ] `apachectl configtest` says `Syntax OK` **before** every `systemctl reload apache2`.
+- [ ] RAM budget covers the existing apps plus MariaDB + two Node containers; the app's MariaDB lives in Docker and does
+      not clash with a database already on the host (it publishes no port).
 
 ## 2. Secrets and configuration (you)
 
@@ -44,6 +58,8 @@ openssl rand -base64 24    # MYSQL_PASSWORD
 openssl rand -hex 48       # JWT_SECRET
 ```
 
+- [ ] On a shared server also set `BIND_ADDR=127.0.0.1`, `HTTP_PORT=8080`, `HTTPS_PORT=8443`,
+      `SITE_ADDRESS=http://<your domain>`, `TRUST_PROXY=2` (see the example file). `PUBLIC_ORIGIN` stays `https://<domain>`.
 - [ ] Fill in `DOMAIN`, the three secrets, SMTP (section 3), `OPERATOR_NAME`, `CONTACT_EMAIL`, `REQUIRE_TERMS_ACCEPTANCE=true`.
 - [ ] **Save the file in a password manager.** Gotchas:
   - The two database passwords are only applied the *first* time the database volume is created. Editing them later
@@ -82,7 +98,10 @@ Password reset and email verification depend on it. Without `SMTP_HOST` neither 
 docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
 ```
 
-- [ ] **Testing the certificate setup?** Let's Encrypt limits repeated requests for the same domain. While experimenting,
+- [ ] **Shared server:** before touching Apache, check `curl -H 'Host: your.domain' http://127.0.0.1:8080/api/health`
+      returns `{"status":"ok"}`; then add the vhost, `certbot --apache -d your.domain`, `apachectl configtest`, reload.
+      Confirm the other sites still load.
+- [ ] **Testing the certificate setup?** (Caddy mode only; with Apache, certbot has its own `--test-cert`.) Let's Encrypt limits repeated requests for the same domain. While experimenting,
       temporarily add `acme_ca https://acme-staging-v02.api.letsencrypt.org/directory` inside the `{ }` global options
       block at the top of `docker/Caddyfile` (add the block if absent), then remove it for the real certificate.
 - [ ] Register your own account, then make it the admin:
@@ -111,7 +130,8 @@ An untested backup is a hope, not a backup.
 - [ ] **Disk space alert** (your host's tooling, or a cron'd `df`). Container logs are capped (3 x 10 MB per service);
       uploads and backups are what grow.
 - [ ] **Certificate expiry**: run `docker/preflight.sh remote https://your.domain` weekly from somewhere else; it fails
-      if the certificate has under 14 days left (Caddy renews automatically, this catches it when it silently cannot).
+      if the certificate has under 14 days left (Caddy or certbot renews automatically, this catches it when it silently cannot). On a shared server check
+      all your hostnames, not only the new one.
 - [ ] Look at the logs now and then: `docker compose ... logs backend | grep "Failed login"` shows brute-force attempts.
 - [ ] Optional, not built in: an error tracker such as Sentry.
 
