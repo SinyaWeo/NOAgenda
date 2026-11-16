@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Put, Patch, Delete, Body, Param, Query, UseGuards, NotFoundException, ForbiddenException, Request } from '@nestjs/common';
 import { TaskService, TaskFilter } from './task.service';
-import { Node, NodeStatus } from '../node/node.entity';
+import { Node, NodeStatus, NodeType } from '../node/node.entity';
 import { AuthGuard } from '@nestjs/passport';
 import { NodeAccessService } from '../node/node-access.service';
 import { TaskCreateDto, TaskUpdateDto, BulkTaskUpdateDto, TaskListQueryDto, TaskPositionDto } from '../node/dto/node.dto';
@@ -11,6 +11,13 @@ export class TaskController {
     private readonly taskService: TaskService,
     private readonly access: NodeAccessService,
   ) {}
+
+  /** Load a node and require it to be a task: /tasks/* must never act on projects. */
+  private async requireTask(id: number): Promise<Node> {
+    const node = await this.taskService.findById(Number(id));
+    if (!node || node.type !== NodeType.TASK) throw new NotFoundException();
+    return node;
+  }
 
   @Get()
   @UseGuards(AuthGuard('jwt'))
@@ -49,7 +56,10 @@ export class TaskController {
   async bulkUpdate(@Body() body: BulkTaskUpdateDto, @Request() req: any): Promise<Node[]> {
     const ids = body.ids;
     // Every task must be writable by the caller before anything is changed.
-    for (const id of ids) await this.access.assertWrite(req.user.userId, id);
+    for (const id of ids) {
+      await this.requireTask(id);
+      await this.access.assertWrite(req.user.userId, id);
+    }
     const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body.data ?? {}));
     delete (data as any).type;
     if (data.parentId !== undefined) await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
@@ -59,8 +69,7 @@ export class TaskController {
   @Put(':id')
   @UseGuards(AuthGuard('jwt'))
   async update(@Param('id') id: number, @Body() body: TaskUpdateDto, @Request() req: any): Promise<Node> {
-    const existing = await this.taskService.findById(id);
-    if (!existing) throw new NotFoundException();
+    const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);
     // Prevent mass-assignment of ownership/identity fields; type is immutable.
     const safeBody = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
@@ -76,6 +85,7 @@ export class TaskController {
   @Put(':id/duplicate')
   @UseGuards(AuthGuard('jwt'))
   async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
+    await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, Number(id));
     const task = await this.taskService.duplicate(Number(id), req.user.userId);
     if (!task) throw new NotFoundException();
@@ -85,8 +95,7 @@ export class TaskController {
   @Post(':id/position')
   @UseGuards(AuthGuard('jwt'))
   async updatePosition(@Param('id') id: number, @Body() body: TaskPositionDto, @Request() req: any): Promise<Node> {
-    const existing = await this.taskService.findById(id);
-    if (!existing) throw new NotFoundException();
+    const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);
     const task = await this.taskService.updatePosition(id, body.position);
     if (!task) throw new NotFoundException();
@@ -107,8 +116,7 @@ export class TaskController {
   @Delete(':id')
   @UseGuards(AuthGuard('jwt'))
   async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
-    const existing = await this.taskService.findById(id);
-    if (!existing) throw new NotFoundException();
+    const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);
     return this.taskService.remove(id);
   }

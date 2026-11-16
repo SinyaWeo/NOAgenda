@@ -12,12 +12,17 @@ export class UserService {
     private readonly userRepository: Repository<User>,
   ) {}
 
+  /** Query builder that also selects the (select:false) password hash. */
+  private withPassword() {
+    return this.userRepository.createQueryBuilder('u').addSelect('u.password');
+  }
+
   async findByUsername(username: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { username } });
+    return this.withPassword().where('u.username = :username', { username }).getOne();
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { email } });
+    return this.withPassword().where('u.email = :email', { email }).getOne();
   }
 
   async findAll(): Promise<Omit<User, 'password'>[]> {
@@ -36,7 +41,7 @@ export class UserService {
   }
 
   async findById(id: number): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+    return this.withPassword().where('u.id = :id', { id }).getOne();
   }
 
   async findByIdSafe(id: number): Promise<Omit<User, 'password'> | null> {

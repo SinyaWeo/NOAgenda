@@ -1,19 +1,13 @@
-import { IsString, IsEmail, IsOptional, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 
+/**
+ * Deliberately name-only. Username/email/password changes must go through the
+ * dedicated flows in user-settings.controller.ts (current-password check,
+ * email re-verification, session revocation, API-token block).
+ */
 export class UpdateUserDto {
   @IsString()
   @IsOptional()
   @MaxLength(255)
-  username?: string;
-
-  @IsEmail()
-  @IsOptional()
-  @MaxLength(255)
-  email?: string;
-
-  @IsString()
-  @IsOptional()
-  @MinLength(8)
-  @MaxLength(255)
-  password?: string;
+  name?: string;
 }

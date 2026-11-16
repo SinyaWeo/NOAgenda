@@ -42,6 +42,6 @@ export class TaskReminderController {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));
-    return this.taskReminderService.remove(id);
+    return this.taskReminderService.remove(Number(taskId), Number(id));
   }
 }

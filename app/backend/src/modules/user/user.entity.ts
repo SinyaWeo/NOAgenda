@@ -10,7 +10,9 @@ export class User extends BaseEntity {
   @Column({ unique: true })
   email!: string;
 
-  @Column()
+  // select:false keeps the hash out of every query and eager/joined relation
+  // (comment.author, attachment.uploader, ...). UserService loads it explicitly.
+  @Column({ select: false })
   password!: string;
 
   @Column({ default: false })

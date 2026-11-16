@@ -19,7 +19,8 @@ export class TaskReminderService {
     return this.repo.save(reminder);
   }
 
-  async remove(id: number): Promise<void> {
-    await this.repo.delete(id);
+  /** Scoped to the task so a reminder id from another task can't be deleted. */
+  async remove(taskId: number, id: number): Promise<void> {
+    await this.repo.delete({ id, node: { id: taskId } as any });
   }
 }
