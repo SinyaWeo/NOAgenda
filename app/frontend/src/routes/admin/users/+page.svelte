@@ -144,8 +144,11 @@
 						{$fmt.date(u.createdAt)}
 					</TableBodyCell>
 					<TableBodyCell>
-						{#if $currentUser?.id !== u.id}
-							<div class="flex items-center gap-2">
+						{@const isSelf = $currentUser?.id === u.id}
+						<div class="flex items-center gap-2">
+							{#if isSelf}
+								<span class="text-xs text-gray-400 w-28">{$t('common.you')}</span>
+							{:else}
 								<Select
 									size="sm"
 									class="w-28"
@@ -155,21 +158,24 @@
 									disabled={$saving === u.id}
 									onchange={(e) => changeRole(u, e.target as HTMLSelectElement)}
 								/>
-								<Button
-									size="xs"
-									color="alternative"
-									disabled={$saving === u.id}
-									onclick={() => toggleLock(u)}
-								>
-									{$t(u.isLocked ? 'admin.users.unlock' : 'admin.users.lock')}
-								</Button>
-								<Button size="xs" color="red" disabled={$saving === u.id} onclick={() => removeUser(u)}>
-									{$t('common.delete')}
-								</Button>
-							</div>
-						{:else}
-							<span class="text-xs text-gray-400">{$t('common.you')}</span>
-						{/if}
+							{/if}
+							<Button
+								size="xs"
+								color="alternative"
+								disabled={isSelf || $saving === u.id}
+								onclick={() => toggleLock(u)}
+							>
+								{$t(u.isLocked ? 'admin.users.unlock' : 'admin.users.lock')}
+							</Button>
+							<Button
+								size="xs"
+								color="red"
+								disabled={isSelf || $saving === u.id}
+								onclick={() => removeUser(u)}
+							>
+								{$t('common.delete')}
+							</Button>
+						</div>
 					</TableBodyCell>
 				</TableBodyRow>
 			{/each}
