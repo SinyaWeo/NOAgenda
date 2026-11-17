@@ -4,7 +4,7 @@ import type { Message } from '../core';
 export const en = {
 	'admin.checking': 'Checking permissions…',
 	'admin.back': 'Admin',
-	'admin.title': 'Admin — NOAgenda',
+	'admin.title': 'Admin — {app}',
 	'admin.dashboard.title': 'Admin Dashboard',
 	'admin.dashboard.users': 'Users',
 	'admin.dashboard.usersHint': 'Manage user roles',
@@ -51,7 +51,7 @@ export const en = {
 	'admin.settings.pageTitle': 'Admin — Settings',
 	'admin.settings.title': 'App Settings',
 	'admin.settings.notice':
-		'These values are stored, but the server does not read them yet, so changing them has no effect. Registration is controlled by the {enabled} and {inviteCode} environment variables on the server.',
+		'The registration toggle takes effect immediately. The server environment variable {enabled}=false closes registration regardless of this toggle, and {inviteCode} requires an invite code. The app name is shown in the sidebar, page titles, sign-in pages and emails.',
 	'admin.settings.loadFailed': 'Failed to load settings.',
 	'admin.settings.saved': 'Settings saved.',
 	'admin.settings.saveFailed': 'Failed to save settings.',
@@ -63,7 +63,7 @@ export const en = {
 export const cs: Record<keyof typeof en, Message> = {
 	'admin.checking': 'Ověřuji oprávnění…',
 	'admin.back': 'Správa',
-	'admin.title': 'Správa — NOAgenda',
+	'admin.title': 'Správa — {app}',
 	'admin.dashboard.title': 'Přehled správy',
 	'admin.dashboard.users': 'Uživatelé',
 	'admin.dashboard.usersHint': 'Správa rolí uživatelů',
@@ -110,7 +110,7 @@ export const cs: Record<keyof typeof en, Message> = {
 	'admin.settings.pageTitle': 'Správa — Nastavení',
 	'admin.settings.title': 'Nastavení aplikace',
 	'admin.settings.notice':
-		'Tyto hodnoty se ukládají, ale server je zatím nečte, takže jejich změna nemá žádný účinek. Registrace se řídí proměnnými prostředí {enabled} a {inviteCode} na serveru.',
+		'Přepínač registrace se projeví okamžitě. Proměnná prostředí serveru {enabled}=false uzavře registraci bez ohledu na tento přepínač a {inviteCode} vyžaduje pozvánkový kód. Název aplikace se zobrazuje v postranním panelu, titulcích stránek, přihlašovacích stránkách a e‑mailech.',
 	'admin.settings.loadFailed': 'Nastavení se nepodařilo načíst.',
 	'admin.settings.saved': 'Nastavení bylo uloženo.',
 	'admin.settings.saveFailed': 'Nastavení se nepodařilo uložit.',

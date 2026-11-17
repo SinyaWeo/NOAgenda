@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 
 export interface MailMessage {
   to: string;
@@ -20,7 +21,7 @@ export class MailService {
   private readonly transport?: nodemailer.Transporter;
   private readonly from: string;
 
-  constructor() {
+  constructor(private readonly appSettings: AppSettingsService) {
     this.from = process.env.MAIL_FROM || 'NOAgenda <no-reply@localhost>';
     if (process.env.SMTP_HOST) {
       this.transport = nodemailer.createTransport({
@@ -39,6 +40,11 @@ export class MailService {
     const base = (process.env.PUBLIC_URL || process.env.CORS_ORIGIN || 'http://localhost:5173').replace(/\/+$/, '');
     const qs = new URLSearchParams(query).toString();
     return `${base}${path}${qs ? '?' + qs : ''}`;
+  }
+
+  /** The configured app name, for subjects and wording. */
+  appName(): Promise<string> {
+    return this.appSettings.getAppName();
   }
 
   /** True when mail can really be delivered. */

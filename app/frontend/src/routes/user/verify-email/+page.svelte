@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '$lib/appName';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -26,12 +27,12 @@
 	});
 </script>
 
-<svelte:head><title>{$t('auth.verify.pageTitle')}</title></svelte:head>
+<svelte:head><title>{$t('auth.verify.pageTitle', { app: $appName })}</title></svelte:head>
 
 <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
 	<Card class="w-full max-w-md">
 		<div class="text-center mb-6">
-			<h1 class="text-2xl font-bold text-gray-900 dark:text-white">NOAgenda</h1>
+			<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$appName}</h1>
 			<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{$t('auth.verify.title')}</p>
 		</div>
 

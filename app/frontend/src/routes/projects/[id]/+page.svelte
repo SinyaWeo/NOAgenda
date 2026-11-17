@@ -6,6 +6,7 @@
 	import { Alert, Button, Card, Input, Select } from 'flowbite-svelte';
 	import { CheckCircleOutline, CogOutline, ExclamationCircleOutline } from 'flowbite-svelte-icons';
 	import { showToast } from '$lib/toast';
+	import { announceRecurrence } from '$lib/recurrence';
 	import { errMessage } from '$lib/errors';
 	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
 	import type { Project, ProjectView, Task } from '$lib/types';
@@ -65,9 +66,10 @@
 
 	async function updateTaskStatus(taskId: number, status: string) {
 		try {
+			const before = $tasks.find((t) => t.id === taskId)?.status;
 			const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, { status });
 			tasks.update((list) => list.map((t) => (t.id === taskId ? updated : t)));
-			showToast(tr('views.toast.statusUpdated'), 'success');
+			if (!announceRecurrence(status, before, updated)) showToast(tr('views.toast.statusUpdated'), 'success');
 		} catch (e: unknown) {
 			showToast(errMessage(e, tr('views.toast.statusFailed')), 'error');
 		}

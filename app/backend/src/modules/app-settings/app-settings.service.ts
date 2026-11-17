@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppSetting } from './app-setting.entity';
 
+export const DEFAULT_APP_NAME = 'NOAgenda';
+
 @Injectable()
 export class AppSettingsService {
   constructor(
@@ -18,6 +20,12 @@ export class AppSettingsService {
   async get(key: string): Promise<string | null> {
     const row = await this.repo.findOne({ where: { key } });
     return row?.value ?? null;
+  }
+
+  /** The admin-configured display name (shown in the UI and emails); blank or unset falls back to the default. */
+  async getAppName(): Promise<string> {
+    const name = (await this.get('appName'))?.trim();
+    return name || DEFAULT_APP_NAME;
   }
 
   async set(key: string, value: string): Promise<void> {

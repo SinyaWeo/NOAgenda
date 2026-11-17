@@ -4,6 +4,7 @@ import { Access, NodeAccessService } from '../node/node-access.service';
 import { ProjectUserService } from './project-user.service';
 import { ProjectService } from '../project/project.service';
 import { ProjectUser } from './project-user.entity';
+import { NotificationService } from '../notification/notification.service';
 
 @Controller('projects/:projectId/users')
 export class ProjectUserController {
@@ -11,6 +12,7 @@ export class ProjectUserController {
     private readonly projectUserService: ProjectUserService,
     private readonly projectService: ProjectService,
     private readonly access: NodeAccessService,
+    private readonly notifications: NotificationService,
   ) {}
 
   @Get()
@@ -26,7 +28,22 @@ export class ProjectUserController {
     @Request() req: any,
   ): Promise<ProjectUser> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
-    return this.projectUserService.add(projectId, body.userId, body.permission);
+    const member = await this.projectUserService.add(projectId, body.userId, body.permission);
+    void this.projectService
+      .findById(Number(projectId))
+      .then((project) =>
+        this.notifications.notify({
+          type: 'project_added',
+          recipients: [body.userId],
+          actorId: req.user.userId,
+          actorName: req.user.username,
+          nodeId: Number(projectId),
+          kind: 'project',
+          title: project?.name ?? '',
+        }),
+      )
+      .catch(() => undefined);
+    return member;
   }
 
   @Put(':userId')

@@ -39,6 +39,7 @@ import { SearchModule } from './modules/search/search.module';
 import { NodeModule } from './modules/node/node.module';
 import { QuoteModule } from './modules/quotes/quote.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { EventsModule } from './common/domain-events';
 import { AppSettingsModule } from './modules/app-settings/app-settings.module';
 import { MailModule } from './modules/mail/mail.module';
 
@@ -100,6 +101,7 @@ import { MailModule } from './modules/mail/mail.module';
     NodeModule,
     QuoteModule,
     AdminModule,
+    EventsModule,
     AppSettingsModule,
   ],
   controllers: [AppController],

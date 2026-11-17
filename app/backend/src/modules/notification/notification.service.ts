@@ -1,10 +1,42 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from './notification.entity';
+import { Notification, NotificationType } from './notification.entity';
+
+export interface NotifyEvent {
+  type: NotificationType;
+  /** Who should hear about it. Duplicates and the actor themself are dropped. */
+  recipients: Array<number | null | undefined>;
+  /** The person who did it; never notified about their own action. Null for system events (reminders). */
+  actorId: number | null;
+  actorName?: string;
+  nodeId: number;
+  kind: 'task' | 'project';
+  title: string;
+}
+
+const clip = (v: string, n: number) => (v.length > n ? v.slice(0, n - 1) + '…' : v);
+
+/** English fallback text (the UI localizes known types from `params`). */
+function englishMessage(e: NotifyEvent): string {
+  const who = clip(e.actorName ?? '', 60);
+  const what = clip(e.title, 120);
+  switch (e.type) {
+    case 'task_assigned':
+      return `${who} assigned you to "${what}"`;
+    case 'task_comment':
+      return `${who} commented on "${what}"`;
+    case 'task_reminder':
+      return `Reminder: "${what}"`;
+    case 'project_added':
+      return `${who} added you to the project "${what}"`;
+  }
+}
 
 @Injectable()
 export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
+
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
@@ -25,6 +57,34 @@ export class NotificationService {
   async create(notification: Partial<Notification>): Promise<Notification> {
     const newNotification = this.notificationRepository.create(notification);
     return this.notificationRepository.save(newNotification);
+  }
+
+  /**
+   * Tell people about something that happened. Never throws and never blocks the action that
+   * caused it: a failed notification must not fail an assignment or a comment.
+   */
+  async notify(event: NotifyEvent): Promise<void> {
+    try {
+      const ids = [...new Set(event.recipients.filter((id): id is number => typeof id === 'number'))].filter(
+        (id) => id !== event.actorId,
+      );
+      if (!ids.length) return;
+      const message = englishMessage(event);
+      const params = JSON.stringify({ actor: event.actorName ?? '', title: event.title, kind: event.kind });
+      await this.notificationRepository.save(
+        ids.map((id) =>
+          this.notificationRepository.create({
+            message,
+            type: event.type,
+            nodeId: event.nodeId,
+            params,
+            user: { id } as any,
+          }),
+        ),
+      );
+    } catch (err) {
+      this.logger.warn(`Could not create a ${event.type} notification: ${(err as Error).message}`);
+    }
   }
 
   async markAsRead(id: number): Promise<Notification | null> {

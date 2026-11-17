@@ -4,6 +4,7 @@ import { NodeAccessService } from '../node/node-access.service';
 import { TaskAssigneeService } from './task-assignee.service';
 import { TaskService } from '../task/task.service';
 import { TaskAssignee } from './task-assignee.entity';
+import { NotificationService } from '../notification/notification.service';
 
 @Controller('tasks/:taskId/assignees')
 export class TaskAssigneeController {
@@ -11,6 +12,7 @@ export class TaskAssigneeController {
     private readonly taskAssigneeService: TaskAssigneeService,
     private readonly taskService: TaskService,
     private readonly access: NodeAccessService,
+    private readonly notifications: NotificationService,
   ) {}
 
   @Get()
@@ -26,7 +28,17 @@ export class TaskAssigneeController {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));
-    return this.taskAssigneeService.add(taskId, body.userId);
+    const assignee = await this.taskAssigneeService.add(taskId, body.userId);
+    void this.notifications.notify({
+      type: 'task_assigned',
+      recipients: [body.userId],
+      actorId: req.user.userId,
+      actorName: req.user.username,
+      nodeId: Number(taskId),
+      kind: 'task',
+      title: task.title ?? '',
+    });
+    return assignee;
   }
 
   @Delete(':userId')

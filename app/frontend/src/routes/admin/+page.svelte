@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { appName } from '$lib/appName';
 	import { Card } from 'flowbite-svelte';
 	import { t } from '$lib/i18n';
 	import { UsersGroupOutline, QuoteOutline, CogOutline } from 'flowbite-svelte-icons';
 </script>
 
 <svelte:head>
-	<title>{$t('admin.title')}</title>
+	<title>{$t('admin.title', { app: $appName })}</title>
 </svelte:head>
 
 <div class="max-w-3xl mx-auto">

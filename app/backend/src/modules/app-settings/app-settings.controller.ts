@@ -26,6 +26,8 @@ export class AppSettingsController {
       if (typeof value !== 'string' || value.length > 2000)
         throw new BadRequestException(`Setting "${key}" must be a string of at most 2000 characters`);
     }
+    if (typeof body.appName === 'string' && body.appName.trim().length > 60)
+      throw new BadRequestException('The app name must be at most 60 characters');
     await this.appSettingsService.setMany(body);
     return this.appSettingsService.getAll();
   }

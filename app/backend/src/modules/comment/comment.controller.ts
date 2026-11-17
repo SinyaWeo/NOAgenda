@@ -15,12 +15,20 @@ import {
 import { CommentService } from './comment.service';
 import { Comment } from './comment.entity';
 import { NodeAccessService } from '../node/node-access.service';
+import { TaskService } from '../task/task.service';
+import { TaskAssigneeService } from '../task-assignee/task-assignee.service';
+import { NotificationService } from '../notification/notification.service';
+import { DomainEvents } from '../../common/domain-events';
 
 @Controller('comments')
 export class CommentController {
   constructor(
     private readonly commentService: CommentService,
     private readonly access: NodeAccessService,
+    private readonly tasks: TaskService,
+    private readonly assignees: TaskAssigneeService,
+    private readonly notifications: NotificationService,
+    private readonly events: DomainEvents,
   ) {}
 
   @Get()
@@ -47,11 +55,49 @@ export class CommentController {
     const taskId = Number(body.taskId);
     if (!Number.isInteger(taskId) || taskId < 1) throw new BadRequestException('Invalid taskId');
     await this.access.assertWrite(req.user.userId, taskId);
-    return this.commentService.create({
+    const comment = await this.commentService.create({
       content: body.content,
       node: { id: taskId } as any,
       author: { id: req.user.userId } as any,
     });
+    void this.notifyAboutComment(taskId, req.user, comment);
+    return comment;
+  }
+
+  /** Announces the new comment to webhooks, and tells the task's creator and assignees (not the commenter). Never throws. */
+  private async notifyAboutComment(
+    taskId: number,
+    actor: { userId: number; username: string },
+    comment: Comment,
+  ): Promise<void> {
+    try {
+      const task = await this.tasks.findById(taskId);
+      if (!task) return;
+      this.events.emit({
+        name: 'comment.created',
+        data: {
+          id: comment.id,
+          content: comment.content,
+          taskId,
+          authorId: actor.userId,
+          createdAt: comment.createdAt,
+        },
+        nodeId: taskId,
+        owner: task.createdBy ?? null,
+      });
+      const assigned = await this.assignees.findByTask(taskId);
+      await this.notifications.notify({
+        type: 'task_comment',
+        recipients: [task.createdBy, ...assigned.map((a) => a.user?.id)],
+        actorId: actor.userId,
+        actorName: actor.username,
+        nodeId: taskId,
+        kind: 'task',
+        title: task.title ?? '',
+      });
+    } catch {
+      // a notification problem must never affect the comment
+    }
   }
 
   @Put(':id')

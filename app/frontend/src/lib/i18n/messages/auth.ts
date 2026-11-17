@@ -60,7 +60,7 @@ export const en = {
 	'auth.newPassword.submit': 'Reset password',
 	'auth.newPassword.submitting': 'Resetting…',
 
-	'auth.verify.pageTitle': 'Confirm email – NOAgenda',
+	'auth.verify.pageTitle': 'Confirm email – {app}',
 	'auth.verify.title': 'Confirm your email address',
 	'auth.verify.incomplete': 'This confirmation link is incomplete.',
 	'auth.verify.failed': 'Could not confirm your email address.',
@@ -76,7 +76,7 @@ export const en = {
 	'auth.profile.timezone': 'Timezone',
 	'auth.profile.edit': 'Edit Profile',
 
-	'auth.about.title': 'About NOAgenda',
+	'auth.about.title': 'About {app}',
 	'auth.about.tagline': 'A project-focused task manager built with NestJS and SvelteKit.',
 	'auth.about.version': 'Version',
 	'auth.about.builtAt': 'Built at',
@@ -141,7 +141,7 @@ export const cs: Record<keyof typeof en, Message> = {
 	'auth.newPassword.submit': 'Obnovit heslo',
 	'auth.newPassword.submitting': 'Obnovování…',
 
-	'auth.verify.pageTitle': 'Potvrzení e‑mailu – NOAgenda',
+	'auth.verify.pageTitle': 'Potvrzení e‑mailu – {app}',
 	'auth.verify.title': 'Potvrďte svou e‑mailovou adresu',
 	'auth.verify.incomplete': 'Tento potvrzovací odkaz je neúplný.',
 	'auth.verify.failed': 'E‑mailovou adresu se nepodařilo potvrdit.',
@@ -157,7 +157,7 @@ export const cs: Record<keyof typeof en, Message> = {
 	'auth.profile.timezone': 'Časové pásmo',
 	'auth.profile.edit': 'Upravit profil',
 
-	'auth.about.title': 'O aplikaci NOAgenda',
+	'auth.about.title': 'O aplikaci {app}',
 	'auth.about.tagline': 'Správce úkolů zaměřený na projekty, vytvořený v NestJS a SvelteKitu.',
 	'auth.about.version': 'Verze',
 	'auth.about.builtAt': 'Sestaveno',

@@ -128,9 +128,14 @@ export class AuthService {
       }),
     );
     // Not awaited: the response time must not reveal whether the account exists.
-    void this.mail.send({
+    void this.sendResetMail(user, token);
+  }
+
+  private async sendResetMail(user: { email: string; username: string }, token: string): Promise<void> {
+    const app = await this.mail.appName().catch(() => 'NOAgenda');
+    await this.mail.send({
       to: user.email,
-      subject: 'Reset your NOAgenda password',
+      subject: `Reset your ${app} password`,
       text:
         `Hi ${user.username},\n\n` +
         `Someone asked to reset the password for your account. Open this link within 1 hour to choose a new one:\n\n` +

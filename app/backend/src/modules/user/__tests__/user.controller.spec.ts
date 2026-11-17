@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserController } from '../user.controller';
 import { UserService } from '../user.service';
+import { AppSettingsService } from '../../app-settings/app-settings.service';
 import { EmailVerificationService } from '../../email-verification/email-verification.service';
 
 describe('UserController', () => {
@@ -16,6 +17,7 @@ describe('UserController', () => {
           useValue: { findAll: jest.fn(), findById: jest.fn() },
         },
         { provide: EmailVerificationService, useValue: { send: jest.fn() } },
+        { provide: AppSettingsService, useValue: { get: jest.fn() } },
       ],
     }).compile();
     controller = module.get<UserController>(UserController);

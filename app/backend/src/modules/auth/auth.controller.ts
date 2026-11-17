@@ -20,7 +20,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto, ResendVerificationDto } from './dto/email-verification.dto';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { SessionMeta } from '../session/session.service';
-import { registrationPolicy } from '../user/registration';
+import { registrationPolicy, adminAllowsRegistration } from '../user/registration';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { Public } from '../../common/decorators/public.decorator';
 
 const COOKIE_NAME = 'noa_rt';
@@ -56,6 +57,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly emailVerification: EmailVerificationService,
+    private readonly appSettings: AppSettingsService,
   ) {}
 
   private meta(req: any): SessionMeta {
@@ -90,12 +92,16 @@ export class AuthController {
 
   /** Public, non-sensitive settings the UI needs before login. */
   @Get('config')
-  config() {
+  async config() {
+    const policy = registrationPolicy(
+      process.env,
+      adminAllowsRegistration(await this.appSettings.get('allowRegistration')),
+    );
     return {
       emailVerificationRequired: this.emailVerification.required,
       termsAcceptanceRequired: process.env.REQUIRE_TERMS_ACCEPTANCE === 'true',
-      registrationEnabled: registrationPolicy().enabled,
-      inviteRequired: registrationPolicy().inviteRequired,
+      registrationEnabled: policy.enabled,
+      inviteRequired: policy.inviteRequired,
     };
   }
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '$lib/appName';
 	import type { Snippet } from 'svelte';
 	import { LEGAL_CONFIGURED } from '$lib/legal';
 	import { t, locale } from '$lib/i18n';
@@ -6,7 +7,7 @@
 	let { title, children }: { title: string; children: Snippet } = $props();
 </script>
 
-<svelte:head><title>{$t('layout.titleWithApp', { title })}</title></svelte:head>
+<svelte:head><title>{$t('layout.titleWithApp', { title, app: $appName })}</title></svelte:head>
 
 <div class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
 	<div class="max-w-3xl mx-auto px-4 py-8">

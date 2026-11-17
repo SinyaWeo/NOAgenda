@@ -57,6 +57,8 @@ export const en = {
 	'tasks.reminders.title': 'Reminders',
 	'tasks.reminders.empty': 'No reminders.',
 	'tasks.reminders.remove': 'Remove reminder',
+	'tasks.reminders.sent': 'Sent',
+	'tasks.reminders.hint': 'You will get a notification at the chosen time.',
 	'tasks.attachments.title': 'Attachments',
 	'tasks.attachments.empty': 'No attachments.',
 	'tasks.attachments.upload': 'Upload file',
@@ -77,9 +79,12 @@ export const en = {
 	'tasks.form.creating': 'Creating…',
 	'tasks.repeat.legend': 'Repeat',
 	'tasks.repeat.every': 'Every',
-	'tasks.repeat.periods': 'periods',
+	'tasks.repeat.periods': 'days',
 	'tasks.repeat.months': 'months',
-	'tasks.repeat.fromCurrent': 'periods from current date'
+	'tasks.repeat.fromCurrent': 'days after completion',
+	'tasks.repeat.hint':
+		'When you mark the task done it reopens with the next due date instead. Leave at 0 to not repeat.',
+	'tasks.repeat.nextCycle': 'Done. This task repeats: next due {date}.'
 } as const;
 
 export const cs: Record<keyof typeof en, Message> = {
@@ -134,6 +139,8 @@ export const cs: Record<keyof typeof en, Message> = {
 	'tasks.reminders.title': 'Připomínky',
 	'tasks.reminders.empty': 'Žádné připomínky.',
 	'tasks.reminders.remove': 'Odebrat připomínku',
+	'tasks.reminders.sent': 'Odesláno',
+	'tasks.reminders.hint': 'V nastavený čas dostanete oznámení.',
 	'tasks.attachments.title': 'Přílohy',
 	'tasks.attachments.empty': 'Žádné přílohy.',
 	'tasks.attachments.upload': 'Nahrát soubor',
@@ -153,7 +160,10 @@ export const cs: Record<keyof typeof en, Message> = {
 	'tasks.form.creating': 'Vytvářím…',
 	'tasks.repeat.legend': 'Opakování',
 	'tasks.repeat.every': 'Každých',
-	'tasks.repeat.periods': 'období',
+	'tasks.repeat.periods': 'dní',
 	'tasks.repeat.months': 'měsíců',
-	'tasks.repeat.fromCurrent': 'období od aktuálního data'
+	'tasks.repeat.fromCurrent': 'dní od dokončení',
+	'tasks.repeat.hint':
+		'Po označení úkolu jako hotového se znovu otevře s dalším termínem. Hodnota 0 znamená bez opakování.',
+	'tasks.repeat.nextCycle': 'Hotovo. Úkol se opakuje: další termín {date}.'
 };

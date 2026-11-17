@@ -5,6 +5,7 @@
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
 	import type { WebhookInfo } from '$lib/types';
 	import { writable } from 'svelte/store';
+	import WebhookStatus from '$lib/components/WebhookStatus.svelte';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
 	import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 
@@ -102,6 +103,7 @@
 			<div>
 				<Label for="wh-event" class="mb-1">{$t('settings.webhooks.event')}</Label>
 				<Select id="wh-event" bind:value={newEvent}>
+					<option value="*">{$t('settings.webhooks.allEvents')}</option>
 					{#each EVENT_OPTIONS as ev}<option value={ev}>{ev}</option>{/each}
 				</Select>
 			</div>
@@ -136,7 +138,7 @@
 					? 'border-b border-gray-100 dark:border-gray-700'
 					: ''}"
 			>
-				<div class="flex-1 min-w-0">
+				<div class="flex-1 min-w-0 flex flex-col gap-1">
 					<p class="font-medium text-sm text-gray-900 dark:text-white m-0 break-all">
 						{wh.url}
 					</p>
@@ -145,6 +147,7 @@
 									>{wh.event}</strong
 								>{/if}{part}{/each}
 					</p>
+					<WebhookStatus webhook={wh} onChanged={load} />
 				</div>
 				<Button size="xs" color="red" onclick={() => remove(wh.id)}>{$t('common.delete')}</Button>
 			</div>

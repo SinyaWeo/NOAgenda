@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t, fmt } from '$lib/i18n';
 	import type { Attachment, Comment, Reminder } from '$lib/types';
-	import { Button, Card, Input } from 'flowbite-svelte';
+	import { Badge, Button, Card, Input } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
 
 	let {
@@ -76,6 +76,7 @@
 					<span class="flex-1 text-sm text-gray-700 dark:text-gray-300"
 						>{$fmt.dateTime(rem.reminderDate)}</span
 					>
+					{#if rem.sentAt}<Badge color="green">{$t('tasks.reminders.sent')}</Badge>{/if}
 					<Button
 						size="xs"
 						color="light"
@@ -88,6 +89,7 @@
 	{:else}
 		<p class="text-sm text-gray-400 mb-3">{$t('tasks.reminders.empty')}</p>
 	{/if}
+	<p class="text-xs text-gray-400 mb-2">{$t('tasks.reminders.hint')}</p>
 	<div class="flex gap-2">
 		<Input type="datetime-local" bind:value={newReminderDate} class="flex-1" />
 		<Button size="sm" onclick={submitReminder}>{$t('common.add')}</Button>

@@ -24,7 +24,7 @@ export const en = {
 	'layout.title.verifyEmail': 'Confirm email',
 	'layout.title.terms': 'Terms of Service',
 	'layout.title.privacy': 'Privacy Policy',
-	'layout.titleWithApp': '{title} · NOAgenda',
+	'layout.titleWithApp': '{title} · {app}',
 
 	// Shell
 	'layout.skipToContent': 'Skip to content',
@@ -67,6 +67,10 @@ export const en = {
 	'layout.notifications.markAllRead': 'Mark all read',
 	'layout.notifications.empty': 'No notifications.',
 	'layout.notifications.fallback': 'Notification #{id}',
+	'layout.notifications.task_assigned': '{actor} assigned you to "{title}"',
+	'layout.notifications.task_comment': '{actor} commented on "{title}"',
+	'layout.notifications.project_added': '{actor} added you to the project "{title}"',
+	'layout.notifications.task_reminder': 'Reminder: "{title}"',
 
 	// User menu
 	'layout.user.toggleThemeTitle': 'Toggle theme',
@@ -127,7 +131,7 @@ export const cs: Record<keyof typeof en, Message> = {
 	'layout.title.verifyEmail': 'Potvrzení e‑mailu',
 	'layout.title.terms': 'Podmínky používání',
 	'layout.title.privacy': 'Zásady ochrany osobních údajů',
-	'layout.titleWithApp': '{title} · NOAgenda',
+	'layout.titleWithApp': '{title} · {app}',
 
 	'layout.skipToContent': 'Přeskočit na obsah',
 	'layout.openMenu': 'Otevřít menu',
@@ -165,6 +169,10 @@ export const cs: Record<keyof typeof en, Message> = {
 	'layout.notifications.markAllRead': 'Označit vše jako přečtené',
 	'layout.notifications.empty': 'Žádná oznámení.',
 	'layout.notifications.fallback': 'Oznámení č. {id}',
+	'layout.notifications.task_assigned': '{actor} vás přiřadil(a) k úkolu „{title}“',
+	'layout.notifications.task_comment': '{actor} okomentoval(a) úkol „{title}“',
+	'layout.notifications.project_added': '{actor} vás přidal(a) do projektu „{title}“',
+	'layout.notifications.task_reminder': 'Připomínka: „{title}“',
 
 	'layout.user.toggleThemeTitle': 'Přepnout motiv',
 	'layout.user.toggleTheme': 'Přepnout světlý/tmavý motiv',

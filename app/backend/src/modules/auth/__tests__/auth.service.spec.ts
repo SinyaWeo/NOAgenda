@@ -47,7 +47,7 @@ function build(over: { user?: any; verificationRequired?: boolean } = {}) {
     hasActiveSessionFromIp: jest.fn(async () => false),
   };
   const verification: any = { required: over.verificationRequired ?? false };
-  const mail: any = { send: jest.fn(async () => true), link: jest.fn((p, q) => `https://app${p}?token=${q.token}`) };
+  const mail: any = { send: jest.fn(async () => true), appName: jest.fn(async () => 'Acme'), link: jest.fn((p, q) => `https://app${p}?token=${q.token}`) };
   const svc = new AuthService(users, jwt, resets, sessions, verification, mail);
   return { svc, users, jwt, resets, sessions, mail };
 }
@@ -175,6 +175,8 @@ describe('AuthService password reset', () => {
   it('stores only a hash of the token and emails the raw token', async () => {
     const { svc, resets, mail } = build();
     await svc.requestPasswordReset('ann@example.com');
+    await new Promise((r) => setImmediate(r)); // the mail is sent in the background, after the app-name lookup
+    expect(mail.send.mock.calls[0][0].subject).toBe('Reset your Acme password');
     const stored = resets.save.mock.calls[0][0];
     const sent: string = mail.send.mock.calls[0][0].text;
     const raw = /token=([0-9a-f]{64})/.exec(sent)![1];

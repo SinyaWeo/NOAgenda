@@ -6,9 +6,10 @@ import { TaskAssigneeController } from './task-assignee.controller';
 import { TaskModule } from '../task/task.module';
 
 import { NodeModule } from '../node/node.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
-  imports: [NodeModule, TypeOrmModule.forFeature([TaskAssignee]), TaskModule],
+  imports: [NodeModule, NotificationModule, TypeOrmModule.forFeature([TaskAssignee]), TaskModule],
   providers: [TaskAssigneeService],
   controllers: [TaskAssigneeController],
   exports: [TaskAssigneeService],

@@ -15,6 +15,7 @@
 	import { writable } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { showToast } from '$lib/toast';
+	import { announceRecurrence } from '$lib/recurrence';
 	import type {
 		Attachment,
 		Comment,
@@ -150,7 +151,9 @@
 	}
 	async function updateTask(patch: Record<string, unknown>) {
 		try {
+			const before = task?.status;
 			task = await apiPutAuth<Task>(`/tasks/${page.params.id}`, patch);
+			announceRecurrence(patch.status, before, task);
 		} catch (e: unknown) {
 			fail(e);
 		}

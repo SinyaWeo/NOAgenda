@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '$lib/appName';
 	import { onMount } from 'svelte';
 	import { t, type MessageKey } from '$lib/i18n';
 	import {
@@ -130,7 +131,7 @@
 			<a
 				href="/dashboard"
 				class="text-white font-bold text-base no-underline whitespace-nowrap overflow-hidden flex-1"
-				>NOAgenda</a
+				>{$appName}</a
 			>
 		{/if}
 		<button

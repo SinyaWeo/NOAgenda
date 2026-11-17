@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName as appNameStore, DEFAULT_APP_NAME } from '$lib/appName';
 	import { onMount } from 'svelte';
 	import { t, tr } from '$lib/i18n';
 	import { apiGetAuth, apiPatchAuth } from '$lib/api';
@@ -25,7 +26,7 @@
 		try {
 			const data = await apiGetAuth<Record<string, string>>('/admin/settings');
 			settings.set(data);
-			appName = data['appName'] ?? 'NOAgenda';
+			appName = data['appName'] ?? DEFAULT_APP_NAME;
 			allowRegistration = (data['allowRegistration'] ?? 'true') === 'true';
 		} catch (_) {
 			error.set(tr('admin.settings.loadFailed'));
@@ -41,6 +42,7 @@
 				appName,
 				allowRegistration: String(allowRegistration)
 			});
+			appNameStore.set(appName.trim() || DEFAULT_APP_NAME);
 			success.set(tr('admin.settings.saved'));
 		} catch (_) {
 			error.set(tr('admin.settings.saveFailed'));
@@ -84,7 +86,7 @@
 	>
 		<div>
 			<Label for="app-name" class="mb-1">{$t('admin.settings.appName')}</Label>
-			<Input id="app-name" bind:value={appName} placeholder="NOAgenda" />
+			<Input id="app-name" bind:value={appName} placeholder={DEFAULT_APP_NAME} maxlength={60} />
 		</div>
 		<div class="flex items-center gap-3">
 			<Toggle bind:checked={allowRegistration} />

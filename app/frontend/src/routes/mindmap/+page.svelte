@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '$lib/appName';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import {
@@ -140,7 +141,7 @@
 </script>
 
 <svelte:head>
-	<title>{$t('views.mindmap.pageTitle')}</title>
+	<title>{$t('views.mindmap.pageTitle', { app: $appName })}</title>
 </svelte:head>
 
 <div class="flex flex-col h-full">

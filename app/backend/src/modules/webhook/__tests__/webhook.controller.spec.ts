@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NodeAccessService } from '../../node/node-access.service';
 import { WebhookController } from '../webhook.controller';
 import { WebhookService } from '../webhook.service';
+import { WebhookDispatcher } from '../webhook-dispatcher.service';
 
 describe('WebhookController', () => {
   let controller: WebhookController;
@@ -26,6 +27,7 @@ describe('WebhookController', () => {
           provide: WebhookService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },
         },
+        { provide: WebhookDispatcher, useValue: { sendTest: jest.fn() } },
       ],
     }).compile();
     controller = module.get<WebhookController>(WebhookController);

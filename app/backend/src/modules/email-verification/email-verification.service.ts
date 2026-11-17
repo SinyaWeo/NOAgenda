@@ -42,9 +42,10 @@ export class EmailVerificationService {
         expiresAt: new Date(Date.now() + TOKEN_TTL_MS),
       }),
     );
+    const app = await this.mail.appName();
     return this.mail.send({
       to: user.email,
-      subject: 'Confirm your NOAgenda email address',
+      subject: `Confirm your ${app} email address`,
       text:
         `Hi ${user.username},\n\n` +
         `Please confirm your email address by opening this link (valid for 24 hours):\n\n` +

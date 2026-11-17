@@ -4,6 +4,8 @@ import { In, Repository } from 'typeorm';
 import { existsSync, unlink } from 'fs';
 import { resolve } from 'path';
 import { Node, NodeType, NodeStatus } from './node.entity';
+import { DomainEvents } from '../../common/domain-events';
+import { recurrenceOnCompletion } from './node-recurrence';
 
 export interface NodeFilter {
   userId?: number;
@@ -36,6 +38,7 @@ export class NodeService {
   constructor(
     @InjectRepository(Node)
     private readonly nodeRepository: Repository<Node>,
+    private readonly events: DomainEvents,
   ) {}
 
   async findAll(filter: NodeFilter = {}): Promise<Node[]> {
@@ -159,27 +162,109 @@ export class NodeService {
     return children;
   }
 
-  async create(data: Partial<Node>): Promise<Node> {
-    const node = this.nodeRepository.create(data);
-    return this.nodeRepository.save(node);
+  /** Tell subscribers (webhooks) what happened to a node. `projectId` is only needed when the node is about to vanish. */
+  private announce(action: 'created' | 'updated' | 'deleted', node: Node, projectId?: number | null) {
+    const isProject = node.type === NodeType.PROJECT;
+    // Children and parent are relations, not the node's own fields.
+    const { parent: _p, children: _c, ...data } = node as any;
+    this.events.emit({
+      name: `${node.type}.${action}`,
+      data,
+      nodeId: node.id,
+      ...(isProject ? { projectId: node.id } : projectId !== undefined ? { projectId } : {}),
+      owner: isProject ? (node.ownerId ?? null) : (node.createdBy ?? null),
+    });
   }
 
+  /** The project a node belongs to (the node itself for a project), or null for a personal task. */
+  async projectIdOf(node: Pick<Node, 'id' | 'type' | 'parentId'>): Promise<number | null> {
+    let cur: Pick<Node, 'id' | 'type' | 'parentId'> | null = node;
+    for (let depth = 0; cur && depth < MAX_TREE_DEPTH; depth++) {
+      if (cur.type === NodeType.PROJECT) return cur.id;
+      if (cur.parentId == null) return null;
+      cur = await this.nodeRepository.findOne({ where: { id: cur.parentId }, select: ['id', 'type', 'parentId'] });
+    }
+    return null;
+  }
+
+  async create(data: Partial<Node>): Promise<Node> {
+    const node = this.nodeRepository.create(data);
+    const saved = await this.nodeRepository.save(node);
+    this.announce('created', saved);
+    return saved;
+  }
+
+  /**
+   * Completing a repeating task does not leave it done: it starts its next cycle (open again, no
+   * progress, dates and reminders moved on). Everything else is a plain update.
+   */
   async update(id: number, data: Partial<Node>): Promise<Node | null> {
-    await this.nodeRepository.update(id, data);
-    return this.findById(id);
+    let change = data;
+    let shiftMs: number | null = null;
+    if (data.status === NodeStatus.DONE) {
+      const existing = await this.nodeRepository.findOne({ where: { id } });
+      const recurrence = existing ? recurrenceOnCompletion(existing, data) : null;
+      if (recurrence) {
+        ({ shiftMs, ...change } = recurrence);
+      }
+    }
+    await this.nodeRepository.update(id, change);
+    if (change !== data) await this.rearmReminders(this.nodeRepository.manager, [id], shiftMs);
+    const node = await this.findById(id);
+    if (node) this.announce('updated', node);
+    return node;
+  }
+
+  /**
+   * A new cycle starts: reminders move on with the due date and fire again, unless the moved time is
+   * already past (completing a task very late must not set off a burst of reminders). Without a previous
+   * due date there is nothing to move them relative to, so they are left alone.
+   */
+  private async rearmReminders(
+    m: { query: (sql: string, params?: any[]) => Promise<any> },
+    nodeIds: number[],
+    shiftMs: number | null,
+  ): Promise<void> {
+    if (!nodeIds.length || shiftMs === null) return;
+    const seconds = Math.round(shiftMs / 1000);
+    const moved = 'DATE_ADD(reminderDate, INTERVAL ? SECOND)';
+    // MariaDB applies SET left to right, so sentAt must be assigned before reminderDate changes.
+    await m.query(
+      `UPDATE task_reminders SET sentAt = CASE WHEN ${moved} > ? THEN NULL ELSE COALESCE(sentAt, ?) END, reminderDate = ${moved}
+        WHERE nodeId IN (${marks(nodeIds.length)})`,
+      [seconds, new Date(), new Date(), seconds, ...nodeIds],
+    );
   }
 
   /** Apply the same changes to many nodes atomically: all of them or none. */
   async updateMany(ids: number[], data: Partial<Node>): Promise<Node[]> {
+    const existing = data.status === NodeStatus.DONE ? await this.nodeRepository.find({ where: { id: In(ids) } }) : [];
     await this.nodeRepository.manager.transaction(async (m) => {
-      await m.getRepository(Node).update(ids, data);
+      const repo = m.getRepository(Node);
+      // Repeating tasks that this completes each start their next cycle; the rest get the plain change.
+      const recurring = new Map<number, ReturnType<typeof recurrenceOnCompletion>>();
+      for (const node of existing) {
+        const r = recurrenceOnCompletion(node, data);
+        if (r) recurring.set(node.id, r);
+      }
+      const plain = ids.filter((id) => !recurring.has(id));
+      if (plain.length) await repo.update(plain, data);
+      for (const [id, r] of recurring) {
+        const { shiftMs, ...change } = r!;
+        await repo.update(id, change);
+        await this.rearmReminders(m, [id], shiftMs);
+      }
     });
-    return this.nodeRepository.find({ where: { id: In(ids) }, relations: ['parent', 'children'] });
+    const nodes = await this.nodeRepository.find({ where: { id: In(ids) }, relations: ['parent', 'children'] });
+    nodes.forEach((n) => this.announce('updated', n));
+    return nodes;
   }
 
   async move(id: number, parentId: number | null): Promise<Node | null> {
     await this.nodeRepository.update(id, { parentId: parentId as any }); // null = top level
-    return this.findById(id);
+    const node = await this.findById(id);
+    if (node) this.announce('updated', node);
+    return node;
   }
 
   /**
@@ -190,6 +275,9 @@ export class NodeService {
    * are unlinked only after the commit.
    */
   async remove(id: number): Promise<void> {
+    // Remember what is being deleted (and where it lived) for subscribers: it is gone afterwards.
+    const doomed = await this.findById(id);
+    const doomedProjectId = doomed ? await this.projectIdOf(doomed) : null;
     const files: string[] = [];
     await this.nodeRepository.manager.transaction(async (m) => {
       const q = (sql: string, p: any[] = []): Promise<any[]> => m.query(sql, p);
@@ -221,6 +309,7 @@ export class NodeService {
         await q(`DELETE FROM nodes WHERE id IN (${inList})`, part);
       }
     });
+    if (doomed) this.announce('deleted', doomed, doomedProjectId);
     for (const f of files) {
       const abs = resolve(f);
       if (abs.startsWith(UPLOADS_DIR + '/') && existsSync(abs)) unlink(abs, () => undefined);
@@ -229,12 +318,16 @@ export class NodeService {
 
   async archive(id: number): Promise<Node | null> {
     await this.nodeRepository.update(id, { isArchived: true });
-    return this.findById(id);
+    const node = await this.findById(id);
+    if (node) this.announce('updated', node);
+    return node;
   }
 
   async unarchive(id: number): Promise<Node | null> {
     await this.nodeRepository.update(id, { isArchived: false });
-    return this.findById(id);
+    const node = await this.findById(id);
+    if (node) this.announce('updated', node);
+    return node;
   }
 
   async duplicate(id: number, userId: number): Promise<Node | null> {

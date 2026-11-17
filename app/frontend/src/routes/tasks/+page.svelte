@@ -10,6 +10,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { showToast } from '$lib/toast';
+	import { announceRecurrence } from '$lib/recurrence';
 	import { t, tr, type MessageKey } from '$lib/i18n';
 	import type { FilterCriteria, NodeStatus, SavedFilter, Task } from '$lib/types';
 	import type { KanbanColumn, ProjectOption, TaskViewMode } from '$lib/types-views';
@@ -269,9 +270,10 @@
 
 	async function updateTaskStatus(taskId: number, status: NodeStatus) {
 		try {
+			const before = $tasks.find((t) => t.id === taskId)?.status;
 			const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, { status });
 			tasks.update((list) => list.map((t) => (t.id === taskId ? { ...t, ...updated } : t)));
-			showToast(tr('views.toast.statusUpdated'), 'success');
+			if (!announceRecurrence(status, before, updated)) showToast(tr('views.toast.statusUpdated'), 'success');
 		} catch (e: unknown) {
 			showToast(errMessage(e, tr('views.toast.statusFailed')), 'error');
 		}

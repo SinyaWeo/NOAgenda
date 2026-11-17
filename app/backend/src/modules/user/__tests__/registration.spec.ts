@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common';
-import { assertMayRegister, registrationPolicy } from '../registration';
+import { adminAllowsRegistration, assertMayRegister, registrationPolicy } from '../registration';
 
 const env = (o: Record<string, string>) => o as NodeJS.ProcessEnv;
 
@@ -16,6 +16,23 @@ describe('registration policy', () => {
     expect(() =>
       assertMayRegister('abc', env({ REGISTRATION_ENABLED: 'false', REGISTRATION_INVITE_CODE: 'abc' })),
     ).toThrow(/closed/);
+  });
+
+  it('can be closed by the admin setting, which an invite code does not override', () => {
+    expect(registrationPolicy(env({}), false)).toEqual({ enabled: false, inviteRequired: false });
+    expect(() => assertMayRegister(undefined, env({}), false)).toThrow(/closed/);
+    expect(() => assertMayRegister('abc', env({ REGISTRATION_INVITE_CODE: 'abc' }), false)).toThrow(/closed/);
+  });
+
+  it('the env switch still closes it when the admin setting allows it', () => {
+    expect(registrationPolicy(env({ REGISTRATION_ENABLED: 'false' }), true).enabled).toBe(false);
+  });
+
+  it('reads the stored admin value: only "false" closes, unset means open', () => {
+    expect(adminAllowsRegistration('false')).toBe(false);
+    expect(adminAllowsRegistration('true')).toBe(true);
+    expect(adminAllowsRegistration(null)).toBe(true);
+    expect(adminAllowsRegistration(undefined)).toBe(true);
   });
 
   it('only the literal string "false" closes it (typos do not lock you out silently)', () => {

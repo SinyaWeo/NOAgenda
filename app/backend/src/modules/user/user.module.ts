@@ -7,9 +7,10 @@ import { UserSettingsController } from './user-settings.controller';
 import { EmailVerificationModule } from '../email-verification/email-verification.module';
 import { SessionModule } from '../session/session.module';
 import { AccountModule } from '../account/account.module';
+import { AppSettingsModule } from '../app-settings/app-settings.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), EmailVerificationModule, SessionModule, AccountModule],
+  imports: [TypeOrmModule.forFeature([User]), EmailVerificationModule, SessionModule, AccountModule, AppSettingsModule],
   providers: [UserService],
   controllers: [UserController, UserSettingsController],
   exports: [UserService],

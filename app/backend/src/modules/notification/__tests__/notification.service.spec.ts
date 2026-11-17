@@ -5,14 +5,15 @@ import { Notification } from '../notification.entity';
 
 describe('NotificationService', () => {
   let service: NotificationService;
+  let module: TestingModule;
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         NotificationService,
         {
           provide: getRepositoryToken(Notification),
-          useValue: { find: jest.fn(), findOne: jest.fn() },
+          useValue: { find: jest.fn(), findOne: jest.fn(), create: jest.fn((x) => x), save: jest.fn(async (x) => x) },
         },
       ],
     }).compile();
@@ -23,5 +24,56 @@ describe('NotificationService', () => {
     expect(service).toBeDefined();
   });
 
-  // Add more tests for service methods here
+  describe('notify', () => {
+    const event = {
+      type: 'task_assigned' as const,
+      actorId: 1,
+      actorName: 'ann',
+      nodeId: 9,
+      kind: 'task' as const,
+      title: 'Write docs',
+    };
+    const repo = () => module.get(getRepositoryToken(Notification)) as any;
+
+    it('creates one notification per recipient, without duplicates, the actor or empty ids', async () => {
+      await service.notify({ ...event, recipients: [2, 2, 3, 1, null, undefined] });
+      const saved = repo().save.mock.calls[0][0];
+      expect(saved.map((n: any) => n.user.id)).toEqual([2, 3]);
+      expect(saved[0]).toMatchObject({
+        type: 'task_assigned',
+        nodeId: 9,
+        message: 'ann assigned you to "Write docs"',
+      });
+      expect(JSON.parse(saved[0].params)).toEqual({ actor: 'ann', title: 'Write docs', kind: 'task' });
+    });
+
+    it('words a system reminder without an actor and keeps the owner as recipient', async () => {
+      await service.notify({
+        type: 'task_reminder',
+        actorId: null,
+        nodeId: 9,
+        kind: 'task',
+        title: 'Pay rent',
+        recipients: [4],
+      });
+      const saved = repo().save.mock.calls[0][0];
+      expect(saved[0]).toMatchObject({ type: 'task_reminder', message: 'Reminder: "Pay rent"' });
+      expect(saved.map((n: any) => n.user.id)).toEqual([4]);
+    });
+
+    it('does nothing when nobody is left to notify', async () => {
+      await service.notify({ ...event, recipients: [1, null] });
+      expect(repo().save).not.toHaveBeenCalled();
+    });
+
+    it('never throws when saving fails', async () => {
+      repo().save.mockRejectedValueOnce(new Error('db down'));
+      await expect(service.notify({ ...event, recipients: [2] })).resolves.toBeUndefined();
+    });
+
+    it('keeps the fallback message within the column length', async () => {
+      await service.notify({ ...event, title: 'x'.repeat(500), actorName: 'y'.repeat(500), recipients: [2] });
+      expect(repo().save.mock.calls[0][0][0].message.length).toBeLessThanOrEqual(255);
+    });
+  });
 });

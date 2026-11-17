@@ -10,8 +10,12 @@ import {
   Request,
   NotFoundException,
   ForbiddenException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { WebhookService } from './webhook.service';
+import { WebhookDispatcher, DeliveryResult } from './webhook-dispatcher.service';
 import { Webhook } from './webhook.entity';
 import { NodeAccessService } from '../node/node-access.service';
 import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
@@ -28,6 +32,7 @@ export class WebhookController {
   constructor(
     private readonly webhookService: WebhookService,
     private readonly access: NodeAccessService,
+    private readonly dispatcher: WebhookDispatcher,
   ) {}
 
   /**
@@ -81,8 +86,20 @@ export class WebhookController {
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);
     if (body.url !== undefined) await assertPublicHttpUrl(body.url);
-    const updated = await this.webhookService.update(id, { ...body });
+    // Switching it back on gives it a clean slate (it may have been switched off after repeated failures).
+    const updated = await this.webhookService.update(id, { ...body, ...(body.active ? { failureCount: 0 } : {}) });
     return updated ? maskSecret(updated) : null;
+  }
+
+  /** Send a `ping` to the webhook now and report what its server answered. */
+  @Post(':id/test')
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @HttpCode(HttpStatus.OK)
+  async test(@Param('id') id: number, @Request() req: any): Promise<DeliveryResult> {
+    const webhook = await this.webhookService.findById(id);
+    if (!webhook) throw new NotFoundException();
+    await this.assertCan(webhook, req.user.userId);
+    return this.dispatcher.sendTest(webhook);
   }
 
   @Delete(':id')

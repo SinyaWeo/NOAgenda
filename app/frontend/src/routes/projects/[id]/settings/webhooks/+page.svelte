@@ -5,6 +5,7 @@
 	import { loadOnParamChange } from '$lib/param-loader.svelte';
 	import type { WebhookInfo } from '$lib/types';
 	import { page } from '$app/state';
+	import WebhookStatus from '$lib/components/WebhookStatus.svelte';
 	import { Alert, Button, Card, Input } from 'flowbite-svelte';
 	import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 	import { t } from '$lib/i18n';
@@ -88,7 +89,10 @@
 					? 'border-b border-gray-100 dark:border-gray-700'
 					: ''}"
 			>
-				<span class="flex-1 text-sm text-gray-700 dark:text-gray-300 truncate">{wh.url}</span>
+				<div class="flex-1 min-w-0 flex flex-col gap-1">
+					<span class="text-sm text-gray-700 dark:text-gray-300 truncate">{wh.url}</span>
+					<WebhookStatus webhook={wh} onChanged={load} />
+				</div>
 				<Button size="sm" color="red" onclick={() => deleteWebhook(wh.id)}>{$t('common.delete')}</Button>
 			</div>
 		{/each}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { writable } from 'svelte/store';
-	import { apiGetAuth, apiPutAuth } from '$lib/api';
+	import { apiDeleteAuth, apiGetAuth, apiPostAuth, apiPutAuth } from '$lib/api';
 	import { errMessage } from '$lib/errors';
 	import { showToast } from '$lib/toast';
 	import { t, tr, type MessageKey } from '$lib/i18n';
@@ -30,6 +30,57 @@
 			showToast(errMessage(e, tr('views.toast.moveTaskFailed')), 'error');
 		}
 	}
+
+	const bucketsUrl = () => `/projects/${page.params.id}/views/${page.params.viewId}/buckets`;
+
+	async function reloadBuckets() {
+		buckets.set(await apiGetAuth<KanbanBucket[]>(bucketsUrl()));
+	}
+
+	/** Run a bucket change, then refresh; a failure (e.g. no permission) is shown as a toast. */
+	async function changeBuckets(fn: () => Promise<unknown>, failed: MessageKey) {
+		try {
+			await fn();
+		} catch (e: unknown) {
+			showToast(errMessage(e, tr(failed)), 'error');
+		}
+		await reloadBuckets().catch(() => undefined);
+	}
+
+	const createBucket = (title: string) =>
+		changeBuckets(
+			() =>
+				apiPostAuth(bucketsUrl(), {
+					title,
+					position: $buckets.reduce((max, b) => Math.max(max, b.position + 1), 0)
+				}),
+			'views.toast.bucketSaveFailed'
+		);
+
+	const updateBucket = (id: number, data: { title?: string; limit?: number | null }) =>
+		changeBuckets(() => apiPutAuth(`${bucketsUrl()}/${id}`, data), 'views.toast.bucketSaveFailed');
+
+	const deleteBucket = (id: number) =>
+		changeBuckets(async () => {
+			await apiDeleteAuth(`${bucketsUrl()}/${id}`);
+			// The server unassigns the bucket's tasks; mirror that locally.
+			tasks.update((list) => list.map((t) => (t.bucketId === id ? { ...t, bucketId: null } : t)));
+		}, 'views.toast.bucketDeleteFailed');
+
+	/** Swap with a neighbour, then renumber 0..n-1 so equal or gappy positions cannot break the order. */
+	const reorderBucket = (id: number, direction: -1 | 1) =>
+		changeBuckets(async () => {
+			const list = [...$buckets];
+			const from = list.findIndex((b) => b.id === id);
+			const to = from + direction;
+			if (from < 0 || to < 0 || to >= list.length) return;
+			[list[from], list[to]] = [list[to], list[from]];
+			await Promise.all(
+				list.flatMap((b, i) =>
+					b.position === i ? [] : [apiPutAuth(`${bucketsUrl()}/${b.id}`, { position: i })]
+				)
+			);
+		}, 'views.toast.bucketSaveFailed');
 
 	async function load(key: string, isStale: () => boolean) {
 		const [id, viewId] = key.split('/');
@@ -92,7 +143,15 @@
 	{#if $view.viewType === 'list'}
 		<SimpleListView tasks={$tasks} />
 	{:else if $view.viewType === 'kanban'}
-		<BucketKanbanView tasks={$tasks} buckets={$buckets} onMove={moveTaskToBucket} />
+		<BucketKanbanView
+			tasks={$tasks}
+			buckets={$buckets}
+			onMove={moveTaskToBucket}
+			onCreate={createBucket}
+			onUpdate={updateBucket}
+			onDelete={deleteBucket}
+			onReorder={reorderBucket}
+		/>
 	{:else if $view.viewType === 'table'}
 		<TableView tasks={$tasks} />
 	{:else if $view.viewType === 'gantt'}

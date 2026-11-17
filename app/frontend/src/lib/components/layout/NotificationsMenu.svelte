@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t, fmt } from '$lib/i18n';
+	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
 	import { apiGetAuth, apiPostAuth } from '$lib/api';
 	import type { AppNotification } from '$lib/types';
 	import { Badge, Dropdown } from 'flowbite-svelte';
@@ -17,6 +17,48 @@
 		} catch (_) {}
 	}
 
+	interface Params {
+		actor?: string;
+		title?: string;
+		kind?: 'task' | 'project';
+	}
+
+	function parseParams(n: AppNotification): Params {
+		try {
+			return n.params ? (JSON.parse(n.params) as Params) : {};
+		} catch {
+			return {};
+		}
+	}
+
+	/** System notifications are worded in the reader's language; others show their stored text. */
+	function textOf(n: AppNotification): string {
+		if (n.type) {
+			const p = parseParams(n);
+			return tr(`layout.notifications.${n.type}` as MessageKey, {
+				actor: p.actor ?? '',
+				title: p.title ?? ''
+			});
+		}
+		return n.message ?? tr('layout.notifications.fallback', { id: n.id });
+	}
+
+	function hrefOf(n: AppNotification): string | null {
+		if (n.nodeId == null) return null;
+		return `/${parseParams(n).kind === 'project' ? 'projects' : 'tasks'}/${n.nodeId}`;
+	}
+
+	/** Opening a notification marks it read (the link then navigates). */
+	async function open(n: AppNotification) {
+		if (n.read) return;
+		n.read = true;
+		try {
+			await apiPostAuth(`/notifications/${n.id}/read`, {});
+		} catch (_) {
+			n.read = false;
+		}
+	}
+
 	async function markAllRead() {
 		try {
 			await apiPostAuth('/notifications/read/all', {});
@@ -24,10 +66,15 @@
 		} catch (_) {}
 	}
 
+	// Reload when the signed-in user changes, then now and then so new ones appear without a page reload.
 	$effect(() => {
 		void userId;
 		notifications = [];
 		void loadNotifications();
+		const timer = setInterval(() => {
+			if (!document.hidden) void loadNotifications();
+		}, 60_000);
+		return () => clearInterval(timer);
 	});
 </script>
 
@@ -66,9 +113,16 @@
 					? ''
 					: 'bg-primary-50 dark:bg-primary-900/20'}"
 			>
-				<p class="text-sm text-gray-800 dark:text-gray-200 m-0">
-					{n.message ?? $t('layout.notifications.fallback', { id: n.id })}
-				</p>
+				{#if hrefOf(n)}
+					<a
+						href={hrefOf(n)}
+						onclick={() => open(n)}
+						class="block text-sm text-gray-800 dark:text-gray-200 m-0 no-underline hover:underline"
+						>{textOf(n)}</a
+					>
+				{:else}
+					<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{textOf(n)}</p>
+				{/if}
 				<small class="text-xs text-gray-400">{$fmt.dateTime(n.createdAt)}</small>
 			</div>
 		{/each}

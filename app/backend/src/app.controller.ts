@@ -1,11 +1,15 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { DataSource } from 'typeorm';
+import { AppSettingsService } from './modules/app-settings/app-settings.service';
 import { Public } from './common/decorators/public.decorator';
 
 @Controller()
 export class AppController {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly appSettings: AppSettingsService,
+  ) {}
 
   @Public()
   @Get()
@@ -28,7 +32,7 @@ export class AppController {
 
   @Public()
   @Get('info')
-  getInfo(): { version: string; name: string } {
-    return { version: process.env.npm_package_version ?? '0.1.0', name: 'NOAgenda' };
+  async getInfo(): Promise<{ version: string; name: string }> {
+    return { version: process.env.npm_package_version ?? '0.1.0', name: await this.appSettings.getAppName() };
   }
 }

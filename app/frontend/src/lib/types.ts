@@ -103,6 +103,8 @@ export interface Attachment {
 export interface Reminder {
 	id: number;
 	reminderDate: string;
+	/** When the notification went out; null while it is still pending. */
+	sentAt?: string | null;
 }
 
 export interface TaskRelation {
@@ -153,11 +155,19 @@ export interface KanbanBucket {
 	limit?: number | null;
 }
 
+export type NotificationType = 'task_assigned' | 'task_comment' | 'project_added' | 'task_reminder';
+
 export interface AppNotification {
 	id: number;
 	message: string;
 	read: boolean;
 	createdAt: string;
+	/** Set for system-generated notifications; the text is then built from `params` in the user's language. */
+	type?: NotificationType | null;
+	/** The task or project it is about. */
+	nodeId?: number | null;
+	/** JSON: { actor, title, kind }. */
+	params?: string | null;
 }
 
 export interface SearchResults {
@@ -191,6 +201,11 @@ export interface WebhookInfo {
 	active: boolean;
 	hasSecret?: boolean;
 	projectId?: number | null;
+	/** Latest delivery: HTTP status (null if none came), error text, time; and the failure streak. */
+	lastStatus?: number | null;
+	lastError?: string | null;
+	lastDeliveryAt?: string | null;
+	failureCount?: number;
 }
 
 /** What a saved filter stores (validated by the backend; see FilterCriteriaDto). */

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '$lib/appName';
 	import { page } from '$app/state';
 	import { authSession } from '$lib/auth';
 	import { t } from '$lib/i18n';
@@ -29,7 +30,7 @@
 	);
 </script>
 
-<svelte:head><title>{$t('layout.titleWithApp', { title })}</title></svelte:head>
+<svelte:head><title>{$t('layout.titleWithApp', { title, app: $appName })}</title></svelte:head>
 
 <div
 	class="min-h-screen flex flex-col items-center justify-center gap-2 p-8 text-center bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100"

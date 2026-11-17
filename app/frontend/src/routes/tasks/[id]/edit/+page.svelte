@@ -130,6 +130,7 @@
 						<option value="from_current_date">{$t('tasks.repeat.fromCurrent')}</option>
 					</Select>
 				</div>
+				<p class="text-xs text-gray-400 mt-2 mb-0">{$t('tasks.repeat.hint')}</p>
 			</fieldset>
 			<div class="flex gap-2">
 				<Button type="submit" disabled={$saving}

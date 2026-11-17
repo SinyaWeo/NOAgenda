@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName, loadAppName } from '$lib/appName';
 	import '../assets/app.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
@@ -73,6 +74,7 @@
 	let signingOut = $state(false);
 
 	onMount(() => {
+		void loadAppName();
 		const mq = window.matchMedia('(max-width: 767px)');
 		const sync = () => {
 			isMobile = mq.matches;
@@ -137,14 +139,14 @@
 
 <svelte:head>
 	<link rel="icon" type="image/svg+xml" href={favicon} />
-	<title>{pageTitle ? $t('layout.titleWithApp', { title: pageTitle }) : 'NOAgenda'}</title>
+	<title>{pageTitle ? $t('layout.titleWithApp', { title: pageTitle, app: $appName }) : $appName}</title>
 </svelte:head>
 
 <ThemeProvider theme={{ card: { base: 'p-5' } }}>
 	{#if $user !== null}
 		<a
 			href="#main-content"
-			class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[500] focus:bg-white focus:text-primary-700 focus:px-3 focus:py-2 focus:rounded focus:shadow"
+			class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-500 focus:bg-white focus:text-primary-700 focus:px-3 focus:py-2 focus:rounded focus:shadow"
 			>{$t('layout.skipToContent')}</a
 		>
 		<div class="sidebar-shell">

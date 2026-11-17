@@ -17,7 +17,8 @@ import { Throttle } from '@nestjs/throttler';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
-import { assertMayRegister } from './registration';
+import { assertMayRegister, adminAllowsRegistration } from './registration';
+import { AppSettingsService } from '../app-settings/app-settings.service';
 import { Public } from '../../common/decorators/public.decorator';
 
 @Controller('users')
@@ -25,6 +26,7 @@ export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly emailVerification: EmailVerificationService,
+    private readonly appSettings: AppSettingsService,
   ) {}
 
   private strip(user: User): Omit<User, 'password'> {
@@ -62,7 +64,11 @@ export class UserController {
   @Post()
   @Throttle({ default: { ttl: 3600000, limit: 10 } }) // 10 registrations / hour / IP
   async create(@Body() body: CreateUserDto): Promise<Omit<User, 'password'>> {
-    assertMayRegister(body.inviteCode);
+    assertMayRegister(
+      body.inviteCode,
+      process.env,
+      adminAllowsRegistration(await this.appSettings.get('allowRegistration')),
+    );
     const { acceptTerms, inviteCode: _inviteCode, ...data } = body;
     if (process.env.REQUIRE_TERMS_ACCEPTANCE === 'true' && acceptTerms !== true) {
       throw new BadRequestException('You must accept the Terms of Service and Privacy Policy to register');

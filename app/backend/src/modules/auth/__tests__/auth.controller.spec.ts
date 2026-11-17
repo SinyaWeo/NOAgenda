@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from '../auth.controller';
 import { AuthService } from '../auth.service';
+import { AppSettingsService } from '../../app-settings/app-settings.service';
 import { EmailVerificationService } from '../../email-verification/email-verification.service';
 
 describe('AuthController', () => {
@@ -16,6 +17,7 @@ describe('AuthController', () => {
           useValue: { login: jest.fn() },
         },
         { provide: EmailVerificationService, useValue: { required: false } },
+        { provide: AppSettingsService, useValue: { get: jest.fn() } },
       ],
     }).compile();
     controller = module.get<AuthController>(AuthController);
