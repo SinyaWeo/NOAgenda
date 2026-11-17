@@ -1,6 +1,6 @@
 import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, QueryFailedError } from 'typeorm';
+import { In, Repository, QueryFailedError } from 'typeorm';
 import { User } from './user.entity';
 import { UserRole } from './user-role.enum';
 import { hashPassword } from '../../common/password';
@@ -23,6 +23,13 @@ export class UserService {
 
   async findByEmail(email: string): Promise<User | null> {
     return this.withPassword().where('u.email = :email', { email }).getOne();
+  }
+
+  /** Saved interface language per user id (null when unset), for text sent while they are away. */
+  async languagesOf(ids: number[]): Promise<Map<number, string | null>> {
+    if (!ids.length) return new Map();
+    const rows = await this.userRepository.find({ where: { id: In(ids) }, select: ['id', 'language'] });
+    return new Map(rows.map((u) => [u.id, u.language ?? null]));
   }
 
   /** Public fields of users whose username or display name contains `q` (the caller is left out). */

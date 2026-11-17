@@ -47,7 +47,7 @@ export interface GeneralSettings {
 	language?: string;
 	timezone?: string;
 	theme?: string;
-	weekStart?: number;
+	defaultProjectId?: number | null;
 }
 
 /** GET and PUT /user/settings/avatar(/upload) */

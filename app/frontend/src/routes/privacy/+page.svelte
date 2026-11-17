@@ -19,7 +19,7 @@
 	<ul>
 		<li>
 			<strong>Account:</strong> username, email address, password (stored only as a salted bcrypt hash, never in
-			readable form), optional display name and avatar, and your preferences (theme, timezone, week start, language).
+			readable form), optional display name and avatar, and your preferences (theme, timezone, language).
 		</li>
 		<li>
 			<strong>Your content:</strong> projects, tasks, comments, labels, teams, saved filters, attachments you upload,

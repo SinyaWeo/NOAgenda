@@ -8,9 +8,17 @@ import { EmailVerificationModule } from '../email-verification/email-verificatio
 import { SessionModule } from '../session/session.module';
 import { AccountModule } from '../account/account.module';
 import { AppSettingsModule } from '../app-settings/app-settings.module';
+import { NodeModule } from '../node/node.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User]), EmailVerificationModule, SessionModule, AccountModule, AppSettingsModule],
+  imports: [
+    TypeOrmModule.forFeature([User]),
+    EmailVerificationModule,
+    SessionModule,
+    AccountModule,
+    AppSettingsModule,
+    NodeModule,
+  ],
   providers: [UserService],
   controllers: [UserController, UserSettingsController],
   exports: [UserService],

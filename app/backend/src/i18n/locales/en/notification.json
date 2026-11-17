@@ -1,0 +1,6 @@
+{
+  "task_assigned": "{actor} assigned you to \"{title}\"",
+  "task_comment": "{actor} commented on \"{title}\"",
+  "project_added": "{actor} added you to the project \"{title}\"",
+  "task_reminder": "Reminder: \"{title}\""
+}

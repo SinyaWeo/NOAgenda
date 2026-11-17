@@ -22,10 +22,30 @@ describe('user settings DTOs', () => {
 
   it('accepts the fields the frontend actually sends', async () => {
     const out = await pipe.transform(
-      { name: 'Ann', language: 'en', timezone: 'Europe/Prague', theme: 'dark', weekStart: 1 },
+      { name: 'Ann', language: 'en', timezone: 'Europe/Prague', theme: 'dark' },
       meta(UpdateGeneralSettingsDto),
     );
-    expect(out).toMatchObject({ name: 'Ann', theme: 'dark', weekStart: 1 });
+    expect(out).toMatchObject({ name: 'Ann', theme: 'dark' });
+  });
+
+  it('accepts a default project, null to clear it, and rejects nonsense', async () => {
+    await expect(pipe.transform({ defaultProjectId: 4 }, meta(UpdateGeneralSettingsDto))).resolves.toMatchObject({
+      defaultProjectId: 4,
+    });
+    await expect(pipe.transform({ defaultProjectId: null }, meta(UpdateGeneralSettingsDto))).resolves.toMatchObject({
+      defaultProjectId: null,
+    });
+    for (const bad of [0, -1, 1.5, 'x']) {
+      await expect(pipe.transform({ defaultProjectId: bad }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    }
+  });
+
+  it('no longer accepts the removed weekStart setting', async () => {
+    await expect(pipe.transform({ weekStart: 1 }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('rejects an invalid theme and an invalid email', async () => {

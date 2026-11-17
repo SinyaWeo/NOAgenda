@@ -32,6 +32,9 @@
 		if (pid) projectId.set(Number(pid));
 		try {
 			projects.set(await apiGetAuth<Project[]>('/projects'));
+			// No project given in the link: start in the user's default one (if they can still open it).
+			const def = me.defaultProjectId;
+			if (!pid && def && get(projects).some((p) => p.id === def)) projectId.set(def);
 		} catch {
 			// the project list is optional; the select just stays empty
 		}

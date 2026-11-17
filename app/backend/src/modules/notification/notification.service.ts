@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './notification.entity';
+import { UserService } from '../user/user.service';
+import { Translator } from '../../i18n/translator.service';
 
 export interface NotifyEvent {
   type: NotificationType;
@@ -17,22 +19,6 @@ export interface NotifyEvent {
 
 const clip = (v: string, n: number) => (v.length > n ? v.slice(0, n - 1) + '…' : v);
 
-/** English fallback text (the UI localizes known types from `params`). */
-function englishMessage(e: NotifyEvent): string {
-  const who = clip(e.actorName ?? '', 60);
-  const what = clip(e.title, 120);
-  switch (e.type) {
-    case 'task_assigned':
-      return `${who} assigned you to "${what}"`;
-    case 'task_comment':
-      return `${who} commented on "${what}"`;
-    case 'task_reminder':
-      return `Reminder: "${what}"`;
-    case 'project_added':
-      return `${who} added you to the project "${what}"`;
-  }
-}
-
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
@@ -40,6 +26,8 @@ export class NotificationService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationRepository: Repository<Notification>,
+    private readonly users: UserService,
+    private readonly translator: Translator,
   ) {}
 
   async findAll(userId: number): Promise<Notification[]> {
@@ -69,12 +57,16 @@ export class NotificationService {
         (id) => id !== event.actorId,
       );
       if (!ids.length) return;
-      const message = englishMessage(event);
       const params = JSON.stringify({ actor: event.actorName ?? '', title: event.title, kind: event.kind });
+      // The stored text is written in each recipient's own language: it is what an email, a push
+      // message or a data export shows when they are not in the app. (The app itself words known
+      // types from `params`, in whatever language is selected at that moment.)
+      const languages = await this.users.languagesOf(ids);
+      const args = { actor: clip(event.actorName ?? '', 60), title: clip(event.title, 120) };
       await this.notificationRepository.save(
         ids.map((id) =>
           this.notificationRepository.create({
-            message,
+            message: clip(this.translator.t(languages.get(id), `notification.${event.type}`, args), 255),
             type: event.type,
             nodeId: event.nodeId,
             params,

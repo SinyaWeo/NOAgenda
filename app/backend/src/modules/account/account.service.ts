@@ -196,7 +196,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
     const q = (sql: string, p: any[] = []) => this.ds.query(sql, p);
 
     const [profile] = await q(
-      `SELECT id, username, email, name, language, timezone, theme, weekStart, defaultProjectId,
+      `SELECT id, username, email, name, language, timezone, theme, defaultProjectId,
               avatarUrl, role, isEmailConfirmed, termsAcceptedAt, createdAt
          FROM users WHERE id = ?`,
       [userId],

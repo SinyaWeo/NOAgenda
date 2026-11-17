@@ -9,7 +9,6 @@ import { normalizeParentRefs } from '../node/node-payload';
 
 // Re-export the shape consumers expect
 export type Task = Node;
-export { NodeStatus as TaskStatus };
 
 export interface TaskFilter {
   userId?: number;

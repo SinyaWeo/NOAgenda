@@ -1,6 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { I18nModule, QueryResolver, HeaderResolver } from 'nestjs-i18n';
 import * as path from 'path';
+import { Translator } from './translator.service';
 
 @Global()
 @Module({
@@ -14,6 +15,7 @@ import * as path from 'path';
       resolvers: [{ use: QueryResolver, options: ['lang', 'locale', 'l'] }, new HeaderResolver(['x-custom-lang'])],
     }),
   ],
-  exports: [I18nModule],
+  providers: [Translator],
+  exports: [I18nModule, Translator],
 })
 export class AppI18nModule {}

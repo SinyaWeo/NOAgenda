@@ -30,11 +30,8 @@ export class User extends BaseEntity {
   @Column({ nullable: true, length: 20, default: 'light' })
   theme?: string;
 
-  @Column({ nullable: true, type: 'tinyint', default: 1 })
-  weekStart?: number;
-
   @Column({ nullable: true, type: 'int' })
-  defaultProjectId?: number;
+  defaultProjectId?: number | null;
 
   @Column({ nullable: true, length: 512 })
   avatarUrl?: string;

@@ -41,6 +41,7 @@ import {
 } from './dto/user-settings.dto';
 import { sniffFile } from '../../common/file-sniff';
 import { AccountService } from '../account/account.service';
+import { Access, NodeAccessService } from '../node/node-access.service';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 
@@ -51,6 +52,7 @@ export class UserSettingsController {
     private readonly emailVerification: EmailVerificationService,
     private readonly sessions: SessionService,
     private readonly account: AccountService,
+    private readonly access: NodeAccessService,
   ) {}
 
   /** GET /user/settings/general — return current user profile */
@@ -63,17 +65,18 @@ export class UserSettingsController {
     return safe;
   }
 
-  /** POST /user/settings/general — update name, language, timezone, theme, weekStart, defaultProjectId */
+  /** POST /user/settings/general — update name, language, timezone, theme, defaultProjectId */
   @Post('settings/general')
   async updateGeneral(@Request() req: any, @Body() body: UpdateGeneralSettingsDto) {
     // Explicit pick: never pass the raw body (role, password, etc.) to update().
-    const { name, language, timezone, theme, weekStart, defaultProjectId } = body;
+    const { name, language, timezone, theme, defaultProjectId } = body;
+    // A default project must be one the user can actually open (null clears it).
+    if (defaultProjectId != null) await this.access.assertProject(req.user.userId, defaultProjectId, Access.READ);
     const user = await this.userService.update(req.user.userId, {
       name,
       language,
       timezone,
       theme,
-      weekStart,
       defaultProjectId,
     });
     if (!user) throw new NotFoundException();
@@ -97,7 +100,7 @@ export class UserSettingsController {
       // A new address is unverified until the owner clicks the emailed link.
       await this.userService.update(user.id, { email: body.email, isEmailConfirmed: false });
       void this.emailVerification
-        .send({ id: user.id, email: body.email, username: user.username })
+        .send({ id: user.id, email: body.email, username: user.username, language: user.language })
         .catch(() => undefined);
     }
     return { message: 'Email updated. Please check your inbox to verify the new address.' };

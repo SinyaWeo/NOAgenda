@@ -1,3 +1,4 @@
+import { realTranslator } from '../../../i18n/__tests__/fake-i18n';
 import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { AuthService, MAX_FAILED_LOGINS, ACCOUNT_LOCK_THRESHOLD } from '../auth.service';
 import * as password from '../../../common/password';
@@ -47,8 +48,12 @@ function build(over: { user?: any; verificationRequired?: boolean } = {}) {
     hasActiveSessionFromIp: jest.fn(async () => false),
   };
   const verification: any = { required: over.verificationRequired ?? false };
-  const mail: any = { send: jest.fn(async () => true), appName: jest.fn(async () => 'Acme'), link: jest.fn((p, q) => `https://app${p}?token=${q.token}`) };
-  const svc = new AuthService(users, jwt, resets, sessions, verification, mail);
+  const mail: any = {
+    send: jest.fn(async () => true),
+    appName: jest.fn(async () => 'Acme'),
+    link: jest.fn((p, q) => `https://app${p}?token=${q.token}`),
+  };
+  const svc = new AuthService(users, jwt, resets, sessions, verification, mail, realTranslator());
   return { svc, users, jwt, resets, sessions, mail };
 }
 
@@ -182,6 +187,14 @@ describe('AuthService password reset', () => {
     const raw = /token=([0-9a-f]{64})/.exec(sent)![1];
     expect(stored.token).toBe(sha256(raw));
     expect(stored.token).not.toBe(raw);
+  });
+
+  it("writes the reset email in the recipient's own language", async () => {
+    const { svc, mail } = build({ user: { ...USER, language: 'cs' } });
+    await svc.requestPasswordReset('ann@example.com');
+    await new Promise((r) => setImmediate(r));
+    expect(mail.send.mock.calls[0][0].subject).toBe('Obnovení hesla v aplikaci Acme');
+    expect(mail.send.mock.calls[0][0].text).toContain('Dobrý den, ann');
   });
 
   it('stays silent for unknown addresses', async () => {

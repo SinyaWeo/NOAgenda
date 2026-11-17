@@ -7,6 +7,7 @@ import { PasswordResetToken } from './password-reset-token.entity';
 import { SessionService, SessionMeta } from '../session/session.service';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { MailService } from '../mail/mail.service';
+import { Translator } from '../../i18n/translator.service';
 import { hashPassword, needsRehash, verifyPassword } from '../../common/password';
 import { randomToken, sha256 } from '../../common/tokens';
 import { LoginThrottle } from '../../common/login-throttle';
@@ -40,6 +41,7 @@ export class AuthService {
     private readonly sessions: SessionService,
     private readonly emailVerification: EmailVerificationService,
     private readonly mail: MailService,
+    private readonly translator: Translator,
   ) {}
 
   private signAccessToken(user: { id: number; username: string; role: string }, sessionId: number) {
@@ -131,16 +133,16 @@ export class AuthService {
     void this.sendResetMail(user, token);
   }
 
-  private async sendResetMail(user: { email: string; username: string }, token: string): Promise<void> {
+  private async sendResetMail(
+    user: { email: string; username: string; language?: string | null },
+    token: string,
+  ): Promise<void> {
     const app = await this.mail.appName().catch(() => 'NOAgenda');
+    const args = { app, username: user.username, link: this.mail.link('/user/password-reset', { token }) };
     await this.mail.send({
       to: user.email,
-      subject: `Reset your ${app} password`,
-      text:
-        `Hi ${user.username},\n\n` +
-        `Someone asked to reset the password for your account. Open this link within 1 hour to choose a new one:\n\n` +
-        `${this.mail.link('/user/password-reset', { token })}\n\n` +
-        `If this was not you, ignore this email: your password stays unchanged.`,
+      subject: this.translator.t(user.language, 'email.reset.subject', args),
+      text: this.translator.t(user.language, 'email.reset.body', args),
     });
   }
 

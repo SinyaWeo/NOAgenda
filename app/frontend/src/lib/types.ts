@@ -9,8 +9,7 @@ export interface User {
 	language?: string;
 	timezone?: string;
 	theme?: string;
-	weekStart?: number;
-	defaultProjectId?: number;
+	defaultProjectId?: number | null;
 	avatarUrl?: string;
 	isEmailConfirmed: boolean;
 	isDeletionRequested: boolean;

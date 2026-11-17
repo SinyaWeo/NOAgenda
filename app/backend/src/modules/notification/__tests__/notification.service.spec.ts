@@ -2,6 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationService } from '../notification.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Notification } from '../notification.entity';
+import { UserService } from '../../user/user.service';
+import { Translator } from '../../../i18n/translator.service';
+import { realTranslator } from '../../../i18n/__tests__/fake-i18n';
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -11,6 +14,13 @@ describe('NotificationService', () => {
     module = await Test.createTestingModule({
       providers: [
         NotificationService,
+        {
+          provide: UserService,
+          useValue: {
+            languagesOf: jest.fn(async (ids: number[]) => new Map(ids.map((i) => [i, i === 3 ? 'cs' : 'en']))),
+          },
+        },
+        { provide: Translator, useValue: realTranslator() },
         {
           provide: getRepositoryToken(Notification),
           useValue: { find: jest.fn(), findOne: jest.fn(), create: jest.fn((x) => x), save: jest.fn(async (x) => x) },
@@ -45,6 +55,13 @@ describe('NotificationService', () => {
         message: 'ann assigned you to "Write docs"',
       });
       expect(JSON.parse(saved[0].params)).toEqual({ actor: 'ann', title: 'Write docs', kind: 'task' });
+    });
+
+    it("writes each notification's message in that recipient's own language", async () => {
+      await service.notify({ ...event, recipients: [2, 3] });
+      const [en, cs] = repo().save.mock.calls[0][0];
+      expect(en.message).toBe('ann assigned you to "Write docs"');
+      expect(cs.message).toBe('ann vás přiřadil(a) k úkolu „Write docs“');
     });
 
     it('words a system reminder without an actor and keeps the owner as recipient', async () => {

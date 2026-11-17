@@ -5,6 +5,7 @@ import { User } from '../user/user.entity';
 import { EmailVerificationToken } from '../auth/email-verification-token.entity';
 import { MailService } from '../mail/mail.service';
 import { randomToken, sha256 } from '../../common/tokens';
+import { Translator } from '../../i18n/translator.service';
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -18,6 +19,7 @@ export class EmailVerificationService {
     @InjectRepository(User)
     private readonly users: Repository<User>,
     private readonly mail: MailService,
+    private readonly translator: Translator,
   ) {}
 
   /**
@@ -31,7 +33,7 @@ export class EmailVerificationService {
   }
 
   /** Issue a fresh token and email it. Safe to call repeatedly; delivery is not awaited by callers that must be uniform. */
-  async send(user: Pick<User, 'id' | 'email' | 'username'>): Promise<boolean> {
+  async send(user: Pick<User, 'id' | 'email' | 'username'> & { language?: string | null }): Promise<boolean> {
     await this.tokens.delete({ user: { id: user.id } });
     const token = randomToken(32);
     await this.tokens.save(
@@ -43,14 +45,12 @@ export class EmailVerificationService {
       }),
     );
     const app = await this.mail.appName();
+    // In the recipient's own language: this goes out while they are not looking at the app.
+    const args = { app, username: user.username, link: this.mail.link('/user/verify-email', { token }) };
     return this.mail.send({
       to: user.email,
-      subject: `Confirm your ${app} email address`,
-      text:
-        `Hi ${user.username},\n\n` +
-        `Please confirm your email address by opening this link (valid for 24 hours):\n\n` +
-        `${this.mail.link('/user/verify-email', { token })}\n\n` +
-        `If you did not create this account you can ignore this message.`,
+      subject: this.translator.t(user.language, 'email.verify.subject', args),
+      text: this.translator.t(user.language, 'email.verify.body', args),
     });
   }
 

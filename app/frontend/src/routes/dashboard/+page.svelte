@@ -13,6 +13,7 @@
 
 	const user = derived(authSession, ($authSession) => $authSession.user);
 	const projects = writable<Project[]>([]);
+	const allProjects = writable<Project[]>([]); // every project, for the quick-add choice
 	const projectCount = writable(0); // total, not just the few shown below
 	const error = writable('');
 	const upcomingTasks = writable<Task[]>([]);
@@ -67,6 +68,9 @@
 			]);
 			projectCount.set(p.length);
 			projects.set(p.slice(0, 5));
+			allProjects.set(p);
+			const def = $user?.defaultProjectId;
+			if (!quickProjectId && def && p.some((x) => x.id === def)) quickProjectId = String(def);
 			error.set('');
 			overdueTasks.set(overdue);
 			upcomingTasks.set(upcoming);
@@ -164,7 +168,7 @@
 	{/if}
 
 	<!-- Quick-add task -->
-	{#if $projects.length > 0}
+	{#if $allProjects.length > 0}
 		<Card class="mb-4">
 			<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
 				{$t('dashboard.quickAdd.title')}
@@ -184,7 +188,7 @@
 				/>
 				<Select bind:value={quickProjectId} class="flex-1 min-w-36">
 					<option value="">{$t('dashboard.quickAdd.selectProject')}</option>
-					{#each $projects as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
+					{#each $allProjects as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
 				</Select>
 				<Button type="submit" disabled={addingTask || !quickTitle.trim() || !quickProjectId}>
 					{addingTask ? $t('dashboard.quickAdd.adding') : $t('dashboard.quickAdd.add')}

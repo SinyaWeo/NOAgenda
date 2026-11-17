@@ -1,0 +1,10 @@
+{
+  "verify": {
+    "subject": "Confirm your {app} email address",
+    "body": "Hi {username},\n\nPlease confirm your email address by opening this link (valid for 24 hours):\n\n{link}\n\nIf you did not create this account you can ignore this message."
+  },
+  "reset": {
+    "subject": "Reset your {app} password",
+    "body": "Hi {username},\n\nSomeone asked to reset the password for your account. Open this link within 1 hour to choose a new one:\n\n{link}\n\nIf this was not you, ignore this email: your password stays unchanged."
+  }
+}

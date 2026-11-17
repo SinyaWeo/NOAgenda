@@ -4,6 +4,7 @@
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import type { GeneralSettings } from '$lib/types-misc';
+	import type { Project } from '$lib/types';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth } from '$lib/api';
 	import { refreshCurrentUser } from '$lib/auth';
@@ -27,7 +28,8 @@
 	const language = writable<string>(get(locale));
 	const timezone = writable('UTC');
 	const theme = writable('light');
-	const weekStart = writable(1);
+	const defaultProjectId = writable<number | null>(null);
+	const projects = writable<Project[]>([]);
 	const error = writable('');
 	const success = writable('');
 	const loading = writable(true);
@@ -40,7 +42,12 @@
 			language.set(isLocale(s.language) ? s.language : get(locale));
 			timezone.set(s.timezone ?? 'UTC');
 			theme.set(s.theme ?? 'light');
-			weekStart.set(s.weekStart ?? 1);
+			const list = await apiGetAuth<Project[]>('/projects').catch((): Project[] => []);
+			projects.set(list);
+			// A project that was deleted, or that the user lost access to, is simply no longer the default.
+			defaultProjectId.set(
+				list.some((p) => p.id === s.defaultProjectId) ? (s.defaultProjectId ?? null) : null
+			);
 		} catch (e: unknown) {
 			error.set(errMessage(e));
 		} finally {
@@ -59,7 +66,7 @@
 				language: $language,
 				timezone: $timezone,
 				theme: $theme,
-				weekStart: $weekStart
+				defaultProjectId: $defaultProjectId
 			});
 			if (isLocale($language)) setLocale($language);
 			await refreshCurrentUser(); // header name, avatar and theme follow at once
@@ -112,23 +119,21 @@
 					{#each LOCALES as l (l.code)}<option value={l.code}>{l.label}</option>{/each}
 				</Select>
 			</div>
-			<div class="grid grid-cols-2 gap-4">
-				<div>
-					<Label for="gen-theme" class="mb-1">{$t('common.field.theme')}</Label>
-					<Select id="gen-theme" bind:value={$theme}>
-						<option value="light">{$t('common.theme.light')}</option><option value="dark"
-							>{$t('common.theme.dark')}</option
-						><option value="system">{$t('common.theme.system')}</option>
-					</Select>
-				</div>
-				<div>
-					<Label for="gen-weekstart" class="mb-1">{$t('settings.general.weekStart')}</Label>
-					<Select id="gen-weekstart" bind:value={$weekStart}>
-						<option value={0}>{$t('settings.general.sunday')}</option><option value={1}
-							>{$t('settings.general.monday')}</option
-						>
-					</Select>
-				</div>
+			<div>
+				<Label for="gen-theme" class="mb-1">{$t('common.field.theme')}</Label>
+				<Select id="gen-theme" bind:value={$theme}>
+					<option value="light">{$t('common.theme.light')}</option><option value="dark"
+						>{$t('common.theme.dark')}</option
+					><option value="system">{$t('common.theme.system')}</option>
+				</Select>
+			</div>
+			<div>
+				<Label for="gen-project" class="mb-1">{$t('settings.general.defaultProject')}</Label>
+				<Select id="gen-project" bind:value={$defaultProjectId}>
+					<option value={null}>{$t('settings.general.noDefaultProject')}</option>
+					{#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
+				</Select>
+				<p class="text-xs text-gray-400 mt-1 mb-0">{$t('settings.general.defaultProjectHint')}</p>
 			</div>
 			<div class="pt-2 border-t border-gray-100 dark:border-gray-700">
 				<Button type="submit" disabled={$saving}

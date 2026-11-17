@@ -1,0 +1,10 @@
+{
+  "verify": {
+    "subject": "Potvrďte svou e-mailovou adresu v aplikaci {app}",
+    "body": "Dobrý den, {username},\n\npotvrďte prosím svou e-mailovou adresu otevřením tohoto odkazu (platí 24 hodin):\n\n{link}\n\nPokud jste tento účet nezaložili vy, můžete tuto zprávu ignorovat."
+  },
+  "reset": {
+    "subject": "Obnovení hesla v aplikaci {app}",
+    "body": "Dobrý den, {username},\n\nněkdo požádal o obnovení hesla k vašemu účtu. Otevřete tento odkaz do 1 hodiny a zvolte nové heslo:\n\n{link}\n\nPokud jste o to nežádali vy, tento e-mail ignorujte: vaše heslo zůstane beze změny."
+  }
+}
