@@ -107,6 +107,48 @@ jobs:
   # Default-deny routes, API-token scopes, search-only user lookup, upload checks and quota, webhook
   # SSRF guard, per-address login lockout and join-table uniqueness. Needs its own API process: it
   # registers users (10 per hour per process) and wants TRUST_PROXY=1 + a 1 MB upload quota.
+  # The production path: an EMPTY database brought up by the migrations alone (NODE_ENV=production turns
+  # schema sync off), then checked against the entities. Any difference means an entity changed without a
+  # migration, which would break a real deployment even though the other jobs (sync on) pass.
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root-password
+          MARIADB_DATABASE: noagenda_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: ci-root-password
+      DB_DATABASE: noagenda_ci
+      NODE_ENV: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: app/backend/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: app/backend
+      - name: Run migrations on an empty database
+        working-directory: app/backend
+        run: npm run migration:run:prod
+      - name: Schema must match the entities
+        working-directory: app/backend
+        run: |
+          out=$(npx typeorm schema:log -d dist/data-source.js 2>&1)
+          echo "$out"
+          echo "$out" | grep -q "Your schema is up to date" || { echo "::error::entities and migrations have drifted: generate a migration"; exit 1; }
+
   hardening:
     runs-on: ubuntu-latest
     services:

@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException, ValidationPipe } from '@nestjs/common';
 import { TaskAssigneeController } from '../task-assignee.controller';
 import { TaskAssigneeService } from '../task-assignee.service';
 import { AddAssigneeDto, AddTaskLabelDto, AddRelationDto } from '../dto/task-links.dto';
@@ -10,14 +10,16 @@ describe('TaskAssigneeController', () => {
   let tasks: any;
   let access: any;
   let notifications: any;
+  let users: any;
   let controller: TaskAssigneeController;
 
   beforeEach(() => {
     service = { findByTask: jest.fn(async () => []), add: jest.fn(async (t, u) => ({ id: 1 })), remove: jest.fn() };
     tasks = { findById: jest.fn(async () => ({ id: 7, title: 'Ship it' })) };
-    access = { assertRead: jest.fn(), assertWrite: jest.fn() };
+    access = { assertRead: jest.fn(), assertWrite: jest.fn(), level: jest.fn(async () => 1) };
+    users = { assertActive: jest.fn(async () => undefined) };
     notifications = { notify: jest.fn(async () => undefined) };
-    controller = new TaskAssigneeController(service, tasks, access, notifications);
+    controller = new TaskAssigneeController(service, tasks, access, notifications, users);
   });
 
   it('findAll asserts read access and returns assignees', async () => {
@@ -53,6 +55,21 @@ describe('TaskAssigneeController', () => {
         title: 'Ship it',
       }),
     );
+  });
+
+  it('add rejects a missing or locked user without saving or notifying', async () => {
+    users.assertActive.mockRejectedValue(new NotFoundException());
+    await expect(controller.add(7, { userId: 5 }, req)).rejects.toBeInstanceOf(NotFoundException);
+    expect(service.add).not.toHaveBeenCalled();
+    expect(notifications.notify).not.toHaveBeenCalled();
+  });
+
+  it('add rejects a user who cannot see the task without saving or notifying', async () => {
+    access.level.mockResolvedValue(0);
+    await expect(controller.add(7, { userId: 5 }, req)).rejects.toBeInstanceOf(BadRequestException);
+    expect(access.level).toHaveBeenCalledWith(5, 7);
+    expect(service.add).not.toHaveBeenCalled();
+    expect(notifications.notify).not.toHaveBeenCalled();
   });
 
   it('add returns the saved assignee', async () => {

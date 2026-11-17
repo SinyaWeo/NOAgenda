@@ -3,11 +3,11 @@ import {
   Get,
   Post,
   Delete,
-  Body,
   Param,
   Query,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
   Request,
   NotFoundException,
@@ -25,6 +25,7 @@ import { existsSync, unlink } from 'fs';
 import { NodeAccessService } from '../node/node-access.service';
 import { randomUUID } from 'crypto';
 import { sniffFile } from '../../common/file-sniff';
+import { MAX_FILE_SIZE, UploadPrecheckGuard, USER_QUOTA_BYTES } from './upload-precheck.guard';
 
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
 
@@ -47,9 +48,6 @@ const ALLOWED_MIME_TYPES = [
   'application/x-zip-compressed',
   'application/json',
 ];
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
-/** Total upload allowance per user (USER_STORAGE_QUOTA_MB, default 200 MB). */
-const USER_QUOTA_BYTES = Number(process.env.USER_STORAGE_QUOTA_MB || 200) * 1024 * 1024;
 /** Declared types whose content we can verify from the first bytes. */
 const SNIFFABLE = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf']);
 
@@ -109,6 +107,7 @@ export class AttachmentController {
   }
 
   @Post('upload')
+  @UseGuards(UploadPrecheckGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -132,13 +131,11 @@ export class AttachmentController {
       },
     }),
   )
-  async upload(@UploadedFile() file: Express.Multer.File, @Body() body: any, @Request() req: any): Promise<Attachment> {
+  async upload(@UploadedFile() file: Express.Multer.File, @Request() req: any): Promise<Attachment> {
     if (!file) throw new BadRequestException('No file uploaded');
-    const taskId = body?.taskId ? Number(body.taskId) : undefined;
+    // UploadPrecheckGuard has already validated this id and the caller's write access, before multer ran.
+    const taskId: number = req.uploadTaskId;
     try {
-      if (taskId === undefined) throw new BadRequestException('taskId is required');
-      if (!Number.isInteger(taskId) || taskId < 1) throw new BadRequestException('Invalid taskId');
-      await this.access.assertWrite(req.user.userId, taskId);
       if (SNIFFABLE.has(file.mimetype) && (await sniffFile(file.path).catch(() => null)) !== file.mimetype) {
         throw new BadRequestException(`The file is not a valid ${file.mimetype} (its content does not match its type)`);
       }

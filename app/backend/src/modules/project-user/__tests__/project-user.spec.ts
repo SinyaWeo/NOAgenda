@@ -1,4 +1,10 @@
-import { ArgumentMetadata, BadRequestException, ForbiddenException, ValidationPipe } from '@nestjs/common';
+import {
+  ArgumentMetadata,
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { Access } from '../../node/node-access.service';
 import { Permission } from '../project-user.entity';
 import { AddProjectUserDto } from '../dto/project-sharing.dto';
@@ -56,6 +62,7 @@ describe('ProjectUserController', () => {
   let service: any;
   let projects: any;
   let notifications: any;
+  let users: any;
   let controller: ProjectUserController;
 
   beforeEach(() => {
@@ -68,7 +75,8 @@ describe('ProjectUserController', () => {
     };
     projects = { findById: jest.fn(async () => ({ id: 3, name: 'Alpha' })) };
     notifications = { notify: jest.fn(async () => undefined) };
-    controller = new ProjectUserController(service, projects, access, notifications);
+    users = { assertActive: jest.fn(async () => undefined) };
+    controller = new ProjectUserController(service, projects, access, notifications, users);
   });
 
   it('list requires READ', async () => {
@@ -110,6 +118,15 @@ describe('ProjectUserController', () => {
     notifications.notify.mockRejectedValue(new Error('boom'));
     await expect(controller.add(3 as any, { userId: 9 }, req)).resolves.toEqual({ id: 1 });
     await flush();
+  });
+
+  it('add rejects a missing or locked user without adding or notifying', async () => {
+    users.assertActive.mockRejectedValue(new NotFoundException());
+    await expect(controller.add(3 as any, { userId: 9 }, req)).rejects.toBeInstanceOf(NotFoundException);
+    await flush();
+    expect(users.assertActive).toHaveBeenCalledWith(9);
+    expect(service.add).not.toHaveBeenCalled();
+    expect(notifications.notify).not.toHaveBeenCalled();
   });
 
   it('add does not add or notify without ADMIN access', async () => {

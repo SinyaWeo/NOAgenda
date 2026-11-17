@@ -246,9 +246,9 @@
 		const id = page.params.id ?? '';
 		const fd = new FormData();
 		fd.append('file', file);
-		fd.append('taskId', id);
 		try {
-			const up = await apiFetchAuth('/attachments/upload', {
+			// The task id goes in the query so the API can refuse before the file is written.
+			const up = await apiFetchAuth(`/attachments/upload?taskId=${encodeURIComponent(id)}`, {
 				method: 'POST',
 				body: fd
 			});

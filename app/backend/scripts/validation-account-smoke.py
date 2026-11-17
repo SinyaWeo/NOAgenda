@@ -136,7 +136,7 @@ s, _, _ = call('POST', '/tokens', {'name': 'tok', 'expiresAt': '2031-01-01'}, A)
 s, body, _ = call('POST', '/tasks', raw=b'{"title":"x","x":"' + b'a' * 2_000_000 + b'"}', token=A); check('oversized body rejected (413)', s, 413)
 
 # ======================= data export =======================
-s, att, _ = multipart('/attachments/upload', A, {'taskId': t1['id']}, 'notes.txt', b'my notes')
+s, att, _ = multipart(f"/attachments/upload?taskId={t1['id']}", A, {'taskId': t1['id']}, 'notes.txt', b'my notes')
 check('attachment uploaded', s, 201)
 s, exp, hdr = call('GET', '/user/export', token=A); check('export works', s, 200)
 check('export is a downloadable file', 'attachment' in (hdr.get('Content-Disposition') or ''), True)
@@ -176,7 +176,7 @@ else:
     s, vs, _ = call('POST', '/tasks', {'title': 'Vic subtask', 'parentTaskId': vt['id'], 'project': {'id': vp['id']}}, V)
     call('POST', '/tasks', {'title': 'Vic personal task'}, V)
     s, ci, _ = call('POST', '/comments', {'content': 'vic comment on own task', 'taskId': vt['id']}, V)
-    s, vatt, _ = multipart('/attachments/upload', V, {'taskId': vt['id']}, 'vic.txt', b'vic file')
+    s, vatt, _ = multipart(f"/attachments/upload?taskId={vt['id']}", V, {'taskId': vt['id']}, 'vic.txt', b'vic file')
     call('POST', '/webhooks', {'url': 'https://vic.example/hook', 'projectId': vp['id']}, V)
     s, vv, _ = call('POST', f'/projects/{vp["id"]}/views', {'title': 'Vic board', 'viewType': 'kanban'}, V)
     call('POST', f'/projects/{vp["id"]}/views/{vv["id"]}/buckets', {'title': 'Todo'}, V)
@@ -192,7 +192,7 @@ else:
     s, ot, _ = call('POST', '/tasks', {'title': 'Own task', 'project': {'id': op['id']}}, O)
     s, vit, _ = call('POST', '/tasks', {'title': 'Vic task in own project', 'project': {'id': op['id']}}, V); check('vic can work in a project shared with them', s, 201)
     call('POST', '/comments', {'content': 'vic comment on own task in shared project', 'taskId': ot['id']}, V)
-    s, vatt2, _ = multipart('/attachments/upload', V, {'taskId': ot['id']}, 'vic2.txt', b'vic file 2')
+    s, vatt2, _ = multipart(f"/attachments/upload?taskId={ot['id']}", V, {'taskId': ot['id']}, 'vic2.txt', b'vic file 2')
     call('POST', '/user/settings/general', {'name': 'Vic'}, V)
     # owner's data that must survive
     s, ocm, _ = call('POST', '/comments', {'content': 'own comment', 'taskId': ot['id']}, O)

@@ -113,13 +113,13 @@ s, av = call('PUT', '/user/settings/avatar/upload', token=A, raw=body, ctype=ct)
 # ================= attachments: sniffing and quota (backend started with USER_STORAGE_QUOTA_MB=1)
 s, task = call('POST', '/tasks', {'title': 'files', 'parentId': pid}, A); tid = task['id']
 body, ct = multipart({'taskId': tid}, {'file': ('x.png', 'image/png', b'not really a png at all')})
-s, _ = call('POST', '/attachments/upload', token=A, raw=body, ctype=ct); check('fake PNG attachment rejected', s, 400)
+s, _ = call('POST', f'/attachments/upload?taskId={tid}', token=A, raw=body, ctype=ct); check('fake PNG attachment rejected', s, 400)
 body, ct = multipart({'taskId': tid}, {'file': ('doc.pdf', 'application/pdf', b'%PDF-1.4\n' + b'0' * 800_000)})
-s, _ = call('POST', '/attachments/upload', token=A, raw=body, ctype=ct); check('800 KB PDF fits the 1 MB quota', s, 201)
+s, _ = call('POST', f'/attachments/upload?taskId={tid}', token=A, raw=body, ctype=ct); check('800 KB PDF fits the 1 MB quota', s, 201)
 body, ct = multipart({'taskId': tid}, {'file': ('doc2.pdf', 'application/pdf', b'%PDF-1.4\n' + b'0' * 600_000)})
-s, r = call('POST', '/attachments/upload', token=A, raw=body, ctype=ct); check('a second 600 KB file exceeds the quota', s, 413)
+s, r = call('POST', f'/attachments/upload?taskId={tid}', token=A, raw=body, ctype=ct); check('a second 600 KB file exceeds the quota', s, 413)
 body, ct = multipart({'taskId': tid}, {'file': ('t.txt', 'text/plain', b'hello')})
-s, _ = call('POST', '/attachments/upload', token=Bt, raw=body, ctype=ct); check('another user cannot attach to my task', s, 403)
+s, _ = call('POST', f'/attachments/upload?taskId={tid}', token=Bt, raw=body, ctype=ct); check('another user cannot attach to my task', s, 403)
 
 # ================= webhooks: no internal targets
 for url in ['http://127.0.0.1:3000/x', 'http://localhost/x', 'http://169.254.169.254/latest/meta-data/', 'http://10.0.0.5/x', 'http://[::1]/x', 'https://u:p@8.8.8.8/x', 'ftp://8.8.8.8/x']:

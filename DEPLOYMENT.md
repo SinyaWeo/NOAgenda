@@ -199,10 +199,16 @@ advice, so have them reviewed before you accept real users.
   username and display name only, 30 requests per minute). Registration says "username or email already in use" without
   saying which.
 - **Uploads**: images (avatars, and image/PDF attachments) must really be what they claim (checked by file signature, not the
-  browser's Content-Type); each user has a storage allowance (`USER_STORAGE_QUOTA_MB`, default 200 MB).
+  browser's Content-Type); each user has a storage allowance (`USER_STORAGE_QUOTA_MB`, default 200 MB). Attachment uploads
+  take the task id in the query string (`POST /attachments/upload?taskId=7`): access and size are checked before multer writes
+  anything to disk, so a refused upload never touches `uploads/`.
 - **Webhooks**: a target URL must be http(s), contain no credentials and must not resolve to an internal address (loopback,
-  private ranges, link-local/cloud metadata). No sender exists yet; when one is built it must repeat this check right
-  before connecting (`common/url-guard.ts`). `WEBHOOK_ALLOW_PRIVATE=true` lifts the restriction on purpose.
+  private ranges, link-local/cloud metadata). The sender (`webhook-dispatcher.service.ts`) checks again at delivery time and
+  connects through a lookup that refuses internal addresses using the same DNS answer it connects to, so DNS rebinding cannot
+  slip past (`publicLookup` in `common/url-guard.ts`). Redirects are never followed; 5 s timeout, three attempts.
+  `WEBHOOK_ALLOW_PRIVATE=true` lifts the restriction on purpose.
+- **Assigning and sharing**: adding a task assignee or project member requires an existing, unlocked account (404 otherwise);
+  a task assignee must also already have access to the task, so nobody can be notified about things they cannot see.
 - Logging out of all devices: change the password, or revoke sessions individually.
 
 ## Configuration reference
@@ -259,8 +265,7 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
   in English that the operator must replace with their own reviewed text. Server validation messages are translated when they
   are one of the common ones; anything else is shown in English.
 - A project's owner deleting their account deletes the project for everyone in it (ownership transfer is not built).
-- Webhook secrets are stored in plaintext (they must be readable to sign deliveries). No webhook sender exists yet; when it does,
-  re-check the target address at delivery time (see Uploads/Webhooks above) and consider encrypting the secrets.
+- Webhook secrets are stored in plaintext (they must be readable to sign deliveries); consider encrypting them at rest.
 - The per-address login counter lives in the API process's memory: a restart clears it and several API instances would not share it.
 - Dependencies: no critical/high advisories (CI fails if one appears). Three *moderate* ones sit inside TypeORM's own `glob`/`minimatch`; they are not reachable (the patterns are constants), and the only fix is a major TypeORM upgrade.
 - No independent security review or penetration test has been done.

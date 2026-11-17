@@ -6,7 +6,10 @@ import { Webhook } from './webhook.entity';
 import { Node } from '../node/node.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { DomainEvent, DomainEvents } from '../../common/domain-events';
-import { assertPublicHttpUrl } from '../../common/url-guard';
+import { request as httpRequest } from 'http';
+import { request as httpsRequest } from 'https';
+import { isIP } from 'net';
+import { assertPublicHttpUrl, BLOCKED_ADDRESS, isPrivateAddress, publicLookup } from '../../common/url-guard';
 
 const TIMEOUT_MS = 5000;
 /** Waits before the 2nd and 3rd attempt. A webhook is tried three times at most. */
@@ -141,22 +144,19 @@ export class WebhookDispatcher implements OnModuleInit {
       return { ok: false, status: null, error: this.clip((err as Error).message), retry: false };
     }
     try {
-      const res = await fetch(hook.url, {
-        method: 'POST',
-        headers,
-        body,
-        redirect: 'manual', // a redirect could lead somewhere internal
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-      void res.body?.cancel().catch(() => undefined);
-      if (res.status >= 200 && res.status < 300) return { ok: true, status: res.status, error: null, retry: false };
+      const status = await this.send(hook.url, headers, body);
+      if (status >= 200 && status < 300) return { ok: true, status, error: null, retry: false };
       return {
         ok: false,
-        status: res.status,
-        error: res.status >= 300 && res.status < 400 ? 'Redirects are not followed' : `HTTP ${res.status}`,
-        retry: res.status >= 500 || res.status === 429,
+        status,
+        error: status >= 300 && status < 400 ? 'Redirects are not followed' : `HTTP ${status}`,
+        retry: status >= 500 || status === 429,
       };
     } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === BLOCKED_ADDRESS) {
+        // The name resolved to an internal address at connect time (see publicLookup).
+        return { ok: false, status: null, error: this.clip((err as Error).message), retry: false };
+      }
       const timedOut = (err as Error).name === 'TimeoutError' || (err as Error).name === 'AbortError';
       return {
         ok: false,
@@ -165,6 +165,38 @@ export class WebhookDispatcher implements OnModuleInit {
         retry: true,
       };
     }
+  }
+
+  /**
+   * POST `body` and resolve with the HTTP status. Redirects are not followed (they could lead somewhere
+   * internal) and the connection goes through {@link publicLookup}, which refuses internal addresses using
+   * the very DNS answer it connects to. Public so tests can replace it.
+   */
+  send(rawUrl: string, headers: Record<string, string>, body: string): Promise<number> {
+    const url = new URL(rawUrl);
+    // The lookup function is not consulted for IP literals, so check those here.
+    const literal = url.hostname.replace(/^\[|\]$/g, '');
+    if (process.env.WEBHOOK_ALLOW_PRIVATE !== 'true' && isIP(literal) && isPrivateAddress(literal)) {
+      return Promise.reject(Object.assign(new Error('url must point to a public address'), { code: BLOCKED_ADDRESS }));
+    }
+    const request = url.protocol === 'https:' ? httpsRequest : httpRequest;
+    return new Promise<number>((resolve, reject) => {
+      const req = request(
+        url,
+        {
+          method: 'POST',
+          headers: { ...headers, 'Content-Length': Buffer.byteLength(body) },
+          lookup: publicLookup,
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        },
+        (res) => {
+          res.resume(); // the response body is not needed
+          resolve(res.statusCode ?? 0);
+        },
+      );
+      req.on('error', reject);
+      req.end(body);
+    });
   }
 
   private clip(s: string): string {

@@ -5,6 +5,7 @@ import { ProjectUserService } from './project-user.service';
 import { ProjectService } from '../project/project.service';
 import { ProjectUser } from './project-user.entity';
 import { NotificationService } from '../notification/notification.service';
+import { UserService } from '../user/user.service';
 
 @Controller('projects/:projectId/users')
 export class ProjectUserController {
@@ -13,6 +14,7 @@ export class ProjectUserController {
     private readonly projectService: ProjectService,
     private readonly access: NodeAccessService,
     private readonly notifications: NotificationService,
+    private readonly users: UserService,
   ) {}
 
   @Get()
@@ -28,6 +30,7 @@ export class ProjectUserController {
     @Request() req: any,
   ): Promise<ProjectUser> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
+    await this.users.assertActive(body.userId);
     const member = await this.projectUserService.add(projectId, body.userId, body.permission);
     void this.projectService
       .findById(Number(projectId))

@@ -1,4 +1,7 @@
 import { createHmac } from 'crypto';
+import { createServer } from 'http';
+import { AddressInfo } from 'net';
+import { BLOCKED_ADDRESS } from '../../../common/url-guard';
 import { WebhookDispatcher, MAX_CONSECUTIVE_FAILURES } from '../webhook-dispatcher.service';
 import { Access } from '../../node/node-access.service';
 
@@ -83,33 +86,28 @@ describe('WebhookDispatcher.recipientsOf', () => {
 });
 
 describe('WebhookDispatcher.deliverOnce', () => {
-  const realFetch = global.fetch;
   afterEach(() => {
-    global.fetch = realFetch;
     delete process.env.WEBHOOK_ALLOW_PRIVATE;
   });
-  const mockFetch = (status: number) => (global.fetch = jest.fn(async () => ({ status, body: null })) as any);
+  const mockSend = (svc: any, status: number) => (svc.send = jest.fn(async () => status));
 
   it('POSTs JSON with an HMAC signature when there is a secret', async () => {
-    const f = mockFetch(200);
     const { svc } = build([]);
+    const send = mockSend(svc, 200);
     const r = await svc.deliverOnce({ url: 'https://1.1.1.1/hook', secret: 's3cret' }, 'task.created', { id: 1 });
     expect(r).toMatchObject({ ok: true, status: 200 });
-    const [, init] = f.mock.calls[0] as any;
-    expect(init.method).toBe('POST');
-    expect(init.redirect).toBe('manual');
-    expect(init.headers['X-NOAgenda-Event']).toBe('task.created');
-    expect(init.headers['X-NOAgenda-Signature']).toBe(
-      'sha256=' + createHmac('sha256', 's3cret').update(init.body).digest('hex'),
-    );
-    expect(JSON.parse(init.body)).toMatchObject({ event: 'task.created', data: { id: 1 } });
+    const [url, headers, body] = send.mock.calls[0] as any;
+    expect(url).toBe('https://1.1.1.1/hook');
+    expect(headers['X-NOAgenda-Event']).toBe('task.created');
+    expect(headers['X-NOAgenda-Signature']).toBe('sha256=' + createHmac('sha256', 's3cret').update(body).digest('hex'));
+    expect(JSON.parse(body)).toMatchObject({ event: 'task.created', data: { id: 1 } });
   });
 
   it('sends no signature without a secret', async () => {
-    const f = mockFetch(204);
     const { svc } = build([]);
+    const send = mockSend(svc, 204);
     await svc.deliverOnce({ url: 'https://1.1.1.1/hook', secret: undefined }, 'x', {});
-    expect((f.mock.calls[0] as any)[1].headers['X-NOAgenda-Signature']).toBeUndefined();
+    expect((send.mock.calls[0] as any)[1]['X-NOAgenda-Signature']).toBeUndefined();
   });
 
   it.each([
@@ -118,17 +116,17 @@ describe('WebhookDispatcher.deliverOnce', () => {
     [404, false],
     [302, false],
   ])('status %i: failure, retry=%p', async (status, retry) => {
-    mockFetch(status);
     const { svc } = build([]);
+    mockSend(svc, status);
     const r = await svc.deliverOnce({ url: 'https://1.1.1.1/hook' }, 'x', {});
     expect(r).toMatchObject({ ok: false, status, retry });
   });
 
   it('retries network errors', async () => {
-    global.fetch = jest.fn(async () => {
-      throw new Error('ECONNREFUSED');
-    }) as any;
     const { svc } = build([]);
+    (svc as any).send = jest.fn(async () => {
+      throw new Error('ECONNREFUSED');
+    });
     expect(await svc.deliverOnce({ url: 'https://1.1.1.1/hook' }, 'x', {})).toMatchObject({
       ok: false,
       status: null,
@@ -137,12 +135,56 @@ describe('WebhookDispatcher.deliverOnce', () => {
     });
   });
 
-  it('refuses internal addresses without connecting (and does not retry)', async () => {
-    const f = mockFetch(200);
+  it('does not retry when the connect-time lookup found an internal address (DNS rebinding)', async () => {
     const { svc } = build([]);
+    (svc as any).send = jest.fn(async () => {
+      throw Object.assign(new Error('url must point to a public address'), { code: BLOCKED_ADDRESS });
+    });
+    expect(await svc.deliverOnce({ url: 'https://1.1.1.1/hook' }, 'x', {})).toMatchObject({ ok: false, retry: false });
+  });
+
+  it('refuses internal addresses without connecting (and does not retry)', async () => {
+    const { svc } = build([]);
+    const send = mockSend(svc, 200);
     const r = await svc.deliverOnce({ url: 'http://169.254.169.254/latest' }, 'x', {});
     expect(r).toMatchObject({ ok: false, retry: false });
-    expect(f).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+});
+
+describe('WebhookDispatcher.send', () => {
+  afterEach(() => {
+    delete process.env.WEBHOOK_ALLOW_PRIVATE;
+  });
+  const post = (url: string) => build([]).svc.send(url, { 'Content-Type': 'application/json' }, '{}');
+
+  it('refuses internal IP literals', async () => {
+    await expect(post('http://127.0.0.1:9/hook')).rejects.toMatchObject({ code: BLOCKED_ADDRESS });
+  });
+
+  it('refuses a name that resolves to an internal address, using the answer it would connect to', async () => {
+    // localhost is resolved by the connect-time lookup, which is what stops DNS rebinding.
+    await expect(post('http://localhost:9/hook')).rejects.toMatchObject({ code: BLOCKED_ADDRESS });
+  });
+
+  it('delivers to a local server and does not follow redirects when allowed', async () => {
+    process.env.WEBHOOK_ALLOW_PRIVATE = 'true';
+    const seen: string[] = [];
+    const server = createServer((req, res) => {
+      seen.push(req.url ?? '');
+      res.statusCode = req.url === '/redir' ? 302 : 204;
+      res.setHeader('Location', '/ok');
+      res.end();
+    });
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const { port } = server.address() as AddressInfo;
+    try {
+      await expect(post(`http://127.0.0.1:${port}/ok`)).resolves.toBe(204);
+      await expect(post(`http://127.0.0.1:${port}/redir`)).resolves.toBe(302);
+      expect(seen).toEqual(['/ok', '/redir']);
+    } finally {
+      server.close();
+    }
   });
 });
 

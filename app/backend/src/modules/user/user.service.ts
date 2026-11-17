@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, QueryFailedError } from 'typeorm';
 import { User } from './user.entity';
@@ -67,6 +67,15 @@ export class UserService {
 
   async findById(id: number): Promise<User | null> {
     return this.withPassword().where('u.id = :id', { id }).getOne();
+  }
+
+  /**
+   * Throw 404 unless `id` is an existing, unlocked account. Used before assigning or sharing with a user,
+   * so a client cannot send notifications to arbitrary ids. Locked and missing look the same on purpose.
+   */
+  async assertActive(id: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'isLocked'] as any });
+    if (!user || user.isLocked) throw new NotFoundException('User not found');
   }
 
   async findByIdSafe(id: number): Promise<Omit<User, 'password'> | null> {

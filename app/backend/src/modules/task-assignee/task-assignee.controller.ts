@@ -1,10 +1,21 @@
-import { Controller, Get, Post, Delete, Param, Body, Request, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  Request,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { AddAssigneeDto } from './dto/task-links.dto';
-import { NodeAccessService } from '../node/node-access.service';
+import { Access, NodeAccessService } from '../node/node-access.service';
 import { TaskAssigneeService } from './task-assignee.service';
 import { TaskService } from '../task/task.service';
 import { TaskAssignee } from './task-assignee.entity';
 import { NotificationService } from '../notification/notification.service';
+import { UserService } from '../user/user.service';
 
 @Controller('tasks/:taskId/assignees')
 export class TaskAssigneeController {
@@ -13,6 +24,7 @@ export class TaskAssigneeController {
     private readonly taskService: TaskService,
     private readonly access: NodeAccessService,
     private readonly notifications: NotificationService,
+    private readonly users: UserService,
   ) {}
 
   @Get()
@@ -28,6 +40,11 @@ export class TaskAssigneeController {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));
+    // Only real, active users who can already see the task: no notifying strangers.
+    await this.users.assertActive(body.userId);
+    if ((await this.access.level(body.userId, Number(taskId))) < Access.READ) {
+      throw new BadRequestException('That user has no access to this task');
+    }
     const assignee = await this.taskAssigneeService.add(taskId, body.userId);
     void this.notifications.notify({
       type: 'task_assigned',

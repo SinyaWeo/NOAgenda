@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { assertPublicHttpUrl, isPrivateAddress } from '../url-guard';
+import { assertPublicHttpUrl, BLOCKED_ADDRESS, isPrivateAddress, publicLookup } from '../url-guard';
 
 describe('isPrivateAddress', () => {
   it.each([
@@ -53,5 +53,36 @@ describe('assertPublicHttpUrl', () => {
     } finally {
       delete process.env.WEBHOOK_ALLOW_PRIVATE;
     }
+  });
+});
+
+describe('publicLookup', () => {
+  const run = (host: string, options: any = {}) =>
+    new Promise<{ err: any; address: any; family?: number }>((resolve) =>
+      publicLookup(host, options, (err, address, family) => resolve({ err, address, family })),
+    );
+  afterEach(() => delete process.env.WEBHOOK_ALLOW_PRIVATE);
+
+  it('blocks a name that resolves to an internal address', async () => {
+    const { err } = await run('localhost');
+    expect(err?.code).toBe(BLOCKED_ADDRESS);
+  });
+
+  it('blocks it in the all:true form too', async () => {
+    const { err } = await run('localhost', { all: true });
+    expect(err?.code).toBe(BLOCKED_ADDRESS);
+  });
+
+  it('lets internal addresses through when WEBHOOK_ALLOW_PRIVATE=true', async () => {
+    process.env.WEBHOOK_ALLOW_PRIVATE = 'true';
+    const { err, address } = await run('localhost');
+    expect(err).toBeNull();
+    expect(typeof address).toBe('string');
+  });
+
+  it('passes resolution errors through', async () => {
+    const { err } = await run('nonexistent.invalid');
+    expect(err).toBeTruthy();
+    expect(err.code).not.toBe(BLOCKED_ADDRESS);
   });
 });

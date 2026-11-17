@@ -7,9 +7,10 @@ import { TaskModule } from '../task/task.module';
 
 import { NodeModule } from '../node/node.module';
 import { NotificationModule } from '../notification/notification.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
-  imports: [NodeModule, NotificationModule, TypeOrmModule.forFeature([TaskAssignee]), TaskModule],
+  imports: [NodeModule, NotificationModule, UserModule, TypeOrmModule.forFeature([TaskAssignee]), TaskModule],
   providers: [TaskAssigneeService],
   controllers: [TaskAssigneeController],
   exports: [TaskAssigneeService],

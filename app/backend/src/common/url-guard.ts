@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
-import { lookup } from 'dns/promises';
-import { isIP } from 'net';
+import { lookup, LookupAddress } from 'dns';
+import { lookup as lookupAsync } from 'dns/promises';
+import { isIP, LookupFunction } from 'net';
 
 /**
  * Is this IP one a public webhook must never reach? Covers loopback, private (RFC 1918 / ULA),
@@ -63,7 +64,9 @@ export async function assertPublicHttpUrl(raw: string): Promise<void> {
   if (host.toLowerCase() === 'localhost' || host.toLowerCase().endsWith('.localhost')) {
     throw new BadRequestException('url must point to a public address, not an internal one');
   }
-  const addresses = isIP(host) ? [host] : (await lookup(host, { all: true }).catch(() => [])).map((a) => a.address);
+  const addresses = isIP(host)
+    ? [host]
+    : (await lookupAsync(host, { all: true }).catch(() => [])).map((a) => a.address);
   // A name that does not resolve (yet) reaches nothing, so it is not an internal target. DNS can change
   // later, which is why the code that delivers a webhook must check again right before connecting.
   if (addresses.length === 0) return;
@@ -71,3 +74,26 @@ export async function assertPublicHttpUrl(raw: string): Promise<void> {
     throw new BadRequestException('url must point to a public address, not an internal one');
   }
 }
+
+/** Error code of a connection refused by {@link publicLookup}. */
+export const BLOCKED_ADDRESS = 'EBLOCKED';
+
+/**
+ * A `lookup` function for `http(s).request` that refuses internal addresses. Passing it to the request makes the
+ * check and the connection use the SAME DNS answer, so a name that resolves to a public address when saved
+ * cannot be switched to an internal one (DNS rebinding) between {@link assertPublicHttpUrl} and the connect.
+ * The hostname itself is untouched, so TLS (SNI and certificate checks) still works.
+ */
+export const publicLookup: LookupFunction = (hostname, options, callback) => {
+  const opts = options ?? {};
+  lookup(hostname, { ...opts, all: true }, (err, list: LookupAddress[]) => {
+    if (err) return callback(err, '', 4);
+    if (process.env.WEBHOOK_ALLOW_PRIVATE !== 'true' && list.some((a) => isPrivateAddress(a.address))) {
+      const blocked: NodeJS.ErrnoException = new Error('url must point to a public address, not an internal one');
+      blocked.code = BLOCKED_ADDRESS;
+      return callback(blocked, '', 4);
+    }
+    if (opts.all) return (callback as any)(null, list);
+    callback(null, list[0].address, list[0].family);
+  });
+};
