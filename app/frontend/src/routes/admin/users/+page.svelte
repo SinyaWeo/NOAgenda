@@ -106,7 +106,7 @@
 	<title>{$t('admin.users.pageTitle')}</title>
 </svelte:head>
 
-<div class="max-w-4xl mx-auto">
+<div class="max-w-6xl mx-auto">
 	<div class="flex items-center justify-between mb-6">
 		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$t('admin.users.title')}</h1>
 		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400"
@@ -145,7 +145,7 @@
 					</TableBodyCell>
 					<TableBodyCell>
 						{@const isSelf = $currentUser?.id === u.id}
-						<div class="flex items-center gap-2">
+						<div class="flex flex-wrap items-center gap-2">
 							{#if isSelf}
 								<span class="text-xs text-gray-400 w-28">{$t('common.you')}</span>
 							{:else}
