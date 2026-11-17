@@ -18,7 +18,7 @@
 		TableHead,
 		TableHeadCell
 	} from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { CaretLeftSolid, LockSolid, LockOpenSolid, TrashBinSolid } from 'flowbite-svelte-icons';
 	import type { User } from '$lib/types';
 
 	const currentUser = derived(authSession, ($s) => $s.user);
@@ -162,18 +162,24 @@
 							<Button
 								size="xs"
 								color="alternative"
+								class="p-2"
+								title={$t(u.isLocked ? 'admin.users.unlockTip' : 'admin.users.lockTip')}
+								aria-label={$t(u.isLocked ? 'admin.users.unlockTip' : 'admin.users.lockTip')}
 								disabled={isSelf || $saving === u.id}
 								onclick={() => toggleLock(u)}
 							>
-								{$t(u.isLocked ? 'admin.users.unlock' : 'admin.users.lock')}
+								{#if u.isLocked}<LockOpenSolid class="w-4 h-4" />{:else}<LockSolid class="w-4 h-4" />{/if}
 							</Button>
 							<Button
 								size="xs"
 								color="red"
+								class="p-2"
+								title={$t('admin.users.deleteTip')}
+								aria-label={$t('admin.users.deleteTip')}
 								disabled={isSelf || $saving === u.id}
 								onclick={() => removeUser(u)}
 							>
-								{$t('common.delete')}
+								<TrashBinSolid class="w-4 h-4" />
 							</Button>
 						</div>
 					</TableBodyCell>
