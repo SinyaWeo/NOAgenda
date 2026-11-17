@@ -12,6 +12,7 @@ export interface User {
 	defaultProjectId?: number | null;
 	avatarUrl?: string;
 	isEmailConfirmed: boolean;
+	isLocked?: boolean;
 	isDeletionRequested: boolean;
 	deletionScheduledAt?: string;
 	createdAt: string;

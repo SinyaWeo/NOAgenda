@@ -55,7 +55,7 @@ export class ApiTokenService {
     const rows: (ApiTokenUser & { lastUsedAt: Date | null })[] = await this.repo.manager.query(
       `SELECT u.id AS id, u.username AS username, u.role AS role, t.id AS tokenId, t.scope AS scope, t.lastUsedAt AS lastUsedAt
          FROM api_tokens t JOIN users u ON u.id = t.userId
-        WHERE t.token = ? AND (t.expiresAt IS NULL OR t.expiresAt > ?)`,
+        WHERE t.token = ? AND u.isLocked = 0 AND (t.expiresAt IS NULL OR t.expiresAt > ?)`,
       [sha256(raw), new Date()],
     );
     const row = rows[0];

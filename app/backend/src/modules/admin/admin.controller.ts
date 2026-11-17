@@ -2,6 +2,9 @@ import {
   Controller,
   Get,
   Patch,
+  Delete,
+  HttpCode,
+  BadRequestException,
   Param,
   Body,
   UseGuards,
@@ -14,12 +17,18 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/user-role.enum';
 import { User } from '../user/user.entity';
+import { AccountService } from '../account/account.service';
+import { SessionService } from '../session/session.service';
 
 @Controller('admin')
 @UseGuards(RolesGuard)
 @Roles(UserRole.ADMIN)
 export class AdminController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly accounts: AccountService,
+    private readonly sessions: SessionService,
+  ) {}
 
   @Get('users')
   async findAllUsers(): Promise<Omit<User, 'password'>[]> {
@@ -42,5 +51,31 @@ export class AdminController {
     if (!user) throw new NotFoundException();
     const { password: _p, ...safe } = user as any;
     return safe;
+  }
+
+  @Patch('users/:id/lock')
+  async setLocked(
+    @Param('id') id: number,
+    @Body('locked') locked: boolean,
+    @Request() req: any,
+  ): Promise<Omit<User, 'password'>> {
+    if (typeof locked !== 'boolean') throw new BadRequestException('locked must be a boolean');
+    const userId = Number(id);
+    if (req.user.userId === userId) throw new ForbiddenException('Cannot lock your own account');
+    const user = await this.userService.setLocked(userId, locked);
+    if (!user) throw new NotFoundException();
+    // End every live session right away; API tokens and JWTs are also refused while locked.
+    if (locked) await this.sessions.revokeAllForUser(userId);
+    const { password: _p, ...safe } = user as any;
+    return safe;
+  }
+
+  @Delete('users/:id')
+  @HttpCode(204)
+  async removeUser(@Param('id') id: number, @Request() req: any): Promise<void> {
+    const userId = Number(id);
+    if (req.user.userId === userId) throw new ForbiddenException('Cannot delete your own account');
+    if (!(await this.userService.findById(userId))) throw new NotFoundException();
+    await this.accounts.purgeUser(userId);
   }
 }

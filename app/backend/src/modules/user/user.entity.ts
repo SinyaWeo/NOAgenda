@@ -50,6 +50,10 @@ export class User extends BaseEntity {
   @Column({ nullable: true, type: 'datetime' })
   lockedUntil?: Date;
 
+  /** Set by an admin: the account cannot sign in and all its sessions and API tokens stop working. */
+  @Column({ default: false })
+  isLocked!: boolean;
+
   @Column({ default: false })
   isDeletionRequested!: boolean;
 

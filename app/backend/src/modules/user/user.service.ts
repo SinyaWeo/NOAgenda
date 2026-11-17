@@ -39,6 +39,7 @@ export class UserService {
       .createQueryBuilder('u')
       .select(['u.id', 'u.username', 'u.name', 'u.avatarUrl'])
       .where('u.id != :me', { me: exceptUserId })
+      .andWhere('u.isLocked = 0')
       .andWhere('(u.username LIKE :like OR u.name LIKE :like)', { like })
       .orderBy('u.username', 'ASC')
       .limit(10)
@@ -53,6 +54,15 @@ export class UserService {
   async setRole(id: number, role: UserRole): Promise<User | null> {
     await this.userRepository.update(id, { role });
     return this.findById(id);
+  }
+
+  async setLocked(id: number, isLocked: boolean): Promise<User | null> {
+    await this.userRepository.update(id, { isLocked });
+    return this.findById(id);
+  }
+
+  async countAdmins(): Promise<number> {
+    return this.userRepository.count({ where: { role: UserRole.ADMIN } });
   }
 
   async findById(id: number): Promise<User | null> {

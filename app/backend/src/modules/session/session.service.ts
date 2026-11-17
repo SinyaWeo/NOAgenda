@@ -147,7 +147,7 @@ export class SessionService implements OnModuleInit, OnModuleDestroy {
     const rows: SessionUser[] = await this.repo.manager.query(
       `SELECT u.id AS id, u.username AS username, u.role AS role
          FROM user_sessions s JOIN users u ON u.id = s.userId
-        WHERE s.id = ? AND s.userId = ? AND (s.expiresAt IS NULL OR s.expiresAt > ?)`,
+        WHERE s.id = ? AND s.userId = ? AND u.isLocked = 0 AND (s.expiresAt IS NULL OR s.expiresAt > ?)`,
       [sessionId, userId, new Date()],
     );
     return rows[0] ?? null;

@@ -80,6 +80,11 @@ export class AuthService {
     }
     this.throttle.clear(username, meta.ip);
 
+    if (user.isLocked) {
+      // Only reachable with the correct password, so this does not disclose accounts.
+      throw new ForbiddenException('Account is locked');
+    }
+
     if (this.emailVerification.required && !user.isEmailConfirmed) {
       // Only reachable with the correct password, so this does not disclose accounts.
       throw new ForbiddenException({ code: 'EMAIL_NOT_VERIFIED', message: 'Please verify your email address first' });
@@ -98,7 +103,7 @@ export class AuthService {
   async refresh(presented: string, meta: SessionMeta = {}): Promise<AuthResult> {
     const { session, refreshToken } = await this.sessions.rotate(presented, meta);
     const user = await this.userService.findById(session.userId);
-    if (!user) {
+    if (!user || user.isLocked) {
       await this.sessions.revokeById(session.id);
       throw new UnauthorizedException('Invalid refresh token');
     }

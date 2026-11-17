@@ -2,12 +2,14 @@
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
-	import { apiGetAuth, apiPatchAuth } from '$lib/api';
+	import { apiGetAuth, apiPatchAuth, apiDeleteAuth } from '$lib/api';
+	import { showToast } from '$lib/toast';
 	import { authSession } from '$lib/auth';
 	import { derived, writable } from 'svelte/store';
 	import {
 		Alert,
 		Badge,
+		Button,
 		Select,
 		Table,
 		TableBody,
@@ -47,6 +49,44 @@
 			select.value = user.role; // the change did not happen: show the role the user really has
 			error.set(
 				tr('admin.users.roleFailed', {
+					username: user.username,
+					reason: errMessage(e, tr('admin.users.unknownError'))
+				})
+			);
+		} finally {
+			saving.set(null);
+		}
+	}
+
+	async function toggleLock(user: User) {
+		const locked = !user.isLocked;
+		saving.set(user.id);
+		try {
+			const updated = await apiPatchAuth<User>(`/admin/users/${user.id}/lock`, { locked });
+			users.update((list) => list.map((u) => (u.id === updated.id ? updated : u)));
+			showToast(tr(locked ? 'admin.users.locked' : 'admin.users.unlocked', { username: user.username }));
+		} catch (e: unknown) {
+			error.set(
+				tr('admin.users.lockFailed', {
+					username: user.username,
+					reason: errMessage(e, tr('admin.users.unknownError'))
+				})
+			);
+		} finally {
+			saving.set(null);
+		}
+	}
+
+	async function removeUser(user: User) {
+		if (!confirm(tr('admin.users.confirmDelete', { username: user.username }))) return;
+		saving.set(user.id);
+		try {
+			await apiDeleteAuth(`/admin/users/${user.id}`);
+			users.update((list) => list.filter((u) => u.id !== user.id));
+			showToast(tr('admin.users.deleted', { username: user.username }));
+		} catch (e: unknown) {
+			error.set(
+				tr('admin.users.deleteFailed', {
 					username: user.username,
 					reason: errMessage(e, tr('admin.users.unknownError'))
 				})
@@ -98,21 +138,35 @@
 						<Badge color={u.role === 'admin' ? 'red' : 'blue'}
 							>{$t(`admin.users.badge.${u.role}` as MessageKey)}</Badge
 						>
+						{#if u.isLocked}<Badge color="yellow" class="ml-1">{$t('admin.users.badge.locked')}</Badge>{/if}
 					</TableBodyCell>
 					<TableBodyCell>
 						{$fmt.date(u.createdAt)}
 					</TableBodyCell>
 					<TableBodyCell>
 						{#if $currentUser?.id !== u.id}
-							<Select
-								size="sm"
-								class="w-28"
-								items={roleOptions}
-								placeholder={$t('admin.users.choose')}
-								value={u.role}
-								disabled={$saving === u.id}
-								onchange={(e) => changeRole(u, e.target as HTMLSelectElement)}
-							/>
+							<div class="flex items-center gap-2">
+								<Select
+									size="sm"
+									class="w-28"
+									items={roleOptions}
+									placeholder={$t('admin.users.choose')}
+									value={u.role}
+									disabled={$saving === u.id}
+									onchange={(e) => changeRole(u, e.target as HTMLSelectElement)}
+								/>
+								<Button
+									size="xs"
+									color="alternative"
+									disabled={$saving === u.id}
+									onclick={() => toggleLock(u)}
+								>
+									{$t(u.isLocked ? 'admin.users.unlock' : 'admin.users.lock')}
+								</Button>
+								<Button size="xs" color="red" disabled={$saving === u.id} onclick={() => removeUser(u)}>
+									{$t('common.delete')}
+								</Button>
+							</div>
 						{:else}
 							<span class="text-xs text-gray-400">{$t('common.you')}</span>
 						{/if}
