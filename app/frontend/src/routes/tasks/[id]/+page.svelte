@@ -5,6 +5,7 @@
 		apiGetAuth,
 		apiPostAuth,
 		apiPutAuth,
+		apiPatchAuth,
 		apiDeleteAuth,
 		apiFetchAuth,
 		downloadAuthFile
@@ -19,6 +20,7 @@
 	import type {
 		Attachment,
 		Comment,
+		Label,
 		Reminder,
 		Task,
 		TaskAssignee,
@@ -35,6 +37,7 @@
 	let comments = $state<Comment[]>([]);
 	let assignees = $state<TaskAssignee[]>([]);
 	let taskLabels = $state<TaskLabel[]>([]);
+	let allLabels = $state<Label[]>([]); // the user's own labels: the ones that can be attached
 	let attachments = $state<Attachment[]>([]);
 	let reminders = $state<Reminder[]>([]);
 	let relations = $state<TaskRelation[]>([]);
@@ -56,7 +59,7 @@
 	}
 
 	async function loadTask(id: string, isStale: () => boolean) {
-		const [t, c, a, l, att, rem, rel, sub] = await Promise.all([
+		const [t, c, a, l, att, rem, rel, sub, mine] = await Promise.all([
 			apiGetAuth<Task>(`/tasks/${id}`),
 			apiGetAuth<Comment[]>(`/comments?taskId=${id}`),
 			apiGetAuth<TaskAssignee[]>(`/tasks/${id}/assignees`),
@@ -64,7 +67,8 @@
 			apiGetAuth<Attachment[]>(`/attachments?taskId=${id}`),
 			apiGetAuth<Reminder[]>(`/tasks/${id}/reminders`).catch(() => []),
 			apiGetAuth<TaskRelation[]>(`/tasks/${id}/relations`).catch(() => []),
-			apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`).catch(() => [])
+			apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`).catch(() => []),
+			apiGetAuth<Label[]>('/labels').catch((): Label[] => [])
 		]);
 		if (isStale()) return; // the user already moved on to another task
 		task = t;
@@ -75,6 +79,7 @@
 		reminders = rem;
 		relations = rel;
 		subtasks = sub;
+		allLabels = mine;
 	}
 
 	// Reloads when only the id changes (subtask / relation links keep this component mounted).
@@ -84,6 +89,55 @@
 	/** Failures of user actions are toasts: `error` is for load failures and replaces the page. */
 	function fail(e: unknown) {
 		showToast(errMessage(e), 'error');
+	}
+
+	async function addLabel(labelId: number) {
+		const id = page.params.id;
+		try {
+			await apiPostAuth(`/tasks/${id}/labels`, { labelId });
+			taskLabels = await apiGetAuth<TaskLabel[]>(`/tasks/${id}/labels`);
+		} catch (e: unknown) {
+			fail(e);
+		}
+	}
+	async function removeLabel(labelId: number) {
+		const id = page.params.id;
+		try {
+			await apiDeleteAuth(`/tasks/${id}/labels/${labelId}`);
+			taskLabels = await apiGetAuth<TaskLabel[]>(`/tasks/${id}/labels`);
+		} catch (e: unknown) {
+			fail(e);
+		}
+	}
+
+	let acting = $state(false);
+	/** A copy lands next to the original (same project) and is opened right away. */
+	async function duplicateTask() {
+		if (!task || acting) return;
+		acting = true;
+		try {
+			const copy = await apiPutAuth<Task>(`/tasks/${task.id}/duplicate`, {});
+			showToast(tr('tasks.toast.duplicated'), 'success');
+			await goto(`/tasks/${copy.id}`);
+		} catch (e: unknown) {
+			fail(e);
+		} finally {
+			acting = false;
+		}
+	}
+	/** Archived tasks drop out of the lists but are kept; restoring brings them back. */
+	async function toggleArchive() {
+		if (!task || acting) return;
+		acting = true;
+		try {
+			const archiving = !task.isArchived;
+			task = await apiPatchAuth<Task>(`/nodes/${task.id}/${archiving ? 'archive' : 'unarchive'}`, {});
+			showToast(tr(archiving ? 'tasks.toast.archived' : 'tasks.toast.restored'), 'success');
+		} catch (e: unknown) {
+			fail(e);
+		} finally {
+			acting = false;
+		}
 	}
 
 	async function downloadAttachment(id: number, filename: string) {
@@ -230,8 +284,19 @@
 				{task.title}
 			</h1>
 		</div>
-		<Button href="/tasks/{task.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
+		<div class="flex items-center gap-2 flex-wrap justify-end">
+			<Button color="light" size="sm" disabled={acting} onclick={duplicateTask}
+				>{$t('tasks.detail.duplicate')}</Button
+			>
+			<Button color="light" size="sm" disabled={acting} onclick={toggleArchive}
+				>{task.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}</Button
+			>
+			<Button href="/tasks/{task.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
+		</div>
 	</div>
+	{#if task.isArchived}
+		<Alert color="yellow" class="mb-4">{$t('tasks.detail.archivedNotice')}</Alert>
+	{/if}
 
 	<!-- Tabs navigation -->
 	<div
@@ -257,7 +322,10 @@
 		<TaskDetailsTab
 			{task}
 			{taskLabels}
+			{allLabels}
 			{assignees}
+			onAddLabel={addLabel}
+			onRemoveLabel={removeLabel}
 			onStatus={updateStatus}
 			onPercentDone={updatePercentDone}
 			onDefer={deferDueDate}

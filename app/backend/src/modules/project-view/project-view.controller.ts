@@ -1,15 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  NotFoundException,
-  ForbiddenException,
-  Request,
-} from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Request } from '@nestjs/common';
 import { CreateViewDto, UpdateViewDto } from './dto/project-view.dto';
 import { ProjectViewService } from './project-view.service';
 import { ProjectService } from '../project/project.service';
@@ -44,7 +33,8 @@ export class ProjectViewController {
     await this.assertAccess(projectId, req);
     const view = await this.projectViewService.findById(id);
     if (!view) throw new NotFoundException();
-    if (Number(view.project?.id) !== Number(projectId)) throw new ForbiddenException();
+    // Another project's view looks exactly like a missing one: its existence is not revealed.
+    if (Number(view.project?.id) !== Number(projectId)) throw new NotFoundException();
     return view;
   }
 
@@ -68,7 +58,8 @@ export class ProjectViewController {
     await this.assertAccess(projectId, req, true);
     const view = await this.projectViewService.findById(id);
     if (!view) throw new NotFoundException();
-    if (Number(view.project?.id) !== Number(projectId)) throw new ForbiddenException();
+    // Another project's view looks exactly like a missing one: its existence is not revealed.
+    if (Number(view.project?.id) !== Number(projectId)) throw new NotFoundException();
     const updated = await this.projectViewService.update(id, { ...body });
     if (!updated) throw new NotFoundException();
     return updated;
@@ -79,7 +70,8 @@ export class ProjectViewController {
     await this.assertAccess(projectId, req, true);
     const view = await this.projectViewService.findById(id);
     if (!view) throw new NotFoundException();
-    if (Number(view.project?.id) !== Number(projectId)) throw new ForbiddenException();
+    // Another project's view looks exactly like a missing one: its existence is not revealed.
+    if (Number(view.project?.id) !== Number(projectId)) throw new NotFoundException();
     return this.projectViewService.remove(id);
   }
 }

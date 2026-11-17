@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProjectTeam } from './project-team.entity';
+import { orConflict } from '../../common/db-errors';
 import { Permission } from '../project-user/project-user.entity';
 
 @Injectable()
@@ -31,7 +32,7 @@ export class ProjectTeamService {
       team: { id: teamId } as any,
       permission,
     });
-    return this.repo.save(entry);
+    return orConflict(this.repo.save(entry), 'This team already has access to the project');
   }
 
   async update(projectId: number, teamId: number, permission: Permission): Promise<void> {

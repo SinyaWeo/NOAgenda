@@ -26,7 +26,13 @@ export class KanbanBucketService {
     return bucket;
   }
 
-  create(projectId: number, viewId: number, data: Partial<KanbanBucket>): Promise<KanbanBucket> {
+  async create(projectId: number, viewId: number, data: Partial<KanbanBucket>): Promise<KanbanBucket> {
+    // The view in the URL must be one of this project's, or a project admin could attach buckets to another project's view.
+    const rows: unknown[] = await this.repo.manager.query(
+      'SELECT 1 FROM project_views WHERE id = ? AND projectId = ?',
+      [viewId, projectId],
+    );
+    if (!rows.length) throw new NotFoundException();
     const entity = this.repo.create({ ...clean(data), projectId, viewId });
     return this.repo.save(entity);
   }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
-	import { apiGetAuth, apiPostAuth } from '$lib/api';
+	import { apiDeleteAuth, apiGetAuth, apiPostAuth } from '$lib/api';
 	import type { AppNotification } from '$lib/types';
 	import { Badge, Dropdown } from 'flowbite-svelte';
 	import { BellOutline } from 'flowbite-svelte-icons';
@@ -59,6 +59,17 @@
 		}
 	}
 
+	/** Remove one notification for good. It disappears at once and comes back if the server refuses. */
+	async function dismiss(n: AppNotification) {
+		const before = notifications;
+		notifications = notifications.filter((x) => x.id !== n.id);
+		try {
+			await apiDeleteAuth(`/notifications/${n.id}`);
+		} catch (_) {
+			notifications = before;
+		}
+	}
+
 	async function markAllRead() {
 		try {
 			await apiPostAuth('/notifications/read/all', {});
@@ -109,21 +120,30 @@
 	{:else}
 		{#each notifications as n (n.id)}
 			<div
-				class="px-4 py-2 border-b border-gray-100 dark:border-gray-700 {n.read
+				class="flex items-start gap-2 px-4 py-2 border-b border-gray-100 dark:border-gray-700 {n.read
 					? ''
 					: 'bg-primary-50 dark:bg-primary-900/20'}"
 			>
-				{#if hrefOf(n)}
-					<a
-						href={hrefOf(n)}
-						onclick={() => open(n)}
-						class="block text-sm text-gray-800 dark:text-gray-200 m-0 no-underline hover:underline"
-						>{textOf(n)}</a
-					>
-				{:else}
-					<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{textOf(n)}</p>
-				{/if}
-				<small class="text-xs text-gray-400">{$fmt.dateTime(n.createdAt)}</small>
+				<div class="flex-1 min-w-0">
+					{#if hrefOf(n)}
+						<a
+							href={hrefOf(n)}
+							onclick={() => open(n)}
+							class="block text-sm text-gray-800 dark:text-gray-200 m-0 no-underline hover:underline"
+							>{textOf(n)}</a
+						>
+					{:else}
+						<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{textOf(n)}</p>
+					{/if}
+					<small class="text-xs text-gray-400">{$fmt.dateTime(n.createdAt)}</small>
+				</div>
+				<button
+					type="button"
+					class="bg-transparent border-0 cursor-pointer text-gray-400 hover:text-red-600 p-0.5 leading-none"
+					aria-label={$t('layout.notifications.dismiss')}
+					title={$t('layout.notifications.dismiss')}
+					onclick={() => dismiss(n)}>✕</button
+				>
 			</div>
 		{/each}
 	{/if}

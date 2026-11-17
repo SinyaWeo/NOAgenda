@@ -47,6 +47,8 @@
 	let showSave = $state(false);
 	let saveName = $state('');
 	let saving = $state(false);
+	let selected = $state<number[]>([]); // bulk selection (list view)
+	let bulkBusy = $state(false);
 	let lastFilterParam: string | null | undefined = undefined;
 	let loadSeq = 0;
 
@@ -129,10 +131,31 @@
 			if (seq !== loadSeq) return;
 			hasMore.set(more);
 			tasks.set(rows);
+			selected = []; // a new page or filter starts with nothing selected
 		} catch (e: unknown) {
 			if (seq === loadSeq) error.set(errMessage(e));
 		} finally {
 			if (seq === loadSeq) loading.set(false);
+		}
+	}
+
+	function toggleSelected(id: number) {
+		selected = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id];
+	}
+
+	/** Apply one change to every selected task, then reload (a repeating task may have moved on, etc.). */
+	async function bulkUpdate(data: { status?: NodeStatus; priority?: number }) {
+		if (!selected.length || bulkBusy) return;
+		bulkBusy = true;
+		const count = selected.length;
+		try {
+			await apiPostAuth('/tasks/bulk', { ids: selected, data });
+			showToast(tr('views.bulk.done', { count }), 'success');
+			await loadTasks();
+		} catch (e: unknown) {
+			showToast(errMessage(e, tr('views.bulk.failed')), 'error');
+		} finally {
+			bulkBusy = false;
 		}
 	}
 
@@ -380,7 +403,63 @@
 	<Alert color="red">{$error}</Alert>
 {:else if viewMode === 'list'}
 	{#if $tasks.length}
-		<TaskListView tasks={$tasks} {projectNames} onStatusChange={updateTaskStatus} />
+		<div class="flex items-center gap-2 mb-3 flex-wrap">
+			<label class="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer">
+				<input
+					type="checkbox"
+					class="w-4 h-4"
+					checked={selected.length > 0 && selected.length === $tasks.length}
+					onchange={() => (selected = selected.length === $tasks.length ? [] : $tasks.map((t) => t.id))}
+				/>
+				{$t('views.bulk.selectAll')}
+			</label>
+			{#if selected.length}
+				<span class="text-sm text-gray-700 dark:text-gray-300"
+					>{$t('views.bulk.selected', { count: selected.length })}</span
+				>
+				<Select
+					size="sm"
+					class="w-auto"
+					disabled={bulkBusy}
+					value=""
+					aria-label={$t('views.bulk.setStatus')}
+					onchange={(e) => {
+						const el = e.target as HTMLSelectElement;
+						if (el.value) void bulkUpdate({ status: el.value as NodeStatus });
+						el.value = '';
+					}}
+				>
+					<option value="">{$t('views.bulk.setStatus')}</option>
+					<option value="open">{$t('common.status.open')}</option>
+					<option value="in_progress">{$t('common.status.in_progress')}</option>
+					<option value="done">{$t('common.status.done')}</option>
+				</Select>
+				<Select
+					size="sm"
+					class="w-auto"
+					disabled={bulkBusy}
+					value=""
+					aria-label={$t('views.bulk.setPriority')}
+					onchange={(e) => {
+						const el = e.target as HTMLSelectElement;
+						if (el.value) void bulkUpdate({ priority: Number(el.value) });
+						el.value = '';
+					}}
+				>
+					<option value="">{$t('views.bulk.setPriority')}</option>
+					{#each [1, 2, 3, 4, 5] as p (p)}<option value={p}>{$t(`common.priority.${p}` as MessageKey)}</option
+						>{/each}
+				</Select>
+				<Button size="xs" color="light" onclick={() => (selected = [])}>{$t('common.clear')}</Button>
+			{/if}
+		</div>
+		<TaskListView
+			tasks={$tasks}
+			{projectNames}
+			onStatusChange={updateTaskStatus}
+			{selected}
+			onToggle={toggleSelected}
+		/>
 		{@render pager('')}
 	{:else}
 		<div class="text-center py-12 text-gray-400">

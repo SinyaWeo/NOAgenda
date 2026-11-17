@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Delete, Param, Body, Request, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Body,
+  Request,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { AddRelationDto } from '../task-assignee/dto/task-links.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { TaskRelationService } from './task-relation.service';
@@ -33,6 +43,8 @@ export class TaskRelationController {
     @Body() body: AddRelationDto,
     @Request() req: any,
   ): Promise<TaskRelation> {
+    if (Number(body.relatedTaskId) === Number(taskId))
+      throw new BadRequestException('A task cannot be related to itself');
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));

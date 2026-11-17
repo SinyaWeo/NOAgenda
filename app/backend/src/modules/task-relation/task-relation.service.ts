@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TaskRelation, RelationKind } from './task-relation.entity';
+import { orConflict } from '../../common/db-errors';
 
 @Injectable()
 export class TaskRelationService {
@@ -23,7 +24,7 @@ export class TaskRelationService {
       relatedNode: { id: relatedTaskId } as any,
       kind,
     });
-    return this.repo.save(relation);
+    return orConflict(this.repo.save(relation), 'These tasks are already related that way');
   }
 
   async remove(taskId: number, relatedTaskId: number, kind: RelationKind): Promise<void> {

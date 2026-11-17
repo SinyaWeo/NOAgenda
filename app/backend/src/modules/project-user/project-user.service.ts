@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ProjectUser, Permission } from './project-user.entity';
+import { orConflict } from '../../common/db-errors';
 
 @Injectable()
 export class ProjectUserService {
@@ -20,7 +21,7 @@ export class ProjectUserService {
       user: { id: userId } as any,
       permission,
     });
-    return this.repo.save(entry);
+    return orConflict(this.repo.save(entry), 'This user already has access to the project');
   }
 
   async update(projectId: number, userId: number, permission: Permission): Promise<void> {

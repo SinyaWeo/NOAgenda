@@ -154,7 +154,7 @@
 		/>
 	{:else if $view.viewType === 'table'}
 		<TableView tasks={$tasks} />
-	{:else if $view.viewType === 'gantt'}
+	{:else if $view.viewType === 'gantt' || $view.viewType === 'timeline'}
 		<GanttView tasks={$tasks} />
 	{:else if $view.viewType === 'mindmap'}
 		<MindmapView projectId={page.params.id ?? ''} />

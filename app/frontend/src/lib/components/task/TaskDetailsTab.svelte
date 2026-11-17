@@ -1,23 +1,33 @@
 <script lang="ts">
 	import { t, fmt, type MessageKey } from '$lib/i18n';
-	import type { Task, TaskAssignee, TaskLabel } from '$lib/types';
+	import type { Label, Task, TaskAssignee, TaskLabel } from '$lib/types';
 	import { Button, Card, Progressbar, Select } from 'flowbite-svelte';
 
 	let {
 		task,
 		taskLabels,
+		allLabels,
 		assignees,
+		onAddLabel,
+		onRemoveLabel,
 		onStatus,
 		onPercentDone,
 		onDefer
 	}: {
 		task: Task;
 		taskLabels: TaskLabel[];
+		/** The user's own labels (only these can be attached). */
+		allLabels: Label[];
 		assignees: TaskAssignee[];
+		onAddLabel: (labelId: number) => void;
+		onRemoveLabel: (labelId: number) => void;
 		onStatus: (status: string) => void;
 		onPercentDone: (value: number) => void;
 		onDefer: (days: number) => void;
 	} = $props();
+
+	/** Labels not on the task yet. */
+	const available = $derived(allLabels.filter((l) => !taskLabels.some((tl) => tl.label?.id === l.id)));
 </script>
 
 <Card class="mb-4">
@@ -99,36 +109,62 @@
 		</div>
 	{/if}
 
-	{#if taskLabels.length || assignees.length}
-		<div class="flex gap-6 flex-wrap mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-			{#if taskLabels.length}
-				<div>
-					<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-						{$t('tasks.details.labels')}
-					</p>
-					<div class="flex items-center gap-1.5 flex-wrap">
-						{#each taskLabels as tl (tl.id)}
-							<span class="color-dot" style="--dot-color:{tl.label?.color ?? '#6366f1'}"></span>
-							<span
-								class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
-								>{tl.label?.title ?? $t('tasks.details.labelFallback', { id: tl.id })}</span
+	<div class="flex gap-6 flex-wrap mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+		<div>
+			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+				{$t('tasks.details.labels')}
+			</p>
+			<div class="flex items-center gap-1.5 flex-wrap">
+				{#each taskLabels as tl (tl.id)}
+					<span
+						class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+					>
+						<span class="color-dot" style="--dot-color:{tl.label?.color ?? '#6366f1'}"></span>
+						{tl.label?.title ?? $t('tasks.details.labelFallback', { id: tl.id })}
+						{#if tl.label}
+							<button
+								type="button"
+								class="bg-transparent border-0 cursor-pointer text-gray-400 hover:text-red-600 p-0 leading-none"
+								aria-label={$t('tasks.details.removeLabel', { title: tl.label.title })}
+								onclick={() => onRemoveLabel(tl.label!.id)}>✕</button
 							>
-						{/each}
-					</div>
-				</div>
-			{/if}
-			{#if assignees.length}
-				<div>
-					<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-						{$t('tasks.details.assignees')}
-					</p>
-					<p class="text-sm text-gray-700 dark:text-gray-300 m-0">
-						{assignees
-							.map((a) => a.user?.username ?? $t('tasks.details.userFallback', { id: a.id }))
-							.join(', ')}
-					</p>
-				</div>
-			{/if}
+						{/if}
+					</span>
+				{/each}
+				{#if available.length}
+					<Select
+						size="sm"
+						class="w-auto"
+						value=""
+						aria-label={$t('tasks.details.addLabel')}
+						onchange={(e) => {
+							const el = e.target as HTMLSelectElement;
+							if (el.value) onAddLabel(Number(el.value));
+							el.value = '';
+						}}
+					>
+						<option value="">{$t('tasks.details.addLabel')}</option>
+						{#each available as l (l.id)}<option value={l.id}>{l.title}</option>{/each}
+					</Select>
+				{:else if !allLabels.length}
+					<span class="text-xs text-gray-400">
+						{$t('tasks.details.noLabelsYet')}
+						<a href="/labels" class="text-primary-600 hover:underline">{$t('tasks.details.createLabels')}</a>
+					</span>
+				{/if}
+			</div>
 		</div>
-	{/if}
+		{#if assignees.length}
+			<div>
+				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+					{$t('tasks.details.assignees')}
+				</p>
+				<p class="text-sm text-gray-700 dark:text-gray-300 m-0">
+					{assignees
+						.map((a) => a.user?.username ?? $t('tasks.details.userFallback', { id: a.id }))
+						.join(', ')}
+				</p>
+			</div>
+		{/if}
+	</div>
 </Card>

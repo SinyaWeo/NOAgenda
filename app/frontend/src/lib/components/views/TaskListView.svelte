@@ -10,8 +10,11 @@
 		tasks: Task[];
 		projectNames: Record<number, string>;
 		onStatusChange: StatusChangeHandler;
+		/** Bulk selection: pass both to show a checkbox on every task. */
+		selected?: number[];
+		onToggle?: (taskId: number) => void;
 	}
-	let { tasks, projectNames, onStatusChange }: Props = $props();
+	let { tasks, projectNames, onStatusChange, selected = [], onToggle }: Props = $props();
 </script>
 
 <div class="flex flex-col gap-2 mb-4">
@@ -22,6 +25,15 @@
 			class="flex flex-col gap-2 p-3.5 {overdue ? 'border-red-300 dark:bg-gray-800 dark:border-red-700' : ''}"
 		>
 			<div class="flex items-center gap-3">
+				{#if onToggle}
+					<input
+						type="checkbox"
+						class="w-4 h-4 shrink-0 cursor-pointer"
+						checked={selected.includes(task.id)}
+						onchange={() => onToggle(task.id)}
+						aria-label={$t('views.bulk.select', { title: task.title ?? '' })}
+					/>
+				{/if}
 				<div class="flex-1 min-w-0">
 					<a
 						href="/tasks/{task.id}"
