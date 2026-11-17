@@ -1,7 +1,6 @@
 import type { Message } from '../../core';
 import type { messages as en } from '../en/common';
 
-
 export const messages: Record<keyof typeof en, Message> = {
 	'common.save': 'Uložit',
 	'common.saving': 'Ukládám…',

@@ -129,7 +129,6 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: ci-root-password
       DB_DATABASE: noagenda_ci
-      NODE_ENV: production
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -139,11 +138,17 @@ jobs:
           cache-dependency-path: app/backend/package-lock.json
       - run: npm ci && npm run build
         working-directory: app/backend
+      # NODE_ENV=production is set per step, not per job: at job level `npm ci` would skip the
+      # devDependencies and `nest build` would not be found.
       - name: Run migrations on an empty database
         working-directory: app/backend
+        env:
+          NODE_ENV: production
         run: npm run migration:run:prod
       - name: Schema must match the entities
         working-directory: app/backend
+        env:
+          NODE_ENV: production
         run: |
           out=$(npx typeorm schema:log -d dist/data-source.js 2>&1)
           echo "$out"

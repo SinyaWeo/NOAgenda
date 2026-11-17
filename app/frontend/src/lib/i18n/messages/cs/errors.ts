@@ -1,7 +1,6 @@
 import type { Message } from '../../core';
 import type { messages as en } from '../en/errors';
 
-
 export const messages: Record<keyof typeof en, Message> = {
 	'errors.forbidden': 'K tomu nemáte oprávnění.',
 	'errors.notFound': 'Položka nebyla nalezena. Možná byla smazána.',

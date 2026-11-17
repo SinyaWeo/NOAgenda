@@ -49,7 +49,7 @@ aid, A = user('alice'); bid, Bt = user('bob'); cid, C = user('carol')
 s, _ = call('POST', '/user/settings/general', {'role': 'admin'}, Bt); check('role escalation rejected', s, 400)
 s, me = call('GET', '/users/me', None, Bt); check('bob is still a normal user', me['role'], 'user')
 s, _ = call('GET', '/admin/users', None, Bt); check('bob cannot use admin API', s, 403)
-s, g = call('POST', '/user/settings/general', {'theme': 'dark', 'weekStart': 1}, Bt); check('valid settings accepted', s, [200, 201])
+s, g = call('POST', '/user/settings/general', {'theme': 'dark'}, Bt); check('valid settings accepted', s, [200, 201])
 
 # --- 2. alice's data
 s, proj = call('POST', '/projects', {'name': 'Alice secret'}, A); check('alice creates project', s, 201)

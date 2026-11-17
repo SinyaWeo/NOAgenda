@@ -35,7 +35,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.users.deleted': 'Uživatel {username} byl smazán',
 	'admin.users.lockFailed': 'Zámek uživatele {username} se nepodařilo změnit: {reason}',
 	'admin.users.deleteFailed': 'Uživatele {username} se nepodařilo smazat: {reason}',
-	'admin.users.confirmDelete': 'Trvale smazat uživatele {username} včetně všech jeho projektů, úkolů a dat? Tuto akci nelze vrátit.',
+	'admin.users.confirmDelete':
+		'Trvale smazat uživatele {username} včetně všech jeho projektů, úkolů a dat? Tuto akci nelze vrátit.',
 
 	'admin.quotes.pageTitle': 'Správa — Citáty',
 	'admin.quotes.title': 'Motivační citáty',

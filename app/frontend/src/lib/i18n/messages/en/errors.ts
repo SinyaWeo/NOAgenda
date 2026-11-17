@@ -1,4 +1,3 @@
-
 export const messages = {
 	'errors.forbidden': 'You do not have permission to do that.',
 	'errors.notFound': 'That item could not be found. It may have been deleted.',

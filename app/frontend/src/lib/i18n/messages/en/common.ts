@@ -1,4 +1,3 @@
-
 export const messages = {
 	'common.save': 'Save',
 	'common.saving': 'Saving…',

@@ -32,7 +32,8 @@ export const messages = {
 	'admin.users.deleted': '{username} was deleted',
 	'admin.users.lockFailed': 'Could not change the lock for {username}: {reason}',
 	'admin.users.deleteFailed': 'Could not delete {username}: {reason}',
-	'admin.users.confirmDelete': 'Permanently delete {username} and all their projects, tasks and data? This cannot be undone.',
+	'admin.users.confirmDelete':
+		'Permanently delete {username} and all their projects, tasks and data? This cannot be undone.',
 
 	'admin.quotes.pageTitle': 'Admin — Quotes',
 	'admin.quotes.title': 'Motivational Quotes',

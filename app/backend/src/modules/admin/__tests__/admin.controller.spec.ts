@@ -7,7 +7,9 @@ function build(setRoleResult: any = { id: 2, username: 'bob', role: 'admin', pas
   const users: any = {
     findAllAdmin: jest.fn(async () => [{ id: 1 }]),
     setRole: jest.fn(async () => setRoleResult),
-    setLocked: jest.fn(async (id: number, isLocked: boolean) => (id === 99 ? null : { id, isLocked, password: 'HASH' })),
+    setLocked: jest.fn(async (id: number, isLocked: boolean) =>
+      id === 99 ? null : { id, isLocked, password: 'HASH' },
+    ),
     findById: jest.fn(async (id: number) => (id === 99 ? null : { id })),
   };
   const accounts: any = { purgeUser: jest.fn(async () => undefined) };
