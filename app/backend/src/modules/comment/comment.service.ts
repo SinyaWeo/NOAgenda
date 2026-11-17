@@ -12,11 +12,11 @@ export class CommentService {
 
   async findAll(nodeId?: number): Promise<Comment[]> {
     const where = nodeId ? { node: { id: nodeId } } : {};
-    return this.commentRepository.find({ where, relations: ['node', 'author'] });
+    return this.commentRepository.find({ where, relations: { node: true, author: true } });
   }
 
   async findById(id: number): Promise<Comment | null> {
-    return this.commentRepository.findOne({ where: { id }, relations: ['node', 'author'] });
+    return this.commentRepository.findOne({ where: { id }, relations: { node: true, author: true } });
   }
 
   async create(comment: Partial<Comment>): Promise<Comment> {

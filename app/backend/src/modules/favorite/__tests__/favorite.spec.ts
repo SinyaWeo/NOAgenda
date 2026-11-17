@@ -21,7 +21,7 @@ describe('FavoriteService', () => {
 
   it('findByUser scopes to the user', async () => {
     await svc.findByUser(2);
-    expect(repo.find).toHaveBeenCalledWith({ where: { user: { id: 2 } }, relations: ['user'] });
+    expect(repo.find).toHaveBeenCalledWith({ where: { user: { id: 2 } }, relations: { user: true } });
   });
 
   it('add creates a favorite for the user', async () => {

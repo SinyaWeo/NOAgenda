@@ -115,7 +115,7 @@ describe('TaskAssigneeService', () => {
   it('findByTask queries by node id with relations', async () => {
     const repo: any = { find: jest.fn(async () => []) };
     await new TaskAssigneeService(repo).findByTask(7);
-    expect(repo.find).toHaveBeenCalledWith({ where: { node: { id: 7 } }, relations: ['user', 'node'] });
+    expect(repo.find).toHaveBeenCalledWith({ where: { node: { id: 7 } }, relations: { user: true, node: true } });
   });
 
   it('add creates and saves the link', async () => {

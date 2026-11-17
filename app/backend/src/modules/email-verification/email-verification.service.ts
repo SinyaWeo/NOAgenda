@@ -55,7 +55,7 @@ export class EmailVerificationService {
   }
 
   async verify(token: string): Promise<void> {
-    const record = await this.tokens.findOne({ where: { tokenHash: sha256(token) }, relations: ['user'] });
+    const record = await this.tokens.findOne({ where: { tokenHash: sha256(token) }, relations: { user: true } });
     if (!record || record.expiresAt.getTime() < Date.now()) {
       if (record) await this.tokens.delete(record.id);
       throw new BadRequestException('Invalid or expired verification link');

@@ -154,7 +154,7 @@ export class AuthService {
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const record = await this.resetTokenRepository.findOne({
       where: { token: sha256(token) },
-      relations: ['user'],
+      relations: { user: true },
     });
     if (!record || record.expiresAt.getTime() < Date.now()) {
       if (record) await this.resetTokenRepository.delete(record.id);

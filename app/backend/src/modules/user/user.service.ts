@@ -28,7 +28,7 @@ export class UserService {
   /** Saved interface language per user id (null when unset), for text sent while they are away. */
   async languagesOf(ids: number[]): Promise<Map<number, string | null>> {
     if (!ids.length) return new Map();
-    const rows = await this.userRepository.find({ where: { id: In(ids) }, select: ['id', 'language'] });
+    const rows = await this.userRepository.find({ where: { id: In(ids) }, select: { id: true, language: true } });
     return new Map(rows.map((u) => [u.id, u.language ?? null]));
   }
 
@@ -74,14 +74,14 @@ export class UserService {
    * so a client cannot send notifications to arbitrary ids. Locked and missing look the same on purpose.
    */
   async assertActive(id: number): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id }, select: ['id', 'isLocked'] as any });
+    const user = await this.userRepository.findOne({ where: { id }, select: { id: true, isLocked: true } });
     if (!user || user.isLocked) throw new NotFoundException('User not found');
   }
 
   async findByIdSafe(id: number): Promise<Omit<User, 'password'> | null> {
     const user = await this.userRepository.findOne({
       where: { id },
-      select: ['id', 'username', 'name', 'avatarUrl', 'createdAt'] as any,
+      select: { id: true, username: true, name: true, avatarUrl: true, createdAt: true },
     });
     return user;
   }

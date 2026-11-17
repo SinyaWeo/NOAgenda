@@ -87,7 +87,7 @@
 
 	/** Navigate to the same page with some query params changed (others, e.g. ?view=, are kept). */
 	function setParams(changes: Record<string, string | null>) {
-		const params = new URLSearchParams(page.url.searchParams);
+		const params = new URLSearchParams(page.url.searchParams.toString());
 		for (const [k, v] of Object.entries(changes)) {
 			if (v === null) params.delete(k);
 			else params.set(k, v);
@@ -95,8 +95,7 @@
 		const qs = params.toString();
 		goto(`${page.url.pathname}${qs ? `?${qs}` : ''}`, {
 			replaceState: true,
-			keepFocus: true,
-			noScroll: true
+			reset: false
 		});
 	}
 

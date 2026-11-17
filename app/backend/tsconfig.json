@@ -11,6 +11,7 @@
     // and class-validator install on entities/DTOs. Keep the classic assignment behaviour.
     "useDefineForClassFields": false,
     "skipLibCheck": true,
+    "types": ["node", "jest"],
     "sourceMap": true,
     "incremental": true,
     "strict": true,

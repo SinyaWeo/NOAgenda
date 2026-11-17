@@ -85,7 +85,7 @@ describe('TaskLabelService', () => {
     };
     const svc = new TaskLabelService(repo);
     await svc.findByTask(7);
-    expect(repo.find).toHaveBeenCalledWith({ where: { node: { id: 7 } }, relations: ['label', 'node'] });
+    expect(repo.find).toHaveBeenCalledWith({ where: { node: { id: 7 } }, relations: { label: true, node: true } });
     await svc.add(7, 4);
     expect(repo.create).toHaveBeenCalledWith({ node: { id: 7 }, label: { id: 4 } });
     await svc.remove(7, 4);

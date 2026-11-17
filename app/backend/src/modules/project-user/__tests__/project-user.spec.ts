@@ -31,7 +31,7 @@ describe('ProjectUserService', () => {
 
   it('findByProject loads user and project', async () => {
     await service.findByProject(3);
-    expect(repo.find).toHaveBeenCalledWith({ where: { project: { id: 3 } }, relations: ['user', 'project'] });
+    expect(repo.find).toHaveBeenCalledWith({ where: { project: { id: 3 } }, relations: { user: true, project: true } });
   });
 
   it('add defaults to READ (least privilege)', async () => {

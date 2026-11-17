@@ -11,7 +11,7 @@ export class FavoriteService {
   ) {}
 
   async findByUser(userId: number): Promise<Favorite[]> {
-    return this.repo.find({ where: { user: { id: userId } }, relations: ['user'] });
+    return this.repo.find({ where: { user: { id: userId } }, relations: { user: true } });
   }
 
   async add(userId: number, entityType: FavoriteEntityType, entityId: number): Promise<Favorite> {

@@ -33,13 +33,13 @@ export class NotificationService {
   async findAll(userId: number): Promise<Notification[]> {
     return this.notificationRepository.find({
       where: { user: { id: userId } },
-      relations: ['user'],
+      relations: { user: true },
       order: { createdAt: 'DESC' },
     });
   }
 
   async findById(id: number): Promise<Notification | null> {
-    return this.notificationRepository.findOne({ where: { id }, relations: ['user'] });
+    return this.notificationRepository.findOne({ where: { id }, relations: { user: true } });
   }
 
   async create(notification: Partial<Notification>): Promise<Notification> {

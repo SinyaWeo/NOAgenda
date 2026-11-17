@@ -34,7 +34,11 @@ export class TaskReminderService implements OnModuleInit, OnModuleDestroy {
   }
 
   async findByTask(taskId: number): Promise<TaskReminder[]> {
-    return this.repo.find({ where: { node: { id: taskId } }, relations: ['node'], order: { reminderDate: 'ASC' } });
+    return this.repo.find({
+      where: { node: { id: taskId } },
+      relations: { node: true },
+      order: { reminderDate: 'ASC' },
+    });
   }
 
   async create(taskId: number, reminderDate: Date, createdBy?: number): Promise<TaskReminder> {
@@ -58,7 +62,7 @@ export class TaskReminderService implements OnModuleInit, OnModuleDestroy {
     try {
       const due = await this.repo.find({
         where: { sentAt: IsNull(), reminderDate: LessThanOrEqual(now) },
-        relations: ['node'],
+        relations: { node: true },
         order: { reminderDate: 'ASC' },
         take: BATCH,
       });

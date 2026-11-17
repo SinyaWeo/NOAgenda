@@ -1,8 +1,8 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle } from '@sveltejs/kit/hooks';
 
 /**
  * Security headers for every response. The Content-Security-Policy itself is
- * configured in svelte.config.js (kit.csp). HSTS is added by the reverse proxy
+ * configured in vite.config.ts (sveltekit({ csp })). HSTS is added by the reverse proxy
  * (docker/Caddyfile) since it terminates TLS.
  */
 export const handle: Handle = async ({ event, resolve }) => {
