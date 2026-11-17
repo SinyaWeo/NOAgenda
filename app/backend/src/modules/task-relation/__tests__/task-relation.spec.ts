@@ -122,7 +122,7 @@ describe('TaskRelationService', () => {
     await svc.findByTask(7);
     expect(repo.find).toHaveBeenCalledWith({
       where: [{ node: { id: 7 } }, { relatedNode: { id: 7 } }],
-      relations: ['node', 'relatedNode'],
+      relations: { node: true, relatedNode: true },
     });
   });
 

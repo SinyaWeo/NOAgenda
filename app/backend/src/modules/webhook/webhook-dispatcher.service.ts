@@ -58,11 +58,11 @@ export class WebhookDispatcher implements OnModuleInit {
 
   /** The project a node belongs to, for events that did not say. */
   private async projectOf(nodeId: number): Promise<number | null> {
-    let cur = await this.nodes.findOne({ where: { id: nodeId }, select: ['id', 'type', 'parentId'] });
+    let cur = await this.nodes.findOne({ where: { id: nodeId }, select: { id: true, type: true, parentId: true } });
     for (let depth = 0; cur && depth < 64; depth++) {
       if (cur.type === 'project') return cur.id;
       if (cur.parentId == null) return null;
-      cur = await this.nodes.findOne({ where: { id: cur.parentId }, select: ['id', 'type', 'parentId'] });
+      cur = await this.nodes.findOne({ where: { id: cur.parentId }, select: { id: true, type: true, parentId: true } });
     }
     return null;
   }
@@ -227,7 +227,7 @@ export class WebhookDispatcher implements OnModuleInit {
       }
       await this.hooks.update(id, { lastStatus: r.status, lastError: r.error, lastDeliveryAt: new Date() });
       await this.hooks.increment({ id }, 'failureCount', 1);
-      const hook = await this.hooks.findOne({ where: { id }, select: ['id', 'failureCount', 'active'] });
+      const hook = await this.hooks.findOne({ where: { id }, select: { id: true, failureCount: true, active: true } });
       if (hook && hook.active && hook.failureCount >= MAX_CONSECUTIVE_FAILURES) {
         await this.hooks.update(id, { active: false });
         this.logger.warn(`Webhook ${id} switched off after ${hook.failureCount} failed deliveries in a row`);

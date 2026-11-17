@@ -132,7 +132,7 @@ export class NodeService {
   }
 
   async findById(id: number): Promise<Node | null> {
-    return this.nodeRepository.findOne({ where: { id }, relations: ['parent', 'children'] });
+    return this.nodeRepository.findOne({ where: { id }, relations: { parent: true, children: true } });
   }
 
   async findChildren(parentId: number): Promise<Node[]> {
@@ -182,7 +182,10 @@ export class NodeService {
     for (let depth = 0; cur && depth < MAX_TREE_DEPTH; depth++) {
       if (cur.type === NodeType.PROJECT) return cur.id;
       if (cur.parentId == null) return null;
-      cur = await this.nodeRepository.findOne({ where: { id: cur.parentId }, select: ['id', 'type', 'parentId'] });
+      cur = await this.nodeRepository.findOne({
+        where: { id: cur.parentId },
+        select: { id: true, type: true, parentId: true },
+      });
     }
     return null;
   }
@@ -255,7 +258,10 @@ export class NodeService {
         await this.rearmReminders(m, [id], shiftMs);
       }
     });
-    const nodes = await this.nodeRepository.find({ where: { id: In(ids) }, relations: ['parent', 'children'] });
+    const nodes = await this.nodeRepository.find({
+      where: { id: In(ids) },
+      relations: { parent: true, children: true },
+    });
     nodes.forEach((n) => this.announce('updated', n));
     return nodes;
   }

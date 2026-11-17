@@ -12,14 +12,18 @@ export class AttachmentService {
 
   async findAll(nodeId?: number): Promise<Attachment[]> {
     const where = nodeId ? { node: { id: nodeId } } : {};
-    return this.attachmentRepository.find({ where, relations: ['node', 'uploader'], order: { createdAt: 'DESC' } });
+    return this.attachmentRepository.find({
+      where,
+      relations: { node: true, uploader: true },
+      order: { createdAt: 'DESC' },
+    });
   }
 
   /** Attachments uploaded by one user (database-side filter). */
   async findByUploader(userId: number): Promise<Attachment[]> {
     return this.attachmentRepository.find({
       where: { uploader: { id: userId } },
-      relations: ['node', 'uploader'],
+      relations: { node: true, uploader: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -35,7 +39,7 @@ export class AttachmentService {
   }
 
   async findById(id: number): Promise<Attachment | null> {
-    return this.attachmentRepository.findOne({ where: { id }, relations: ['node', 'uploader'] });
+    return this.attachmentRepository.findOne({ where: { id }, relations: { node: true, uploader: true } });
   }
 
   async create(attachment: Partial<Attachment>): Promise<Attachment> {

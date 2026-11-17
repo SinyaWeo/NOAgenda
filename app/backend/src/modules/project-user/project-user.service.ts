@@ -12,7 +12,7 @@ export class ProjectUserService {
   ) {}
 
   async findByProject(projectId: number): Promise<ProjectUser[]> {
-    return this.repo.find({ where: { project: { id: projectId } }, relations: ['user', 'project'] });
+    return this.repo.find({ where: { project: { id: projectId } }, relations: { user: true, project: true } });
   }
 
   async add(projectId: number, userId: number, permission: Permission = Permission.READ): Promise<ProjectUser> {

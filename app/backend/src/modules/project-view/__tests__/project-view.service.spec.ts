@@ -19,7 +19,7 @@ describe('ProjectViewService', () => {
 
   it('findByProject filters by project and loads the project relation', async () => {
     await service.findByProject(5);
-    expect(repo.find).toHaveBeenCalledWith({ where: { project: { id: 5 } }, relations: ['project'] });
+    expect(repo.find).toHaveBeenCalledWith({ where: { project: { id: 5 } }, relations: { project: true } });
   });
 
   it('create defaults the view type to LIST', async () => {
@@ -35,7 +35,7 @@ describe('ProjectViewService', () => {
   it('update writes then re-reads the view', async () => {
     const out = await service.update(1, { title: 'X' });
     expect(repo.update).toHaveBeenCalledWith(1, { title: 'X' });
-    expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 1 }, relations: ['project'] });
+    expect(repo.findOne).toHaveBeenCalledWith({ where: { id: 1 }, relations: { project: true } });
     expect(out).toEqual({ id: 1 });
   });
 

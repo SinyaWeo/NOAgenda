@@ -11,7 +11,7 @@ export class TaskLabelService {
   ) {}
 
   async findByTask(taskId: number): Promise<TaskLabel[]> {
-    return this.repo.find({ where: { node: { id: taskId } }, relations: ['label', 'node'] });
+    return this.repo.find({ where: { node: { id: taskId } }, relations: { label: true, node: true } });
   }
 
   async add(taskId: number, labelId: number): Promise<TaskLabel> {

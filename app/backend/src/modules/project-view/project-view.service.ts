@@ -11,11 +11,11 @@ export class ProjectViewService {
   ) {}
 
   async findByProject(projectId: number): Promise<ProjectView[]> {
-    return this.repo.find({ where: { project: { id: projectId } }, relations: ['project'] });
+    return this.repo.find({ where: { project: { id: projectId } }, relations: { project: true } });
   }
 
   async findById(id: number): Promise<ProjectView | null> {
-    return this.repo.findOne({ where: { id }, relations: ['project'] });
+    return this.repo.findOne({ where: { id }, relations: { project: true } });
   }
 
   async create(projectId: number, title: string, viewType: ViewType = ViewType.LIST): Promise<ProjectView> {

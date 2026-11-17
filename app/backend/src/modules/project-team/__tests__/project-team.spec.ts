@@ -25,7 +25,7 @@ describe('ProjectTeamService', () => {
 
   it('findByProject loads team and project', async () => {
     await service.findByProject(3);
-    expect(repo.find).toHaveBeenCalledWith({ where: { project: { id: 3 } }, relations: ['team', 'project'] });
+    expect(repo.find).toHaveBeenCalledWith({ where: { project: { id: 3 } }, relations: { team: true, project: true } });
   });
 
   it('add defaults to READ permission', async () => {

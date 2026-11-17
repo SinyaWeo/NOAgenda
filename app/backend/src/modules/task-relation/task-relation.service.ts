@@ -14,7 +14,7 @@ export class TaskRelationService {
   async findByTask(taskId: number): Promise<TaskRelation[]> {
     return this.repo.find({
       where: [{ node: { id: taskId } }, { relatedNode: { id: taskId } }],
-      relations: ['node', 'relatedNode'],
+      relations: { node: true, relatedNode: true },
     });
   }
 

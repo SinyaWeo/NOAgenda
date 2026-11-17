@@ -12,7 +12,7 @@ export class TaskAssigneeService {
   ) {}
 
   async findByTask(taskId: number): Promise<TaskAssignee[]> {
-    return this.repo.find({ where: { node: { id: taskId } }, relations: ['user', 'node'] });
+    return this.repo.find({ where: { node: { id: taskId } }, relations: { user: true, node: true } });
   }
 
   async add(taskId: number, userId: number): Promise<TaskAssignee> {

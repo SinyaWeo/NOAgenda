@@ -5,10 +5,24 @@ updates:
     directory: /app/backend
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    groups:
+      # NestJS packages must move together (shared @nestjs/core/common peer range).
+      nestjs: { patterns: ["@nestjs/*"] }
+    ignore:
+      # typescript-eslint, @nestjs/schematics and ts-jest cap TypeScript below 7.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /app/frontend
     schedule: { interval: weekly }
     open-pull-requests-limit: 5
+    groups:
+      # SvelteKit, its adapter, the Svelte vite plugin and Vite pin each other's peer ranges.
+      sveltekit: { patterns: ["@sveltejs/*", "vite", "vitest", "svelte"] }
+    ignore:
+      # SvelteKit 3 requires typescript ^6.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
     directory: /e2e
     schedule: { interval: monthly }

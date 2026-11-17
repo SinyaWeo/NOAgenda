@@ -55,7 +55,7 @@
 
 	function setTab(tab: Tab) {
 		activeTab = tab;
-		goto(`?tab=${tab}`, { replaceState: true, noScroll: true });
+		goto(`?tab=${tab}`, { replaceState: true, reset: false });
 	}
 
 	async function loadTask(id: string, isStale: () => boolean) {

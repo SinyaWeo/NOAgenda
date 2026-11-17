@@ -13,7 +13,7 @@ export class ProjectTeamService {
   ) {}
 
   async findByProject(projectId: number): Promise<ProjectTeam[]> {
-    return this.repo.find({ where: { project: { id: projectId } }, relations: ['team', 'project'] });
+    return this.repo.find({ where: { project: { id: projectId } }, relations: { team: true, project: true } });
   }
 
   /** True when the user owns the team or is one of its members. */

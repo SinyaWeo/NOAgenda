@@ -77,14 +77,17 @@ export class NodeAccessService {
   }
 
   async assert(userId: number, nodeId: number, needed: Access): Promise<void> {
-    const node = await this.nodeRepository.findOne({ where: { id: nodeId }, select: ['id'] });
+    const node = await this.nodeRepository.findOne({ where: { id: nodeId }, select: { id: true } });
     if (!node) throw new NotFoundException();
     if ((await this.level(userId, nodeId)) < needed) throw new ForbiddenException();
   }
 
   /** Like assert(), but the node must be a *project* (404 for tasks / unknown ids). */
   async assertProject(userId: number, projectId: number, needed: Access): Promise<void> {
-    const node = await this.nodeRepository.findOne({ where: { id: Number(projectId) }, select: ['id', 'type'] });
+    const node = await this.nodeRepository.findOne({
+      where: { id: Number(projectId) },
+      select: { id: true, type: true },
+    });
     if (!node || node.type !== NodeType.PROJECT) throw new NotFoundException();
     if ((await this.level(userId, node.id)) < needed) throw new ForbiddenException();
   }
@@ -135,7 +138,7 @@ export class NodeAccessService {
       seen.add(cur);
       const n: Pick<Node, 'id' | 'parentId'> | null = await this.nodeRepository.findOne({
         where: { id: cur },
-        select: ['id', 'parentId'],
+        select: { id: true, parentId: true },
       });
       cur = n?.parentId ?? null;
     }
