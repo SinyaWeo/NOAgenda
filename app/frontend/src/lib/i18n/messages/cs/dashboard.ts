@@ -1,37 +1,8 @@
-import type { Message } from '../core';
+import type { Message } from '../../core';
+import type { messages as en } from '../en/dashboard';
 
 // Messages for the "dashboard" area (dashboard page and the Upcoming page). Keys are prefixed "dashboard." (see ../README.md).
-export const en = {
-	'dashboard.loadFailed': 'Could not load your dashboard.',
-	'dashboard.welcome': 'Welcome!',
-	'dashboard.welcomeName': 'Welcome, {name}!',
-	'dashboard.stat.projects': 'Projects',
-	'dashboard.stat.upcoming': 'Upcoming',
-	'dashboard.stat.overdue': 'Overdue',
-	'dashboard.quickAdd.title': 'Quick Add Task',
-	'dashboard.quickAdd.titlePlaceholder': 'Task title…',
-	'dashboard.quickAdd.selectProject': 'Select project…',
-	'dashboard.quickAdd.adding': 'Adding…',
-	'dashboard.quickAdd.add': '+ Add',
-	'dashboard.quickAdd.failed': 'Could not add the task',
-	'dashboard.overdue.title': 'Overdue',
-	'dashboard.upcomingTasks.title': 'Upcoming Tasks',
-	'dashboard.upcomingTasks.empty': 'No pending tasks.',
-	'dashboard.viewAll': 'View all',
-	'dashboard.recentProjects.title': 'Recent Projects',
-	'dashboard.recentProjects.empty': 'No projects yet. {link}.',
-	'dashboard.recentProjects.create': 'Create one',
-
-	'dashboard.upcoming.title': 'Upcoming Tasks',
-	'dashboard.upcoming.showNext': 'Show next',
-	'dashboard.upcoming.days': { one: '{count} day', other: '{count} days' },
-	'dashboard.upcoming.includeOverdue': 'Include overdue',
-	'dashboard.upcoming.empty': 'No upcoming tasks in this range.',
-	'dashboard.upcoming.emptyHint': 'Try extending the date range or enabling overdue tasks.',
-	'dashboard.upcoming.notSet': 'Not set'
-} as const;
-
-export const cs: Record<keyof typeof en, Message> = {
+export const messages: Record<keyof typeof en, Message> = {
 	'dashboard.loadFailed': 'Přehled se nepodařilo načíst.',
 	'dashboard.welcome': 'Vítejte!',
 	'dashboard.welcomeName': 'Vítejte, {name}!',

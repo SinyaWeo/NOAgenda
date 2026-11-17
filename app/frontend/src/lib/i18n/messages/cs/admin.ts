@@ -1,76 +1,8 @@
-import type { Message } from '../core';
+import type { Message } from '../../core';
+import type { messages as en } from '../en/admin';
 
 // Messages for the "admin" area. Keys are prefixed "admin." (see ../README.md).
-export const en = {
-	'admin.checking': 'Checking permissions…',
-	'admin.back': 'Admin',
-	'admin.title': 'Admin — {app}',
-	'admin.dashboard.title': 'Admin Dashboard',
-	'admin.dashboard.users': 'Users',
-	'admin.dashboard.usersHint': 'Manage user roles, lock and delete accounts',
-	'admin.dashboard.quotes': 'Quotes',
-	'admin.dashboard.quotesHint': 'Manage motivational quotes',
-	'admin.dashboard.settings': 'Settings',
-	'admin.dashboard.settingsHint': 'App configuration',
-
-	'admin.users.pageTitle': 'Admin — Users',
-	'admin.users.title': 'Users',
-	'admin.users.loadFailed': 'Failed to load users.',
-	'admin.users.roleFailed': 'Could not update the role for {username}: {reason}',
-	'admin.users.unknownError': 'unknown error',
-	'admin.users.col.role': 'Role',
-	'admin.users.col.joined': 'Joined',
-	'admin.users.choose': 'Choose option ...',
-	'admin.users.role.user': 'User',
-	'admin.users.role.admin': 'Admin',
-	'admin.users.badge.user': 'user',
-	'admin.users.badge.admin': 'admin',
-	'admin.users.lockTip': 'Lock user (blocks sign-in)',
-	'admin.users.unlockTip': 'Unlock user',
-	'admin.users.deleteTip': 'Delete user permanently',
-	'admin.users.badge.locked': 'locked',
-	'admin.users.locked': '{username} was locked',
-	'admin.users.unlocked': '{username} was unlocked',
-	'admin.users.deleted': '{username} was deleted',
-	'admin.users.lockFailed': 'Could not change the lock for {username}: {reason}',
-	'admin.users.deleteFailed': 'Could not delete {username}: {reason}',
-	'admin.users.confirmDelete': 'Permanently delete {username} and all their projects, tasks and data? This cannot be undone.',
-
-	'admin.quotes.pageTitle': 'Admin — Quotes',
-	'admin.quotes.title': 'Motivational Quotes',
-	'admin.quotes.new': 'New Quote',
-	'admin.quotes.edit': 'Edit Quote',
-	'admin.quotes.loadFailed': 'Could not load quotes. Try refreshing.',
-	'admin.quotes.saveFailed': 'Failed to save quote.',
-	'admin.quotes.deleteFailed': 'Failed to delete quote.',
-	'admin.quotes.confirmDelete': 'Delete quote by {author}?',
-	'admin.quotes.unknownAuthor': 'unknown',
-	'admin.quotes.empty': 'No quotes yet.',
-	'admin.quotes.createOne': 'Create one.',
-	'admin.quotes.col.quote': 'Quote',
-	'admin.quotes.col.author': 'Author',
-	'admin.quotes.col.active': 'Active',
-	'admin.quotes.active': 'Active',
-	'admin.quotes.inactive': 'Inactive',
-	'admin.quotes.form.text': 'Quote text *',
-	'admin.quotes.form.textPlaceholder': 'Enter the quote…',
-	'admin.quotes.form.author': 'Author',
-	'admin.quotes.form.authorPlaceholder': 'e.g. Albert Einstein',
-	'admin.quotes.form.active': 'Active (show on dashboard)',
-
-	'admin.settings.pageTitle': 'Admin — Settings',
-	'admin.settings.title': 'App Settings',
-	'admin.settings.notice':
-		'The registration toggle takes effect immediately. The server environment variable {enabled}=false closes registration regardless of this toggle, and {inviteCode} requires an invite code. The app name is shown in the sidebar, page titles, sign-in pages and emails.',
-	'admin.settings.loadFailed': 'Failed to load settings.',
-	'admin.settings.saved': 'Settings saved.',
-	'admin.settings.saveFailed': 'Failed to save settings.',
-	'admin.settings.appName': 'App Name',
-	'admin.settings.allowRegistration': 'Allow new user registration',
-	'admin.settings.save': 'Save Settings'
-} as const;
-
-export const cs: Record<keyof typeof en, Message> = {
+export const messages: Record<keyof typeof en, Message> = {
 	'admin.checking': 'Ověřuji oprávnění…',
 	'admin.back': 'Správa',
 	'admin.title': 'Správa — {app}',

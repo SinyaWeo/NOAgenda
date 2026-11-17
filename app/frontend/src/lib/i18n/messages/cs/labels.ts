@@ -1,17 +1,8 @@
-import type { Message } from '../core';
+import type { Message } from '../../core';
+import type { messages as en } from '../en/labels';
 
 // Messages for the "labels" area. Keys are prefixed "labels." (see ../README.md).
-export const en = {
-	'labels.title': 'Labels',
-	'labels.newPlaceholder': 'New label name',
-	'labels.pickColor': 'Pick color',
-	'labels.add': '+ Add Label',
-	'labels.adding': 'Adding…',
-	'labels.empty': 'No labels yet. Create one above.',
-	'labels.confirmDelete': 'Delete this label?'
-} as const;
-
-export const cs: Record<keyof typeof en, Message> = {
+export const messages: Record<keyof typeof en, Message> = {
 	'labels.title': 'Štítky',
 	'labels.newPlaceholder': 'Název nového štítku',
 	'labels.pickColor': 'Vybrat barvu',

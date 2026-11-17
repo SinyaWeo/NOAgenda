@@ -4,8 +4,8 @@ The UI is available in English (`en`, the source) and Czech (`cs`). Everything l
 
 | File                                                      | What it is                                                                                                                                                                                             |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `messages/<area>.ts`                                      | The texts, one file per area: `common`, `layout`, `auth`, `dashboard`, `tasks`, `projects`, `views`, `filters`, `teams`, `labels`, `settings`, `admin`, `legal`, `errors`. Each exports `en` and `cs`. |
-| `messages/index.ts`                                       | Merges the areas. **English defines the keys; Czech must have exactly the same ones** (enforced by `svelte-check` and by `catalog.test.ts`).                                                           |
+| `messages/<lang>/<area>.ts`                                   | The texts, one file per area: `common`, `layout`, `auth`, `dashboard`, `tasks`, `projects`, `views`, `filters`, `teams`, `labels`, `settings`, `admin`, `legal`, `errors`. Lives in `messages/en/` (source) and `messages/cs/`, same file names; each exports `messages`. |
+| `messages/{en,cs}/index.ts`, `messages/index.ts`                                     | Merges the areas. **English defines the keys; Czech must have exactly the same ones** (enforced by `svelte-check` and by `catalog.test.ts`).                                                           |
 | `index.ts`                                                | What components import: `t`, `fmt`, `locale`, `setLocale`, `LOCALES`, `tr`.                                                                                                                            |
 | `translate.ts`, `locale-store.ts`, `core.ts`, `format.ts` | Plumbing (plural rules, interpolation, language detection, date/number formatting).                                                                                                                    |
 | `server-messages.ts`                                      | Turns the backend's English error messages into the current language. Unknown messages are shown as the server sent them.                                                                              |
@@ -36,7 +36,7 @@ the time zone saved in the user's settings**. Never call `toLocaleDateString()` 
 
 ## Adding or changing a text
 
-1. Add the key to the area file's `en` **and** `cs`. Keys are `area.something`, camelCase segments, e.g. `tasks.relations.empty`.
+1. Add the key to the area file in `messages/en/` **and** `messages/cs/`. Keys are `area.something`, camelCase segments, e.g. `tasks.relations.empty`.
 2. Reuse `common.*` for the everyday words (Save, Cancel, Delete, statuses, priorities, field labels) instead of making a new one.
 3. Plurals: give an object `{ one, other }` in English and `{ one, few, many, other }` in Czech, with `{count}` inside.
    Czech: `one` = 1, `few` = 2-4, `many` = fractions (1,5), `other` = 0 and 5 or more.

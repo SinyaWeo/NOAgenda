@@ -1,0 +1,65 @@
+import type { Message } from '../../core';
+import type { messages as en } from '../en/common';
+
+
+export const messages: Record<keyof typeof en, Message> = {
+	'common.save': 'Uložit',
+	'common.saving': 'Ukládám…',
+	'common.cancel': 'Zrušit',
+	'common.delete': 'Smazat',
+	'common.edit': 'Upravit',
+	'common.add': 'Přidat',
+	'common.remove': 'Odebrat',
+	'common.create': 'Vytvořit',
+	'common.back': 'Zpět',
+	'common.loading': 'Načítání…',
+	'common.next': 'Další',
+	'common.apply': 'Použít',
+	'common.clear': 'Vymazat',
+	'common.no': 'Ne',
+	'common.none': 'Žádné',
+	'common.optional': 'volitelné',
+	'common.you': 'Vy',
+	'common.unknown': 'Neznámé',
+	'common.somethingWentWrong': 'Něco se pokazilo',
+	'common.pageOf': 'Strana {page}',
+
+	'common.field.name': 'Název',
+	'common.field.title': 'Název',
+	'common.field.description': 'Popis',
+	'common.field.status': 'Stav',
+	'common.field.priority': 'Priorita',
+	'common.field.dueDate': 'Termín',
+	'common.field.progress': 'Průběh',
+	'common.field.project': 'Projekt',
+	'common.field.email': 'E‑mail',
+	'common.field.password': 'Heslo',
+	'common.field.username': 'Uživatelské jméno',
+	'common.field.language': 'Jazyk',
+	'common.field.theme': 'Motiv',
+	'common.field.created': 'Vytvořeno',
+
+	'common.status.open': 'Otevřený',
+	'common.status.in_progress': 'Probíhá',
+	'common.status.done': 'Hotovo',
+
+	'common.priority.0': '—',
+	'common.priority.1': 'Nízká',
+	'common.priority.2': 'Střední',
+	'common.priority.3': 'Vysoká',
+	'common.priority.4': 'Naléhavá',
+	'common.priority.5': 'Ihned',
+	'common.priorityShort.1': 'Nízká',
+	'common.priorityShort.2': 'Stř.',
+	'common.priorityShort.3': 'Vys.',
+	'common.priorityShort.4': 'Nal.',
+	'common.priorityShort.5': 'Ihned',
+
+	'common.permission.read': 'Čtení',
+	'common.permission.write': 'Zápis',
+	'common.permission.admin': 'Správce',
+
+	'common.theme.light': 'Světlý',
+	'common.theme.dark': 'Tmavý',
+	'common.theme.system': 'Podle systému'
+};
