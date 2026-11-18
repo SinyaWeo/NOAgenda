@@ -23,8 +23,12 @@ export function loadOnParamChange(
 	loading: Writable<boolean>,
 	error: Writable<string>
 ): void {
+	// A $derived only notifies when the VALUE changes. Reading `page.params.id` straight in the effect
+	// re-ran it on every navigation that merely replaced the params object (e.g. `?tab=activity`),
+	// which reloaded the task and unmounted the tab, wiping whatever the user had just typed.
+	const current = $derived(key());
 	$effect(() => {
-		const k = key(); // the only reactive read: re-run when the route params change
+		const k = current; // the only reactive read: re-run only when the key itself changes
 		let stale = false;
 		loading.set(true);
 		error.set('');
