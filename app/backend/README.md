@@ -26,6 +26,7 @@ JWT_SECRET=your_jwt_secret
 ## Scripts
 - `npm run start:dev` — Start backend in development mode
 - `npm run build` — Build the backend
+- `npm run seed` — Fill a development database with example data (10 users, 3 teams, projects, tasks). Run migrations first. All users share the password `password123`; `alice` is an admin. Use `npm run seed -- --reset` to delete and re-create the example data. Refuses to run with `NODE_ENV=production`.
 
 ---
 
