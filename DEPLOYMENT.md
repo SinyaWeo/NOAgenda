@@ -33,8 +33,11 @@ cp docker/.env.production.example docker/.env.production
 $EDITOR docker/.env.production      # DOMAIN + the three secrets (see comments in the file)
 chmod 600 docker/.env.production
 
-docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
+docker/deploy.sh                    # pulls the prebuilt images from GHCR (see "Updating" below)
 ```
+No CI images yet, or a big enough server? Build locally instead:
+`docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build`.
+
 The database schema is created automatically on first start (TypeORM migrations run at boot in production).
 Check: `https://<DOMAIN>/api/health` returns `{"status":"ok"}`.
 
@@ -131,6 +134,9 @@ not healthy it starts the previous tag again. The tag is kept as `IMAGE_TAG` in 
 older tag; migrations only go forward, so after a schema change restore the pre-deploy backup as well.
 
 One-time setup: make the GHCR packages public, or `docker login ghcr.io` on the server with a token that has `read:packages`.
+If the Release workflow fails with `denied` on push, the package already exists without this repository linked: open it in GitHub
+(Packages > Package settings > *Manage Actions access*) and add the repository with the **Write** role, or delete the stale package.
+The workflow labels new images with the repository (`org.opencontainers.image.source`), which links a fresh package automatically.
 `OPERATOR_NAME`/`CONTACT_EMAIL` are baked into the frontend image, so for CI set them as repository *variables* (same names).
 To deploy automatically from CI, set the variable `DEPLOY_ENABLED=true` and the secrets `DEPLOY_HOST`, `DEPLOY_USER`,
 `DEPLOY_SSH_KEY` and `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <host>`); the `deploy` job then runs `git pull` and `docker/deploy.sh <sha>` over SSH.

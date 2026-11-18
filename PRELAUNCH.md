@@ -16,17 +16,19 @@ docker/preflight.sh remote https://your.domain           # is the LIVE site corr
 
 ## 0. Before you touch a server
 
-- [ ] **Review and commit the code.** Everything from the security work is uncommitted or recently committed and has
-      had one reviewer: the agent that wrote it. Read the diff, or have someone else read it.
-- [ ] **CI is green** on GitHub (backend, frontend, authz, auth-lifecycle, browser, docker). The browser job has
-      only ever run locally so far, so watch its first GitHub run.
+- [ ] **Review the code.** The security work has had one reviewer: the agent that wrote it. Read the diff, or have
+      someone else read it.
+- [ ] **CI is green** on GitHub (backend, frontend, authz, auth-lifecycle, browser, docker, migrations, hardening), and the
+      **Release** workflow has published the images to GHCR (see "Prebuilt images" in [DEPLOYMENT.md](DEPLOYMENT.md)).
 - [ ] Decide **who can sign up**. Default is anyone. For a soft launch set `REGISTRATION_INVITE_CODE`
       (share the code with the people you invite) or `REGISTRATION_ENABLED=false`.
 
 ## 1. Server (you)
 
-- [ ] A Linux server with Docker + the Compose plugin. 2 GB RAM is comfortable for a small group; plan disk for
-      uploads + backups.
+- [ ] A Linux server with Docker + the Compose plugin. 4 GB RAM is comfortable for a small group, 2 GB works; 1 GB is
+      too tight (it needs swap and `MARIADB_BUFFER_POOL=128M`). Plan disk for uploads + backups.
+- [ ] `systemd-detect-virt` prints `kvm` (Docker misbehaves on OpenVZ/LXC), and `free -h` shows the RAM you paid for.
+- [ ] **Outbound mail**: many VPS providers block port 25, so use a transactional SMTP provider on 587 (section 3).
 - [ ] **DNS**: an `A` (and `AAAA` if you have IPv6) record for your domain pointing at the server.
 - [ ] **Ports 80/443 already used** by Apache/nginx (e.g. other sites on the same VPS)? Do **not** replace it (PHP apps
       such as Leantime would break). Use the proxy mode: web server terminates HTTPS, Caddy listens on `127.0.0.1:8080`.
@@ -65,7 +67,9 @@ openssl rand -hex 48       # JWT_SECRET
   - The two database passwords are only applied the *first* time the database volume is created. Editing them later
     does **not** change the database password.
   - Changing `JWT_SECRET` later signs every user out (harmless, but know it).
-  - `OPERATOR_NAME`/`CONTACT_EMAIL` are baked into the frontend: re-run `up -d --build` after changing them.
+  - `OPERATOR_NAME`/`CONTACT_EMAIL` are baked into the frontend image. With CI images, set them as GitHub repository
+    *variables* (same names), re-run the Release workflow, then `docker/deploy.sh`. When building on the server,
+    re-run `up -d --build` instead.
 - [ ] `docker/preflight.sh config docker/.env.production` shows **0 failures**.
 
 ## 3. Email (you)
@@ -90,13 +94,20 @@ Password reset and email verification depend on it. Without `SMTP_HOST` neither 
       as Docker's log rotation keeps them.
 - [ ] If you have EU/UK users: sign a data-processing agreement with your hosting and email providers, and keep a short
       record of what you process (the privacy page lists it).
-- [ ] Re-run `docker compose ... up -d --build` so the operator details appear.
+- [ ] Rebuild and redeploy so the operator details appear (set the `OPERATOR_NAME`/`CONTACT_EMAIL` repository variables,
+      re-run the Release workflow, then `docker/deploy.sh`).
 
 ## 5. Deploy
 
+Recommended: pull the images CI built, so the server never compiles anything. One-time: make the GHCR packages public or
+`docker login ghcr.io` on the server (token with `read:packages`); if the Release workflow gets `denied`, give the repository
+Write access under the package's *Manage Actions access*.
+
 ```bash
-docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
+docker/deploy.sh                 # latest; or a tag: docker/deploy.sh <12-char commit sha>
 ```
+
+(Without CI images, build on the server instead: `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build`.)
 
 - [ ] **Shared server:** before touching Apache, check `curl -H 'Host: your.domain' http://127.0.0.1:8080/api/health`
       returns `{"status":"ok"}`; then add the vhost, `certbot --apache -d your.domain`, `apachectl configtest`, reload.
@@ -114,8 +125,10 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 An untested backup is a hope, not a backup.
 
 - [ ] **Schedule it** (`crontab -e`): `15 3 * * * /opt/noagenda/docker/backup.sh /var/backups/noagenda`
-- [ ] **Copy it off the server** (a backup on the same disk dies with the disk). For example `rclone sync /var/backups/noagenda remote:noagenda`
-      after the backup, or a provider snapshot. Protect the copy: it contains everyone's data.
+- [ ] **Copy it off the server** (a backup on the same disk dies with the disk). Install rclone, configure a remote, and add
+      `BACKUP_RCLONE_REMOTE=<remote>:<bucket>/noagenda` to the cron line: `backup.sh` then copies each backup there itself
+      (a failed copy counts as a failed backup). Set retention on the remote (bucket lifecycle rule). A provider snapshot also
+      works. Protect the copy: it contains everyone's data.
 - [ ] **Get alerted when backups stop**: create a check at healthchecks.io (or Uptime Kuma) and set
       `BACKUP_PING_URL=https://hc-ping.com/<uuid>` in the cron line. The script pings on success and `/fail` on failure.
 - [ ] **Prove a backup restores**, without touching production:
@@ -148,8 +161,8 @@ An untested backup is a hope, not a backup.
 
 | Task | How |
 |---|---|
-| Update the app | `git pull`, take a backup, `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build` (migrations run on start) |
-| Roll back a bad release | Restore the pre-update backup with `docker/restore.sh`, then `git checkout` the previous version and rebuild. Do not use `migration:revert` on live data |
+| Update the app | `git pull`, then `docker/deploy.sh` (takes a backup, pulls the CI images, restarts, checks `/health`; migrations run on start). Building on the server instead: back up, then `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build` |
+| Roll back a bad release | `docker/deploy.sh <previous-tag>` (it also rolls back by itself if the new version is not healthy). If the release changed the schema, restore the pre-deploy backup with `docker/restore.sh` too. Do not use `migration:revert` on live data |
 | See logs | `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production logs -f backend` |
 | Someone is locked out | The lock lasts 15 minutes, or they can reset their password (that clears it) |
 | Make/unmake an admin | `... exec backend node dist/scripts/promote-admin.js <username>` (`--demote <username>`) |
