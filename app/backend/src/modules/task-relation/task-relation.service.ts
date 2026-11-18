@@ -20,8 +20,8 @@ export class TaskRelationService {
 
   async create(taskId: number, relatedTaskId: number, kind: RelationKind): Promise<TaskRelation> {
     const relation = this.repo.create({
-      node: { id: taskId } as any,
-      relatedNode: { id: relatedTaskId } as any,
+      node: { id: taskId },
+      relatedNode: { id: relatedTaskId },
       kind,
     });
     return orConflict(this.repo.save(relation), 'These tasks are already related that way');

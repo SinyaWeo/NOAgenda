@@ -16,7 +16,7 @@ export class CreatePluginDto {
 
   @IsOptional()
   @IsObject()
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }
 
 export class UpdatePluginDto {
@@ -37,5 +37,5 @@ export class UpdatePluginDto {
 
   @IsOptional()
   @IsObject()
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }

@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Put, Delete, Param, Body, NotFoundException, Request } from '@nestjs/common';
 import { CreateViewDto, UpdateViewDto } from './dto/project-view.dto';
 import { ProjectViewService } from './project-view.service';
@@ -13,13 +14,13 @@ export class ProjectViewController {
     private readonly access: NodeAccessService,
   ) {}
 
-  private async assertAccess(projectId: number, req: any, requireOwner = false): Promise<void> {
+  private async assertAccess(projectId: number, req: AuthRequest, requireOwner = false): Promise<void> {
     // Owner or ADMIN grant to manage views/buckets; any grant (user or team) to read them.
     await this.access.assertProject(req.user.userId, Number(projectId), requireOwner ? Access.ADMIN : Access.READ);
   }
 
   @Get()
-  async findAll(@Param('projectId') projectId: number, @Request() req: any): Promise<ProjectView[]> {
+  async findAll(@Param('projectId') projectId: number, @Request() req: AuthRequest): Promise<ProjectView[]> {
     await this.assertAccess(projectId, req);
     return this.projectViewService.findByProject(projectId);
   }
@@ -28,7 +29,7 @@ export class ProjectViewController {
   async findById(
     @Param('projectId') projectId: number,
     @Param('id') id: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<ProjectView> {
     await this.assertAccess(projectId, req);
     const view = await this.projectViewService.findById(id);
@@ -42,7 +43,7 @@ export class ProjectViewController {
   async create(
     @Param('projectId') projectId: number,
     @Body() body: CreateViewDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<ProjectView> {
     await this.assertAccess(projectId, req, true);
     return this.projectViewService.create(projectId, body.title, body.viewType);
@@ -53,7 +54,7 @@ export class ProjectViewController {
     @Param('projectId') projectId: number,
     @Param('id') id: number,
     @Body() body: UpdateViewDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<ProjectView> {
     await this.assertAccess(projectId, req, true);
     const view = await this.projectViewService.findById(id);
@@ -66,7 +67,11 @@ export class ProjectViewController {
   }
 
   @Delete(':id')
-  async remove(@Param('projectId') projectId: number, @Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(
+    @Param('projectId') projectId: number,
+    @Param('id') id: number,
+    @Request() req: AuthRequest,
+  ): Promise<void> {
     await this.assertAccess(projectId, req, true);
     const view = await this.projectViewService.findById(id);
     if (!view) throw new NotFoundException();

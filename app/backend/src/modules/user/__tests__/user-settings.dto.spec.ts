@@ -1,8 +1,8 @@
-import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common';
+import { ArgumentMetadata, Type, BadRequestException, ValidationPipe } from '@nestjs/common';
 import { UpdateGeneralSettingsDto, UpdateEmailDto } from '../dto/user-settings.dto';
 
 const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
-const meta = (metatype: any): ArgumentMetadata => ({ type: 'body', metatype });
+const meta = (metatype: Type<unknown>): ArgumentMetadata => ({ type: 'body', metatype });
 
 describe('user settings DTOs', () => {
   it('rejects role escalation through settings/general', async () => {

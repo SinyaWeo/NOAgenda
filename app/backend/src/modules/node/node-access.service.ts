@@ -145,8 +145,8 @@ export class NodeAccessService {
   }
 
   /** Remove identity/ownership fields a client must not control. */
-  sanitize<T extends Record<string, any>>(data: T): Partial<T> {
-    const copy: Record<string, any> = { ...data };
+  sanitize<T extends object>(data: T): Partial<T> {
+    const copy: Record<string, unknown> = { ...(data as Record<string, unknown>) };
     for (const f of PROTECTED_NODE_FIELDS) delete copy[f];
     return copy as Partial<T>;
   }

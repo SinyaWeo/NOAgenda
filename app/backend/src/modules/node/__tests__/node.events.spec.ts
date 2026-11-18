@@ -1,3 +1,4 @@
+import { asMock } from '../../../common/__tests__/test-utils';
 import { NodeService } from '../node.service';
 import { Node, NodeStatus, NodeType, RepeatMode } from '../node.entity';
 
@@ -15,20 +16,27 @@ const task = (over: Partial<Node> = {}) =>
 const project = (over: Partial<Node> = {}) =>
   ({ id: 10, type: NodeType.PROJECT, name: 'Docs', parentId: null, ownerId: 3, ...over }) as Node;
 
+type RepoMock = Record<'create' | 'save' | 'update' | 'findOne' | 'find', jest.Mock> & {
+  manager: { transaction: jest.Mock; query: jest.Mock };
+};
+
 function build(stored: Node[]) {
   const byId = new Map(stored.map((n) => [n.id, n]));
-  const repo: any = {
+  const repo: RepoMock = {
     create: jest.fn((x) => x),
     save: jest.fn(async (x) => ({ id: 99, ...x })),
     update: jest.fn(async () => ({})),
-    findOne: jest.fn(async ({ where }: any) => byId.get(where.id) ?? null),
+    findOne: jest.fn(async ({ where }: { where: { id: number } }) => byId.get(where.id) ?? null),
     find: jest.fn(async () => stored),
     manager: {
-      transaction: jest.fn(async (fn: any) => fn({ query: jest.fn(async () => []), getRepository: () => repo })),
+      query: jest.fn(),
+      transaction: jest.fn(async (fn: (m: object) => unknown) =>
+        fn({ query: jest.fn(async () => []), getRepository: () => repo }),
+      ),
     },
   };
   const events = { emit: jest.fn() };
-  return { svc: new NodeService(repo, events as any), events, repo };
+  return { svc: new NodeService(asMock(repo), asMock(events)), events, repo };
 }
 
 describe('NodeService announces changes', () => {
@@ -87,10 +95,10 @@ describe('NodeService announces changes', () => {
       task({ parentId: 6 }),
       task({ id: 6, parentId: 10 }),
       project(),
-      task({ id: 7, parentId: null as any }),
+      task({ id: 7, parentId: null }),
     ]);
     expect(await svc.projectIdOf(task({ parentId: 6 }))).toBe(10);
-    expect(await svc.projectIdOf(task({ id: 7, parentId: null as any }))).toBeNull();
+    expect(await svc.projectIdOf(task({ id: 7, parentId: null }))).toBeNull();
   });
 
   describe('repeating tasks', () => {
@@ -145,7 +153,9 @@ describe('NodeService announces changes', () => {
       const b = repeating({ id: 6, repeatAfter: undefined });
       const { svc, repo } = build([a, b]);
       const query = jest.fn(async () => []);
-      repo.manager.transaction = jest.fn(async (fn: any) => fn({ query, getRepository: () => repo }));
+      repo.manager.transaction = jest.fn(async (fn: (m: object) => unknown) =>
+        fn({ query, getRepository: () => repo }),
+      );
       await svc.updateMany([5, 6], { status: NodeStatus.DONE });
       expect(repo.update).toHaveBeenCalledWith([6], { status: NodeStatus.DONE });
       expect(repo.update).toHaveBeenCalledWith(

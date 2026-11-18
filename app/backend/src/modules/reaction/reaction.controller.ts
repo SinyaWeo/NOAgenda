@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -35,7 +36,7 @@ export class ReactionController {
   async findAll(
     @Query('entityType') entityType: string,
     @Query('entityId') entityId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Reaction[]> {
     const id = await this.check(req.user.userId, entityType, entityId);
     return this.service.findAll(entityType, id);
@@ -44,7 +45,7 @@ export class ReactionController {
   @Post()
   async upsert(
     @Body() body: { entityType: string; entityId: number; reaction: string },
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Reaction> {
     const id = await this.check(req.user.userId, body?.entityType, body?.entityId);
     if (typeof body.reaction !== 'string' || !body.reaction.trim() || body.reaction.length > 100) {
@@ -57,7 +58,7 @@ export class ReactionController {
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(
     @Body() body: { entityType: string; entityId: number; reaction: string },
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     const id = await this.check(req.user.userId, body?.entityType, body?.entityId);
     if (typeof body.reaction !== 'string' || !body.reaction.trim()) {

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { Notification, NotificationType } from './notification.entity';
 import { UserService } from '../user/user.service';
 import { Translator } from '../../i18n/translator.service';
@@ -42,7 +42,7 @@ export class NotificationService {
     return this.notificationRepository.findOne({ where: { id }, relations: { user: true } });
   }
 
-  async create(notification: Partial<Notification>): Promise<Notification> {
+  async create(notification: DeepPartial<Notification>): Promise<Notification> {
     const newNotification = this.notificationRepository.create(notification);
     return this.notificationRepository.save(newNotification);
   }
@@ -70,7 +70,7 @@ export class NotificationService {
             type: event.type,
             nodeId: event.nodeId,
             params,
-            user: { id } as any,
+            user: { id },
           }),
         ),
       );

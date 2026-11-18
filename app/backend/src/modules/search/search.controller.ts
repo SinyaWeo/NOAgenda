@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Query, Request } from '@nestjs/common';
 import { SearchService } from './search.service';
 
@@ -6,7 +7,7 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get()
-  async search(@Query('q') q: unknown, @Request() req: any) {
+  async search(@Query('q') q: unknown, @Request() req: AuthRequest) {
     if (typeof q !== 'string' || q.trim().length < 2) return { tasks: [], projects: [] };
     return this.searchService.search(req.user.userId, q.trim().slice(0, 100));
   }

@@ -12,7 +12,7 @@ export class LabelService {
 
   async findAll(userId?: number): Promise<Label[]> {
     if (userId !== undefined) {
-      return this.labelRepository.find({ where: { createdBy: userId } as any });
+      return this.labelRepository.find({ where: { createdBy: userId } });
     }
     return this.labelRepository.find();
   }

@@ -11,7 +11,7 @@ export class SavedFilter extends BaseEntity {
   description?: string;
 
   @Column({ type: 'json', nullable: true })
-  filters?: Record<string, any>;
+  filters?: object;
 
   @ForeignKey(() => User, { name: 'FK_saved_filters_userId', onDelete: 'CASCADE' })
   @Column()

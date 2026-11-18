@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Delete, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { SessionService, SafeSession } from './session.service';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
@@ -8,13 +9,13 @@ export class SessionController {
   constructor(private readonly service: SessionService) {}
 
   @Get()
-  findAll(@Request() req: any): Promise<SafeSession[]> {
+  findAll(@Request() req: AuthRequest): Promise<SafeSession[]> {
     return this.service.findAll(req.user.userId, req.user.sessionId);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  revoke(@Param('id') id: number, @Request() req: any): Promise<void> {
+  revoke(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     return this.service.revoke(Number(id), req.user.userId);
   }
 }

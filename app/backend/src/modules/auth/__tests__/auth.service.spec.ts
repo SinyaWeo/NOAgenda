@@ -3,6 +3,14 @@ import { BadRequestException, ForbiddenException, UnauthorizedException } from '
 import { AuthService, MAX_FAILED_LOGINS, ACCOUNT_LOCK_THRESHOLD } from '../auth.service';
 import * as password from '../../../common/password';
 import { sha256 } from '../../../common/tokens';
+import type { JwtService } from '@nestjs/jwt';
+import type { Repository } from 'typeorm';
+import type { UserService } from '../../user/user.service';
+import type { PasswordResetToken } from '../password-reset-token.entity';
+import type { SessionService } from '../../session/session.service';
+import type { EmailVerificationService } from '../../email-verification/email-verification.service';
+import type { MailService } from '../../mail/mail.service';
+import { asMock } from '../../../common/__tests__/test-utils';
 
 jest.mock('../../../common/password');
 const pw = password as jest.Mocked<typeof password>;
@@ -18,9 +26,11 @@ const USER = {
   lockedUntil: undefined as Date | undefined,
 };
 
-function build(over: { user?: any; verificationRequired?: boolean } = {}) {
-  const user = over.user === undefined ? { ...USER } : over.user;
-  const users: any = {
+type TestUser = typeof USER & { language?: string };
+
+function build(over: { user?: TestUser | null; verificationRequired?: boolean } = {}) {
+  const user: TestUser | null = over.user === undefined ? { ...USER } : over.user;
+  const users = {
     findByUsername: jest.fn(async () => user),
     findByEmail: jest.fn(async () => user),
     findById: jest.fn(async () => user),
@@ -29,31 +39,39 @@ function build(over: { user?: any; verificationRequired?: boolean } = {}) {
     setPasswordHash: jest.fn(),
     update: jest.fn(),
   };
-  const jwt: any = {
+  const jwt = {
     sign: jest.fn(() => 'jwt'),
     decode: jest.fn(() => ({ iat: 100, exp: 1000 })),
   };
-  const resets: any = {
+  const resets = {
     delete: jest.fn(async () => ({ affected: 1 })),
-    save: jest.fn(async (x) => x),
-    create: jest.fn((x) => x),
+    save: jest.fn(async (x: Record<string, unknown>) => x),
+    create: jest.fn((x: Record<string, unknown>) => x),
     findOne: jest.fn(),
   };
-  const sessions: any = {
+  const sessions = {
     create: jest.fn(async () => ({ session: { id: 55 }, refreshToken: 'rt' })),
     rotate: jest.fn(),
     revokeAllForUser: jest.fn(),
     revokeById: jest.fn(),
     revokeByRefreshToken: jest.fn(),
-    hasActiveSessionFromIp: jest.fn(async () => false),
+    hasActiveSessionFromIp: jest.fn(async (_id: number, _ip: string) => false),
   };
-  const verification: any = { required: over.verificationRequired ?? false };
-  const mail: any = {
-    send: jest.fn(async () => true),
+  const verification = { required: over.verificationRequired ?? false };
+  const mail = {
+    send: jest.fn(async (_mail: { subject: string; text: string }) => true),
     appName: jest.fn(async () => 'Acme'),
-    link: jest.fn((p, q) => `https://app${p}?token=${q.token}`),
+    link: jest.fn((p: string, q: { token: string }) => `https://app${p}?token=${q.token}`),
   };
-  const svc = new AuthService(users, jwt, resets, sessions, verification, mail, realTranslator());
+  const svc = new AuthService(
+    asMock<UserService>(users),
+    asMock<JwtService>(jwt),
+    asMock<Repository<PasswordResetToken>>(resets),
+    asMock<SessionService>(sessions),
+    asMock<EmailVerificationService>(verification),
+    asMock<MailService>(mail),
+    realTranslator(),
+  );
   return { svc, users, jwt, resets, sessions, mail };
 }
 
@@ -153,7 +171,7 @@ describe('AuthService.login', () => {
     const { svc, sessions } = build({ user: { ...USER, isEmailConfirmed: false }, verificationRequired: true });
     const err: ForbiddenException = await svc.login('ann', 'right').catch((e) => e);
     expect(err).toBeInstanceOf(ForbiddenException);
-    expect((err.getResponse() as any).code).toBe('EMAIL_NOT_VERIFIED');
+    expect((err.getResponse() as { code: string }).code).toBe('EMAIL_NOT_VERIFIED');
     expect(sessions.create).not.toHaveBeenCalled();
 
     pw.verifyPassword.mockResolvedValue(false);

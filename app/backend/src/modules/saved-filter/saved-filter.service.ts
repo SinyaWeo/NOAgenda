@@ -5,7 +5,7 @@ import { SavedFilter } from './saved-filter.entity';
 
 /** Fields a client must never control (identity / ownership). */
 function clean(data: Partial<SavedFilter>): Partial<SavedFilter> {
-  const { id: _i, userId: _u, createdAt: _c, updatedAt: _up, ...rest } = (data ?? {}) as any;
+  const { id: _i, userId: _u, createdAt: _c, updatedAt: _up, ...rest } = data ?? {};
   return rest;
 }
 

@@ -48,7 +48,7 @@ export class User extends BaseEntity {
   failedLoginAttempts!: number;
 
   @Column({ nullable: true, type: 'datetime' })
-  lockedUntil?: Date;
+  lockedUntil?: Date | null;
 
   /** Set by an admin: the account cannot sign in and all its sessions and API tokens stop working. */
   @Column({ default: false })

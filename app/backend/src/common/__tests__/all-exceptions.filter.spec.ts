@@ -1,17 +1,18 @@
-import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, BadRequestException, HttpStatus } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { AllExceptionsFilter } from '../all-exceptions.filter';
+import { asMock } from './test-utils';
 
 function run(exception: unknown) {
-  const res: any = { status: jest.fn().mockReturnThis(), json: jest.fn() };
-  const host: any = {
+  const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+  const host = asMock<ArgumentsHost>({
     switchToHttp: () => ({ getResponse: () => res, getRequest: () => ({ method: 'POST', url: '/x' }) }),
-  };
+  });
   new AllExceptionsFilter().catch(exception, host);
   return { status: res.status.mock.calls[0][0], body: res.json.mock.calls[0][0] };
 }
 const dbError = (code: string) =>
-  new QueryFailedError('SELECT 1', [], Object.assign(new Error('driver says: secret SQL details'), { code }) as any);
+  new QueryFailedError('SELECT 1', [], Object.assign(new Error('driver says: secret SQL details'), { code }));
 
 describe('AllExceptionsFilter', () => {
   it('passes HTTP exceptions through unchanged', () => {

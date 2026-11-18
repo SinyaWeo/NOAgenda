@@ -1,14 +1,20 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TaskLabelController } from '../task-label.controller';
 import { TaskLabelService } from '../task-label.service';
+import { TaskLabel } from '../task-label.entity';
+import { Repository } from 'typeorm';
+import { TaskService } from '../../task/task.service';
+import { NodeAccessService } from '../../node/node-access.service';
+import { LabelService } from '../../label/label.service';
+import { asMock, authReq, type Mocks } from '../../../common/__tests__/test-utils';
 
-const req = { user: { userId: 2 } };
+const req = authReq(2);
 
 describe('TaskLabelController', () => {
-  let service: any;
-  let tasks: any;
-  let access: any;
-  let labels: any;
+  let service: Mocks;
+  let tasks: Mocks;
+  let access: Mocks;
+  let labels: Mocks;
   let controller: TaskLabelController;
 
   beforeEach(() => {
@@ -20,7 +26,12 @@ describe('TaskLabelController', () => {
     tasks = { findById: jest.fn(async () => ({ id: 7 })) };
     access = { assertRead: jest.fn(), assertWrite: jest.fn() };
     labels = { findById: jest.fn(async () => ({ id: 4, createdBy: 2 })) };
-    controller = new TaskLabelController(service, tasks, access, labels);
+    controller = new TaskLabelController(
+      asMock<TaskLabelService>(service),
+      asMock<TaskService>(tasks),
+      asMock<NodeAccessService>(access),
+      asMock<LabelService>(labels),
+    );
   });
 
   it('findAll asserts read and returns labels', async () => {
@@ -77,13 +88,13 @@ describe('TaskLabelController', () => {
 
 describe('TaskLabelService', () => {
   it('findByTask, add and remove use node/label ids', async () => {
-    const repo: any = {
+    const repo: Mocks = {
       find: jest.fn(async () => []),
-      create: jest.fn((x) => x),
-      save: jest.fn(async (x) => ({ id: 1, ...x })),
+      create: jest.fn((x: object) => x),
+      save: jest.fn(async (x: object) => ({ id: 1, ...x })),
       delete: jest.fn(),
     };
-    const svc = new TaskLabelService(repo);
+    const svc = new TaskLabelService(asMock<Repository<TaskLabel>>(repo));
     await svc.findByTask(7);
     expect(repo.find).toHaveBeenCalledWith({ where: { node: { id: 7 } }, relations: { label: true, node: true } });
     await svc.add(7, 4);

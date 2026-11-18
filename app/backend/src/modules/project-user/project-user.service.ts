@@ -17,8 +17,8 @@ export class ProjectUserService {
 
   async add(projectId: number, userId: number, permission: Permission = Permission.READ): Promise<ProjectUser> {
     const entry = this.repo.create({
-      project: { id: projectId } as any,
-      user: { id: userId } as any,
+      project: { id: projectId },
+      user: { id: userId },
       permission,
     });
     return orConflict(this.repo.save(entry), 'This user already has access to the project');

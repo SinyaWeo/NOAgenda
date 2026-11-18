@@ -1,5 +1,10 @@
 import { TaskReminderService } from '../task-reminder.service';
 import { NodeStatus } from '../../node/node.entity';
+import { Repository } from 'typeorm';
+import { TaskReminder } from '../task-reminder.entity';
+import { NotificationService } from '../../notification/notification.service';
+import { TaskAssigneeService } from '../../task-assignee/task-assignee.service';
+import { asMock, type Mocks } from '../../../common/__tests__/test-utils';
 
 const reminder = (over: Record<string, unknown> = {}, node: Record<string, unknown> = {}) => ({
   id: 1,
@@ -10,14 +15,23 @@ const reminder = (over: Record<string, unknown> = {}, node: Record<string, unkno
   ...over,
 });
 
-function build(due: any[], claimResults: number[] = []) {
-  const repo: any = {
+function build(due: object[], claimResults: number[] = []) {
+  const repo: Mocks = {
     find: jest.fn(async () => due),
     update: jest.fn(async () => ({ affected: claimResults.shift() ?? 1 })),
   };
-  const notifications: any = { notify: jest.fn(async () => undefined) };
-  const assignees: any = { findByTask: jest.fn(async () => [{ user: { id: 9 } }, { user: { id: 10 } }]) };
-  return { svc: new TaskReminderService(repo, notifications, assignees), repo, notifications, assignees };
+  const notifications: Mocks = { notify: jest.fn(async () => undefined) };
+  const assignees: Mocks = { findByTask: jest.fn(async () => [{ user: { id: 9 } }, { user: { id: 10 } }]) };
+  return {
+    svc: new TaskReminderService(
+      asMock<Repository<TaskReminder>>(repo),
+      asMock<NotificationService>(notifications),
+      asMock<TaskAssigneeService>(assignees),
+    ),
+    repo,
+    notifications,
+    assignees,
+  };
 }
 
 describe('TaskReminderService.sendDue', () => {
@@ -25,7 +39,7 @@ describe('TaskReminderService.sendDue', () => {
     const { svc, repo } = build([]);
     const now = new Date('2026-01-01T10:05:00Z');
     await svc.sendDue(now);
-    const where = repo.find.mock.calls[0][0].where;
+    const where = (repo.find.mock.calls[0][0] as { where: { sentAt: unknown; reminderDate: { value: Date } } }).where;
     expect(where.sentAt).toBeDefined();
     expect(where.reminderDate.value).toEqual(now);
   });
@@ -42,7 +56,7 @@ describe('TaskReminderService.sendDue', () => {
   it('falls back to the task creator and assignees when the reminder has no owner', async () => {
     const { svc, notifications } = build([reminder({ createdBy: null })]);
     await svc.sendDue();
-    expect(notifications.notify.mock.calls[0][0].recipients).toEqual([8, 9, 10]);
+    expect((notifications.notify.mock.calls[0][0] as { recipients: number[] }).recipients).toEqual([8, 9, 10]);
   });
 
   it('does nothing for a reminder another run already claimed', async () => {

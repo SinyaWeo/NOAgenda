@@ -1,23 +1,29 @@
-import { BadRequestException, ForbiddenException, PayloadTooLargeException } from '@nestjs/common';
+import { ExecutionContext, BadRequestException, ForbiddenException, PayloadTooLargeException } from '@nestjs/common';
 import { UploadPrecheckGuard } from '../upload-precheck.guard';
+import type { NodeAccessService } from '../../node/node-access.service';
+import type { AttachmentService } from '../attachment.service';
+import type { UploadRequest } from '../../../common/auth-user';
+import { asMock, authReq, type Mocks } from '../../../common/__tests__/test-utils';
 
-const ctx = (req: any): any => ({ switchToHttp: () => ({ getRequest: () => req }) });
-const request = (query: any, length?: number) =>
-  ({
-    user: { userId: 2 },
+const ctx = (req: UploadRequest) => asMock<ExecutionContext>({ switchToHttp: () => ({ getRequest: () => req }) });
+const request = (query: unknown, length?: number): UploadRequest => {
+  const base = authReq(2);
+  return asMock<UploadRequest>({
+    user: base.user,
     query,
     headers: length === undefined ? {} : { 'content-length': String(length) },
-  }) as any;
+  });
+};
 
 describe('UploadPrecheckGuard', () => {
-  let access: any;
-  let attachments: any;
+  let access: Mocks;
+  let attachments: Mocks;
   let guard: UploadPrecheckGuard;
 
   beforeEach(() => {
     access = { assertWrite: jest.fn(async () => undefined) };
     attachments = { usedBytes: jest.fn(async () => 0) };
-    guard = new UploadPrecheckGuard(access, attachments);
+    guard = new UploadPrecheckGuard(asMock<NodeAccessService>(access), asMock<AttachmentService>(attachments));
   });
 
   it('checks write access on the task and hands the id on', async () => {

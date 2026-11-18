@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -28,7 +29,7 @@ export class TaskAssigneeController {
   ) {}
 
   @Get()
-  async findAll(@Param('taskId') taskId: number, @Request() req: any): Promise<TaskAssignee[]> {
+  async findAll(@Param('taskId') taskId: number, @Request() req: AuthRequest): Promise<TaskAssignee[]> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertRead(req.user.userId, Number(taskId));
@@ -36,7 +37,11 @@ export class TaskAssigneeController {
   }
 
   @Post()
-  async add(@Param('taskId') taskId: number, @Body() body: AddAssigneeDto, @Request() req: any): Promise<TaskAssignee> {
+  async add(
+    @Param('taskId') taskId: number,
+    @Body() body: AddAssigneeDto,
+    @Request() req: AuthRequest,
+  ): Promise<TaskAssignee> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));
@@ -59,7 +64,11 @@ export class TaskAssigneeController {
   }
 
   @Delete(':userId')
-  async remove(@Param('taskId') taskId: number, @Param('userId') userId: number, @Request() req: any): Promise<void> {
+  async remove(
+    @Param('taskId') taskId: number,
+    @Param('userId') userId: number,
+    @Request() req: AuthRequest,
+  ): Promise<void> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));

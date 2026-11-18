@@ -1,3 +1,5 @@
+import { asMock, authReq, invalid, Mocks } from '../../../common/__tests__/test-utils';
+import type { Type } from '@nestjs/common';
 import { ArgumentMetadata, BadRequestException, ForbiddenException, ValidationPipe } from '@nestjs/common';
 import { Access } from '../../node/node-access.service';
 import { Permission } from '../../project-user/project-user.entity';
@@ -5,10 +7,12 @@ import { AddProjectTeamDto, SetPermissionDto } from '../../project-user/dto/proj
 import { ProjectTeamController } from '../project-team.controller';
 import { ProjectTeamService } from '../project-team.service';
 
-const req = { user: { userId: 7 } };
+const req = authReq(7);
+
+type RepoMock = Record<'find' | 'create' | 'save' | 'update' | 'delete', jest.Mock> & { manager: { query: jest.Mock } };
 
 describe('ProjectTeamService', () => {
-  let repo: any;
+  let repo: RepoMock;
   let service: ProjectTeamService;
 
   beforeEach(() => {
@@ -20,7 +24,7 @@ describe('ProjectTeamService', () => {
       delete: jest.fn(),
       manager: { query: jest.fn(async () => [{ 1: 1 }]) },
     };
-    service = new ProjectTeamService(repo);
+    service = new ProjectTeamService(asMock(repo));
   });
 
   it('findByProject loads team and project', async () => {
@@ -57,8 +61,8 @@ describe('ProjectTeamService', () => {
 });
 
 describe('ProjectTeamController', () => {
-  let access: any;
-  let service: any;
+  let access: Mocks;
+  let service: Mocks;
   let controller: ProjectTeamController;
 
   beforeEach(() => {
@@ -70,44 +74,44 @@ describe('ProjectTeamController', () => {
       update: jest.fn(),
       remove: jest.fn(),
     };
-    controller = new ProjectTeamController(service, {} as any, access);
+    controller = new ProjectTeamController(asMock(service), asMock({}), asMock(access));
   });
 
   it('list requires READ', async () => {
-    await controller.findAll(3 as any, req);
+    await controller.findAll(3, req);
     expect(access.assertProject).toHaveBeenCalledWith(7, 3, Access.READ);
   });
 
   it('add/update/remove require ADMIN', async () => {
-    await controller.add(3 as any, { teamId: 5 }, req);
-    await controller.update(3 as any, 5 as any, { permission: Permission.WRITE }, req);
-    await controller.remove(3 as any, 5 as any, req);
+    await controller.add(3, { teamId: 5 }, req);
+    await controller.update(3, 5, { permission: Permission.WRITE }, req);
+    await controller.remove(3, 5, req);
     for (const call of access.assertProject.mock.calls) expect(call).toEqual([7, 3, Access.ADMIN]);
     expect(access.assertProject).toHaveBeenCalledTimes(3);
   });
 
   it('add forwards permission and checks team usability for the caller', async () => {
-    await controller.add(3 as any, { teamId: 5, permission: Permission.WRITE }, req);
+    await controller.add(3, { teamId: 5, permission: Permission.WRITE }, req);
     expect(service.canUseTeam).toHaveBeenCalledWith(7, 5);
     expect(service.add).toHaveBeenCalledWith(3, 5, Permission.WRITE);
   });
 
   it('add refuses a team the caller neither owns nor belongs to', async () => {
     service.canUseTeam.mockResolvedValue(false);
-    await expect(controller.add(3 as any, { teamId: 5 }, req)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(controller.add(3, { teamId: 5 }, req)).rejects.toBeInstanceOf(ForbiddenException);
     expect(service.add).not.toHaveBeenCalled();
   });
 
   it('add does not check the team when the caller is not project admin', async () => {
     access.assertProject.mockRejectedValue(new ForbiddenException());
-    await expect(controller.add(3 as any, { teamId: 5 }, req)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(controller.add(3, { teamId: 5 }, req)).rejects.toBeInstanceOf(ForbiddenException);
     expect(service.canUseTeam).not.toHaveBeenCalled();
   });
 
   it('update/remove do nothing when access is denied', async () => {
     access.assertProject.mockRejectedValue(new ForbiddenException());
-    await expect(controller.remove(3 as any, 5 as any, req)).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(controller.update(3 as any, 5 as any, { permission: Permission.READ }, req)).rejects.toBeInstanceOf(
+    await expect(controller.remove(3, 5, req)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(controller.update(3, 5, { permission: Permission.READ }, req)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
     expect(service.remove).not.toHaveBeenCalled();
@@ -117,7 +121,7 @@ describe('ProjectTeamController', () => {
 
 describe('team sharing DTOs', () => {
   const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
-  const meta = (metatype: any): ArgumentMetadata => ({ type: 'body', metatype });
+  const meta = (metatype: Type<unknown>): ArgumentMetadata => ({ type: 'body', metatype });
 
   it('accepts valid bodies', async () => {
     await expect(pipe.transform({ teamId: 2, permission: 'write' }, meta(AddProjectTeamDto))).resolves.toBeDefined();

@@ -108,7 +108,7 @@ export class UserService {
       return await this.userRepository.save(newUser);
     } catch (err: unknown) {
       // Handle race conditions where another request inserts the same unique field first.
-      if (err instanceof QueryFailedError && (err as any).driverError?.code === 'ER_DUP_ENTRY') {
+      if (err instanceof QueryFailedError && err.driverError?.code === 'ER_DUP_ENTRY') {
         throw new ConflictException('Username or email is already in use');
       }
       throw err;
@@ -138,7 +138,7 @@ export class UserService {
   }
 
   async resetLoginState(id: number): Promise<void> {
-    await this.userRepository.update(id, { failedLoginAttempts: 0, lockedUntil: null as any });
+    await this.userRepository.update(id, { failedLoginAttempts: 0, lockedUntil: null });
   }
 
   /** Store an already-hashed password (e.g. a cost upgrade) without re-hashing it. */

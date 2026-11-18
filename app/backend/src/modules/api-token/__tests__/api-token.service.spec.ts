@@ -1,18 +1,21 @@
 import { NotFoundException } from '@nestjs/common';
 import { ApiTokenService, API_TOKEN_PREFIX } from '../api-token.service';
 import { sha256 } from '../../../common/tokens';
+import type { Repository } from 'typeorm';
+import type { ApiToken } from '../api-token.entity';
+import { asMock } from '../../../common/__tests__/test-utils';
 
 function build() {
-  const repo: any = {
+  const repo = {
     find: jest.fn(),
     findOne: jest.fn(),
     delete: jest.fn(async () => ({})),
     update: jest.fn(async () => ({})),
-    create: jest.fn((x) => x),
-    save: jest.fn(async (x) => ({ id: 5, createdAt: new Date(0), ...x })),
+    create: jest.fn((x: Record<string, unknown>) => x),
+    save: jest.fn(async (x: Record<string, unknown>) => ({ id: 5, createdAt: new Date(0), ...x })),
     manager: { query: jest.fn() },
   };
-  return { svc: new ApiTokenService(repo), repo };
+  return { svc: new ApiTokenService(asMock<Repository<ApiToken>>(repo)), repo };
 }
 
 describe('ApiTokenService', () => {
@@ -35,7 +38,7 @@ describe('ApiTokenService', () => {
       expect(stored.token).not.toBe(res.rawToken);
       expect(stored.tokenPrefix).toBe(res.rawToken.slice(0, 8));
       expect(stored).toMatchObject({ userId: 3, name: 'ci', scope: 'write', expiresAt: new Date(1000) });
-      expect((res as any).token).toBeUndefined();
+      expect((res as { token?: string }).token).toBeUndefined();
     });
 
     it('defaults to read scope and generates unique tokens', async () => {

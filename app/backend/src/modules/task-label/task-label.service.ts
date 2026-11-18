@@ -15,7 +15,7 @@ export class TaskLabelService {
   }
 
   async add(taskId: number, labelId: number): Promise<TaskLabel> {
-    const taskLabel = this.repo.create({ node: { id: taskId } as any, label: { id: labelId } as any });
+    const taskLabel = this.repo.create({ node: { id: taskId }, label: { id: labelId } });
     return this.repo.save(taskLabel);
   }
 

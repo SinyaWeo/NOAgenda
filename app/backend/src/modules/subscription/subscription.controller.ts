@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -21,7 +22,7 @@ export class SubscriptionController {
   ) {}
 
   @Get()
-  findAll(@Request() req: any): Promise<Subscription[]> {
+  findAll(@Request() req: AuthRequest): Promise<Subscription[]> {
     return this.service.findAll(req.user.userId);
   }
 
@@ -30,7 +31,7 @@ export class SubscriptionController {
   async subscribe(
     @Param('entityType') entityType: SubscriptionEntityType,
     @Param('entityId') entityId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Subscription> {
     if (entityType !== 'project' && entityType !== 'task') throw new BadRequestException('Invalid entityType');
     // You may only subscribe to things you can read.
@@ -43,7 +44,7 @@ export class SubscriptionController {
   unsubscribe(
     @Param('entityType') entityType: SubscriptionEntityType,
     @Param('entityId') entityId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     return this.service.unsubscribe(req.user.userId, entityType, entityId);
   }

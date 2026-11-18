@@ -1,8 +1,10 @@
 import { ProjectViewService } from '../project-view.service';
-import { ViewType } from '../project-view.entity';
+import { ProjectView, ViewType } from '../project-view.entity';
+import { Repository } from 'typeorm';
+import { asMock, type Mocks } from '../../../common/__tests__/test-utils';
 
 describe('ProjectViewService', () => {
-  let repo: any;
+  let repo: Mocks;
   let service: ProjectViewService;
 
   beforeEach(() => {
@@ -14,7 +16,7 @@ describe('ProjectViewService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     };
-    service = new ProjectViewService(repo);
+    service = new ProjectViewService(asMock<Repository<ProjectView>>(repo));
   });
 
   it('findByProject filters by project and loads the project relation', async () => {

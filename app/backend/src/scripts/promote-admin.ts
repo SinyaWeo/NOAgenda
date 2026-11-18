@@ -17,7 +17,10 @@ async function main() {
   await dataSource.initialize();
   try {
     const role = demote ? 'user' : 'admin';
-    const res: any = await dataSource.query('UPDATE users SET role = ? WHERE username = ?', [role, username]);
+    const res: { affectedRows?: number } = await dataSource.query('UPDATE users SET role = ? WHERE username = ?', [
+      role,
+      username,
+    ]);
     if (!res.affectedRows) {
       console.error(`No user named "${username}".`);
       process.exitCode = 1;

@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -19,12 +20,12 @@ export class LabelController {
   constructor(private readonly labelService: LabelService) {}
 
   @Get()
-  async findAll(@Request() req: any): Promise<Label[]> {
+  async findAll(@Request() req: AuthRequest): Promise<Label[]> {
     return this.labelService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: any): Promise<Label> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
     if (label.createdBy !== req.user.userId) {
@@ -35,13 +36,13 @@ export class LabelController {
   }
 
   @Post()
-  async create(@Body() body: CreateLabelDto, @Request() req: any): Promise<Label> {
+  async create(@Body() body: CreateLabelDto, @Request() req: AuthRequest): Promise<Label> {
     const data = { ...body };
     return this.labelService.create({ ...data, createdBy: req.user.userId });
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() body: UpdateLabelDto, @Request() req: any): Promise<Label> {
+  async update(@Param('id') id: number, @Body() body: UpdateLabelDto, @Request() req: AuthRequest): Promise<Label> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
     if (label.createdBy !== req.user.userId) throw new ForbiddenException();
@@ -51,7 +52,7 @@ export class LabelController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const label = await this.labelService.findById(id);
     if (!label) throw new NotFoundException();
     if (label.createdBy !== req.user.userId) throw new ForbiddenException();

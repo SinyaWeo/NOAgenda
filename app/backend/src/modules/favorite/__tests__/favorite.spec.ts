@@ -1,12 +1,14 @@
+import { asMock, authReq, invalid, Mocks } from '../../../common/__tests__/test-utils';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { FavoriteController } from '../favorite.controller';
 import { FavoriteService } from '../favorite.service';
 import { FavoriteEntityType } from '../favorite.entity';
 
-const req = { user: { userId: 2 } };
+const req = authReq(2);
+type AddBody = Parameters<FavoriteController['add']>[1];
 
 describe('FavoriteService', () => {
-  let repo: any;
+  let repo: Mocks;
   let svc: FavoriteService;
   beforeEach(() => {
     repo = {
@@ -16,7 +18,7 @@ describe('FavoriteService', () => {
       save: jest.fn(async (x) => ({ id: 1, ...x })),
       delete: jest.fn(),
     };
-    svc = new FavoriteService(repo);
+    svc = new FavoriteService(asMock(repo));
   });
 
   it('findByUser scopes to the user', async () => {
@@ -43,13 +45,13 @@ describe('FavoriteService', () => {
 });
 
 describe('FavoriteController', () => {
-  let service: any;
-  let access: any;
+  let service: Mocks;
+  let access: Mocks;
   let controller: FavoriteController;
   beforeEach(() => {
     service = { findByUser: jest.fn(async () => []), add: jest.fn(async () => ({ id: 1 })), remove: jest.fn() };
     access = { assertRead: jest.fn() };
-    controller = new FavoriteController(service, access);
+    controller = new FavoriteController(asMock(service), asMock(access));
   });
 
   it('findAll lists the requesting user favorites', async () => {
@@ -58,22 +60,22 @@ describe('FavoriteController', () => {
   });
 
   it('add asserts read and adds with numeric id', async () => {
-    await controller.add(req, { entityType: FavoriteEntityType.TASK, entityId: '7' as any });
+    await controller.add(req, { entityType: FavoriteEntityType.TASK, entityId: invalid<number>('7') });
     expect(access.assertRead).toHaveBeenCalledWith(2, 7);
     expect(service.add).toHaveBeenCalledWith(2, 'task', 7);
   });
 
   it('add rejects invalid entityType and missing body', async () => {
-    await expect(controller.add(req, { entityType: 'user' as any, entityId: 7 })).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
-    await expect(controller.add(req, undefined as any)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      controller.add(req, { entityType: invalid<FavoriteEntityType>('user'), entityId: 7 }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(controller.add(req, invalid<AddBody>(undefined))).rejects.toBeInstanceOf(BadRequestException);
     expect(service.add).not.toHaveBeenCalled();
   });
 
   it.each([0, -1, 1.5, 'abc', undefined])('add rejects invalid entityId %s', async (id) => {
     await expect(
-      controller.add(req, { entityType: FavoriteEntityType.TASK, entityId: id as any }),
+      controller.add(req, { entityType: FavoriteEntityType.TASK, entityId: invalid<number>(id) }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -86,7 +88,7 @@ describe('FavoriteController', () => {
   });
 
   it('remove is scoped to the requesting user', async () => {
-    await controller.remove(req, FavoriteEntityType.TASK, '7' as any);
+    await controller.remove(req, FavoriteEntityType.TASK, invalid<number>('7'));
     expect(service.remove).toHaveBeenCalledWith(2, 'task', 7);
   });
 });

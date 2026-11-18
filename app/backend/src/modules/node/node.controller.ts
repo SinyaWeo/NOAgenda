@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -26,7 +27,7 @@ export class NodeController {
   ) {}
 
   @Get()
-  async findAll(@Request() req: any, @Query() q: NodeListQueryDto): Promise<Node[]> {
+  async findAll(@Request() req: AuthRequest, @Query() q: NodeListQueryDto): Promise<Node[]> {
     const filter: NodeFilter = { userId: req.user.userId };
     if (q.type) filter.type = q.type;
     if (q.parentId !== undefined) filter.parentId = q.parentId === 'null' ? null : Number(q.parentId);
@@ -41,13 +42,13 @@ export class NodeController {
   }
 
   @Get(':id/children')
-  async findChildren(@Param('id') id: number, @Request() req: any): Promise<Node[]> {
+  async findChildren(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node[]> {
     await this.access.assertRead(req.user.userId, Number(id));
     return this.nodeService.findChildren(Number(id));
   }
 
   @Get(':id/tree')
-  async findTree(@Param('id') id: number, @Request() req: any): Promise<Node> {
+  async findTree(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
     await this.access.assertRead(req.user.userId, Number(id));
     const tree = await this.nodeService.findTree(Number(id));
     if (!tree) throw new NotFoundException();
@@ -55,7 +56,7 @@ export class NodeController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: any): Promise<Node> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
     await this.access.assertRead(req.user.userId, Number(id));
     const node = await this.nodeService.findById(Number(id));
     if (!node) throw new NotFoundException();
@@ -63,7 +64,7 @@ export class NodeController {
   }
 
   @Post()
-  async create(@Body() body: NodeCreateDto, @Request() req: any): Promise<Node> {
+  async create(@Body() body: NodeCreateDto, @Request() req: AuthRequest): Promise<Node> {
     if (body.type !== NodeType.PROJECT && body.type !== NodeType.TASK) {
       throw new BadRequestException('type must be "project" or "task"');
     }
@@ -78,12 +79,12 @@ export class NodeController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() body: NodeUpdateDto, @Request() req: any): Promise<Node> {
+  async update(@Param('id') id: number, @Body() body: NodeUpdateDto, @Request() req: AuthRequest): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
     const safeBody: Partial<Node> = normalizeParentRefs(this.access.sanitize(body));
-    delete (safeBody as any).type; // a node's type is immutable
+    delete safeBody.type; // a node's type is immutable
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
       await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, existing.id);
     }
@@ -93,7 +94,7 @@ export class NodeController {
   }
 
   @Put(':id/duplicate')
-  async duplicate(@Param('id') id: number, @Request() req: any): Promise<Node> {
+  async duplicate(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
     const source = await this.nodeService.findById(Number(id));
     if (!source) throw new NotFoundException();
     // A copy of a task lands in the same project, so it needs write access there.
@@ -106,7 +107,7 @@ export class NodeController {
   }
 
   @Patch(':id/move')
-  async move(@Param('id') id: number, @Body() body: NodeMoveDto, @Request() req: any): Promise<Node> {
+  async move(@Param('id') id: number, @Body() body: NodeMoveDto, @Request() req: AuthRequest): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
@@ -117,7 +118,7 @@ export class NodeController {
   }
 
   @Patch(':id/archive')
-  async archive(@Param('id') id: number, @Request() req: any): Promise<Node> {
+  async archive(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
@@ -127,7 +128,7 @@ export class NodeController {
   }
 
   @Patch(':id/unarchive')
-  async unarchive(@Param('id') id: number, @Request() req: any): Promise<Node> {
+  async unarchive(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
@@ -137,7 +138,7 @@ export class NodeController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);

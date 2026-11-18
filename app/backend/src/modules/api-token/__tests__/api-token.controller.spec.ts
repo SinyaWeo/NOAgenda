@@ -1,16 +1,19 @@
 import 'reflect-metadata';
 import { ApiTokenController } from '../api-token.controller';
 import { NoApiTokenGuard } from '../../auth/no-api-token.guard';
+import type { ApiTokenService } from '../api-token.service';
+import type { CreateApiTokenDto } from '../dto/api-token.dto';
+import { asMock, authReq } from '../../../common/__tests__/test-utils';
 
 function build() {
-  const service: any = {
+  const service = {
     findAll: jest.fn(async () => []),
     create: jest.fn(async () => ({ id: 1, rawToken: 'noa_x' })),
     remove: jest.fn(async () => undefined),
   };
-  return { ctrl: new ApiTokenController(service), service };
+  return { ctrl: new ApiTokenController(asMock<ApiTokenService>(service)), service };
 }
-const req = { user: { userId: 7 } };
+const req = authReq(7);
 
 describe('ApiTokenController', () => {
   it('cannot be used with an API token itself (NoApiTokenGuard)', () => {
@@ -25,9 +28,9 @@ describe('ApiTokenController', () => {
 
   it('create defaults scope to read and converts expiresAt to a Date', async () => {
     const { ctrl, service } = build();
-    await ctrl.create({ name: 'a' } as any, req);
+    await ctrl.create({ name: 'a' } as CreateApiTokenDto, req);
     expect(service.create).toHaveBeenCalledWith(7, 'a', 'read', undefined);
-    await ctrl.create({ name: 'b', scope: 'write', expiresAt: '2030-01-01T00:00:00.000Z' } as any, req);
+    await ctrl.create({ name: 'b', scope: 'write', expiresAt: '2030-01-01T00:00:00.000Z' } as CreateApiTokenDto, req);
     expect(service.create).toHaveBeenLastCalledWith(7, 'b', 'write', new Date('2030-01-01T00:00:00.000Z'));
   });
 

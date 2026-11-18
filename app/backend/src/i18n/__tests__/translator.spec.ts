@@ -1,12 +1,14 @@
 import { readdirSync } from 'fs';
 import { join } from 'path';
 import { Translator } from '../translator.service';
-import { fakeI18n, readLocale, realTranslator } from './fake-i18n';
+import { asMock, invalid } from '../../common/__tests__/test-utils';
+import type { I18nService } from 'nestjs-i18n';
+import { fakeI18n, LocaleTree, readLocale, realTranslator } from './fake-i18n';
 
 const read = readLocale;
 
 /** { a: { b: 'x' } } -> { 'a.b': 'x' } */
-function flatten(obj: Record<string, any>, prefix = ''): Record<string, string> {
+function flatten(obj: LocaleTree, prefix = ''): Record<string, string> {
   return Object.entries(obj).reduce(
     (out, [k, v]) =>
       typeof v === 'object' ? { ...out, ...flatten(v, `${prefix}${k}.`) } : { ...out, [`${prefix}${k}`]: v as string },
@@ -55,13 +57,17 @@ describe('Translator', () => {
   });
 
   it.each([undefined, null, '', 'de', 'EN'])('falls back to English for the language %p', (lang) => {
-    expect(tr.t(lang as any, 'notification.task_reminder', { title: 'Pay rent' })).toBe('Reminder: "Pay rent"');
+    expect(tr.t(invalid<string>(lang), 'notification.task_reminder', { title: 'Pay rent' })).toBe(
+      'Reminder: "Pay rent"',
+    );
   });
 
   it('falls back to English when a key is missing in the requested language', () => {
     const i18n = fakeI18n();
     const original = i18n.t;
     i18n.t = (key, opts) => (opts?.lang === 'cs' ? key : original(key, opts));
-    expect(new Translator(i18n as any).t('cs', 'notification.task_reminder', { title: 'X' })).toBe('Reminder: "X"');
+    expect(new Translator(asMock<I18nService>(i18n)).t('cs', 'notification.task_reminder', { title: 'X' })).toBe(
+      'Reminder: "X"',
+    );
   });
 });

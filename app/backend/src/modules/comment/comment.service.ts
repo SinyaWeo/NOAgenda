@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { Comment } from './comment.entity';
 
 @Injectable()
@@ -19,7 +19,7 @@ export class CommentService {
     return this.commentRepository.findOne({ where: { id }, relations: { node: true, author: true } });
   }
 
-  async create(comment: Partial<Comment>): Promise<Comment> {
+  async create(comment: DeepPartial<Comment>): Promise<Comment> {
     const newComment = this.commentRepository.create(comment);
     return this.commentRepository.save(newComment);
   }

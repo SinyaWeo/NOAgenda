@@ -5,6 +5,7 @@ import {
   Injectable,
   PayloadTooLargeException,
 } from '@nestjs/common';
+import type { UploadRequest } from '../../common/auth-user';
 import { NodeAccessService } from '../node/node-access.service';
 import { AttachmentService } from './attachment.service';
 
@@ -26,7 +27,7 @@ export class UploadPrecheckGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest<UploadRequest>();
     const raw = req.query?.taskId;
     const taskId = typeof raw === 'string' && /^\d+$/.test(raw) ? Number(raw) : NaN;
     if (!Number.isSafeInteger(taskId) || taskId < 1) {

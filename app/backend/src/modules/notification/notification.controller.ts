@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -18,12 +19,12 @@ export class NotificationController {
   constructor(private readonly notificationService: NotificationService) {}
 
   @Get()
-  async findAll(@Request() req: any): Promise<Notification[]> {
+  async findAll(@Request() req: AuthRequest): Promise<Notification[]> {
     return this.notificationService.findAll(req.user.userId);
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: any): Promise<Notification> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Notification> {
     const notification = await this.notificationService.findById(id);
     if (!notification) throw new NotFoundException();
     if (notification.user?.id !== req.user.userId) throw new ForbiddenException();
@@ -31,18 +32,18 @@ export class NotificationController {
   }
 
   @Post()
-  async create(@Body() body: CreateNotificationDto, @Request() req: any): Promise<Notification> {
+  async create(@Body() body: CreateNotificationDto, @Request() req: AuthRequest): Promise<Notification> {
     // Notifications created via the API are always scoped to the requesting user
-    return this.notificationService.create({ message: body.message, user: { id: req.user.userId } as any });
+    return this.notificationService.create({ message: body.message, user: { id: req.user.userId } });
   }
 
   @Post('read/all')
-  async markAllAsRead(@Request() req: any): Promise<void> {
+  async markAllAsRead(@Request() req: AuthRequest): Promise<void> {
     return this.notificationService.markAllAsRead(req.user.userId);
   }
 
   @Post(':id/read')
-  async markAsRead(@Param('id') id: number, @Request() req: any): Promise<Notification> {
+  async markAsRead(@Param('id') id: number, @Request() req: AuthRequest): Promise<Notification> {
     const notification = await this.notificationService.findById(id);
     if (!notification) throw new NotFoundException();
     if (notification.user?.id !== req.user.userId) throw new ForbiddenException();
@@ -52,7 +53,7 @@ export class NotificationController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const notification = await this.notificationService.findById(id);
     if (!notification) throw new NotFoundException();
     if (notification.user?.id !== req.user.userId) throw new ForbiddenException();

@@ -10,8 +10,7 @@ export default tseslint.config(
   prettier,
   {
     rules: {
-      // Nest controllers/guards read `req.user` and similar untyped request fields; that is pervasive and deliberate here.
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
       // `_x` marks an intentionally unused destructured value (e.g. dropping `password` from an object).
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' }],
       '@typescript-eslint/no-empty-function': 'off',

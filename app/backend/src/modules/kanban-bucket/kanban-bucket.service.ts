@@ -5,7 +5,7 @@ import { KanbanBucket } from './kanban-bucket.entity';
 
 /** Fields a client must never control (identity / which project or view it belongs to). */
 function clean(data: Partial<KanbanBucket>): Partial<KanbanBucket> {
-  const { id: _i, projectId: _p, viewId: _v, createdAt: _c, updatedAt: _u, ...rest } = (data ?? {}) as any;
+  const { id: _i, projectId: _p, viewId: _v, createdAt: _c, updatedAt: _u, ...rest } = data ?? {};
   return rest;
 }
 

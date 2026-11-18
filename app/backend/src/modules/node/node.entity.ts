@@ -79,7 +79,7 @@ export class Node extends BaseEntity {
 
   // Self-referencing parent-child
   @Column({ nullable: true, type: 'int' })
-  parentId?: number;
+  parentId?: number | null;
 
   @ManyToOne(() => Node, (node) => node.children, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'parentId' })

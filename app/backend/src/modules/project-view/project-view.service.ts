@@ -19,7 +19,7 @@ export class ProjectViewService {
   }
 
   async create(projectId: number, title: string, viewType: ViewType = ViewType.LIST): Promise<ProjectView> {
-    const view = this.repo.create({ project: { id: projectId } as any, title, viewType });
+    const view = this.repo.create({ project: { id: projectId }, title, viewType });
     return this.repo.save(view);
   }
 

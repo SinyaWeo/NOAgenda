@@ -1,7 +1,11 @@
+import { Logger } from '@nestjs/common';
+import { asMock, Mocks } from '../../../common/__tests__/test-utils';
 import { MailService } from '../mail.service';
 
 const sendMail = jest.fn();
-jest.mock('nodemailer', () => ({ createTransport: jest.fn(() => ({ sendMail: (...a: any[]) => sendMail(...a) })) }));
+jest.mock('nodemailer', () => ({
+  createTransport: jest.fn(() => ({ sendMail: (...a: unknown[]) => sendMail(...a) })),
+}));
 import * as nodemailer from 'nodemailer';
 
 const KEYS = [
@@ -18,7 +22,7 @@ const KEYS = [
 
 describe('MailService', () => {
   const saved: Record<string, string | undefined> = {};
-  const settings: any = { getAppName: jest.fn(async () => 'MyApp') };
+  const settings: Mocks = { getAppName: jest.fn(async () => 'MyApp') };
 
   beforeEach(() => {
     KEYS.forEach((k) => {
@@ -38,31 +42,31 @@ describe('MailService', () => {
 
   describe('link()', () => {
     it('falls back to local dev', () => {
-      expect(new MailService(settings).link('/reset')).toBe('http://localhost:5173/reset');
+      expect(new MailService(asMock(settings)).link('/reset')).toBe('http://localhost:5173/reset');
     });
     it('prefers PUBLIC_URL over CORS_ORIGIN and strips trailing slashes', () => {
       process.env.CORS_ORIGIN = 'http://cors';
       process.env.PUBLIC_URL = 'https://app.example.com//';
-      expect(new MailService(settings).link('/x')).toBe('https://app.example.com/x');
+      expect(new MailService(asMock(settings)).link('/x')).toBe('https://app.example.com/x');
     });
     it('uses CORS_ORIGIN when no PUBLIC_URL', () => {
       process.env.CORS_ORIGIN = 'http://cors';
-      expect(new MailService(settings).link('/x')).toBe('http://cors/x');
+      expect(new MailService(asMock(settings)).link('/x')).toBe('http://cors/x');
     });
     it('encodes query parameters', () => {
-      const url = new MailService(settings).link('/reset', { token: 'a b&c=d' });
+      const url = new MailService(asMock(settings)).link('/reset', { token: 'a b&c=d' });
       expect(url).toBe('http://localhost:5173/reset?token=a+b%26c%3Dd');
     });
   });
 
   it('appName() delegates to app settings', async () => {
-    expect(await new MailService(settings).appName()).toBe('MyApp');
+    expect(await new MailService(asMock(settings)).appName()).toBe('MyApp');
   });
 
   describe('without SMTP_HOST', () => {
     it('is disabled, creates no transport, send() returns false and logs the body outside production', async () => {
-      const svc = new MailService(settings);
-      const log = jest.spyOn((svc as any).logger, 'log').mockImplementation();
+      const svc = new MailService(asMock(settings));
+      const log = jest.spyOn(asMock<{ logger: Logger }>(svc).logger, 'log').mockImplementation();
       expect(svc.enabled).toBe(false);
       expect(nodemailer.createTransport).not.toHaveBeenCalled();
       expect(await svc.send({ to: 'a@b.c', subject: 'Hi', text: 'secret-link' })).toBe(false);
@@ -72,8 +76,8 @@ describe('MailService', () => {
 
     it('does not log the body in production', async () => {
       process.env.NODE_ENV = 'production';
-      const svc = new MailService(settings);
-      const log = jest.spyOn((svc as any).logger, 'log').mockImplementation();
+      const svc = new MailService(asMock(settings));
+      const log = jest.spyOn(asMock<{ logger: Logger }>(svc).logger, 'log').mockImplementation();
       await svc.send({ to: 'a@b.c', subject: 'Hi', text: 'secret-link' });
       expect(log.mock.calls[0][0]).not.toContain('secret-link');
     });
@@ -81,7 +85,7 @@ describe('MailService', () => {
     it('warns at construction in production', () => {
       process.env.NODE_ENV = 'production';
       const warn = jest.spyOn(require('@nestjs/common').Logger.prototype, 'warn').mockImplementation();
-      new MailService(settings);
+      new MailService(asMock(settings));
       expect(warn).toHaveBeenCalled();
     });
   });
@@ -92,7 +96,7 @@ describe('MailService', () => {
     });
 
     it('creates the transport with defaults', () => {
-      const svc = new MailService(settings);
+      const svc = new MailService(asMock(settings));
       expect(svc.enabled).toBe(true);
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         host: 'smtp.example.com',
@@ -104,7 +108,7 @@ describe('MailService', () => {
 
     it('honours port, secure and auth settings', () => {
       Object.assign(process.env, { SMTP_PORT: '465', SMTP_SECURE: 'true', SMTP_USER: 'u', SMTP_PASS: 'p' });
-      new MailService(settings);
+      new MailService(asMock(settings));
       expect(nodemailer.createTransport).toHaveBeenCalledWith({
         host: 'smtp.example.com',
         port: 465,
@@ -116,21 +120,21 @@ describe('MailService', () => {
     it('sends with the default From and returns true', async () => {
       sendMail.mockResolvedValue({});
       const msg = { to: 'a@b.c', subject: 'S', text: 'T' };
-      expect(await new MailService(settings).send(msg)).toBe(true);
+      expect(await new MailService(asMock(settings)).send(msg)).toBe(true);
       expect(sendMail).toHaveBeenCalledWith({ from: 'NOAgenda <no-reply@localhost>', ...msg });
     });
 
     it('uses MAIL_FROM', async () => {
       process.env.MAIL_FROM = 'X <x@y.z>';
       sendMail.mockResolvedValue({});
-      await new MailService(settings).send({ to: 'a@b.c', subject: 'S', text: 'T' });
+      await new MailService(asMock(settings)).send({ to: 'a@b.c', subject: 'S', text: 'T' });
       expect(sendMail.mock.calls[0][0].from).toBe('X <x@y.z>');
     });
 
     it('never throws: returns false and logs an error on delivery failure', async () => {
       sendMail.mockRejectedValue(new Error('boom'));
-      const svc = new MailService(settings);
-      const err = jest.spyOn((svc as any).logger, 'error').mockImplementation();
+      const svc = new MailService(asMock(settings));
+      const err = jest.spyOn(asMock<{ logger: Logger }>(svc).logger, 'error').mockImplementation();
       await expect(svc.send({ to: 'a@b.c', subject: 'S', text: 'T' })).resolves.toBe(false);
       expect(err.mock.calls[0][0]).toContain('boom');
     });

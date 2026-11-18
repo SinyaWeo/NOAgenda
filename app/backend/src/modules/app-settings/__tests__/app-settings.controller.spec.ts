@@ -2,13 +2,15 @@ import 'reflect-metadata';
 import { BadRequestException } from '@nestjs/common';
 import { AppSettingsController } from '../app-settings.controller';
 import { UserRole } from '../../user/user-role.enum';
+import type { AppSettingsService } from '../app-settings.service';
+import { asMock, invalid } from '../../../common/__tests__/test-utils';
 
 function build() {
-  const service: any = {
+  const service = {
     getAll: jest.fn(async () => ({ appName: 'X' })),
     setMany: jest.fn(async () => undefined),
   };
-  return { ctrl: new AppSettingsController(service), service };
+  return { ctrl: new AppSettingsController(asMock<AppSettingsService>(service)), service };
 }
 
 describe('AppSettingsController', () => {
@@ -32,13 +34,13 @@ describe('AppSettingsController', () => {
     ['bad key chars', { 'a b': 'v' }],
     ['key too long', { ['k'.repeat(65)]: 'v' }],
     ['empty key', { '': 'v' }],
-    ['non-string value', { a: 5 as any }],
+    ['non-string value', { a: invalid<string>(5) }],
     ['value too long', { a: 'x'.repeat(2001) }],
     ['app name too long', { appName: 'x'.repeat(61) }],
     ['too many settings', Object.fromEntries(Array.from({ length: 101 }, (_, i) => ['k' + i, 'v']))],
   ])('rejects %s without writing', async (_n, body) => {
     const { ctrl, service } = build();
-    await expect(ctrl.update(body as any)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(ctrl.update(invalid<Record<string, string>>(body))).rejects.toBeInstanceOf(BadRequestException);
     expect(service.setMany).not.toHaveBeenCalled();
   });
 

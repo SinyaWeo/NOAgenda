@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
 import { Attachment } from './attachment.entity';
 
 @Injectable()
@@ -42,7 +42,7 @@ export class AttachmentService {
     return this.attachmentRepository.findOne({ where: { id }, relations: { node: true, uploader: true } });
   }
 
-  async create(attachment: Partial<Attachment>): Promise<Attachment> {
+  async create(attachment: DeepPartial<Attachment>): Promise<Attachment> {
     const newAttachment = this.attachmentRepository.create(attachment);
     return this.attachmentRepository.save(newAttachment);
   }

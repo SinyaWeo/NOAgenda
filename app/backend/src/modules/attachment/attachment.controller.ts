@@ -1,3 +1,4 @@
+import type { AuthRequest, UploadRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -68,7 +69,7 @@ export class AttachmentController {
   }
 
   @Get()
-  async findAll(@Query('taskId') taskId?: number, @Request() req?: any): Promise<Attachment[]> {
+  async findAll(@Query('taskId') taskId: number | undefined, @Request() req: AuthRequest): Promise<Attachment[]> {
     if (taskId) {
       // Everyone who can read the task may list its attachments.
       await this.access.assertRead(req.user.userId, Number(taskId));
@@ -79,7 +80,7 @@ export class AttachmentController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: any): Promise<Attachment> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Attachment> {
     const attachment = await this.attachmentService.findById(id);
     if (!attachment) throw new NotFoundException();
     await this.assertCan(attachment, req.user.userId, false);
@@ -87,7 +88,7 @@ export class AttachmentController {
   }
 
   @Get(':id/download')
-  async download(@Param('id') id: number, @Res() res: Response, @Request() req: any): Promise<void> {
+  async download(@Param('id') id: number, @Res() res: Response, @Request() req: AuthRequest): Promise<void> {
     const attachment = await this.attachmentService.findById(id);
     if (!attachment) throw new NotFoundException();
     await this.assertCan(attachment, req.user.userId, false);
@@ -112,7 +113,11 @@ export class AttachmentController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: './uploads',
-        filename: (_req: any, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
+        filename: (
+          _req: AuthRequest,
+          file: Express.Multer.File,
+          cb: (error: Error | null, filename: string) => void,
+        ) => {
           // Unguessable server-side name; keep only a sanitized extension.
           const ext = extname(file.originalname)
             .toLowerCase()
@@ -122,7 +127,11 @@ export class AttachmentController {
         },
       }),
       limits: { fileSize: MAX_FILE_SIZE },
-      fileFilter: (_req: any, file: Express.Multer.File, cb: (error: Error | null, accept: boolean) => void) => {
+      fileFilter: (
+        _req: AuthRequest,
+        file: Express.Multer.File,
+        cb: (error: Error | null, accept: boolean) => void,
+      ) => {
         if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
           cb(null, true);
         } else {
@@ -131,10 +140,10 @@ export class AttachmentController {
       },
     }),
   )
-  async upload(@UploadedFile() file: Express.Multer.File, @Request() req: any): Promise<Attachment> {
+  async upload(@UploadedFile() file: Express.Multer.File, @Request() req: UploadRequest): Promise<Attachment> {
     if (!file) throw new BadRequestException('No file uploaded');
     // UploadPrecheckGuard has already validated this id and the caller's write access, before multer ran.
-    const taskId: number = req.uploadTaskId;
+    const taskId = req.uploadTaskId as number;
     try {
       if (SNIFFABLE.has(file.mimetype) && (await sniffFile(file.path).catch(() => null)) !== file.mimetype) {
         throw new BadRequestException(`The file is not a valid ${file.mimetype} (its content does not match its type)`);
@@ -151,13 +160,13 @@ export class AttachmentController {
       filename: file.originalname,
       path: resolve(file.path),
       size: file.size,
-      node: { id: taskId } as any,
-      uploader: { id: req.user.userId } as any,
+      node: { id: taskId },
+      uploader: { id: req.user.userId },
     });
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const attachment = await this.attachmentService.findById(id);
     if (!attachment) throw new NotFoundException();
     await this.assertCan(attachment, req.user.userId, true);

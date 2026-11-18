@@ -42,13 +42,13 @@ export class TaskReminderService implements OnModuleInit, OnModuleDestroy {
   }
 
   async create(taskId: number, reminderDate: Date, createdBy?: number): Promise<TaskReminder> {
-    const reminder = this.repo.create({ node: { id: taskId } as any, reminderDate, createdBy: createdBy ?? null });
+    const reminder = this.repo.create({ node: { id: taskId }, reminderDate, createdBy: createdBy ?? null });
     return this.repo.save(reminder);
   }
 
   /** Scoped to the task so a reminder id from another task can't be deleted. */
   async remove(taskId: number, id: number): Promise<void> {
-    await this.repo.delete({ id, node: { id: taskId } as any });
+    await this.repo.delete({ id, node: { id: taskId } });
   }
 
   /**

@@ -31,7 +31,7 @@ export interface TaskFilter {
 export class TaskService {
   constructor(private readonly nodeService: NodeService) {}
 
-  normalizeTaskPayload(data: Partial<Node> & any): Partial<Node> {
+  normalizeTaskPayload(data: object): Partial<Node> {
     return normalizeParentRefs(data);
   }
 

@@ -58,6 +58,6 @@ describe('LoginThrottle', () => {
   it('is bounded: a flood of random usernames cannot grow it without limit', () => {
     const th = make(); // maxEntries = 50
     for (let i = 0; i < 500; i++) th.recordFailure(`user${i}`, '9.9.9.9');
-    expect((th as any).entries.size).toBeLessThanOrEqual(50);
+    expect((th as unknown as { entries: Map<string, unknown> }).entries.size).toBeLessThanOrEqual(50);
   });
 });

@@ -1,10 +1,13 @@
-import { ArgumentMetadata, BadRequestException, NotFoundException, ValidationPipe } from '@nestjs/common';
+import { ArgumentMetadata, Type, BadRequestException, NotFoundException, ValidationPipe } from '@nestjs/common';
 import { SavedFilterController } from '../saved-filter.controller';
 import { SavedFilterService } from '../saved-filter.service';
+import { Repository } from 'typeorm';
+import { SavedFilter } from '../saved-filter.entity';
+import { asMock, authReq, invalid, type Mocks } from '../../../common/__tests__/test-utils';
 import { CreateFilterDto, UpdateFilterDto } from '../dto/saved-filter.dto';
 
 describe('SavedFilterService', () => {
-  let repo: any;
+  let repo: Mocks;
   let service: SavedFilterService;
 
   beforeEach(() => {
@@ -16,7 +19,7 @@ describe('SavedFilterService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     };
-    service = new SavedFilterService(repo);
+    service = new SavedFilterService(asMock<Repository<SavedFilter>>(repo));
   });
 
   it('findAll returns only the user own filters', async () => {
@@ -31,13 +34,17 @@ describe('SavedFilterService', () => {
   });
 
   it('create forces ownership and ignores client-supplied id/userId', async () => {
-    await service.create(7, { id: 50, userId: 99, name: 'F' } as any);
+    await service.create(7, invalid<Partial<SavedFilter>>({ id: 50, userId: 99, name: 'F' }));
     expect(repo.create).toHaveBeenCalledWith({ name: 'F', userId: 7 });
   });
 
   it('update strips identity/ownership fields', async () => {
     repo.findOne.mockResolvedValue({ id: 1 });
-    await service.update(1, 7, { id: 2, userId: 99, createdAt: 1, updatedAt: 2, name: 'N' } as any);
+    await service.update(
+      1,
+      7,
+      invalid<Partial<SavedFilter>>({ id: 2, userId: 99, createdAt: 1, updatedAt: 2, name: 'N' }),
+    );
     expect(repo.update).toHaveBeenCalledWith(1, { name: 'N' });
   });
 
@@ -62,20 +69,20 @@ describe('SavedFilterService', () => {
 
 describe('SavedFilterController', () => {
   it('always passes the authenticated user id, never a client one', async () => {
-    const service: any = {
+    const service: Mocks = {
       findAll: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
       remove: jest.fn(),
     };
-    const c = new SavedFilterController(service);
-    const req = { user: { userId: 7 } };
+    const c = new SavedFilterController(asMock<SavedFilterService>(service));
+    const req = authReq(7);
     c.findAll(req);
-    c.findOne(1 as any, req);
+    c.findOne(1, req);
     c.create({ name: 'a' }, req);
-    c.update(1 as any, { name: 'b' }, req);
-    c.remove(1 as any, req);
+    c.update(1, { name: 'b' }, req);
+    c.remove(1, req);
     expect(service.findAll).toHaveBeenCalledWith(7);
     expect(service.findOne).toHaveBeenCalledWith(1, 7);
     expect(service.create).toHaveBeenCalledWith(7, { name: 'a' });
@@ -86,17 +93,17 @@ describe('SavedFilterController', () => {
 
 describe('saved filter DTOs', () => {
   const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
-  const meta = (metatype: any): ArgumentMetadata => ({ type: 'body', metatype });
+  const meta = (metatype: Type<unknown>): ArgumentMetadata => ({ type: 'body', metatype });
 
   it('accepts a full valid filter', async () => {
-    const out: any = await pipe.transform(
+    const out = (await pipe.transform(
       {
         name: 'Mine',
         description: 'd',
         filters: { status: 'open', priority: 3, projectId: 2, search: 'x', due: 'week', hideDone: true },
       },
       meta(CreateFilterDto),
-    );
+    )) as { filters: { due: string } };
     expect(out.filters.due).toBe('week');
   });
 

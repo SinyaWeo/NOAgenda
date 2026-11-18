@@ -1,4 +1,6 @@
 import { ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
+import type { Request } from 'express';
+import type { AuthUser } from '../auth-user';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -28,10 +30,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err: any, user: any, _info: any, context: ExecutionContext) {
+  handleRequest<TUser = AuthUser>(
+    err: unknown,
+    user: AuthUser | false | null,
+    _info: unknown,
+    context: ExecutionContext,
+  ): TUser {
     if (err || !user) throw err || new UnauthorizedException();
     if (user.viaApiToken) {
-      const req = context.switchToHttp().getRequest();
+      const req = context.switchToHttp().getRequest<Request>();
       if (user.apiTokenScope !== 'write' && !SAFE_METHODS.has(String(req.method).toUpperCase())) {
         throw new ForbiddenException('This API token is read-only');
       }
@@ -40,6 +47,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         throw new ForbiddenException('Admin actions require an interactive login, not an API token');
       }
     }
-    return user;
+    return user as TUser;
   }
 }

@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -24,7 +25,7 @@ export class TaskRelationController {
   ) {}
 
   @Get()
-  async findAll(@Param('taskId') taskId: number, @Request() req: any): Promise<TaskRelation[]> {
+  async findAll(@Param('taskId') taskId: number, @Request() req: AuthRequest): Promise<TaskRelation[]> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertRead(req.user.userId, Number(taskId));
@@ -41,7 +42,7 @@ export class TaskRelationController {
   async create(
     @Param('taskId') taskId: number,
     @Body() body: AddRelationDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<TaskRelation> {
     if (Number(body.relatedTaskId) === Number(taskId))
       throw new BadRequestException('A task cannot be related to itself');
@@ -57,7 +58,7 @@ export class TaskRelationController {
     @Param('taskId') taskId: number,
     @Param('relatedTaskId') relatedTaskId: number,
     @Param('kind') kind: RelationKind,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();

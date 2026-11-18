@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -32,14 +33,14 @@ export class CommentController {
   ) {}
 
   @Get()
-  async findAll(@Query('taskId') taskId: number | undefined, @Request() req: any): Promise<Comment[]> {
+  async findAll(@Query('taskId') taskId: number | undefined, @Request() req: AuthRequest): Promise<Comment[]> {
     if (!taskId) throw new BadRequestException('taskId query parameter is required');
     await this.access.assertRead(req.user.userId, Number(taskId));
     return this.commentService.findAll(Number(taskId));
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: any): Promise<Comment> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Comment> {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
     // Only the comment author may fetch a single comment by ID
@@ -48,7 +49,7 @@ export class CommentController {
   }
 
   @Post()
-  async create(@Body() body: { content: string; taskId: number }, @Request() req: any): Promise<Comment> {
+  async create(@Body() body: { content: string; taskId: number }, @Request() req: AuthRequest): Promise<Comment> {
     if (typeof body?.content !== 'string' || !body.content.trim() || body.content.length > 10000) {
       throw new BadRequestException('content is required (max 10000 characters)');
     }
@@ -57,8 +58,8 @@ export class CommentController {
     await this.access.assertWrite(req.user.userId, taskId);
     const comment = await this.commentService.create({
       content: body.content,
-      node: { id: taskId } as any,
-      author: { id: req.user.userId } as any,
+      node: { id: taskId },
+      author: { id: req.user.userId },
     });
     void this.notifyAboutComment(taskId, req.user, comment);
     return comment;
@@ -101,7 +102,7 @@ export class CommentController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() body: Partial<Comment>, @Request() req: any): Promise<Comment> {
+  async update(@Param('id') id: number, @Body() body: Partial<Comment>, @Request() req: AuthRequest): Promise<Comment> {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
     if (comment.author?.id !== req.user.userId) throw new ForbiddenException();
@@ -115,7 +116,7 @@ export class CommentController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
     if (comment.author?.id !== req.user.userId) throw new ForbiddenException();

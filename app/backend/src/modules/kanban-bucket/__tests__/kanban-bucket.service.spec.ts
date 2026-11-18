@@ -1,8 +1,14 @@
+import { asMock, authReq, invalid, Mocks } from '../../../common/__tests__/test-utils';
 import { NotFoundException } from '@nestjs/common';
 import { KanbanBucketService } from '../kanban-bucket.service';
+import { CreateBucketDto, UpdateBucketDto } from '../dto/kanban-bucket.dto';
+
+type RepoMock = Record<'find' | 'findOne' | 'create' | 'save' | 'update' | 'delete', jest.Mock> & {
+  manager: { query: jest.Mock };
+};
 
 describe('KanbanBucketService', () => {
-  let repo: any;
+  let repo: RepoMock;
   let service: KanbanBucketService;
 
   beforeEach(() => {
@@ -15,7 +21,7 @@ describe('KanbanBucketService', () => {
       delete: jest.fn(),
       manager: { query: jest.fn(async () => [{ 1: 1 }]) }, // the view belongs to the project
     };
-    service = new KanbanBucketService(repo);
+    service = new KanbanBucketService(asMock(repo));
   });
 
   it('findAll scopes by project and view and orders by position', async () => {
@@ -35,7 +41,7 @@ describe('KanbanBucketService', () => {
   });
 
   it('create strips mass-assigned id/projectId/viewId and uses the URL values', async () => {
-    await service.create(3, 4, { id: 99, projectId: 100, viewId: 200, title: 'Todo' } as any);
+    await service.create(3, 4, invalid<CreateBucketDto>({ id: 99, projectId: 100, viewId: 200, title: 'Todo' }));
     expect(repo.create).toHaveBeenCalledWith({ title: 'Todo', projectId: 3, viewId: 4 });
   });
 
@@ -47,13 +53,18 @@ describe('KanbanBucketService', () => {
   });
 
   it('create tolerates undefined data', async () => {
-    await service.create(3, 4, undefined as any);
+    await service.create(3, 4, invalid<CreateBucketDto>(undefined));
     expect(repo.create).toHaveBeenCalledWith({ projectId: 3, viewId: 4 });
   });
 
   it('update checks scope first and never writes identity fields', async () => {
     repo.findOne.mockResolvedValue({ id: 1 });
-    await service.update(1, 3, 4, { id: 5, projectId: 9, viewId: 9, createdAt: 1, updatedAt: 2, title: 'X' } as any);
+    await service.update(
+      1,
+      3,
+      4,
+      invalid<UpdateBucketDto>({ id: 5, projectId: 9, viewId: 9, createdAt: 1, updatedAt: 2, title: 'X' }),
+    );
     expect(repo.update).toHaveBeenCalledWith(1, { title: 'X' });
   });
 

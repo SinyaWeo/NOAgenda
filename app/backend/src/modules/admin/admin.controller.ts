@@ -1,3 +1,5 @@
+import { omit } from '../../common/omit';
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -39,7 +41,7 @@ export class AdminController {
   async updateRole(
     @Param('id') id: number,
     @Body('role') role: UserRole,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Omit<User, 'password'>> {
     if (!Object.values(UserRole).includes(role)) {
       throw new ForbiddenException('Invalid role');
@@ -49,15 +51,14 @@ export class AdminController {
     }
     const user = await this.userService.setRole(Number(id), role);
     if (!user) throw new NotFoundException();
-    const { password: _p, ...safe } = user as any;
-    return safe;
+    return omit(user, 'password');
   }
 
   @Patch('users/:id/lock')
   async setLocked(
     @Param('id') id: number,
     @Body('locked') locked: boolean,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Omit<User, 'password'>> {
     if (typeof locked !== 'boolean') throw new BadRequestException('locked must be a boolean');
     const userId = Number(id);
@@ -66,13 +67,12 @@ export class AdminController {
     if (!user) throw new NotFoundException();
     // End every live session right away; API tokens and JWTs are also refused while locked.
     if (locked) await this.sessions.revokeAllForUser(userId);
-    const { password: _p, ...safe } = user as any;
-    return safe;
+    return omit(user, 'password');
   }
 
   @Delete('users/:id')
   @HttpCode(204)
-  async removeUser(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async removeUser(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const userId = Number(id);
     if (req.user.userId === userId) throw new ForbiddenException('Cannot delete your own account');
     if (!(await this.userService.findById(userId))) throw new NotFoundException();

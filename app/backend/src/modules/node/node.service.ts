@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
+import { omit } from '../../common/omit';
+import { sqlRunner } from '../../common/sql';
 import { existsSync, unlink } from 'fs';
 import { resolve } from 'path';
 import { Node, NodeType, NodeStatus } from './node.entity';
@@ -166,7 +168,7 @@ export class NodeService {
   private announce(action: 'created' | 'updated' | 'deleted', node: Node, projectId?: number | null) {
     const isProject = node.type === NodeType.PROJECT;
     // Children and parent are relations, not the node's own fields.
-    const { parent: _p, children: _c, ...data } = node as any;
+    const data = omit(node, 'parent', 'children');
     this.events.emit({
       name: `${node.type}.${action}`,
       data,
@@ -223,11 +225,7 @@ export class NodeService {
    * already past (completing a task very late must not set off a burst of reminders). Without a previous
    * due date there is nothing to move them relative to, so they are left alone.
    */
-  private async rearmReminders(
-    m: { query: (sql: string, params?: any[]) => Promise<any> },
-    nodeIds: number[],
-    shiftMs: number | null,
-  ): Promise<void> {
+  private async rearmReminders(m: EntityManager, nodeIds: number[], shiftMs: number | null): Promise<void> {
     if (!nodeIds.length || shiftMs === null) return;
     const seconds = Math.round(shiftMs / 1000);
     const moved = 'DATE_ADD(reminderDate, INTERVAL ? SECOND)';
@@ -267,7 +265,7 @@ export class NodeService {
   }
 
   async move(id: number, parentId: number | null): Promise<Node | null> {
-    await this.nodeRepository.update(id, { parentId: parentId as any }); // null = top level
+    await this.nodeRepository.update(id, { parentId }); // null = top level
     const node = await this.findById(id);
     if (node) this.announce('updated', node);
     return node;
@@ -286,14 +284,17 @@ export class NodeService {
     const doomedProjectId = doomed ? await this.projectIdOf(doomed) : null;
     const files: string[] = [];
     await this.nodeRepository.manager.transaction(async (m) => {
-      const q = (sql: string, p: any[] = []): Promise<any[]> => m.query(sql, p);
+      const q = sqlRunner(m);
       const all = new Set<number>([id]);
       let frontier = [id];
       while (frontier.length) {
         const next: number[] = [];
         for (let i = 0; i < frontier.length; i += CHUNK) {
           const part = frontier.slice(i, i + CHUNK);
-          for (const r of await q(`SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`, part)) {
+          for (const r of await q<{ id: number }>(
+            `SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`,
+            part,
+          )) {
             if (!all.has(r.id)) {
               all.add(r.id);
               next.push(r.id);
@@ -306,7 +307,9 @@ export class NodeService {
       for (let i = 0; i < ids.length; i += CHUNK) {
         const part = ids.slice(i, i + CHUNK);
         const inList = marks(part.length);
-        (await q(`SELECT path FROM attachments WHERE nodeId IN (${inList})`, part)).forEach((a) => files.push(a.path));
+        (await q<{ path: string }>(`SELECT path FROM attachments WHERE nodeId IN (${inList})`, part)).forEach((a) =>
+          files.push(a.path),
+        );
         await q(`DELETE FROM webhook WHERE projectId IN (${inList})`, part);
         await q(`DELETE FROM kanban_buckets WHERE projectId IN (${inList})`, part);
         for (const table of ['favorites', 'subscriptions', 'reactions']) {
@@ -339,7 +342,7 @@ export class NodeService {
   async duplicate(id: number, userId: number): Promise<Node | null> {
     const original = await this.findById(id);
     if (!original) return null;
-    const { id: _id, createdAt: _c, updatedAt: _u, parent: _p, children: _ch, ...data } = original as any;
+    const data = omit(original, 'id', 'createdAt', 'updatedAt', 'parent', 'children');
     const suffix = original.type === NodeType.PROJECT ? ' (copy)' : ' (copy)';
     return this.create({
       ...data,

@@ -1,25 +1,39 @@
-import { BadRequestException, ForbiddenException, NotFoundException, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, NotFoundException, ValidationPipe, Type } from '@nestjs/common';
 import { TaskAssigneeController } from '../task-assignee.controller';
 import { TaskAssigneeService } from '../task-assignee.service';
+import { TaskAssignee } from '../task-assignee.entity';
+import { Repository } from 'typeorm';
+import { TaskService } from '../../task/task.service';
+import { NodeAccessService } from '../../node/node-access.service';
+import { NotificationService } from '../../notification/notification.service';
+import { UserService } from '../../user/user.service';
+import { asMock, authReq, type Mocks } from '../../../common/__tests__/test-utils';
+
 import { AddAssigneeDto, AddTaskLabelDto, AddRelationDto } from '../dto/task-links.dto';
 
-const req = { user: { userId: 2, username: 'ann' } };
+const req = authReq(2, { username: 'ann' });
 
 describe('TaskAssigneeController', () => {
-  let service: any;
-  let tasks: any;
-  let access: any;
-  let notifications: any;
-  let users: any;
+  let service: Mocks;
+  let tasks: Mocks;
+  let access: Mocks;
+  let notifications: Mocks;
+  let users: Mocks;
   let controller: TaskAssigneeController;
 
   beforeEach(() => {
-    service = { findByTask: jest.fn(async () => []), add: jest.fn(async (t, u) => ({ id: 1 })), remove: jest.fn() };
+    service = { findByTask: jest.fn(async () => []), add: jest.fn(async () => ({ id: 1 })), remove: jest.fn() };
     tasks = { findById: jest.fn(async () => ({ id: 7, title: 'Ship it' })) };
     access = { assertRead: jest.fn(), assertWrite: jest.fn(), level: jest.fn(async () => 1) };
     users = { assertActive: jest.fn(async () => undefined) };
     notifications = { notify: jest.fn(async () => undefined) };
-    controller = new TaskAssigneeController(service, tasks, access, notifications, users);
+    controller = new TaskAssigneeController(
+      asMock<TaskAssigneeService>(service),
+      asMock<TaskService>(tasks),
+      asMock<NodeAccessService>(access),
+      asMock<NotificationService>(notifications),
+      asMock<UserService>(users),
+    );
   });
 
   it('findAll asserts read access and returns assignees', async () => {
@@ -113,28 +127,28 @@ describe('TaskAssigneeController', () => {
 
 describe('TaskAssigneeService', () => {
   it('findByTask queries by node id with relations', async () => {
-    const repo: any = { find: jest.fn(async () => []) };
-    await new TaskAssigneeService(repo).findByTask(7);
+    const repo: Mocks = { find: jest.fn(async () => []) };
+    await new TaskAssigneeService(asMock<Repository<TaskAssignee>>(repo)).findByTask(7);
     expect(repo.find).toHaveBeenCalledWith({ where: { node: { id: 7 } }, relations: { user: true, node: true } });
   });
 
   it('add creates and saves the link', async () => {
-    const repo: any = { create: jest.fn((x) => x), save: jest.fn(async (x) => ({ id: 1, ...x })) };
-    const res = await new TaskAssigneeService(repo).add(7, 5);
+    const repo: Mocks = { create: jest.fn((x: object) => x), save: jest.fn(async (x: object) => ({ id: 1, ...x })) };
+    const res = await new TaskAssigneeService(asMock<Repository<TaskAssignee>>(repo)).add(7, 5);
     expect(repo.create).toHaveBeenCalledWith({ node: { id: 7 }, user: { id: 5 } });
     expect(res.id).toBe(1);
   });
 
   it('remove deletes only that task/user pair', async () => {
-    const repo: any = { delete: jest.fn() };
-    await new TaskAssigneeService(repo).remove(7, 5);
+    const repo: Mocks = { delete: jest.fn() };
+    await new TaskAssigneeService(asMock<Repository<TaskAssignee>>(repo)).remove(7, 5);
     expect(repo.delete).toHaveBeenCalledWith({ node: { id: 7 }, user: { id: 5 } });
   });
 });
 
 describe('task-links DTOs', () => {
   const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
-  const run = (value: any, metatype: any) => pipe.transform(value, { type: 'body', metatype });
+  const run = (value: unknown, metatype: Type<unknown>) => pipe.transform(value, { type: 'body', metatype });
 
   it('accepts a valid AddAssigneeDto', async () => {
     await expect(run({ userId: 3 }, AddAssigneeDto)).resolves.toEqual({ userId: 3 });

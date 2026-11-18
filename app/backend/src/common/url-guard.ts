@@ -93,7 +93,7 @@ export const publicLookup: LookupFunction = (hostname, options, callback) => {
       blocked.code = BLOCKED_ADDRESS;
       return callback(blocked, '', 4);
     }
-    if (opts.all) return (callback as any)(null, list);
+    if (opts.all) return (callback as unknown as (err: null, addresses: LookupAddress[]) => void)(null, list);
     callback(null, list[0].address, list[0].family);
   });
 };

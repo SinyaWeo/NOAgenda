@@ -1,11 +1,15 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { SubscriptionController } from '../subscription.controller';
 import { SubscriptionService } from '../subscription.service';
+import { Subscription, SubscriptionEntityType } from '../subscription.entity';
+import { Repository } from 'typeorm';
+import { NodeAccessService } from '../../node/node-access.service';
+import { asMock, authReq, invalid, type Mocks } from '../../../common/__tests__/test-utils';
 
-const req = { user: { userId: 2 } };
+const req = authReq(2);
 
 describe('SubscriptionService', () => {
-  let repo: any;
+  let repo: Mocks;
   let svc: SubscriptionService;
   beforeEach(() => {
     repo = {
@@ -15,7 +19,7 @@ describe('SubscriptionService', () => {
       save: jest.fn(async (x) => ({ id: 1, ...x })),
       delete: jest.fn(),
     };
-    svc = new SubscriptionService(repo);
+    svc = new SubscriptionService(asMock<Repository<Subscription>>(repo));
   });
 
   it('subscribe creates a subscription for the user', async () => {
@@ -48,13 +52,13 @@ describe('SubscriptionService', () => {
 });
 
 describe('SubscriptionController', () => {
-  let service: any;
-  let access: any;
+  let service: Mocks;
+  let access: Mocks;
   let controller: SubscriptionController;
   beforeEach(() => {
     service = { findAll: jest.fn(async () => []), subscribe: jest.fn(async () => ({ id: 1 })), unsubscribe: jest.fn() };
     access = { assertRead: jest.fn() };
-    controller = new SubscriptionController(service, access);
+    controller = new SubscriptionController(asMock<SubscriptionService>(service), asMock<NodeAccessService>(access));
   });
 
   it('findAll lists only the requesting user subscriptions', async () => {
@@ -63,13 +67,15 @@ describe('SubscriptionController', () => {
   });
 
   it('subscribe asserts read then subscribes with numeric id', async () => {
-    await controller.subscribe('task', '7' as any, req);
+    await controller.subscribe('task', invalid<number>('7'), req);
     expect(access.assertRead).toHaveBeenCalledWith(2, 7);
     expect(service.subscribe).toHaveBeenCalledWith(2, 'task', 7);
   });
 
   it('subscribe rejects invalid entity types without touching access or service', async () => {
-    await expect(controller.subscribe('user' as any, 7, req)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(controller.subscribe(invalid<SubscriptionEntityType>('user'), 7, req)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
     expect(access.assertRead).not.toHaveBeenCalled();
     expect(service.subscribe).not.toHaveBeenCalled();
   });

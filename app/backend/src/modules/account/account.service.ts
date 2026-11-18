@@ -1,3 +1,4 @@
+import { SqlRunner, sqlRunner } from '../../common/sql';
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { existsSync, unlink } from 'fs';
@@ -94,13 +95,13 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
   // ---------------------------------------------------------------- purge
 
   /** All nodes at or below `roots` (projects/tasks and their descendants). */
-  private async descendants(q: (sql: string, p?: any[]) => Promise<any[]>, roots: number[]): Promise<number[]> {
+  private async descendants(q: SqlRunner, roots: number[]): Promise<number[]> {
     const all = new Set(roots);
     let frontier = roots;
     while (frontier.length) {
       const next: number[] = [];
       for (const part of chunks(frontier)) {
-        const rows = await q(`SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`, part);
+        const rows = await q<{ id: number }>(`SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`, part);
         for (const r of rows)
           if (!all.has(r.id)) {
             all.add(r.id);
@@ -117,25 +118,28 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
     const files: string[] = [];
 
     await this.ds.transaction(async (m) => {
-      const q = (sql: string, p: any[] = []) => m.query(sql, p);
+      const q = sqlRunner(m);
 
-      const [user] = await q('SELECT id, avatarUrl FROM users WHERE id = ? FOR UPDATE', [userId]);
+      const [user] = await q<{ id: number; avatarUrl: string | null }>(
+        'SELECT id, avatarUrl FROM users WHERE id = ? FOR UPDATE',
+        [userId],
+      );
       if (!user) return;
 
       // Owned projects and personal (top-level) tasks, with everything below them.
       const roots: number[] = (
-        await q(
+        await q<{ id: number }>(
           `SELECT id FROM nodes
             WHERE (type = 'project' AND ownerId = ?) OR (type = 'task' AND createdBy = ? AND parentId IS NULL)`,
           [userId, userId],
         )
-      ).map((r: any) => r.id);
+      ).map((r) => r.id);
       const ids = await this.descendants(q, roots);
 
       for (const part of chunks(ids)) {
         const inList = marks(part.length);
-        const att = await q(`SELECT path FROM attachments WHERE nodeId IN (${inList})`, part);
-        att.forEach((a: any) => files.push(a.path));
+        const att = await q<{ path: string }>(`SELECT path FROM attachments WHERE nodeId IN (${inList})`, part);
+        att.forEach((a) => files.push(a.path));
         // Rows that are not removed by the nodes' ON DELETE CASCADE:
         await q(`DELETE FROM webhook WHERE projectId IN (${inList})`, part);
         await q(`DELETE FROM kanban_buckets WHERE projectId IN (${inList})`, part);
@@ -146,8 +150,8 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       }
 
       // The user's own comments/uploads on other people's items.
-      const uploads = await q('SELECT path FROM attachments WHERE uploaderId = ?', [userId]);
-      uploads.forEach((a: any) => files.push(a.path));
+      const uploads = await q<{ path: string }>('SELECT path FROM attachments WHERE uploaderId = ?', [userId]);
+      uploads.forEach((a) => files.push(a.path));
       await q('DELETE FROM attachments WHERE uploaderId = ?', [userId]);
       await q('DELETE FROM comments WHERE authorId = ?', [userId]);
 
@@ -155,7 +159,9 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       await q('UPDATE nodes SET createdBy = NULL WHERE createdBy = ?', [userId]);
 
       // Teams they own (and all memberships), and their memberships elsewhere.
-      const teams: number[] = (await q('SELECT id FROM teams WHERE ownerId = ?', [userId])).map((r: any) => r.id);
+      const teams: number[] = (await q<{ id: number }>('SELECT id FROM teams WHERE ownerId = ?', [userId])).map(
+        (r) => r.id,
+      );
       for (const part of chunks(teams)) {
         await q(`DELETE FROM team_members WHERE teamId IN (${marks(part.length)})`, part);
       }
@@ -193,7 +199,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
 
   /** Everything the app stores about this user, as one JSON document. Secrets are never included. */
   async exportData(userId: number): Promise<Record<string, unknown>> {
-    const q = (sql: string, p: any[] = []) => this.ds.query(sql, p);
+    const q = sqlRunner(this.ds);
 
     const [profile] = await q(
       `SELECT id, username, email, name, language, timezone, theme, defaultProjectId,
@@ -203,20 +209,25 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
     );
 
     const roots: number[] = (
-      await q(
+      await q<{ id: number }>(
         `SELECT id FROM nodes
           WHERE (type = 'project' AND ownerId = ?) OR (type = 'task' AND createdBy = ? AND parentId IS NULL)`,
         [userId, userId],
       )
-    ).map((r: any) => r.id);
+    ).map((r) => r.id);
     const ownedIds = await this.descendants(q, roots);
-    const owned: any[] = [];
+    const owned: Record<string, unknown>[] = [];
     for (const part of chunks(ownedIds)) {
-      owned.push(...(await q(`SELECT * FROM nodes WHERE id IN (${marks(part.length)}) ORDER BY id`, part)));
+      owned.push(
+        ...(await q<Record<string, unknown>>(
+          `SELECT * FROM nodes WHERE id IN (${marks(part.length)}) ORDER BY id`,
+          part,
+        )),
+      );
     }
     const ownedSet = new Set(ownedIds);
-    const elsewhere = (await q('SELECT * FROM nodes WHERE createdBy = ? ORDER BY id', [userId])).filter(
-      (n: any) => !ownedSet.has(n.id),
+    const elsewhere = (await q<{ id: number }>('SELECT * FROM nodes WHERE createdBy = ? ORDER BY id', [userId])).filter(
+      (n) => !ownedSet.has(n.id),
     );
 
     const teamsOwned = await q('SELECT id, name, description, createdAt FROM teams WHERE ownerId = ?', [userId]);
@@ -227,7 +238,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
     );
     const filters = (
       await q('SELECT id, name, description, filters, createdAt FROM saved_filters WHERE userId = ?', [userId])
-    ).map((f: any) => ({ ...f, filters: parseJson(f.filters) }));
+    ).map((f) => ({ ...f, filters: parseJson(f.filters) }));
 
     return {
       exportedAt: new Date().toISOString(),

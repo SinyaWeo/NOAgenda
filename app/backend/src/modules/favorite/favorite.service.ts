@@ -19,7 +19,7 @@ export class FavoriteService {
       where: { user: { id: userId }, entityType, entityId },
     });
     if (existing) return existing;
-    const favorite = this.repo.create({ user: { id: userId } as any, entityType, entityId });
+    const favorite = this.repo.create({ user: { id: userId }, entityType, entityId });
     return this.repo.save(favorite);
   }
 

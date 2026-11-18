@@ -2,24 +2,36 @@ import { resolve } from 'path';
 
 jest.mock('fs', () => ({ ...jest.requireActual('fs'), existsSync: jest.fn(() => true), unlink: jest.fn() }));
 import * as fs from 'fs';
+import type { Logger } from '@nestjs/common';
+import type { DataSource } from 'typeorm';
+import { asMock } from '../../../common/__tests__/test-utils';
 import { AccountService } from '../account.service';
 
 const UPLOADS = resolve(process.cwd(), 'uploads');
 
-type Handler = (sql: string, params: any[]) => any[] | undefined;
+type Row = Record<string, unknown>;
+type Handler = (sql: string, params: unknown[]) => Row[] | undefined;
+type Manager = { query: (sql: string, params?: unknown[]) => Promise<Row[]> };
+type ExportShape = Record<string, unknown> & {
+  profile: Row;
+  ownedProjectsAndTasks: Row[];
+  tasksCreatedInOtherProjects: Row[];
+  savedFilters: { filters: unknown }[];
+  note: string;
+};
 
 function build(handler: Handler = () => undefined) {
-  const calls: { sql: string; params: any[] }[] = [];
-  const run = async (sql: string, params: any[] = []) => {
+  const calls: { sql: string; params: unknown[] }[] = [];
+  const run = async (sql: string, params: unknown[] = []) => {
     calls.push({ sql, params });
     return handler(sql, params) ?? [];
   };
   const manager = { query: jest.fn(run) };
-  const ds: any = {
+  const ds = {
     query: jest.fn(run),
-    transaction: jest.fn(async (fn: any) => fn(manager)),
+    transaction: jest.fn(async (fn: (m: Manager) => Promise<unknown>) => fn(manager)),
   };
-  return { svc: new AccountService(ds), ds, calls, manager };
+  return { svc: new AccountService(asMock<DataSource>(ds)), ds, calls, manager };
 }
 
 describe('AccountService', () => {
@@ -52,8 +64,8 @@ describe('AccountService', () => {
   describe('purgeDue', () => {
     it('purges every due user, continuing past a failure, and counts successes', async () => {
       const { svc } = build((sql) => (sql.startsWith('SELECT id FROM users') ? [{ id: 1 }, { id: 2 }, { id: 3 }] : []));
-      jest.spyOn((svc as any).logger, 'error').mockImplementation();
-      jest.spyOn((svc as any).logger, 'log').mockImplementation();
+      jest.spyOn((svc as unknown as { logger: Logger }).logger, 'error').mockImplementation();
+      jest.spyOn((svc as unknown as { logger: Logger }).logger, 'log').mockImplementation();
       const spy = jest.spyOn(svc, 'purgeUser').mockImplementation(async (id) => {
         if (id === 2) throw new Error('fail');
       });
@@ -67,7 +79,7 @@ describe('AccountService', () => {
       const [sql, params] = ds.query.mock.calls[0];
       expect(sql).toMatch(/isDeletionRequested = 1/);
       expect(sql).toMatch(/deletionScheduledAt <= \?/);
-      expect(params[0]).toBeInstanceOf(Date);
+      expect(params?.[0]).toBeInstanceOf(Date);
     });
   });
 
@@ -109,7 +121,7 @@ describe('AccountService', () => {
 
     it('does not delete files when the transaction fails', async () => {
       const { svc, ds } = build(handler);
-      ds.transaction.mockImplementation(async (fn: any) => {
+      ds.transaction.mockImplementation(async (fn: (m: Manager) => Promise<unknown>) => {
         await fn({ query: async (sql: string) => handler(sql, []) ?? [] });
         throw new Error('commit failed');
       });
@@ -151,7 +163,7 @@ describe('AccountService', () => {
           ];
         return undefined;
       });
-      const out: any = await svc.exportData(3);
+      const out = (await svc.exportData(3)) as ExportShape;
       expect(out.format).toBe('noagenda-export-v1');
       expect(out.profile).toEqual({ id: 3, username: 'ann' });
       expect(out.ownedProjectsAndTasks).toEqual([{ id: 10 }]);

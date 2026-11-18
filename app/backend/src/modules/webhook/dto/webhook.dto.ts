@@ -24,7 +24,7 @@ export class CreateWebhookDto {
 
   @IsOptional()
   @IsObject()
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 
   @IsOptional()
   @IsInt()
@@ -54,5 +54,5 @@ export class UpdateWebhookDto {
 
   @IsOptional()
   @IsObject()
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }

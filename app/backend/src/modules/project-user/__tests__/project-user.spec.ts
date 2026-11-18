@@ -1,4 +1,6 @@
+import { asMock, authReq, invalid, Mocks } from '../../../common/__tests__/test-utils';
 import {
+  Type,
   ArgumentMetadata,
   BadRequestException,
   ForbiddenException,
@@ -11,11 +13,11 @@ import { AddProjectUserDto } from '../dto/project-sharing.dto';
 import { ProjectUserController } from '../project-user.controller';
 import { ProjectUserService } from '../project-user.service';
 
-const req = { user: { userId: 7, username: 'ann' } };
+const req = authReq(7, { username: 'ann' });
 const flush = () => new Promise((r) => setImmediate(r));
 
 describe('ProjectUserService', () => {
-  let repo: any;
+  let repo: Mocks;
   let service: ProjectUserService;
 
   beforeEach(() => {
@@ -26,7 +28,7 @@ describe('ProjectUserService', () => {
       update: jest.fn(),
       delete: jest.fn(),
     };
-    service = new ProjectUserService(repo);
+    service = new ProjectUserService(asMock(repo));
   });
 
   it('findByProject loads user and project', async () => {
@@ -58,11 +60,11 @@ describe('ProjectUserService', () => {
 });
 
 describe('ProjectUserController', () => {
-  let access: any;
-  let service: any;
-  let projects: any;
-  let notifications: any;
-  let users: any;
+  let access: Mocks;
+  let service: Mocks;
+  let projects: Mocks;
+  let notifications: Mocks;
+  let users: Mocks;
   let controller: ProjectUserController;
 
   beforeEach(() => {
@@ -76,24 +78,30 @@ describe('ProjectUserController', () => {
     projects = { findById: jest.fn(async () => ({ id: 3, name: 'Alpha' })) };
     notifications = { notify: jest.fn(async () => undefined) };
     users = { assertActive: jest.fn(async () => undefined) };
-    controller = new ProjectUserController(service, projects, access, notifications, users);
+    controller = new ProjectUserController(
+      asMock(service),
+      asMock(projects),
+      asMock(access),
+      asMock(notifications),
+      asMock(users),
+    );
   });
 
   it('list requires READ', async () => {
-    await controller.findAll(3 as any, req);
+    await controller.findAll(3, req);
     expect(access.assertProject).toHaveBeenCalledWith(7, 3, Access.READ);
   });
 
   it('add/update/remove require ADMIN', async () => {
-    await controller.add(3 as any, { userId: 9 }, req);
-    await controller.update(3 as any, 9 as any, { permission: Permission.WRITE }, req);
-    await controller.remove(3 as any, 9 as any, req);
+    await controller.add(3, { userId: 9 }, req);
+    await controller.update(3, 9, { permission: Permission.WRITE }, req);
+    await controller.remove(3, 9, req);
     expect(access.assertProject).toHaveBeenCalledTimes(3);
     for (const call of access.assertProject.mock.calls) expect(call).toEqual([7, 3, Access.ADMIN]);
   });
 
   it('add notifies the added user with project_added', async () => {
-    await controller.add('3' as any, { userId: 9, permission: Permission.WRITE }, req);
+    await controller.add(invalid<number>('3'), { userId: 9, permission: Permission.WRITE }, req);
     await flush();
     expect(service.add).toHaveBeenCalledWith('3', 9, Permission.WRITE);
     expect(notifications.notify).toHaveBeenCalledWith({
@@ -109,20 +117,20 @@ describe('ProjectUserController', () => {
 
   it('add uses an empty title when the project cannot be found', async () => {
     projects.findById.mockResolvedValue(null);
-    await controller.add(3 as any, { userId: 9 }, req);
+    await controller.add(3, { userId: 9 }, req);
     await flush();
     expect(notifications.notify).toHaveBeenCalledWith(expect.objectContaining({ title: '' }));
   });
 
   it('add still succeeds when the notification fails', async () => {
     notifications.notify.mockRejectedValue(new Error('boom'));
-    await expect(controller.add(3 as any, { userId: 9 }, req)).resolves.toEqual({ id: 1 });
+    await expect(controller.add(3, { userId: 9 }, req)).resolves.toEqual({ id: 1 });
     await flush();
   });
 
   it('add rejects a missing or locked user without adding or notifying', async () => {
     users.assertActive.mockRejectedValue(new NotFoundException());
-    await expect(controller.add(3 as any, { userId: 9 }, req)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(controller.add(3, { userId: 9 }, req)).rejects.toBeInstanceOf(NotFoundException);
     await flush();
     expect(users.assertActive).toHaveBeenCalledWith(9);
     expect(service.add).not.toHaveBeenCalled();
@@ -131,7 +139,7 @@ describe('ProjectUserController', () => {
 
   it('add does not add or notify without ADMIN access', async () => {
     access.assertProject.mockRejectedValue(new ForbiddenException());
-    await expect(controller.add(3 as any, { userId: 9 }, req)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(controller.add(3, { userId: 9 }, req)).rejects.toBeInstanceOf(ForbiddenException);
     await flush();
     expect(service.add).not.toHaveBeenCalled();
     expect(notifications.notify).not.toHaveBeenCalled();
@@ -139,15 +147,15 @@ describe('ProjectUserController', () => {
 
   it('add does not notify when adding the member fails (e.g. duplicate)', async () => {
     service.add.mockRejectedValue(new Error('dup'));
-    await expect(controller.add(3 as any, { userId: 9 }, req)).rejects.toThrow('dup');
+    await expect(controller.add(3, { userId: 9 }, req)).rejects.toThrow('dup');
     await flush();
     expect(notifications.notify).not.toHaveBeenCalled();
   });
 
   it('update/remove do nothing when access is denied', async () => {
     access.assertProject.mockRejectedValue(new ForbiddenException());
-    await expect(controller.remove(3 as any, 9 as any, req)).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(controller.update(3 as any, 9 as any, { permission: Permission.READ }, req)).rejects.toBeInstanceOf(
+    await expect(controller.remove(3, 9, req)).rejects.toBeInstanceOf(ForbiddenException);
+    await expect(controller.update(3, 9, { permission: Permission.READ }, req)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
     expect(service.remove).not.toHaveBeenCalled();
@@ -157,7 +165,7 @@ describe('ProjectUserController', () => {
 
 describe('AddProjectUserDto', () => {
   const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
-  const meta = (metatype: any): ArgumentMetadata => ({ type: 'body', metatype });
+  const meta = (metatype: Type<unknown>): ArgumentMetadata => ({ type: 'body', metatype });
 
   it('accepts userId with optional permission', async () => {
     await expect(pipe.transform({ userId: 2 }, meta(AddProjectUserDto))).resolves.toBeDefined();

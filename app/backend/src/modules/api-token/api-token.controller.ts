@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
 import { CreateApiTokenDto } from './dto/api-token.dto';
@@ -10,7 +11,7 @@ export class ApiTokenController {
   constructor(private readonly service: ApiTokenService) {}
 
   @Get()
-  findAll(@Request() req: any): Promise<Omit<ApiToken, 'token'>[]> {
+  findAll(@Request() req: AuthRequest): Promise<Omit<ApiToken, 'token'>[]> {
     return this.service.findAll(req.user.userId);
   }
 
@@ -18,7 +19,7 @@ export class ApiTokenController {
   @HttpCode(HttpStatus.CREATED)
   create(
     @Body() body: CreateApiTokenDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Omit<ApiToken, 'token'> & { rawToken: string }> {
     return this.service.create(
       req.user.userId,
@@ -30,7 +31,7 @@ export class ApiTokenController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     return this.service.remove(id, req.user.userId);
   }
 }

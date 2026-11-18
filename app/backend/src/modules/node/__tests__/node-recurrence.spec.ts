@@ -1,5 +1,5 @@
 import { addMonths, isRecurring, nextOccurrence, recurrenceOnCompletion } from '../node-recurrence';
-import { NodeStatus, NodeType, RepeatMode } from '../node.entity';
+import { Node, NodeStatus, NodeType, RepeatMode } from '../node.entity';
 
 const d = (s: string) => new Date(s);
 const NOW = d('2026-03-10T12:00:00Z');
@@ -12,7 +12,7 @@ const task = (over: Record<string, unknown> = {}) =>
     repeatMode: RepeatMode.DEFAULT,
     repeatAfter: 7,
     ...over,
-  }) as any;
+  }) as unknown as Node;
 
 describe('addMonths', () => {
   it('adds calendar months', () => expect(addMonths(d('2026-01-15T08:00:00Z'), 2)).toEqual(d('2026-03-15T08:00:00Z')));

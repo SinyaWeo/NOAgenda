@@ -29,8 +29,8 @@ export class TeamMemberService {
 
   async add(userId: number, teamId: number): Promise<TeamMember> {
     const newMember = this.teamMemberRepository.create({
-      user: { id: userId } as any,
-      team: { id: teamId } as any,
+      user: { id: userId },
+      team: { id: teamId },
     });
     return this.teamMemberRepository.save(newMember);
   }

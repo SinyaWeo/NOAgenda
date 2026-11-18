@@ -1,15 +1,16 @@
+import { asMock, Mocks } from '../../../common/__tests__/test-utils';
 import { EmailVerificationService } from '../email-verification.service';
 import { realTranslator } from '../../../i18n/__tests__/fake-i18n';
 
 function build() {
-  const tokens: any = { delete: jest.fn(async () => ({})), create: jest.fn((x) => x), save: jest.fn(async (x) => x) };
-  const mail: any = {
+  const tokens: Mocks = { delete: jest.fn(async () => ({})), create: jest.fn((x) => x), save: jest.fn(async (x) => x) };
+  const mail: { appName: jest.Mock; link: jest.Mock; send: jest.Mock; enabled: boolean } = {
     appName: jest.fn(async () => 'Acme'),
     link: jest.fn((p: string, q: Record<string, string>) => `https://app${p}?token=${q.token}`),
     send: jest.fn(async () => true),
     enabled: true,
   };
-  return { svc: new EmailVerificationService(tokens, {} as any, mail, realTranslator()), mail };
+  return { svc: new EmailVerificationService(asMock(tokens), asMock({}), asMock(mail), realTranslator()), mail };
 }
 
 describe('EmailVerificationService.send', () => {

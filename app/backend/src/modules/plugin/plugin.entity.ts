@@ -13,5 +13,5 @@ export class Plugin extends BaseEntity {
   enabled!: boolean;
 
   @Column({ type: 'json', nullable: true })
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }

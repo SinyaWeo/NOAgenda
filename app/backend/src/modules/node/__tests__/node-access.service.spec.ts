@@ -1,3 +1,4 @@
+import { asMock } from '../../../common/__tests__/test-utils';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Access, NodeAccessService } from '../node-access.service';
 import { NodeType } from '../node.entity';
@@ -5,16 +6,16 @@ import { NodeType } from '../node.entity';
 type N = { id: number; type: NodeType; ownerId?: number | null; createdBy?: number | null; parentId?: number | null };
 
 function build(nodes: N[], grants: Record<number, string[]> = {}) {
-  const repo: any = {
-    findOne: jest.fn(async ({ where }: any) => nodes.find((n) => n.id === where.id) ?? null),
+  const repo = {
+    findOne: jest.fn(async ({ where }: { where: { id: number } }) => nodes.find((n) => n.id === where.id) ?? null),
     manager: {
       // args: [projectId, userId, projectId, userId]
-      query: jest.fn(async (_sql: string, args: any[]) =>
+      query: jest.fn(async (_sql: string, args: number[]) =>
         (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission })),
       ),
     },
   };
-  return new NodeAccessService(repo);
+  return new NodeAccessService(asMock(repo));
 }
 
 const ME = 1;

@@ -1,23 +1,29 @@
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { QueryFailedError } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { TaskRelationController } from '../task-relation.controller';
 import { TaskRelationService } from '../task-relation.service';
-import { RelationKind } from '../task-relation.entity';
-import { Access } from '../../node/node-access.service';
+import { RelationKind, TaskRelation } from '../task-relation.entity';
+import { Access, NodeAccessService } from '../../node/node-access.service';
+import { TaskService } from '../../task/task.service';
+import { asMock, authReq, invalid, type Mocks } from '../../../common/__tests__/test-utils';
 
-const req = { user: { userId: 2 } };
+const req = authReq(2);
 
 describe('TaskRelationController', () => {
-  let service: any;
-  let tasks: any;
-  let access: any;
+  let service: Mocks;
+  let tasks: Mocks;
+  let access: Mocks;
   let controller: TaskRelationController;
 
   beforeEach(() => {
     service = { findByTask: jest.fn(async () => []), create: jest.fn(async () => ({ id: 1 })), remove: jest.fn() };
     tasks = { findById: jest.fn(async () => ({ id: 7 })) };
     access = { assertRead: jest.fn(), assertWrite: jest.fn(), level: jest.fn(async () => Access.READ) };
-    controller = new TaskRelationController(service, tasks, access);
+    controller = new TaskRelationController(
+      asMock<TaskRelationService>(service),
+      asMock<TaskService>(tasks),
+      asMock<NodeAccessService>(access),
+    );
   });
 
   it('findAll 404 on missing task', async () => {
@@ -41,7 +47,7 @@ describe('TaskRelationController', () => {
       id === 8 ? Access.WRITE : id === 9 ? Access.READ : Access.NONE,
     );
     const res = await controller.findAll(7, req);
-    expect(res.map((r: any) => r.id)).toEqual([1, 2]);
+    expect(res.map((r) => r.id)).toEqual([1, 2]);
     expect(access.level).toHaveBeenCalledWith(2, 8);
     expect(access.level).toHaveBeenCalledWith(2, 9);
     expect(access.level).toHaveBeenCalledWith(2, 10);
@@ -57,7 +63,7 @@ describe('TaskRelationController', () => {
       BadRequestException,
     );
     await expect(
-      controller.create('7' as any, { relatedTaskId: 7, kind: RelationKind.RELATED }, req),
+      controller.create(invalid<number>('7'), { relatedTaskId: 7, kind: RelationKind.RELATED }, req),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(service.create).not.toHaveBeenCalled();
   });
@@ -106,16 +112,16 @@ describe('TaskRelationController', () => {
 });
 
 describe('TaskRelationService', () => {
-  let repo: any;
+  let repo: Mocks;
   let svc: TaskRelationService;
   beforeEach(() => {
     repo = {
       find: jest.fn(async () => []),
-      create: jest.fn((x) => x),
-      save: jest.fn(async (x) => ({ id: 1, ...x })),
+      create: jest.fn((x: object) => x),
+      save: jest.fn(async (x: object) => ({ id: 1, ...x })),
       delete: jest.fn(),
     };
-    svc = new TaskRelationService(repo);
+    svc = new TaskRelationService(asMock<Repository<TaskRelation>>(repo));
   });
 
   it('findByTask matches either end of the relation', async () => {

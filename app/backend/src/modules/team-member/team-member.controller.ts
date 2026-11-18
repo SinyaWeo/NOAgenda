@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -23,7 +24,7 @@ export class TeamMemberController {
   ) {}
 
   @Get()
-  async findAll(@Query('teamId') teamId?: string, @Request() req?: any): Promise<TeamMember[]> {
+  async findAll(@Query('teamId') teamId: string | undefined, @Request() req: AuthRequest): Promise<TeamMember[]> {
     if (teamId) {
       // Verify caller is owner or member of this team
       const team = await this.teamService.findById(Number(teamId));
@@ -38,7 +39,7 @@ export class TeamMemberController {
   }
 
   @Post()
-  async add(@Body() body: AddTeamMemberDto, @Request() req: any): Promise<TeamMember> {
+  async add(@Body() body: AddTeamMemberDto, @Request() req: AuthRequest): Promise<TeamMember> {
     const team = await this.teamService.findById(body.teamId);
     if (!team) throw new NotFoundException();
     if (team.ownerId !== req.user.userId) throw new ForbiddenException();
@@ -46,7 +47,7 @@ export class TeamMemberController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const member = await this.teamMemberService.findById(id);
     if (!member) throw new NotFoundException();
     const team = await this.teamService.findById(member.team?.id);

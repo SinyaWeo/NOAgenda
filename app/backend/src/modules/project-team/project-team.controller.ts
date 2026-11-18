@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Put, Delete, Param, Body, Request, ForbiddenException } from '@nestjs/common';
 import { AddProjectTeamDto, SetPermissionDto } from '../project-user/dto/project-sharing.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
@@ -14,7 +15,7 @@ export class ProjectTeamController {
   ) {}
 
   @Get()
-  async findAll(@Param('projectId') projectId: number, @Request() req: any): Promise<ProjectTeam[]> {
+  async findAll(@Param('projectId') projectId: number, @Request() req: AuthRequest): Promise<ProjectTeam[]> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.READ);
     return this.projectTeamService.findByProject(projectId);
   }
@@ -23,7 +24,7 @@ export class ProjectTeamController {
   async add(
     @Param('projectId') projectId: number,
     @Body() body: AddProjectTeamDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<ProjectTeam> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     if (!(await this.projectTeamService.canUseTeam(req.user.userId, Number(body.teamId))))
@@ -36,7 +37,7 @@ export class ProjectTeamController {
     @Param('projectId') projectId: number,
     @Param('teamId') teamId: number,
     @Body() body: SetPermissionDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectTeamService.update(projectId, teamId, body.permission);
@@ -46,7 +47,7 @@ export class ProjectTeamController {
   async remove(
     @Param('projectId') projectId: number,
     @Param('teamId') teamId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectTeamService.remove(projectId, teamId);

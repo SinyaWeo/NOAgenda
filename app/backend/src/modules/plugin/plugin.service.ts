@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { Plugin } from './plugin.entity';
 
 @Injectable()
@@ -24,7 +25,7 @@ export class PluginService {
   }
 
   async update(id: number, data: Partial<Plugin>): Promise<Plugin | null> {
-    await this.pluginRepository.update(id, data);
+    await this.pluginRepository.update(id, data as QueryDeepPartialEntity<Plugin>);
     return this.findById(id);
   }
 

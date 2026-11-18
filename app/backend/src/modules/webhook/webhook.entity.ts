@@ -18,7 +18,7 @@ export class Webhook extends BaseEntity {
   active!: boolean;
 
   @Column({ type: 'json', nullable: true })
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 
   /** Outcome of the latest delivery attempt: HTTP status, or null when it never got a response. */
   @Column({ type: 'int', nullable: true })

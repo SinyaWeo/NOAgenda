@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, HttpStatus, Request } from '@nestjs/common';
 import { KanbanBucketService } from './kanban-bucket.service';
 import { KanbanBucket } from './kanban-bucket.entity';
@@ -13,7 +14,7 @@ export class KanbanBucketController {
     private readonly access: NodeAccessService,
   ) {}
 
-  private async assertAccess(projectId: number, req: any, requireOwner = false): Promise<void> {
+  private async assertAccess(projectId: number, req: AuthRequest, requireOwner = false): Promise<void> {
     // Owner or ADMIN grant to manage views/buckets; any grant (user or team) to read them.
     await this.access.assertProject(req.user.userId, Number(projectId), requireOwner ? Access.ADMIN : Access.READ);
   }
@@ -22,7 +23,7 @@ export class KanbanBucketController {
   async findAll(
     @Param('projectId') projectId: number,
     @Param('viewId') viewId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<KanbanBucket[]> {
     await this.assertAccess(projectId, req);
     return this.service.findAll(projectId, viewId);
@@ -33,7 +34,7 @@ export class KanbanBucketController {
     @Param('id') id: number,
     @Param('projectId') projectId: number,
     @Param('viewId') viewId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<KanbanBucket> {
     await this.assertAccess(projectId, req);
     return this.service.findOne(id, projectId, viewId);
@@ -45,7 +46,7 @@ export class KanbanBucketController {
     @Param('projectId') projectId: number,
     @Param('viewId') viewId: number,
     @Body() body: CreateBucketDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<KanbanBucket> {
     await this.assertAccess(projectId, req, true);
     return this.service.create(projectId, viewId, body);
@@ -57,7 +58,7 @@ export class KanbanBucketController {
     @Param('projectId') projectId: number,
     @Param('viewId') viewId: number,
     @Body() body: UpdateBucketDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<KanbanBucket> {
     await this.assertAccess(projectId, req, true);
     return this.service.update(id, projectId, viewId, body);
@@ -69,7 +70,7 @@ export class KanbanBucketController {
     @Param('id') id: number,
     @Param('projectId') projectId: number,
     @Param('viewId') viewId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     await this.assertAccess(projectId, req, true);
     return this.service.remove(id, projectId, viewId);

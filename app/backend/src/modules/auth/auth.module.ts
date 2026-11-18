@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
+import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
@@ -25,7 +25,10 @@ import { PasswordResetToken } from './password-reset-token.entity';
       useFactory: () => ({
         secret: process.env.JWT_SECRET,
         // Short-lived: the long-lived credential is the rotating refresh cookie.
-        signOptions: { expiresIn: (process.env.ACCESS_TOKEN_TTL || '15m') as any, algorithm: 'HS256' },
+        signOptions: {
+          expiresIn: (process.env.ACCESS_TOKEN_TTL || '15m') as JwtSignOptions['expiresIn'],
+          algorithm: 'HS256',
+        },
       }),
     }),
   ],

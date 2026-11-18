@@ -1,3 +1,4 @@
+import { Mocks } from '../../../common/__tests__/test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationService } from '../notification.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -43,12 +44,12 @@ describe('NotificationService', () => {
       kind: 'task' as const,
       title: 'Write docs',
     };
-    const repo = () => module.get(getRepositoryToken(Notification)) as any;
+    const repo = () => module.get(getRepositoryToken(Notification)) as Mocks;
 
     it('creates one notification per recipient, without duplicates, the actor or empty ids', async () => {
       await service.notify({ ...event, recipients: [2, 2, 3, 1, null, undefined] });
       const saved = repo().save.mock.calls[0][0];
-      expect(saved.map((n: any) => n.user.id)).toEqual([2, 3]);
+      expect(saved.map((n: { user: { id: number } }) => n.user.id)).toEqual([2, 3]);
       expect(saved[0]).toMatchObject({
         type: 'task_assigned',
         nodeId: 9,
@@ -75,7 +76,7 @@ describe('NotificationService', () => {
       });
       const saved = repo().save.mock.calls[0][0];
       expect(saved[0]).toMatchObject({ type: 'task_reminder', message: 'Reminder: "Pay rent"' });
-      expect(saved.map((n: any) => n.user.id)).toEqual([4]);
+      expect(saved.map((n: { user: { id: number } }) => n.user.id)).toEqual([4]);
     });
 
     it('does nothing when nobody is left to notify', async () => {

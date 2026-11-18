@@ -16,7 +16,7 @@ export class TaskAssigneeService {
   }
 
   async add(taskId: number, userId: number): Promise<TaskAssignee> {
-    const assignee = this.repo.create({ node: { id: taskId } as any, user: { id: userId } as any });
+    const assignee = this.repo.create({ node: { id: taskId }, user: { id: userId } });
     return orConflict(this.repo.save(assignee), 'This user is already assigned to the task');
   }
 

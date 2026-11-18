@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Delete, Param, Body, Request, BadRequestException } from '@nestjs/common';
 import { NodeAccessService } from '../node/node-access.service';
 import { FavoriteService } from './favorite.service';
@@ -11,13 +12,13 @@ export class FavoriteController {
   ) {}
 
   @Get()
-  async findAll(@Request() req: any): Promise<Favorite[]> {
+  async findAll(@Request() req: AuthRequest): Promise<Favorite[]> {
     return this.favoriteService.findByUser(req.user.userId);
   }
 
   @Post()
   async add(
-    @Request() req: any,
+    @Request() req: AuthRequest,
     @Body() body: { entityType: FavoriteEntityType; entityId: number },
   ): Promise<Favorite> {
     if (!Object.values(FavoriteEntityType).includes(body?.entityType))
@@ -31,7 +32,7 @@ export class FavoriteController {
 
   @Delete(':entityType/:entityId')
   async remove(
-    @Request() req: any,
+    @Request() req: AuthRequest,
     @Param('entityType') entityType: FavoriteEntityType,
     @Param('entityId') entityId: number,
   ): Promise<void> {

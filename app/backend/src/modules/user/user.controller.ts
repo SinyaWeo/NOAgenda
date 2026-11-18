@@ -1,3 +1,5 @@
+import { omit } from '../../common/omit';
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -30,9 +32,7 @@ export class UserController {
   ) {}
 
   private strip(user: User): Omit<User, 'password'> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...safe } = user as any;
-    return safe;
+    return omit(user, 'password');
   }
 
   /**
@@ -44,7 +44,7 @@ export class UserController {
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   async search(
     @Query('q') q: unknown,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>[]> {
     if (typeof q !== 'string' || q.trim().length < 3) {
       throw new BadRequestException('q is required (at least 3 characters)');
@@ -54,7 +54,7 @@ export class UserController {
 
   // Must be registered before :id to avoid route conflict
   @Get('me')
-  async getMe(@Request() req: any): Promise<Omit<User, 'password'>> {
+  async getMe(@Request() req: AuthRequest): Promise<Omit<User, 'password'>> {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     return this.strip(user);
@@ -83,7 +83,7 @@ export class UserController {
   async update(
     @Param('id') id: number,
     @Body() body: UpdateUserDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<Omit<User, 'password'>> {
     if (req.user.userId !== Number(id)) throw new ForbiddenException();
     const user = await this.userService.update(id, body);

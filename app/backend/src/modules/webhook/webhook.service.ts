@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { Webhook } from './webhook.entity';
 
 @Injectable()
@@ -11,7 +12,7 @@ export class WebhookService {
   ) {}
 
   async findAll(filter?: { projectId?: number; userId?: number }): Promise<Webhook[]> {
-    const where: Record<string, any> = {};
+    const where: FindOptionsWhere<Webhook> = {};
     if (filter?.projectId !== undefined) where.projectId = filter.projectId;
     if (filter?.userId !== undefined) where.userId = filter.userId;
     return this.webhookRepository.find({ where, order: { createdAt: 'DESC' } });
@@ -27,7 +28,7 @@ export class WebhookService {
   }
 
   async update(id: number, data: Partial<Webhook>): Promise<Webhook | null> {
-    await this.webhookRepository.update(id, data);
+    await this.webhookRepository.update(id, data as QueryDeepPartialEntity<Webhook>);
     return this.findById(id);
   }
 

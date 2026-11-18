@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -32,7 +33,7 @@ const cookiePath = () => process.env.REFRESH_COOKIE_PATH || '/auth';
 const loginLimit = Number(process.env.LOGIN_RATE_LIMIT || 10);
 const refreshDays = () => Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30);
 
-function readCookie(req: any, name: string): string | undefined {
+function readCookie(req: AuthRequest, name: string): string | undefined {
   const header: string | undefined = req.headers?.cookie;
   if (!header) return undefined;
   for (const part of header.split(';')) {
@@ -60,7 +61,7 @@ export class AuthController {
     private readonly appSettings: AppSettingsService,
   ) {}
 
-  private meta(req: any): SessionMeta {
+  private meta(req: AuthRequest): SessionMeta {
     return { userAgent: req.headers?.['user-agent'], ip: req.ip };
   }
 
@@ -79,7 +80,7 @@ export class AuthController {
   }
 
   /** Defence in depth next to SameSite: a browser-sent Origin must be our frontend. */
-  private assertSameOrigin(req: any) {
+  private assertSameOrigin(req: AuthRequest) {
     const allowed = process.env.CORS_ORIGIN;
     const origin = req.headers?.origin;
     if (allowed && origin && origin !== allowed) throw new ForbiddenException('Cross-origin request refused');
@@ -108,7 +109,7 @@ export class AuthController {
   @Post('login')
   @Throttle({ default: { ttl: 60000, limit: loginLimit } })
   @HttpCode(HttpStatus.OK)
-  async login(@Body() body: LoginDto, @Request() req: any, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() body: LoginDto, @Request() req: AuthRequest, @Res({ passthrough: true }) res: Response) {
     try {
       return this.respond(res, await this.authService.login(body.username, body.password, this.meta(req)));
     } catch (err) {
@@ -127,7 +128,7 @@ export class AuthController {
   @Post('refresh')
   @Throttle({ default: { ttl: 60000, limit: 60 } })
   @HttpCode(HttpStatus.OK)
-  async refresh(@Request() req: any, @Res({ passthrough: true }) res: Response) {
+  async refresh(@Request() req: AuthRequest, @Res({ passthrough: true }) res: Response) {
     this.assertSameOrigin(req);
     const token = readCookie(req, COOKIE_NAME);
     if (!token) throw new UnauthorizedException('No session');
@@ -141,7 +142,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(@Request() req: any, @Res({ passthrough: true }) res: Response) {
+  async logout(@Request() req: AuthRequest, @Res({ passthrough: true }) res: Response) {
     this.assertSameOrigin(req);
     await this.authService.logout(undefined, readCookie(req, COOKIE_NAME));
     this.clearRefreshCookie(res);

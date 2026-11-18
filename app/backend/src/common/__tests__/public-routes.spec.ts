@@ -16,11 +16,13 @@ function controllerFiles(dir: string, out: string[] = []): string[] {
   return out;
 }
 
+type Ctor = { prototype: Record<string, object> };
+
 function publicRoutes(): string[] {
   const routes: string[] = [];
   for (const file of controllerFiles(join(__dirname, '..', '..'))) {
-    const mod = require(file);
-    for (const cls of Object.values<any>(mod).filter((v) => typeof v === 'function')) {
+    const mod: Record<string, unknown> = require(file);
+    for (const cls of Object.values(mod).filter((v): v is Ctor => typeof v === 'function')) {
       const prefix = Reflect.getMetadata(PATH_METADATA, cls);
       if (prefix === undefined) continue; // not a controller
       const classPublic = !!Reflect.getMetadata(IS_PUBLIC_KEY, cls);

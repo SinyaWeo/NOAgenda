@@ -1,3 +1,4 @@
+import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Put, Delete, Param, Body, Request } from '@nestjs/common';
 import { AddProjectUserDto, SetPermissionDto } from './dto/project-sharing.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
@@ -18,7 +19,7 @@ export class ProjectUserController {
   ) {}
 
   @Get()
-  async findAll(@Param('projectId') projectId: number, @Request() req: any): Promise<ProjectUser[]> {
+  async findAll(@Param('projectId') projectId: number, @Request() req: AuthRequest): Promise<ProjectUser[]> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.READ);
     return this.projectUserService.findByProject(projectId);
   }
@@ -27,7 +28,7 @@ export class ProjectUserController {
   async add(
     @Param('projectId') projectId: number,
     @Body() body: AddProjectUserDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<ProjectUser> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     await this.users.assertActive(body.userId);
@@ -54,7 +55,7 @@ export class ProjectUserController {
     @Param('projectId') projectId: number,
     @Param('userId') userId: number,
     @Body() body: SetPermissionDto,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectUserService.update(projectId, userId, body.permission);
@@ -64,7 +65,7 @@ export class ProjectUserController {
   async remove(
     @Param('projectId') projectId: number,
     @Param('userId') userId: number,
-    @Request() req: any,
+    @Request() req: AuthRequest,
   ): Promise<void> {
     await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectUserService.remove(projectId, userId);

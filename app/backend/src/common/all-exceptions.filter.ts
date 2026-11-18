@@ -19,6 +19,13 @@ const DB_ERRORS: Record<string, { status: number; message: string }> = {
  * become 4xx with a safe message; anything else is logged in full on the server and
  * answered with a generic 500 (no stack traces or SQL in the response).
  */
+/** Shape of errors raised by the HTTP layer itself (body-parser, multer, ...). */
+interface HttpLikeError {
+  status?: number;
+  statusCode?: number;
+  expose?: boolean;
+}
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger('Exceptions');
@@ -34,7 +41,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     if (exception instanceof QueryFailedError) {
-      const known = DB_ERRORS[(exception as any).driverError?.code];
+      const known = DB_ERRORS[exception.driverError?.code];
       if (known) {
         return res
           .status(known.status)
@@ -43,9 +50,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     // Errors from the HTTP layer itself (body too large, malformed JSON, ...) carry a 4xx status.
-    const status = (exception as any)?.status ?? (exception as any)?.statusCode;
+    const http = (typeof exception === 'object' && exception !== null ? exception : {}) as HttpLikeError;
+    const status = http.status ?? http.statusCode;
     if (typeof status === 'number' && status >= 400 && status < 500) {
-      const message = (exception as any)?.expose ? (exception as Error).message : 'Bad request';
+      const message = http.expose ? (exception as Error).message : 'Bad request';
       return res.status(status).json({ statusCode: status, message });
     }
 

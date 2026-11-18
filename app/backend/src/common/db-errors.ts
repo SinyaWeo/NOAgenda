@@ -11,7 +11,7 @@ export async function orConflict<T>(write: Promise<T>, duplicateMessage: string)
     return await write;
   } catch (err) {
     if (err instanceof QueryFailedError) {
-      const code = (err as any).driverError?.code;
+      const code = err.driverError?.code;
       if (code === 'ER_DUP_ENTRY') throw new ConflictException(duplicateMessage);
       if (code === 'ER_NO_REFERENCED_ROW_2' || code === 'ER_NO_REFERENCED_ROW') {
         throw new BadRequestException('A referenced item does not exist');

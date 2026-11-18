@@ -3,7 +3,12 @@ import { createServer } from 'http';
 import { AddressInfo } from 'net';
 import { BLOCKED_ADDRESS } from '../../../common/url-guard';
 import { WebhookDispatcher, MAX_CONSECUTIVE_FAILURES } from '../webhook-dispatcher.service';
-import { Access } from '../../node/node-access.service';
+import { Access, NodeAccessService } from '../../node/node-access.service';
+import { Repository } from 'typeorm';
+import { Webhook } from '../webhook.entity';
+import { Node } from '../../node/node.entity';
+import { DomainEvents } from '../../../common/domain-events';
+import { asMock, type Mocks } from '../../../common/__tests__/test-utils';
 
 const hook = (over: Record<string, unknown> = {}) => ({
   id: 1,
@@ -17,19 +22,33 @@ const hook = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-function build(hooks: any[], opts: { levels?: Record<number, Access>; nodes?: any[] } = {}) {
-  const repo: any = {
+type NodeRow = { id: number; type: string; parentId: number | null };
+
+function build(hooks: object[], opts: { levels?: Record<number, Access>; nodes?: NodeRow[] } = {}) {
+  const repo: Mocks = {
     find: jest.fn(async () => hooks),
     update: jest.fn(async () => ({})),
     increment: jest.fn(async () => ({})),
     findOne: jest.fn(async () => ({ id: 1, failureCount: 1, active: true })),
   };
-  const nodes: any = {
-    findOne: jest.fn(async ({ where }: any) => (opts.nodes ?? []).find((n) => n.id === where.id) ?? null),
+  const nodes: Mocks = {
+    findOne: jest.fn(
+      async ({ where }: { where: { id: number } }) => (opts.nodes ?? []).find((n) => n.id === where.id) ?? null,
+    ),
   };
-  const access: any = { level: jest.fn(async (u: number) => opts.levels?.[u] ?? Access.NONE) };
-  const bus: any = { on: jest.fn() };
-  return { svc: new WebhookDispatcher(repo, nodes, access, bus), repo, access, bus };
+  const access: Mocks = { level: jest.fn(async (u: number) => opts.levels?.[u] ?? Access.NONE) };
+  const bus: Mocks = { on: jest.fn() };
+  return {
+    svc: new WebhookDispatcher(
+      asMock<Repository<Webhook>>(repo),
+      asMock<Repository<Node>>(nodes),
+      asMock<NodeAccessService>(access),
+      asMock<DomainEvents>(bus),
+    ),
+    repo,
+    access,
+    bus,
+  };
 }
 
 describe('WebhookDispatcher.recipientsOf', () => {
@@ -89,14 +108,18 @@ describe('WebhookDispatcher.deliverOnce', () => {
   afterEach(() => {
     delete process.env.WEBHOOK_ALLOW_PRIVATE;
   });
-  const mockSend = (svc: any, status: number) => (svc.send = jest.fn(async () => status));
+  const mockSend = (svc: WebhookDispatcher, status: number) => {
+    const send = jest.fn(async () => status);
+    svc.send = asMock<WebhookDispatcher['send']>(send);
+    return send;
+  };
 
   it('POSTs JSON with an HMAC signature when there is a secret', async () => {
     const { svc } = build([]);
     const send = mockSend(svc, 200);
     const r = await svc.deliverOnce({ url: 'https://1.1.1.1/hook', secret: 's3cret' }, 'task.created', { id: 1 });
     expect(r).toMatchObject({ ok: true, status: 200 });
-    const [url, headers, body] = send.mock.calls[0] as any;
+    const [url, headers, body] = send.mock.calls[0] as unknown as [string, Record<string, string>, string];
     expect(url).toBe('https://1.1.1.1/hook');
     expect(headers['X-NOAgenda-Event']).toBe('task.created');
     expect(headers['X-NOAgenda-Signature']).toBe('sha256=' + createHmac('sha256', 's3cret').update(body).digest('hex'));
@@ -107,7 +130,9 @@ describe('WebhookDispatcher.deliverOnce', () => {
     const { svc } = build([]);
     const send = mockSend(svc, 204);
     await svc.deliverOnce({ url: 'https://1.1.1.1/hook', secret: undefined }, 'x', {});
-    expect((send.mock.calls[0] as any)[1]['X-NOAgenda-Signature']).toBeUndefined();
+    expect(
+      (send.mock.calls[0] as unknown as [string, Record<string, string>])[1]['X-NOAgenda-Signature'],
+    ).toBeUndefined();
   });
 
   it.each([
@@ -124,7 +149,7 @@ describe('WebhookDispatcher.deliverOnce', () => {
 
   it('retries network errors', async () => {
     const { svc } = build([]);
-    (svc as any).send = jest.fn(async () => {
+    svc.send = jest.fn(async () => {
       throw new Error('ECONNREFUSED');
     });
     expect(await svc.deliverOnce({ url: 'https://1.1.1.1/hook' }, 'x', {})).toMatchObject({
@@ -137,7 +162,7 @@ describe('WebhookDispatcher.deliverOnce', () => {
 
   it('does not retry when the connect-time lookup found an internal address (DNS rebinding)', async () => {
     const { svc } = build([]);
-    (svc as any).send = jest.fn(async () => {
+    svc.send = jest.fn(async () => {
       throw Object.assign(new Error('url must point to a public address'), { code: BLOCKED_ADDRESS });
     });
     expect(await svc.deliverOnce({ url: 'https://1.1.1.1/hook' }, 'x', {})).toMatchObject({ ok: false, retry: false });

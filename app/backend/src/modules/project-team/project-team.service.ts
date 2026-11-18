@@ -28,8 +28,8 @@ export class ProjectTeamService {
 
   async add(projectId: number, teamId: number, permission: Permission = Permission.READ): Promise<ProjectTeam> {
     const entry = this.repo.create({
-      project: { id: projectId } as any,
-      team: { id: teamId } as any,
+      project: { id: projectId },
+      team: { id: teamId },
       permission,
     });
     return orConflict(this.repo.save(entry), 'This team already has access to the project');

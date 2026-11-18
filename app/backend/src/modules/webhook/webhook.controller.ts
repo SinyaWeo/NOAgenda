@@ -1,3 +1,5 @@
+import { omit } from '../../common/omit';
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -22,9 +24,10 @@ import { CreateWebhookDto, UpdateWebhookDto } from './dto/webhook.dto';
 import { assertPublicHttpUrl } from '../../common/url-guard';
 
 /** The signing secret is write-only: responses say whether one is set, never what it is. */
-function maskSecret(w: Webhook): Webhook {
-  const { secret, ...rest } = w as any;
-  return { ...rest, hasSecret: !!secret } as Webhook;
+export type MaskedWebhook = Omit<Webhook, 'secret'> & { hasSecret: boolean };
+
+function maskSecret(w: Webhook): MaskedWebhook {
+  return { ...omit(w, 'secret'), hasSecret: !!w.secret };
 }
 
 @Controller('webhooks')
@@ -45,7 +48,7 @@ export class WebhookController {
   }
 
   @Get()
-  async findAll(@Request() req: any, @Query('projectId') projectId?: string): Promise<Webhook[]> {
+  async findAll(@Request() req: AuthRequest, @Query('projectId') projectId?: string): Promise<Webhook[]> {
     if (projectId) {
       await this.access.assertAdmin(req.user.userId, Number(projectId));
       return (await this.webhookService.findAll({ projectId: Number(projectId) })).map(maskSecret);
@@ -55,7 +58,7 @@ export class WebhookController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: any): Promise<Webhook | null> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Webhook | null> {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);
@@ -63,7 +66,7 @@ export class WebhookController {
   }
 
   @Post()
-  async create(@Request() req: any, @Body() body: CreateWebhookDto): Promise<Webhook> {
+  async create(@Request() req: AuthRequest, @Body() body: CreateWebhookDto): Promise<Webhook> {
     const projectId = body.projectId;
     if (projectId !== undefined) await this.access.assertAdmin(req.user.userId, projectId);
     await assertPublicHttpUrl(body.url);
@@ -81,7 +84,11 @@ export class WebhookController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: number, @Body() body: UpdateWebhookDto, @Request() req: any): Promise<Webhook | null> {
+  async update(
+    @Param('id') id: number,
+    @Body() body: UpdateWebhookDto,
+    @Request() req: AuthRequest,
+  ): Promise<Webhook | null> {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);
@@ -95,7 +102,7 @@ export class WebhookController {
   @Post(':id/test')
   @Throttle({ default: { ttl: 60000, limit: 10 } })
   @HttpCode(HttpStatus.OK)
-  async test(@Param('id') id: number, @Request() req: any): Promise<DeliveryResult> {
+  async test(@Param('id') id: number, @Request() req: AuthRequest): Promise<DeliveryResult> {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);
@@ -103,7 +110,7 @@ export class WebhookController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number, @Request() req: any): Promise<void> {
+  async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const webhook = await this.webhookService.findById(id);
     if (!webhook) throw new NotFoundException();
     await this.assertCan(webhook, req.user.userId);

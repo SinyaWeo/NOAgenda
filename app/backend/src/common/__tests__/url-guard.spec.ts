@@ -1,3 +1,4 @@
+import type { LookupAddress, LookupOptions } from 'dns';
 import { BadRequestException } from '@nestjs/common';
 import { assertPublicHttpUrl, BLOCKED_ADDRESS, isPrivateAddress, publicLookup } from '../url-guard';
 
@@ -57,8 +58,8 @@ describe('assertPublicHttpUrl', () => {
 });
 
 describe('publicLookup', () => {
-  const run = (host: string, options: any = {}) =>
-    new Promise<{ err: any; address: any; family?: number }>((resolve) =>
+  const run = (host: string, options: LookupOptions = {}) =>
+    new Promise<{ err: NodeJS.ErrnoException | null; address: string | LookupAddress[]; family?: number }>((resolve) =>
       publicLookup(host, options, (err, address, family) => resolve({ err, address, family })),
     );
   afterEach(() => delete process.env.WEBHOOK_ALLOW_PRIVATE);
@@ -83,6 +84,6 @@ describe('publicLookup', () => {
   it('passes resolution errors through', async () => {
     const { err } = await run('nonexistent.invalid');
     expect(err).toBeTruthy();
-    expect(err.code).not.toBe(BLOCKED_ADDRESS);
+    expect(err?.code).not.toBe(BLOCKED_ADDRESS);
   });
 });

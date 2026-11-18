@@ -1,3 +1,5 @@
+import { omit } from '../../common/omit';
+import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
   Get,
@@ -57,17 +59,15 @@ export class UserSettingsController {
 
   /** GET /user/settings/general — return current user profile */
   @Get('settings/general')
-  async getGeneral(@Request() req: any) {
+  async getGeneral(@Request() req: AuthRequest) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...safe } = user as any;
-    return safe;
+    return omit(user, 'password');
   }
 
   /** POST /user/settings/general — update name, language, timezone, theme, defaultProjectId */
   @Post('settings/general')
-  async updateGeneral(@Request() req: any, @Body() body: UpdateGeneralSettingsDto) {
+  async updateGeneral(@Request() req: AuthRequest, @Body() body: UpdateGeneralSettingsDto) {
     // Explicit pick: never pass the raw body (role, password, etc.) to update().
     const { name, language, timezone, theme, defaultProjectId } = body;
     // A default project must be one the user can actually open (null clears it).
@@ -80,9 +80,7 @@ export class UserSettingsController {
       defaultProjectId,
     });
     if (!user) throw new NotFoundException();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...safe } = user as any;
-    return safe;
+    return omit(user, 'password');
   }
 
   /** POST /user/settings/email — change email address */
@@ -90,7 +88,7 @@ export class UserSettingsController {
   // frontend treat it as "session expired" and sign the user out over a typo.
   @Post('settings/email')
   @UseGuards(NoApiTokenGuard)
-  async updateEmail(@Request() req: any, @Body() body: UpdateEmailDto) {
+  async updateEmail(@Request() req: AuthRequest, @Body() body: UpdateEmailDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     if (!(await verifyPassword(body.password, user.password))) throw new BadRequestException('Incorrect password');
@@ -108,7 +106,7 @@ export class UserSettingsController {
 
   /** GET /user/settings/avatar — return avatar URL */
   @Get('settings/avatar')
-  async getAvatar(@Request() req: any) {
+  async getAvatar(@Request() req: AuthRequest) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     return { avatarUrl: user.avatarUrl ?? null };
@@ -120,18 +118,18 @@ export class UserSettingsController {
     FileInterceptor('avatar', {
       storage: diskStorage({
         destination: './uploads/avatars',
-        filename: (req: any, file: Express.Multer.File, cb: (err: Error | null, name: string) => void) => {
+        filename: (req: AuthRequest, file: Express.Multer.File, cb: (err: Error | null, name: string) => void) => {
           cb(null, `avatar-${req.user?.userId ?? 'unknown'}-${randomUUID()}${AVATAR_MIME_EXT[file.mimetype] ?? ''}`);
         },
       }),
-      fileFilter: (_req: any, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
+      fileFilter: (_req: AuthRequest, file: Express.Multer.File, cb: (err: Error | null, accept: boolean) => void) => {
         if (AVATAR_MIME_EXT[file.mimetype]) cb(null, true);
         else cb(new BadRequestException('Avatar must be a JPEG, PNG, GIF or WebP image'), false);
       },
       limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
     }),
   )
-  async uploadAvatar(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
+  async uploadAvatar(@Request() req: AuthRequest, @UploadedFile() file: Express.Multer.File) {
     if (!file) throw new BadRequestException('No file uploaded');
     // multer trusted the Content-Type header; check what was actually written to disk.
     if ((await sniffFile(file.path).catch(() => null)) !== file.mimetype) {
@@ -152,7 +150,7 @@ export class UserSettingsController {
   /** POST /user/settings/password — change password */
   @Post('settings/password')
   @UseGuards(NoApiTokenGuard)
-  async updatePassword(@Request() req: any, @Body() body: UpdatePasswordDto) {
+  async updatePassword(@Request() req: AuthRequest, @Body() body: UpdatePasswordDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     if (!(await verifyPassword(body.oldPassword, user.password)))
@@ -167,7 +165,7 @@ export class UserSettingsController {
   @Get('export')
   @UseGuards(NoApiTokenGuard)
   @Throttle({ default: { ttl: 3600000, limit: 5 } })
-  async exportData(@Request() req: any, @Res() res: Response) {
+  async exportData(@Request() req: AuthRequest, @Res() res: Response) {
     const data = await this.account.exportData(req.user.userId);
     const day = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -180,7 +178,7 @@ export class UserSettingsController {
   @Post('deletion/request')
   @UseGuards(NoApiTokenGuard)
   @Throttle({ default: { ttl: 3600000, limit: 5 } })
-  async requestDeletion(@Request() req: any, @Body() body: DeletionRequestDto) {
+  async requestDeletion(@Request() req: AuthRequest, @Body() body: DeletionRequestDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     if (!(await verifyPassword(body.password, user.password))) throw new BadRequestException('Incorrect password');
@@ -190,7 +188,7 @@ export class UserSettingsController {
 
   /** POST /user/deletion/cancel — cancel a pending account deletion. */
   @Post('deletion/cancel')
-  async cancelDeletion(@Request() req: any) {
+  async cancelDeletion(@Request() req: AuthRequest) {
     await this.account.cancelDeletion(req.user.userId);
     return { message: 'Account deletion cancelled' };
   }

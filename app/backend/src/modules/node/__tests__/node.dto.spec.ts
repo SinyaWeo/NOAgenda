@@ -1,3 +1,4 @@
+import type { Type } from '@nestjs/common';
 import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common';
 import {
   TaskCreateDto,
@@ -12,9 +13,9 @@ import { normalizeParentRefs } from '../node-payload';
 
 // Same settings as main.ts
 const pipe = new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true });
-const body = (metatype: any): ArgumentMetadata => ({ type: 'body', metatype });
-const query = (metatype: any): ArgumentMetadata => ({ type: 'query', metatype });
-const rejects = (v: any, m: ArgumentMetadata) =>
+const body = (metatype: Type<unknown>): ArgumentMetadata => ({ type: 'body', metatype });
+const query = (metatype: Type<unknown>): ArgumentMetadata => ({ type: 'query', metatype });
+const rejects = (v: unknown, m: ArgumentMetadata) =>
   expect(pipe.transform(v, m)).rejects.toBeInstanceOf(BadRequestException);
 
 describe('task/project DTOs', () => {
@@ -69,7 +70,7 @@ describe('task/project DTOs', () => {
 
 describe('list query DTOs', () => {
   it('converts and bounds paging', async () => {
-    const q: any = await pipe.transform(
+    const q = await pipe.transform(
       { limit: '50', page: '2', order: 'desc', sort: 'priority', status: 'open' },
       query(TaskListQueryDto),
     );

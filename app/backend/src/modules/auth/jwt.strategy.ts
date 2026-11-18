@@ -1,6 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ExtractJwt, Strategy, StrategyOptionsWithoutRequest, VerifyCallback } from 'passport-jwt';
+import type { Request } from 'express';
+import type { AuthUser } from '../../common/auth-user';
 import { SessionService } from '../session/session.service';
 import { ApiTokenService, API_TOKEN_PREFIX, ApiTokenUser } from '../api-token/api-token.service';
 import { UserRole } from '../user/user-role.enum';
@@ -12,18 +14,21 @@ import { UserRole } from '../user/user-role.enum';
 class JwtOrApiTokenStrategy extends Strategy {
   private readonly resolveApiToken: (raw: string) => Promise<ApiTokenUser | null>;
 
-  constructor(options: any, verify: any) {
+  constructor(
+    options: StrategyOptionsWithoutRequest & { resolveApiToken: (raw: string) => Promise<ApiTokenUser | null> },
+    verify: VerifyCallback,
+  ) {
     super(options, verify);
     this.resolveApiToken = options.resolveApiToken;
   }
 
-  authenticate(req: any, options?: any): void {
+  authenticate(req: Request, options?: unknown): void {
     const raw = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
     if (raw?.startsWith(API_TOKEN_PREFIX)) {
       this.resolveApiToken(raw)
         .then((u) =>
           u
-            ? (this as any).success({
+            ? this.success({
                 userId: u.id,
                 username: u.username,
                 role: u.role as UserRole,
@@ -31,9 +36,9 @@ class JwtOrApiTokenStrategy extends Strategy {
                 apiTokenScope: u.scope,
                 viaApiToken: true,
               })
-            : (this as any).fail('Invalid API token', 401),
+            : this.fail('Invalid API token', 401),
         )
-        .catch((err) => (this as any).error(err));
+        .catch((err) => this.error(err));
       return;
     }
     super.authenticate(req, options);
@@ -59,7 +64,7 @@ export class JwtStrategy extends PassportStrategy(JwtOrApiTokenStrategy, 'jwt') 
    * Runs after the signature/expiry check. The token is only good while its session
    * exists, and the role always comes from the database, never from the token.
    */
-  async validate(payload: { sub?: number; sid?: number }) {
+  async validate(payload: { sub?: number; sid?: number }): Promise<AuthUser> {
     if (!payload?.sub || !payload?.sid) throw new UnauthorizedException();
     const user = await this.sessions.findUserForSession(payload.sid, payload.sub);
     if (!user) throw new UnauthorizedException();

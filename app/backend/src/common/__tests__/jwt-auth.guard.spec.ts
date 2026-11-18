@@ -1,21 +1,24 @@
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { ExecutionContext, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UserRole } from '../../modules/user/user-role.enum';
+import type { AuthUser } from '../auth-user';
+import { asMock } from './test-utils';
 
 const guard = new JwtAuthGuard(new Reflector());
 const ctx = (method: string, roles?: UserRole[]) => {
   class C {}
   const handler = function h() {};
   if (roles) Reflect.defineMetadata('roles', roles, handler);
-  return {
+  return asMock<ExecutionContext>({
     getHandler: () => handler,
     getClass: () => C,
     switchToHttp: () => ({ getRequest: () => ({ method }) }),
-  } as any;
+  });
 };
-const token = (scope: 'read' | 'write') => ({
+const token = (scope: 'read' | 'write'): AuthUser => ({
   userId: 1,
+  username: 'ann',
   role: UserRole.USER,
   viaApiToken: true,
   apiTokenScope: scope,
@@ -26,7 +29,7 @@ describe('JwtAuthGuard.handleRequest', () => {
     expect(() => guard.handleRequest(null, false, null, ctx('GET'))).toThrow(UnauthorizedException);
   });
   it('lets an interactive session do anything', () => {
-    const u = { userId: 1, role: UserRole.ADMIN };
+    const u: AuthUser = { userId: 1, username: 'ann', role: UserRole.ADMIN };
     expect(guard.handleRequest(null, u, null, ctx('DELETE', [UserRole.ADMIN]))).toBe(u);
   });
   it('a read-only token may read but never change anything', () => {

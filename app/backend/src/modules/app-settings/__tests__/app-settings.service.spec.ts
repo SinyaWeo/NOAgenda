@@ -1,12 +1,15 @@
+import type { Repository } from 'typeorm';
 import { AppSettingsService, DEFAULT_APP_NAME } from '../app-settings.service';
+import type { AppSetting } from '../app-setting.entity';
+import { asMock } from '../../../common/__tests__/test-utils';
 
 function build(rows: { key: string; value: string }[] = []) {
-  const repo: any = {
+  const repo = {
     find: jest.fn(async () => rows),
-    findOne: jest.fn(async ({ where }: any) => rows.find((r) => r.key === where.key) ?? null),
+    findOne: jest.fn(async ({ where }: { where: { key: string } }) => rows.find((r) => r.key === where.key) ?? null),
     upsert: jest.fn(async () => undefined),
   };
-  return { svc: new AppSettingsService(repo), repo };
+  return { svc: new AppSettingsService(asMock<Repository<AppSetting>>(repo)), repo };
 }
 
 describe('AppSettingsService', () => {
@@ -29,7 +32,7 @@ describe('AppSettingsService', () => {
     [[{ key: 'appName', value: '   ' }], DEFAULT_APP_NAME],
     [[{ key: 'appName', value: '  Acme  ' }], 'Acme'],
   ])('getAppName() %j -> %s', async (rows, expected) => {
-    expect(await build(rows as any).svc.getAppName()).toBe(expected);
+    expect(await build(rows).svc.getAppName()).toBe(expected);
   });
 
   it('set() upserts on the key column', async () => {

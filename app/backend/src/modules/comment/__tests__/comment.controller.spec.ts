@@ -1,3 +1,4 @@
+import { asMock, authReq, Mocks } from '../../../common/__tests__/test-utils';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NodeAccessService } from '../../node/node-access.service';
 import { CommentController } from '../comment.controller';
@@ -51,8 +52,8 @@ describe('CommentController', () => {
   });
 
   it('announces a new comment to webhooks', async () => {
-    const events = (controller as any).events;
-    await controller.create({ content: 'Looks good', taskId: 7 }, { user: { userId: 2, username: 'ann' } });
+    const events = asMock<{ events: Mocks }>(controller).events;
+    await controller.create({ content: 'Looks good', taskId: 7 }, authReq(2, { username: 'ann' }));
     await new Promise((r) => setImmediate(r));
     expect(events.emit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -65,8 +66,8 @@ describe('CommentController', () => {
   });
 
   it('notifies the task creator and assignees about a new comment, not the commenter', async () => {
-    const notifications = (controller as any).notifications;
-    await controller.create({ content: 'Looks good', taskId: 7 }, { user: { userId: 2, username: 'ann' } });
+    const notifications = asMock<{ notifications: Mocks }>(controller).notifications;
+    await controller.create({ content: 'Looks good', taskId: 7 }, authReq(2, { username: 'ann' }));
     await new Promise((r) => setImmediate(r)); // notification runs in the background
     expect(notifications.notify).toHaveBeenCalledWith(
       expect.objectContaining({

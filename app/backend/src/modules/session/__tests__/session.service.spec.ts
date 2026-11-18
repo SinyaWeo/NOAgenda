@@ -1,16 +1,20 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { SessionService } from '../session.service';
+import { Repository } from 'typeorm';
+import { UserSession } from '../session.entity';
+import { asMock } from '../../../common/__tests__/test-utils';
 import { sha256 } from '../../../common/tokens';
 
 /** Minimal in-memory stand-in for the TypeORM repository. */
 function fakeRepo() {
-  const rows: any[] = [];
+  type Row = Record<string, unknown> & { id?: number; createdAt?: Date; updatedAt?: Date };
+  const rows: Row[] = [];
   let seq = 1;
-  const matches = (r: any, where: any) => Object.entries(where).every(([k, v]) => r[k] === v);
+  const matches = (r: Row, where: Row) => Object.entries(where).every(([k, v]) => r[k] === v);
   return {
     rows,
-    create: (x: any) => ({ ...x }),
-    save: jest.fn(async (x: any) => {
+    create: (x: Row) => ({ ...x }),
+    save: jest.fn(async (x: Row) => {
       if (!x.id) {
         x.id = seq++;
         x.createdAt = new Date();
@@ -20,11 +24,11 @@ function fakeRepo() {
       return x;
     }),
     // Like a real database, hand out copies: two concurrent readers must not share one object.
-    findOne: jest.fn(async ({ where }: any) => {
+    findOne: jest.fn(async ({ where }: { where: Row }) => {
       const r = rows.find((x) => matches(x, where));
       return r ? { ...r } : null;
     }),
-    update: jest.fn(async (where: any, set: any) => {
+    update: jest.fn(async (where: Row, set: Row) => {
       let affected = 0;
       for (const r of rows)
         if (matches(r, where)) {
@@ -33,8 +37,8 @@ function fakeRepo() {
         }
       return { affected };
     }),
-    delete: jest.fn(async (where: any) => {
-      const w = typeof where === 'number' ? { id: where } : where;
+    delete: jest.fn(async (where: number | Row) => {
+      const w: Row = typeof where === 'number' ? { id: where } : where;
       for (let i = rows.length - 1; i >= 0; i--) if (matches(rows[i], w)) rows.splice(i, 1);
     }),
   };
@@ -42,7 +46,7 @@ function fakeRepo() {
 
 const make = () => {
   const repo = fakeRepo();
-  return { repo, svc: new SessionService(repo as any) };
+  return { repo, svc: new SessionService(asMock<Repository<UserSession>>(repo)) };
 };
 
 describe('SessionService refresh-token rotation', () => {

@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { adminAllowsRegistration, assertMayRegister, registrationPolicy } from '../registration';
+import { invalid } from '../../../common/__tests__/test-utils';
 
 const env = (o: Record<string, string>) => o as NodeJS.ProcessEnv;
 
@@ -50,7 +51,7 @@ describe('registration policy', () => {
       expect(() => assertMayRegister('s3cret-invite', e)).not.toThrow();
     });
     it.each([undefined, '', 'wrong', 's3cret-invite ', 'S3CRET-INVITE', 's3cret-invit'])('rejects %p', (code) => {
-      expect(() => assertMayRegister(code as any, e)).toThrow(ForbiddenException);
+      expect(() => assertMayRegister(invalid<string>(code), e)).toThrow(ForbiddenException);
     });
   });
 });
