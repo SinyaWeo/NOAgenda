@@ -112,9 +112,16 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
    Other vhosts are unaffected. Make sure they all serve HTTPS with a valid certificate too (`certbot certificates`).
 
 ## Server setup checklist (small VPS)
+`docker/provision.sh` does most of this on a Debian or Ubuntu server (run `sudo docker/provision.sh --dry-run` first to see
+what it would do): KVM and RAM check, packages, old kernels, time sync, swap, Docker with log rotation, the `noagenda` user and
+`/opt/noagenda`, automatic updates. The two risky steps are opt-in: `--firewall` (ufw) and `--ssh-harden` (key-only logins; keep your
+session open and test a second login). It never touches Apache/nginx. The list below is what it covers, plus what you still do by hand.
 Done once, before the first deployment:
 - **Virtualisation must be KVM**: `systemd-detect-virt` prints `kvm` (Docker misbehaves on OpenVZ/LXC).
-- **Memory**: 4 GB is comfortable. On 1-2 GB add a 2 GB swap file, set `MARIADB_BUFFER_POOL=128M`, and never build on the server.
+- **Memory**: 4 GB is comfortable. On 1-2 GB add a 2 GB swap file, never build on the server, and lower the limits in
+  `docker/.env.production`: `MARIADB_BUFFER_POOL=128M`, `BACKEND_MEM_LIMIT=384m`, `FRONTEND_MEM_LIMIT=256m`, `CADDY_MEM_LIMIT=128m`.
+  Then watch `docker stats --no-stream` and `free -h` for a few days. A 1 GB server that already runs other sites (e.g. Apache + PHP apps)
+  may not have room for this stack at all: check `free -h` for the *available* memory first.
 - **Access**: SSH keys only (`PasswordAuthentication no`), a non-root user in the `docker` group, `ufw allow 22,80,443/tcp` then `ufw enable`,
   and `unattended-upgrades`.
 - **Mail**: many VPS providers block outbound port 25. Use a transactional provider (Brevo, Mailgun, Postmark...) on 587 for `SMTP_*`.

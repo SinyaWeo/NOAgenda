@@ -29,6 +29,9 @@ docker/preflight.sh remote https://your.domain           # is the LIVE site corr
       too tight (it needs swap and `MARIADB_BUFFER_POOL=128M`). Plan disk for uploads + backups.
 - [ ] `systemd-detect-virt` prints `kvm` (Docker misbehaves on OpenVZ/LXC), and `free -h` shows the RAM you paid for.
 - [ ] **Outbound mail**: many VPS providers block port 25, so use a transactional SMTP provider on 587 (section 3).
+- [ ] **Provisioning**: `sudo docker/provision.sh --dry-run`, then without `--dry-run` (see "Server setup checklist" in
+      [DEPLOYMENT.md](DEPLOYMENT.md)). It installs Docker, adds swap, creates the `noagenda` user and enables automatic updates;
+      `--firewall` and `--ssh-harden` are opt-in. Several items below are then already done: verify them.
 - [ ] **DNS**: an `A` (and `AAAA` if you have IPv6) record for your domain pointing at the server.
 - [ ] **Ports 80/443 already used** by Apache/nginx (e.g. other sites on the same VPS)? Do **not** replace it (PHP apps
       such as Leantime would break). Use the proxy mode: web server terminates HTTPS, Caddy listens on `127.0.0.1:8080`.
