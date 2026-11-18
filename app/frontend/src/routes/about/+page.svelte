@@ -8,6 +8,10 @@
 	import { Alert, Card } from 'flowbite-svelte';
 	import type { AppInfo } from '$lib/types-misc';
 
+	// AGPL-3.0 section 13: users of a network service must be offered the source of the running version.
+	const SOURCE_URL = 'https://github.com/SinyaWeo/NOAgenda';
+	const LICENSE_URL = `${SOURCE_URL}/blob/main/LICENSE`;
+
 	const info = writable<AppInfo | null>(null);
 	const error = writable('');
 
@@ -39,6 +43,24 @@
 				<dd class="text-gray-900 dark:text-white font-medium m-0">{$info.builtAt ?? '—'}</dd>
 				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.commit')}</dt>
 				<dd class="font-mono text-sm text-gray-900 dark:text-white m-0">{$info.commit ?? '—'}</dd>
+				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.source')}</dt>
+				<dd class="text-gray-900 dark:text-white font-medium m-0">
+					<a
+						href={SOURCE_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-primary-700 hover:underline dark:text-primary-500">NOAgenda on GitHub</a
+					>
+				</dd>
+				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.license')}</dt>
+				<dd class="text-gray-900 dark:text-white font-medium m-0">
+					<a
+						href={LICENSE_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-primary-700 hover:underline dark:text-primary-500">AGPL-3.0-or-later</a
+					>
+				</dd>
 			</dl>
 		</Card>
 	{:else}
