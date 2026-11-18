@@ -49,8 +49,11 @@ jobs:
           REPO: ${{ steps.meta.outputs.repo }}
           TAG: ${{ steps.meta.outputs.tag }}
         run: |
-          docker build -t "$REPO-backend:$TAG" -t "$REPO-backend:latest" app/backend
-          docker build \
+          # The source label links a newly created package to this repository, which is what grants this
+          # workflow's GITHUB_TOKEN write access to it.
+          SRC="--label org.opencontainers.image.source=https://github.com/${{ github.repository }}"
+          docker build $SRC -t "$REPO-backend:$TAG" -t "$REPO-backend:latest" app/backend
+          docker build $SRC \
             --build-arg VITE_API_BASE=/api \
             --build-arg VITE_OPERATOR_NAME="${{ vars.OPERATOR_NAME }}" \
             --build-arg VITE_CONTACT_EMAIL="${{ vars.CONTACT_EMAIL }}" \
