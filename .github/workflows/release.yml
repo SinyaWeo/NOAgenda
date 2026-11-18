@@ -1,0 +1,78 @@
+name: Release
+
+# Builds the production images once CI has passed on main and publishes them to GHCR, so the
+# (small) server only pulls images and never compiles anything. Optionally deploys over SSH.
+#
+# Optional repository settings (Settings > Secrets and variables > Actions):
+#   variables: OPERATOR_NAME, CONTACT_EMAIL   baked into the frontend (legal pages)
+#              DEPLOY_ENABLED=true            run the deploy job
+#   secrets:   DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY, DEPLOY_KNOWN_HOSTS (output of `ssh-keyscan <host>`)
+#   variable:  DEPLOY_PATH                    checkout on the server (default /opt/noagenda)
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  images:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - name: Image names and tag
+        id: meta
+        run: |
+          sha="${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "tag=${sha:0:12}" >> "$GITHUB_OUTPUT"
+          echo "repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/noagenda" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Build and push
+        env:
+          REPO: ${{ steps.meta.outputs.repo }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          docker build -t "$REPO-backend:$TAG" -t "$REPO-backend:latest" app/backend
+          docker build \
+            --build-arg VITE_API_BASE=/api \
+            --build-arg VITE_OPERATOR_NAME="${{ vars.OPERATOR_NAME }}" \
+            --build-arg VITE_CONTACT_EMAIL="${{ vars.CONTACT_EMAIL }}" \
+            -t "$REPO-frontend:$TAG" -t "$REPO-frontend:latest" app/frontend
+          for img in backend frontend; do
+            docker push "$REPO-$img:$TAG"
+            docker push "$REPO-$img:latest"
+          done
+
+  deploy:
+    needs: images
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        env:
+          TAG: ${{ needs.images.outputs.tag }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/opt/noagenda' }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
+          printf '%s\n' "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/id_deploy -o StrictHostKeyChecking=yes \
+            "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" \
+            "cd '$DEPLOY_PATH' && git pull --ff-only && docker/deploy.sh '$TAG'"

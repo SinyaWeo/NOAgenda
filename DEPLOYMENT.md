@@ -108,12 +108,39 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
    Then `a2ensite noagenda.app`, `certbot --apache -d noagenda.app`, `apachectl configtest`, `systemctl reload apache2`.
    Other vhosts are unaffected. Make sure they all serve HTTPS with a valid certificate too (`certbot certificates`).
 
+## Server setup checklist (small VPS)
+Done once, before the first deployment:
+- **Virtualisation must be KVM**: `systemd-detect-virt` prints `kvm` (Docker misbehaves on OpenVZ/LXC).
+- **Memory**: 4 GB is comfortable. On 1-2 GB add a 2 GB swap file, set `MARIADB_BUFFER_POOL=128M`, and never build on the server.
+- **Access**: SSH keys only (`PasswordAuthentication no`), a non-root user in the `docker` group, `ufw allow 22,80,443/tcp` then `ufw enable`,
+  and `unattended-upgrades`.
+- **Mail**: many VPS providers block outbound port 25. Use a transactional provider (Brevo, Mailgun, Postmark...) on 587 for `SMTP_*`.
+- **Disk**: container logs are capped by the compose file; `/boot` on Debian fills with old kernels, so run `apt autoremove --purge` now and then.
+- Adminer (dev only) is not part of the production stack; keep it that way.
+
 ## Updating
+### Prebuilt images (recommended)
+CI (`.github/workflows/release.yml`) builds the backend and frontend images after every green run on `main` and pushes them to
+GHCR tagged with the commit SHA and `latest`. The server only pulls them:
+```bash
+git pull
+docker/deploy.sh                  # latest; or a tag: docker/deploy.sh 1a2b3c4d5e6f
+```
+`deploy.sh` takes a backup (if the stack is running), pulls the images, restarts, waits for `/health`, and if the new version is
+not healthy it starts the previous tag again. The tag is kept as `IMAGE_TAG` in `docker/.env.production`. Rolling back = run it with an
+older tag; migrations only go forward, so after a schema change restore the pre-deploy backup as well.
+
+One-time setup: make the GHCR packages public, or `docker login ghcr.io` on the server with a token that has `read:packages`.
+`OPERATOR_NAME`/`CONTACT_EMAIL` are baked into the frontend image, so for CI set them as repository *variables* (same names).
+To deploy automatically from CI, set the variable `DEPLOY_ENABLED=true` and the secrets `DEPLOY_HOST`, `DEPLOY_USER`,
+`DEPLOY_SSH_KEY` and `DEPLOY_KNOWN_HOSTS` (`ssh-keyscan <host>`); the `deploy` job then runs `git pull` and `docker/deploy.sh <sha>` over SSH.
+
+### Building on the server
 ```bash
 git pull
 docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
 ```
-Pending migrations run on startup. **Take a backup first** (below).
+Fine on a machine with 4+ GB and spare CPU. Pending migrations run on startup either way. **Take a backup first** (below).
 
 ### Upgrading MariaDB (11.3 -> 11.8 LTS)
 The stack now uses `mariadb:11.8` (long-term support; 11.3 was a short-term release that is out of support). The data
@@ -146,7 +173,10 @@ Review and commit the generated file. Local development still auto-syncs (`NODE_
 docker/backup.sh /var/backups/noagenda          # DB dump + uploads, keeps 14 days (KEEP_DAYS)
 ```
 Schedule it, e.g. `15 3 * * * /opt/noagenda/docker/backup.sh /var/backups/noagenda`, and copy the
-directory off the server. Restore (**replaces current data**):
+directory off the server. To do that automatically, install [rclone](https://rclone.org), configure a remote (S3, Backblaze B2,
+a Hetzner Storage Box...) and run the script with `BACKUP_RCLONE_REMOTE=<remote>:<bucket>/noagenda`: each backup is then
+copied there (a failure counts as a failed backup and pings `BACKUP_PING_URL/fail`). Set the retention on the remote side
+(e.g. a bucket lifecycle rule); `KEEP_DAYS` only prunes local files. Restore (**replaces current data**):
 ```bash
 docker/restore.sh /var/backups/noagenda/db-<ts>.sql.gz /var/backups/noagenda/uploads-<ts>.tar.gz
 ```
@@ -230,6 +260,9 @@ advice, so have them reviewed before you accept real users.
 | `USER_STORAGE_QUOTA_MB` | backend | Attachment storage per user (default `200`) |
 | `WEBHOOK_ALLOW_PRIVATE` | backend | `true` allows webhook URLs that point at internal addresses (default off) |
 | `BACKEND_MEM_LIMIT`, `FRONTEND_MEM_LIMIT`, `CADDY_MEM_LIMIT` | `.env.production` | Container memory caps (defaults `768m` / `512m` / `256m`) |
+| `IMAGE_REPO`, `IMAGE_TAG` | `.env.production` | Image name prefix (default `ghcr.io/sinyaweo/noagenda`) and tag (default `latest`; `docker/deploy.sh` manages the tag) |
+| `MARIADB_BUFFER_POOL` | `.env.production` | InnoDB buffer pool size (default `256M`; `128M` on a 1 GB server) |
+| `BACKUP_RCLONE_REMOTE` | environment of `backup.sh` | rclone destination for an off-server copy of each backup |
 | `REGISTRATION_INVITE_CODE` / `REGISTRATION_ENABLED=false` | `.env.production` | Soft launch: require an invite code to sign up, or close sign-ups entirely (existing users unaffected) |
 | `OPERATOR_NAME`, `CONTACT_EMAIL`, `REQUIRE_TERMS_ACCEPTANCE` | `.env.production` | Legal pages and consent (see above) |
 | `BACKUP_PING_URL` | environment of `backup.sh` | Dead-man's-switch URL pinged after each backup (`/fail` on failure) |

@@ -3,6 +3,8 @@
 #
 #   cp docker/.env.production.example docker/.env.production   # then edit
 #   docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build
+#
+# On a small server do not build there: CI publishes the images, and docker/deploy.sh pulls them.
 name: noagenda
 
 # Container logs rotate (3 x 10 MB per service). Without this, Docker keeps them forever and
@@ -35,6 +37,11 @@ services:
       MARIADB_DATABASE: ${MYSQL_DATABASE:-noagenda}
       MARIADB_USER: ${MYSQL_USER:-noagenda}
       MARIADB_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD is required}
+    # Small-server tuning: a modest buffer pool and no performance_schema (saves ~100 MB).
+    # Raise MARIADB_BUFFER_POOL on a bigger machine.
+    command:
+      - --innodb-buffer-pool-size=${MARIADB_BUFFER_POOL:-256M}
+      - --performance-schema=OFF
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
@@ -49,6 +56,8 @@ services:
     <<: *hardened
     mem_limit: ${BACKEND_MEM_LIMIT:-768m}
     logging: *default-logging
+    # `image` + `build`: a server pulls the prebuilt image (docker/deploy.sh); `up --build` still builds it locally.
+    image: ${IMAGE_REPO:-ghcr.io/sinyaweo/noagenda}-backend:${IMAGE_TAG:-latest}
     build:
       context: ../app/backend
     restart: unless-stopped
@@ -90,6 +99,7 @@ services:
     <<: *hardened
     mem_limit: ${FRONTEND_MEM_LIMIT:-512m}
     logging: *default-logging
+    image: ${IMAGE_REPO:-ghcr.io/sinyaweo/noagenda}-frontend:${IMAGE_TAG:-latest}
     build:
       context: ../app/frontend
       args:

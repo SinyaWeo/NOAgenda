@@ -5,6 +5,8 @@
 #
 # Env: ENV_FILE (default docker/.env.production), COMPOSE_FILE, COMPOSE_PROJECT,
 #      KEEP_DAYS (default 14; older backups are deleted).
+#      BACKUP_RCLONE_REMOTE  optional rclone destination for an off-server copy (e.g. b2:bucket/noagenda).
+#                       Remote retention is yours to set (bucket lifecycle rule); KEEP_DAYS only prunes local files.
 #      BACKUP_PING_URL  optional "dead man's switch" (healthchecks.io, Uptime Kuma, ...): GET <url> after a
 #                       successful backup and <url>/fail after a failed one. If the pings stop, you are
 #                       alerted that backups are no longer running.
@@ -36,6 +38,13 @@ up="$BACKUP_DIR/uploads-$ts.tar.gz"
 gzip -t "$db.part" && gzip -t "$up.part"
 [ "$(gzip -dc "$db.part" | grep -c 'CREATE TABLE')" -gt 0 ] || { echo "dump looks empty, aborting" >&2; rm -f "$db.part" "$up.part"; exit 1; }
 mv "$db.part" "$db"; mv "$up.part" "$up"
+
+# Optional off-server copy (a backup that lives only on the server dies with it). Needs rclone configured
+# for the remote, e.g. BACKUP_RCLONE_REMOTE=b2:my-bucket/noagenda. A failure here triggers the /fail ping.
+if [ -n "${BACKUP_RCLONE_REMOTE:-}" ]; then
+  rclone copy "$db" "$BACKUP_RCLONE_REMOTE"
+  rclone copy "$up" "$BACKUP_RCLONE_REMOTE"
+fi
 
 find "$BACKUP_DIR" -maxdepth 1 \( -name 'db-*.sql.gz' -o -name 'uploads-*.tar.gz' \) -mtime +"$KEEP_DAYS" -delete
 ping ""
