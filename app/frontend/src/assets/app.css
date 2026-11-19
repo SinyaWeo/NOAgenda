@@ -64,6 +64,16 @@ body {
 .dark body {
 	color: var(--color-gray-100);
 }
+/* Flowbite's Dropdown/Popover/Tooltip use the native popover attribute, and Modal uses <dialog>.
+   The browser stylesheet gives both `color: CanvasText` (black), which breaks inheritance from body. */
+[popover],
+dialog {
+	color: var(--color-gray-900);
+}
+.dark [popover],
+.dark dialog {
+	color: var(--color-gray-100);
+}
 
 /* Fallback for runtime/caching issues where utility classes are present in HTML but not applied */
 button.bg-primary-700,
