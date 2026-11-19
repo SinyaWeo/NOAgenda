@@ -442,7 +442,7 @@ a.text-gray-900 {
 
 /* Brand colour for the app name: matches the logo (static/logo-light.png / logo-dark.png). */
 .brand-text {
-	color: #00459f;
+	color: var(--color-primary-700);
 }
 .dark .brand-text {
 	color: var(--color-primary-400);
