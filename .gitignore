@@ -6,3 +6,4 @@ backups/
 # Secrets: any docker/.env* (.env, .env.production, .env.staging, ...) except the committed examples
 docker/.env*
 !docker/.env*.example
+findings
