@@ -439,3 +439,11 @@ a.text-gray-900 {
 	border-color: #334155;
 	color: #e2e8f0;
 }
+
+/* Brand colour for the app name: matches the logo (static/logo-light.png / logo-dark.png). */
+.brand-text {
+	color: #00459f;
+}
+.dark .brand-text {
+	color: var(--color-primary-400);
+}

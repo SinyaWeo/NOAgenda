@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { appName } from '$lib/appName';
+	import Logo from '$lib/components/Logo.svelte';
 	import { onMount } from 'svelte';
 	import { t, type MessageKey } from '$lib/i18n';
 	import {
@@ -130,8 +131,8 @@
 		{#if !compact}
 			<a
 				href="/dashboard"
-				class="text-white font-bold text-base no-underline whitespace-nowrap overflow-hidden flex-1"
-				>{$appName}</a
+				class="flex items-center gap-2 brand-text font-bold text-base no-underline whitespace-nowrap overflow-hidden flex-1"
+				><Logo size={28} /><span class="truncate">{$appName}</span></a
 			>
 		{/if}
 		<button

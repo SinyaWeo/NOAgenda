@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { appName, loadAppName } from '$lib/appName';
 	import '../assets/app.css';
-	import favicon from '$lib/assets/favicon.svg';
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import { authSession, clearAuthSession, initializeAuth, logout as signOut } from '$lib/auth';
@@ -138,7 +137,9 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" type="image/svg+xml" href={favicon} />
+	<link rel="icon" href="/favicon.ico" sizes="48x48" />
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 	<title>{pageTitle ? $t('layout.titleWithApp', { title: pageTitle, app: $appName }) : $appName}</title>
 </svelte:head>
 

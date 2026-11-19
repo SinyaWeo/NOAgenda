@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { appName } from '$lib/appName';
+	import Logo from '$lib/components/Logo.svelte';
 	import { errMessage } from '$lib/errors';
 	import { writable } from 'svelte/store';
 	import { apiPost } from '$lib/api';
@@ -42,7 +43,8 @@
 <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
 	<Card class="w-full max-w-md">
 		<div class="text-center mb-6">
-			<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$appName}</h1>
+			<div class="flex justify-center mb-3"><Logo size={64} /></div>
+			<h1 class="brand-text text-2xl font-bold">{$appName}</h1>
 			<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{$t('auth.newPassword.title')}</p>
 		</div>
 
