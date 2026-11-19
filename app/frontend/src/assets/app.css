@@ -55,6 +55,16 @@
 	--color-gray-950: #020617;
 }
 
+/* Base text color. Popper-based components (Dropdown, Popover, Tooltip, Modal) render
+   outside the layout's coloured wrapper and inherit from <body>, so without this they get
+   the browser's default dark text in dark mode. */
+body {
+	color: var(--color-gray-900);
+}
+.dark body {
+	color: var(--color-gray-100);
+}
+
 /* Fallback for runtime/caching issues where utility classes are present in HTML but not applied */
 button.bg-primary-700,
 a.bg-primary-700 {
@@ -85,6 +95,33 @@ a.bg-white {
 button.text-gray-900,
 a.text-gray-900 {
 	color: #111827;
+}
+
+/* These unlayered fallbacks out-rank Tailwind's layered utilities, including the dark: variants,
+   so the dark counterparts must be restated here or links/buttons stay light-themed in dark mode. */
+.dark button.bg-white,
+.dark a.bg-white {
+	background-color: var(--color-gray-800);
+}
+.dark button.dark\:bg-gray-700,
+.dark a.dark\:bg-gray-700 {
+	background-color: var(--color-gray-700);
+}
+.dark button.dark\:bg-gray-800,
+.dark a.dark\:bg-gray-800 {
+	background-color: var(--color-gray-800);
+}
+.dark button.dark\:bg-gray-900,
+.dark a.dark\:bg-gray-900 {
+	background-color: var(--color-gray-900);
+}
+.dark button.dark\:text-white,
+.dark a.dark\:text-white {
+	color: #fff;
+}
+.dark button.text-gray-900:not(.dark\:text-white),
+.dark a.text-gray-900:not(.dark\:text-white) {
+	color: var(--color-gray-100);
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -440,7 +477,7 @@ a.text-gray-900 {
 	color: #e2e8f0;
 }
 
-/* Brand colour for the app name: matches the logo (static/logo-light.png / logo-dark.png). */
+/* Brand color for the app name: matches the logo (static/logo-light.png / logo-dark.png). */
 .brand-text {
 	color: var(--color-primary-700);
 }
