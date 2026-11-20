@@ -134,8 +134,8 @@ Example with two instances (replace `example.net` with your domain):
 
 | Instance | `INSTANCE` | Project (`COMPOSE_PROJECT`) | Env file | Site file |
 | --- | --- | --- | --- | --- |
-| `app.example.net` | `app` | `noagenda-app` | `app.env` | `docker/sites/app.caddy` |
-| `demo.example.net` | `demo` | `noagenda-demo` | `demo.env` | `docker/sites/demo.caddy` |
+| `app.example.net` | `app` | `noagenda-app` | `docker/app.env` | `docker/sites/app.caddy` |
+| `demo.example.net` | `demo` | `noagenda-demo` | `docker/demo.env` | `docker/sites/demo.caddy` |
 
 Each env file has its own `INSTANCE`, `DOMAIN`, `JWT_SECRET` and `MYSQL_*` values (behind Apache also `TRUST_PROXY=2`).
 **`INSTANCE` must differ between instances**: Caddy finds an instance as `<INSTANCE>-backend`, so a duplicate would send
@@ -148,7 +148,7 @@ http://app.example.net {      # no http:// when Caddy does HTTPS itself
 then reload Caddy (`docker compose -f docker/docker-compose.edge.yml exec caddy caddy reload --config /etc/caddy/Caddyfile`).
 Behind Apache, give every hostname its own vhost and certificate (see the Apache example above); all of them proxy to the same
 `127.0.0.1:8080`. Deploy each instance with
-`COMPOSE_PROJECT=noagenda-app ENV_FILE=/opt/noagenda/app.env docker/deploy.sh`. The same `COMPOSE_PROJECT` and `ENV_FILE` variables work
+`COMPOSE_PROJECT=noagenda-app ENV_FILE=/opt/noagenda/docker/app.env docker/deploy.sh`. The same `COMPOSE_PROJECT` and `ENV_FILE` variables work
 for `docker/backup.sh`. Any other site on the host (for example static pages on the bare domain) is just another vhost.
 `deploy.sh` refuses to run while the shared proxy is down.
 
@@ -167,7 +167,7 @@ For a demo that visitors can try without signing up, add to its env file:
 
 `docker/demo-reset.sh` re-creates the example data (`seed --reset`) and clears uploads. It refuses to run unless
 `DEMO_MODE=true` is set in the env file. Run it once after the first deploy to create the users, then schedule it, e.g. nightly:
-`0 0 * * * ENV_FILE=/opt/noagenda/demo.env /opt/noagenda/docker/demo-reset.sh`.
+`0 0 * * * ENV_FILE=/opt/noagenda/docker/demo.env /opt/noagenda/docker/demo-reset.sh`.
 Never set `DEMO_MODE=true` on an instance with real data.
 
 ## Server setup checklist (small VPS)
