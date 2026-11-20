@@ -45,7 +45,7 @@
 						href={SOURCE_URL}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="text-primary-700 hover:underline dark:text-primary-500">NOAgenda on GitHub</a
+						class="text-primary-700 hover:underline dark:text-primary-500">GitHub</a
 					>
 				</dd>
 				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.license')}</dt>
