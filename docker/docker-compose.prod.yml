@@ -90,6 +90,8 @@ services:
       REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-}
       REGISTRATION_INVITE_CODE: ${REGISTRATION_INVITE_CODE:-}
       ACCOUNT_DELETION_GRACE_DAYS: ${ACCOUNT_DELETION_GRACE_DAYS:-}
+      # Public demo instance only: lists the example users on the login page and blocks password/email/deletion changes.
+      DEMO_MODE: ${DEMO_MODE:-}
     volumes:
       - uploads:/app/uploads
     depends_on:
