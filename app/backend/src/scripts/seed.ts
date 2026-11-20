@@ -1,15 +1,17 @@
 /**
- * Fill the database with example data: 10 users, 3 teams, personal projects per user and shared
+ * Fill the database with example data: 5 users, 3 teams, personal projects per user and shared
  * projects per team (with views, kanban buckets, tasks, labels and assignees).
  *
  *   npm run seed                 # no-op if the example users already exist
  *   npm run seed -- --reset      # delete the example users and everything they own, then seed again
  *
- * Needs the migrations applied. Refuses to run with NODE_ENV=production.
+ * Needs the migrations applied. Refuses to run with NODE_ENV=production unless ALLOW_DEMO_SEED=true
+ * (the demo instance's nightly reset, docker/demo-reset.sh).
  */
 import { EntityManager, In } from 'typeorm';
 import dataSource from '../data-source';
 import { hashPassword } from '../common/password';
+import { DEMO_PASSWORD, DEMO_USERS } from '../common/demo-users';
 import { User } from '../modules/user/user.entity';
 import { UserRole } from '../modules/user/user-role.enum';
 import { Team } from '../modules/team/team.entity';
@@ -23,28 +25,10 @@ import { Label } from '../modules/label/label.entity';
 import { TaskLabel } from '../modules/task-label/task-label.entity';
 import { TaskAssignee } from '../modules/task-assignee/task-assignee.entity';
 
-const PASSWORD = 'password123';
+const PASSWORD = DEMO_PASSWORD;
 const DAY = 24 * 60 * 60 * 1000;
 
-interface SeedUser {
-  username: string;
-  name: string;
-  language: 'en' | 'cs';
-  role?: UserRole;
-}
-
-const USERS: SeedUser[] = [
-  { username: 'alice', name: 'Alice Novak', language: 'en', role: UserRole.ADMIN },
-  { username: 'bob', name: 'Bob Svoboda', language: 'cs' },
-  { username: 'carol', name: 'Carol Dvorak', language: 'en' },
-  { username: 'dave', name: 'Dave Cerny', language: 'en' },
-  { username: 'erin', name: 'Erin Prochazka', language: 'cs' },
-  { username: 'frank', name: 'Frank Kral', language: 'en' },
-  { username: 'grace', name: 'Grace Horak', language: 'en' },
-  { username: 'heidi', name: 'Heidi Marek', language: 'cs' },
-  { username: 'ivan', name: 'Ivan Pospisil', language: 'en' },
-  { username: 'judy', name: 'Judy Kovar', language: 'en' },
-];
+const USERS = DEMO_USERS;
 
 interface SeedTeam {
   name: string;
@@ -59,7 +43,7 @@ const TEAMS: SeedTeam[] = [
     name: 'Engineering',
     description: 'Product development and infrastructure',
     owner: 'alice',
-    members: ['bob', 'carol', 'dave'],
+    members: ['bob', 'carol'],
     projects: [
       { name: 'Platform Rewrite', permission: Permission.WRITE, kanban: true },
       { name: 'CI/CD Improvements', permission: Permission.WRITE },
@@ -69,8 +53,8 @@ const TEAMS: SeedTeam[] = [
   {
     name: 'Marketing',
     description: 'Campaigns, content and brand',
-    owner: 'erin',
-    members: ['frank', 'grace', 'bob'],
+    owner: 'dave',
+    members: ['erin', 'bob'],
     projects: [
       { name: 'Spring Campaign', permission: Permission.WRITE, kanban: true },
       { name: 'Website Content', permission: Permission.WRITE },
@@ -80,8 +64,8 @@ const TEAMS: SeedTeam[] = [
   {
     name: 'Operations',
     description: 'Office, finance and support',
-    owner: 'ivan',
-    members: ['heidi', 'judy', 'carol', 'frank'],
+    owner: 'carol',
+    members: ['erin', 'alice'],
     projects: [
       { name: 'Quarterly Budget', permission: Permission.WRITE },
       { name: 'Support Backlog', permission: Permission.WRITE, kanban: true },
@@ -280,8 +264,8 @@ async function seed(m: EntityManager): Promise<Record<string, number>> {
 }
 
 async function main(): Promise<void> {
-  if (process.env.NODE_ENV === 'production') {
-    console.error('Refusing to seed example data with NODE_ENV=production.');
+  if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEMO_SEED !== 'true') {
+    console.error('Refusing to seed example data with NODE_ENV=production (set ALLOW_DEMO_SEED=true for the demo).');
     process.exit(2);
   }
   const reset = process.argv.slice(2).includes('--reset');

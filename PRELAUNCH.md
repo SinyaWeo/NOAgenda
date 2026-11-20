@@ -50,7 +50,9 @@ docker/preflight.sh remote https://your.domain           # is the LIVE site corr
 - [ ] Apache modules `proxy proxy_http headers ssl rewrite` enabled; a new vhost for your domain forwarding to
       `http://127.0.0.1:8080/` with `X-Forwarded-Proto https`. The other vhosts are untouched.
 - [ ] `apachectl configtest` says `Syntax OK` **before** every `systemctl reload apache2`.
-- [ ] RAM budget covers the existing apps plus MariaDB + two Node containers; the app's MariaDB lives in Docker and does
+- [ ] Running a second instance (e.g. a public demo) on the same host? Give it its own compose project, env file, secrets
+      and ports, and never set `DEMO_MODE=true` on the instance with real data (see DEPLOYMENT.md).
+- [ ] RAM budget covers the existing apps plus MariaDB + two Node containers (per instance); the app's MariaDB lives in Docker and does
       not clash with a database already on the host (it publishes no port).
 
 ## 2. Secrets and configuration (you)

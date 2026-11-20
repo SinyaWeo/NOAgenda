@@ -77,11 +77,11 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
    BIND_ADDR=127.0.0.1
    HTTP_PORT=8080
    HTTPS_PORT=8443
-   SITE_ADDRESS=http://noagenda.app
+   SITE_ADDRESS=http://example.net
    TRUST_PROXY=2
    ```
-   Keep `DOMAIN=noagenda.app`; the public origin stays `https://noagenda.app`. Start the stack as usual and check
-   `curl -H 'Host: noagenda.app' http://127.0.0.1:8080/api/health`.
+   Keep `DOMAIN=example.net`; the public origin stays `https://example.net`. Start the stack as usual and check
+   `curl -H 'Host: example.net' http://127.0.0.1:8080/api/health`.
    **The backend must see the visitor's real address** (rate limits and login lockouts are per address). The Caddyfile
    trusts `X-Forwarded-For` from private network ranges only (`trusted_proxies static private_ranges`), so Apache's header
    passes through while a visitor on the public internet cannot forge one. Verify once after setup: attempt a login with a wrong
@@ -89,16 +89,16 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
    show your own public IP, not `172.x.x.x`/`127.0.0.1`. (If it shows the proxy's address, every visitor shares one rate
    limit: re-check `TRUST_PROXY=2`.)
 2. Apache: `a2enmod proxy proxy_http headers ssl rewrite`, then a vhost, e.g.
-   `/etc/apache2/sites-available/noagenda.app.conf`:
+   `/etc/apache2/sites-available/example.net.conf`:
    ```apache
    <VirtualHost *:80>
-       ServerName noagenda.app
+       ServerName example.net
        RewriteEngine On
        RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
    </VirtualHost>
    <VirtualHost *:443>
-       ServerName noagenda.app
-       # certbot --apache -d noagenda.app adds the SSLCertificate lines
+       ServerName example.net
+       # certbot --apache -d example.net adds the SSLCertificate lines
        ProxyPreserveHost On
        RequestHeader set X-Forwarded-Proto "https"
        LimitRequestBody 12582912
@@ -108,8 +108,37 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
    ```
    Add `Header always set Strict-Transport-Security "max-age=31536000"` to the 443 vhost only if Caddy's header is not
    reaching clients (it normally is: `docker/preflight.sh remote` checks it).
-   Then `a2ensite noagenda.app`, `certbot --apache -d noagenda.app`, `apachectl configtest`, `systemctl reload apache2`.
+   Then `a2ensite example.net`, `certbot --apache -d example.net`, `apachectl configtest`, `systemctl reload apache2`.
    Other vhosts are unaffected. Make sure they all serve HTTPS with a valid certificate too (`certbot certificates`).
+
+## Several instances on one host (e.g. production plus a public demo)
+
+Run each instance as its own compose project with its own env file, so volumes, containers and secrets never mix.
+Example with two instances (replace `example.net` with your domain):
+
+| Instance | Project (`COMPOSE_PROJECT`) | Env file | `HTTP_PORT` | Host proxy |
+| --- | --- | --- | --- | --- |
+| `app.example.net` | `noagenda-app` | `app.env` | `8081` | vhost -> `127.0.0.1:8081` |
+| `demo.example.net` | `noagenda-demo` | `demo.env` | `8082` | vhost -> `127.0.0.1:8082` |
+
+Each env file uses proxy mode (`SITE_ADDRESS=http://<hostname>`, `BIND_ADDR=127.0.0.1`, `TRUST_PROXY=2`) and has its own
+`DOMAIN`, `JWT_SECRET` and `MYSQL_*` values. Give every instance its own host-proxy vhost and certificate (see the Apache
+example above) and deploy each one with
+`COMPOSE_PROJECT=noagenda-app ENV_FILE=/opt/noagenda/app.env docker/deploy.sh`. The same `COMPOSE_PROJECT` and `ENV_FILE` variables work
+for `docker/backup.sh`. Any other site on the host (for example static pages on the bare domain) is just another vhost.
+
+### Public demo instance
+
+For a demo that visitors can try without signing up, add to its env file:
+
+- `DEMO_MODE=true`: the login page lists the example users (with password and role), and the password, email and
+  account-deletion endpoints are disabled so visitors cannot lock each other out.
+- `REGISTRATION_ENABLED=false` and an empty `SMTP_HOST`.
+
+`docker/demo-reset.sh` re-creates the example data (`seed --reset`) and clears uploads. It refuses to run unless
+`DEMO_MODE=true` is set in the env file. Run it once after the first deploy to create the users, then schedule it, e.g. nightly:
+`0 0 * * * ENV_FILE=/opt/noagenda/demo.env /opt/noagenda/docker/demo-reset.sh`.
+Never set `DEMO_MODE=true` on an instance with real data.
 
 ## Server setup checklist (small VPS)
 `docker/provision.sh` does most of this on a Debian or Ubuntu server (run `sudo docker/provision.sh --dry-run` first to see

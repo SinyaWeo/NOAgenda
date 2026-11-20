@@ -59,11 +59,12 @@ To start the pieces by hand: `docker compose -f docker/docker-compose.yml up -d`
 
 ```bash
 cd app/backend
-npm run seed             # example users, teams and shared projects (password: password123)
+npm run seed             # 5 example users, 3 teams and shared projects (password: password123)
 npm run seed -- --reset  # wipe and re-seed
 ```
 
-The seeder refuses to run when `NODE_ENV=production`.
+The seeder refuses to run when `NODE_ENV=production`, unless `ALLOW_DEMO_SEED=true` is set. That is how a public demo
+instance resets itself; see "Several instances on one host" in [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ### Database changes
 

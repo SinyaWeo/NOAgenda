@@ -40,11 +40,16 @@
 	});
 
 	let registrationEnabled = $state(true);
+	let demoUsers = $state<{ username: string; name: string; password: string; role: string }[]>([]);
 	onMount(async () => {
-		const cfg: { registrationEnabled?: boolean } = await apiFetch('/auth/config')
+		const cfg: {
+			registrationEnabled?: boolean;
+			demoUsers?: { username: string; name: string; password: string; role: string }[];
+		} = await apiFetch('/auth/config')
 			.then((r) => (r.ok ? r.json() : {}))
 			.catch(() => ({}));
 		registrationEnabled = cfg.registrationEnabled !== false;
+		demoUsers = cfg.demoUsers ?? [];
 	});
 
 	async function handleLogin(event: Event) {
@@ -125,6 +130,32 @@
 				</div>
 				{#if resendStatus}<p class="text-xs text-gray-500">{resendStatus}</p>{/if}
 			</form>
+		{/if}
+
+		{#if demoUsers.length}
+			<div class="mb-4 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+				<p class="text-sm font-medium">{$t('auth.demo.title')}</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{$t('auth.demo.hint')}</p>
+				<table class="w-full text-xs">
+					<tbody>
+						{#each demoUsers as u (u.username)}
+							<tr
+								class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+								onclick={() => {
+									username.set(u.username);
+									password.set(u.password);
+								}}
+							>
+								<td class="py-1 pr-2 font-mono">{u.username}</td>
+								<td class="py-1 pr-2 font-mono">{u.password}</td>
+								<td class="py-1 text-right text-gray-500"
+									>{u.role === 'admin' ? $t('auth.demo.role.admin') : $t('auth.demo.role.user')}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
 		{/if}
 
 		<form onsubmit={handleLogin} class="flex flex-col gap-4">

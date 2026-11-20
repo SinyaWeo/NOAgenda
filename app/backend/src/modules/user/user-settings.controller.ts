@@ -35,6 +35,7 @@ import { verifyPassword } from '../../common/password';
 import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { SessionService } from '../session/session.service';
 import { NoApiTokenGuard } from '../auth/no-api-token.guard';
+import { NotInDemoGuard } from '../../common/guards/not-in-demo.guard';
 import {
   UpdateGeneralSettingsDto,
   UpdateEmailDto,
@@ -87,7 +88,7 @@ export class UserSettingsController {
   // A wrong password here is bad INPUT (400), not a failed session: a 401 would make the
   // frontend treat it as "session expired" and sign the user out over a typo.
   @Post('settings/email')
-  @UseGuards(NoApiTokenGuard)
+  @UseGuards(NoApiTokenGuard, NotInDemoGuard)
   async updateEmail(@Request() req: AuthRequest, @Body() body: UpdateEmailDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
@@ -149,7 +150,7 @@ export class UserSettingsController {
 
   /** POST /user/settings/password — change password */
   @Post('settings/password')
-  @UseGuards(NoApiTokenGuard)
+  @UseGuards(NoApiTokenGuard, NotInDemoGuard)
   async updatePassword(@Request() req: AuthRequest, @Body() body: UpdatePasswordDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
@@ -176,7 +177,7 @@ export class UserSettingsController {
 
   /** POST /user/deletion/request — schedule deletion after a grace period (password required). */
   @Post('deletion/request')
-  @UseGuards(NoApiTokenGuard)
+  @UseGuards(NoApiTokenGuard, NotInDemoGuard)
   @Throttle({ default: { ttl: 3600000, limit: 5 } })
   async requestDeletion(@Request() req: AuthRequest, @Body() body: DeletionRequestDto) {
     const user = await this.userService.findById(req.user.userId);

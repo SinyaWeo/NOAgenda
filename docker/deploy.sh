@@ -3,7 +3,8 @@
 #
 #   docker/deploy.sh [image_tag]        # default: latest; CI tags every image with the commit SHA
 #
-# Env: ENV_FILE (default docker/.env.production), COMPOSE_FILE, BACKUP_DIR (default /var/backups/noagenda).
+# Env: ENV_FILE (default docker/.env.production), COMPOSE_FILE, COMPOSE_PROJECT (for a second instance on
+# the same host, e.g. noagenda-demo), BACKUP_DIR (default /var/backups/noagenda).
 # The chosen tag is stored as IMAGE_TAG in the env file, so restarts keep using the same version.
 # If the new version does not become healthy, the previous tag is started again. Note that database
 # migrations only go forward: a rollback to older code can need the pre-deploy backup (docker/restore.sh).
@@ -13,7 +14,7 @@ COMPOSE_FILE="${COMPOSE_FILE:-$HERE/docker-compose.prod.yml}"
 ENV_FILE="${ENV_FILE:-$HERE/.env.production}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/noagenda}"
 TAG="${1:-latest}"
-DC=(docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE")
+DC=(docker compose ${COMPOSE_PROJECT:+-p "$COMPOSE_PROJECT"} -f "$COMPOSE_FILE" --env-file "$ENV_FILE")
 
 prev="$(grep -E '^IMAGE_TAG=' "$ENV_FILE" | tail -1 | cut -d= -f2- || true)"
 set_tag() {

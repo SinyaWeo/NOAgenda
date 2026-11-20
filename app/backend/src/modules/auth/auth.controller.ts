@@ -1,3 +1,4 @@
+import { demoUserList, isDemoMode } from '../../common/demo-users';
 import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
@@ -103,6 +104,7 @@ export class AuthController {
       termsAcceptanceRequired: process.env.REQUIRE_TERMS_ACCEPTANCE === 'true',
       registrationEnabled: policy.enabled,
       inviteRequired: policy.inviteRequired,
+      ...(isDemoMode() ? { demoUsers: demoUserList() } : {}),
     };
   }
 
