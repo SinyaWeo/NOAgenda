@@ -18,7 +18,7 @@ Only Caddy publishes ports (80/443). MariaDB, the API and the UI live on an inte
 Internet ──443──> Apache (certbot HTTPS) ──> Caddy 127.0.0.1:8080 (plain HTTP, loopback only) ──> backend / frontend
 ```
 
-The UI and API share one origin (the API is under `/api`), so there is no CORS to configure.
+The UI and API share one origin (the API is under `/api`), so there is no CORS to set up by hand: compose passes `CORS_ORIGIN` to the backend from `DOMAIN`.
 
 ## Requirements
 - A Linux server with Docker + the Compose plugin
@@ -184,24 +184,6 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 ```
 Fine on a machine with 4+ GB and spare CPU. Pending migrations run on startup either way. **Take a backup first** (below).
 
-### Upgrading MariaDB (11.3 -> 11.8 LTS)
-The stack now uses `mariadb:11.8` (long-term support; 11.3 was a short-term release that is out of support). The data
-directory is upgraded in place on the first start (`MARIADB_AUTO_UPGRADE=1` is set), but **a data directory cannot be
-downgraded**, so:
-```bash
-docker/backup.sh /var/backups/noagenda                  # 1. fresh backup, copy it off the server
-docker/verify-backup.sh /var/backups/noagenda/db-<ts>.sql.gz   # 2. prove it restores (it now starts a 11.8 scratch server)
-git pull && docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build   # 3.
-docker compose -f docker/docker-compose.prod.yml logs mariadb | grep -i upgrade      # 4. look for a clean upgrade
-```
-Rollback = stop the stack, restore the backup into a fresh volume on the old image tag. Local development: the dev compose
-file uses the same image; `docker compose -f docker/docker-compose.yml up -d` upgrades your local data volume (dump it first
-if it matters).
-
-The migration `1794900000000-Hardening` also runs: it removes duplicate rows from the join tables (keeping the strongest
-permission), deletes rows that point at things that no longer exist, then adds the missing foreign keys and unique indexes.
-Read it before upgrading a production database; `down()` reverts it.
-
 ### Changing the data model (developers)
 Production never auto-syncs the schema. After changing an entity:
 ```bash
@@ -299,6 +281,10 @@ advice, so have them reviewed before you accept real users.
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL_DAYS` | backend | Defaults `15m` / `30` |
 | `MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES` | backend | Failures per address+account before that address is locked, and the lock length. Defaults `5` / `15` |
 | `ACCOUNT_LOCK_THRESHOLD` | backend | Failures across all addresses before the account itself is locked (default `20`) |
+| `ACCOUNT_DELETION_GRACE_DAYS` | backend | Days between a deletion request and the account being purged (default `7`) |
+| `COMPOSE_PROJECT` | environment of `deploy.sh`, `backup.sh` | Compose project name when several instances share a host (see above) |
+| `DEMO_MODE` | demo instance only | `true` lists the example users on the login page and disables password, email and account-deletion changes. Never on an instance with real data |
+| `ALLOW_DEMO_SEED` | environment of `demo-reset.sh` | `true` lets `seed.js` run with `NODE_ENV=production` (set by `docker/demo-reset.sh`) |
 | `USER_STORAGE_QUOTA_MB` | backend | Attachment storage per user (default `200`) |
 | `WEBHOOK_ALLOW_PRIVATE` | backend | `true` allows webhook URLs that point at internal addresses (default off) |
 | `BACKEND_MEM_LIMIT`, `FRONTEND_MEM_LIMIT`, `CADDY_MEM_LIMIT` | `.env.production` | Container memory caps (defaults `768m` / `512m` / `256m`) |
@@ -339,10 +325,11 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
 - The UI is available in **English and Czech** (see `app/frontend/src/lib/i18n/README.md`). Terms and Privacy texts are templates
   in English that the operator must replace with their own reviewed text. Server validation messages are translated when they
   are one of the common ones; anything else is shown in English.
-- A project's owner deleting their account deletes the project for everyone in it (ownership transfer is not built).
+- A project's owner deleting their account deletes the project for everyone in it, and teams they own are deleted too (ownership transfer is not built). Deletion is scheduled with a grace period (`ACCOUNT_DELETION_GRACE_DAYS`, default 7), so there is time to cancel.
 - Webhook secrets are stored in plaintext (they must be readable to sign deliveries); consider encrypting them at rest.
-- The per-address login counter lives in the API process's memory: a restart clears it and several API instances would not share it.
-- Dependencies: no critical/high advisories (CI fails if one appears). Three *moderate* ones sit inside TypeORM's own `glob`/`minimatch`; they are not reachable (the patterns are constants), and the only fix is a major TypeORM upgrade.
+- The per-address login counter and the general request rate limit (300 requests/minute per client) live in the API process's memory: a restart clears them and several API replicas of one instance would not share them. This is fine for the single-container stack here; it matters only if you scale the backend out.
+- Without `SMTP_HOST` no mail is sent and email verification is off, so addresses are unverified and password reset by email does not work. Configure SMTP (PRELAUNCH.md section 3) before opening registration.
+- Dependencies: `npm audit --omit=dev` reports nothing for the backend and the frontend, and CI fails on a high/critical advisory in production dependencies. Moderate advisories remain in development/test tooling only (`glob`/`minimatch` pulled in by Jest); they are not part of the production images.
 - No independent security review or penetration test has been done.
 - The access token lives in `localStorage` (15-minute lifetime; the refresh credential is an httpOnly cookie). A strict CSP
   is in place and was exercised in a real browser during testing, but a new XSS bug would still expose the short-lived token.

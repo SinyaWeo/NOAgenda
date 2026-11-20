@@ -4,7 +4,7 @@ services:
     container_name: mariadb
     restart: unless-stopped
     environment:
-      # Upgrades an existing data directory (e.g. from 11.3) on first start with a newer image.
+      # Upgrades an existing data directory on the first start of a newer image.
       MARIADB_AUTO_UPGRADE: "1"
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-noagenda}

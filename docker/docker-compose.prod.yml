@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
     environment:
       # Upgrades the data directory on the first start of a newer image. TAKE A BACKUP BEFORE
-      # changing the image tag: a data directory cannot be downgraded (see DEPLOYMENT.md).
+      # changing the image tag: a data directory cannot be downgraded (see "Backups and restore" in DEPLOYMENT.md).
       MARIADB_AUTO_UPGRADE: "1"
       MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD is required}
       MARIADB_DATABASE: ${MYSQL_DATABASE:-noagenda}
