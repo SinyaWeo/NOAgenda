@@ -1,0 +1,4 @@
+# Instances for docker/deploy-all.sh: <compose project> <env file>. Copy to docker/instances.
+# The compose project is what you pass as COMPOSE_PROJECT to deploy.sh and backup.sh; the env file is that instance's own.
+noagenda-app   /opt/noagenda/docker/app.env
+noagenda-demo  /opt/noagenda/docker/demo.env

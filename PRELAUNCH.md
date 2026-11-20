@@ -166,7 +166,7 @@ An untested backup is a hope, not a backup.
 
 | Task | How |
 |---|---|
-| Update the app | `git pull`, then `docker/deploy.sh` (takes a backup, pulls the CI images, restarts, checks `/health`; migrations run on start). Building on the server instead: back up, then `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build` |
+| Update the app | `git pull`, then `docker/deploy.sh` (takes a backup, pulls the CI images, restarts, checks `/health`; migrations run on start; with several instances, `docker/deploy-all.sh` does each one in turn). Building on the server instead: back up, then `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build` |
 | Roll back a bad release | `docker/deploy.sh <previous-tag>` (it also rolls back by itself if the new version is not healthy). If the release changed the schema, restore the pre-deploy backup with `docker/restore.sh` too. Do not use `migration:revert` on live data |
 | See logs | `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production logs -f backend` |
 | Someone is locked out | The lock lasts 15 minutes, or they can reset their password (that clears it) |

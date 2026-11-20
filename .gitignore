@@ -9,3 +9,5 @@ docker/.env*
 # Per-host Caddy site files (docker/sites/*.caddy); only the example is committed
 docker/sites/*.caddy
 findings
+# Per-host instance list for docker/deploy-all.sh; only the example is committed
+docker/instances

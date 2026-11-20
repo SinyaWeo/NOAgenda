@@ -149,7 +149,12 @@ then reload Caddy (`docker compose -f docker/docker-compose.edge.yml exec caddy 
 Behind Apache, give every hostname its own vhost and certificate (see the Apache example above); all of them proxy to the same
 `127.0.0.1:8080`. Deploy each instance with
 `COMPOSE_PROJECT=noagenda-app ENV_FILE=/opt/noagenda/docker/app.env docker/deploy.sh`. The same `COMPOSE_PROJECT` and `ENV_FILE` variables work
-for `docker/backup.sh`. Any other site on the host (for example static pages on the bare domain) is just another vhost.
+for `docker/backup.sh`. To deploy all instances in one go, list them in `docker/instances` (copy `docker/instances.example`: one
+`<compose project> <env file>` per line) and run `docker/deploy-all.sh [<12-char commit sha>]` (`--dry-run` shows what it would
+do). Each instance runs its own pending migrations when its backend starts, so this migrates every database. The script checks
+the list first, deploys one instance after another, and stops at the first failure, telling you which instances are done and
+which were not touched; if the release changed the schema, restore the failed instance's pre-deploy backup before retrying.
+Pass the same sha to every instance so they all end up on one version. Any other site on the host (for example static pages on the bare domain) is just another vhost.
 `deploy.sh` refuses to run while the shared proxy is down.
 
 **Moving from a per-instance Caddy** (older versions had a `caddy` service in each stack): start the edge, add the site files,
