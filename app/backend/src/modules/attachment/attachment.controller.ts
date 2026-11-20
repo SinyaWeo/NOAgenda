@@ -25,6 +25,7 @@ import { extname, resolve, basename } from 'path';
 import { existsSync, unlink } from 'fs';
 import { NodeAccessService } from '../node/node-access.service';
 import { randomUUID } from 'crypto';
+import { NotInDemoGuard } from '../../common/guards/not-in-demo.guard';
 import { sniffFile } from '../../common/file-sniff';
 import { MAX_FILE_SIZE, UploadPrecheckGuard, USER_QUOTA_BYTES } from './upload-precheck.guard';
 
@@ -108,7 +109,7 @@ export class AttachmentController {
   }
 
   @Post('upload')
-  @UseGuards(UploadPrecheckGuard)
+  @UseGuards(NotInDemoGuard, UploadPrecheckGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({

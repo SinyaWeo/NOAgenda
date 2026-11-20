@@ -162,12 +162,14 @@ Do this one instance at a time, because the old Caddy still holds the ports unti
 For a demo that visitors can try without signing up, add to its env file:
 
 - `DEMO_MODE=true`: the login page lists the example users (with password and role), and the password, email and
-  account-deletion endpoints are disabled so visitors cannot lock each other out.
+  account-deletion endpoints are disabled so visitors cannot lock each other out. Attachment and avatar uploads are
+  disabled too (HTTP 403), so the public demo cannot be used to store files.
 - `REGISTRATION_ENABLED=false` and an empty `SMTP_HOST`.
 
 `docker/demo-reset.sh` re-creates the example data (`seed --reset`) and clears uploads. It refuses to run unless
 `DEMO_MODE=true` is set in the env file. Run it once after the first deploy to create the users, then schedule it, e.g. nightly:
-`0 0 * * * ENV_FILE=/opt/noagenda/docker/demo.env /opt/noagenda/docker/demo-reset.sh`.
+`0 0 * * * ENV_FILE=/opt/noagenda/docker/demo.env COMPOSE_PROJECT=noagenda-demo /opt/noagenda/docker/demo-reset.sh >> /var/log/noagenda-demo-reset.log 2>&1`
+(`COMPOSE_PROJECT` defaults to `noagenda-demo`; set it to match the project name your demo stack was started with.)
 Never set `DEMO_MODE=true` on an instance with real data.
 
 ## Server setup checklist (small VPS)

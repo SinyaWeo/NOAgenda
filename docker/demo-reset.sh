@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Reset the public demo instance to its default example data (run nightly from cron or a systemd timer).
 #
-#   0 0 * * *  ENV_FILE=/opt/noagenda/demo.env COMPOSE_PROJECT=noagenda-demo /opt/noagenda/docker/demo-reset.sh
+#   0 0 * * *  ENV_FILE=/opt/noagenda/docker/demo.env COMPOSE_PROJECT=noagenda-demo /opt/noagenda/docker/demo-reset.sh
 #
 # Env: ENV_FILE, COMPOSE_FILE, COMPOSE_PROJECT (default noagenda-demo).
 # Re-creates the example users and their data (seed --reset), deletes uploaded files and sessions.

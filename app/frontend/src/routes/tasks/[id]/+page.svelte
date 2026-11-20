@@ -253,7 +253,7 @@
 				body: fd
 			});
 			if (!up.ok) {
-				showToast(tr('tasks.toast.uploadFailed'), 'error');
+				showToast(tr(up.status === 403 ? 'tasks.toast.uploadDisabled' : 'tasks.toast.uploadFailed'), 'error');
 				return;
 			}
 			attachments = await apiGetAuth<Attachment[]>(`/attachments?taskId=${id}`);

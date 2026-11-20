@@ -2,7 +2,7 @@ import { CanActivate, ForbiddenException, Injectable } from '@nestjs/common';
 import { isDemoMode } from '../demo-users';
 
 /**
- * Blocks account-changing endpoints (password, email, deletion) on the public demo instance
+ * Blocks account-changing endpoints (password, email, deletion) and file uploads (attachments, avatars) on the public demo instance
  * (DEMO_MODE=true). The demo accounts are shared and listed on the login page, so one visitor must
  * not be able to lock the others out until the nightly reset.
  */

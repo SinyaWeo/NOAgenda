@@ -115,6 +115,7 @@ export class UserSettingsController {
 
   /** PUT /user/settings/avatar/upload — upload a new avatar image */
   @Put('settings/avatar/upload')
+  @UseGuards(NotInDemoGuard)
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: diskStorage({

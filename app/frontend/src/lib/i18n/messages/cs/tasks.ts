@@ -25,6 +25,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.toast.commentPosted': 'Komentář přidán',
 	'tasks.toast.fileUploaded': 'Soubor nahrán',
 	'tasks.toast.uploadFailed': 'Nahrání se nezdařilo',
+	'tasks.toast.uploadDisabled': 'Nahrávání souborů je v demu vypnuto',
 	'tasks.toast.downloadFailed': 'Stažení se nezdařilo',
 	'tasks.toast.saved': 'Úkol uložen',
 	'tasks.toast.created': 'Úkol vytvořen!',

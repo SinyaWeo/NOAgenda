@@ -13,7 +13,8 @@ export const messages = {
 	'auth.signIn': 'Sign in',
 	'auth.signingIn': 'Signing in…',
 	'auth.demo.title': 'Demo accounts',
-	'auth.demo.hint': 'Click an account to fill in the sign-in form. The demo resets every night at midnight.',
+	'auth.demo.hint':
+		'Click an account to fill in the sign-in form. The demo resets every night at midnight. File uploads (attachments, avatars) are disabled.',
 	'auth.demo.role.admin': 'Admin',
 	'auth.demo.role.user': 'User',
 	'auth.noAccount': "Don't have an account?",

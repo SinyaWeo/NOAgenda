@@ -23,6 +23,7 @@ export const messages = {
 	'tasks.toast.commentPosted': 'Comment posted',
 	'tasks.toast.fileUploaded': 'File uploaded',
 	'tasks.toast.uploadFailed': 'Upload failed',
+	'tasks.toast.uploadDisabled': 'Uploads are disabled on the demo',
 	'tasks.toast.downloadFailed': 'Download failed',
 	'tasks.toast.saved': 'Task saved',
 	'tasks.toast.created': 'Task created!',
