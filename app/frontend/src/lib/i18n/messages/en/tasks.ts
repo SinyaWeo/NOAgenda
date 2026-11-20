@@ -92,7 +92,48 @@ export const messages = {
 	'tasks.repeat.periods': 'days',
 	'tasks.repeat.months': 'months',
 	'tasks.repeat.fromCurrent': 'days after completion',
+	'tasks.repeat.kind.none': 'Does not repeat',
+	'tasks.repeat.kind.weekly': 'weeks',
+	'tasks.repeat.kind.monthlyWeekday': 'months, same weekday (e.g. 2nd Tuesday)',
+	'tasks.repeat.kind.monthEnd': 'months, on the last day',
+	'tasks.repeat.weekdays': 'On',
+	'tasks.repeat.weekdaysHint': "None selected: the due date's weekday.",
+	'tasks.repeat.ends': 'Ends',
+	'tasks.repeat.end.never': 'Never',
+	'tasks.repeat.end.until': 'On date',
+	'tasks.repeat.end.count': 'After',
+	'tasks.repeat.occurrences': 'more times, this one included',
 	'tasks.repeat.hint':
-		'When you mark the task done it reopens with the next due date instead. Leave at 0 to not repeat.',
-	'tasks.repeat.nextCycle': 'Done. This task repeats: next due {date}.'
+		'When you mark the task done it reopens with the next due date and its subtasks unticked, until the series ends. The date is worked out in your time zone.',
+	'tasks.repeat.nextCycle': 'Done. This task repeats: next due {date}.',
+	'tasks.repeat.finished': 'Done. That was the last occurrence of this repeating task.',
+	'tasks.repeat.summaryLabel': 'Repeats',
+	'tasks.repeat.summary.daily': { one: 'Every day', other: 'Every {count} days' },
+	'tasks.repeat.summary.weekly': { one: 'Every week', other: 'Every {count} weeks' },
+	'tasks.repeat.summary.weeklyOn': {
+		one: 'Every week on {days}',
+		other: 'Every {count} weeks on {days}'
+	},
+	'tasks.repeat.summary.monthly': { one: 'Every month', other: 'Every {count} months' },
+	'tasks.repeat.summary.monthlyWeekday': {
+		one: 'Every month on the same weekday',
+		other: 'Every {count} months on the same weekday'
+	},
+	'tasks.repeat.summary.monthEnd': {
+		one: 'Every month on the last day',
+		other: 'Every {count} months on the last day'
+	},
+	'tasks.repeat.summary.afterCompletion': {
+		one: '1 day after completion',
+		other: '{count} days after completion'
+	},
+	'tasks.repeat.summary.left': { one: '1 occurrence left', other: '{count} occurrences left' },
+	'tasks.repeat.summary.until': 'until {date}',
+	'tasks.repeat.history.title': 'Completed cycles',
+	'tasks.repeat.history.total': { one: 'Completed 1 time', other: 'Completed {count} times' },
+	'tasks.repeat.history.streak': { one: 'On time 1× in a row', other: 'On time {count}× in a row' },
+	'tasks.repeat.history.onTime': 'on time',
+	'tasks.repeat.history.late': 'late',
+	'tasks.repeat.history.dueFor': 'due {date}',
+	'tasks.repeat.history.loadFailed': 'Could not load the history.'
 } as const;

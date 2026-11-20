@@ -28,7 +28,6 @@ export const messages = {
 	'settings.general.title': 'General Settings',
 	'settings.general.displayName': 'Display Name',
 	'settings.general.timezone': 'Timezone',
-	'settings.general.timezonePlaceholder': 'e.g. Europe/Prague',
 	'settings.general.defaultProject': 'Default project',
 	'settings.general.noDefaultProject': 'None',
 	'settings.general.defaultProjectHint': 'New tasks are created in this project unless you pick another.',

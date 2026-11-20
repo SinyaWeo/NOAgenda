@@ -88,7 +88,7 @@ export class NodeController {
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
       await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, existing.id);
     }
-    const node = await this.nodeService.update(Number(id), safeBody);
+    const node = await this.nodeService.update(Number(id), safeBody, req.user.userId);
     if (!node) throw new NotFoundException();
     return node;
   }

@@ -76,6 +76,23 @@ export class NodeCommonDto {
   @Max(100000000)
   repeatAfter?: number;
 
+  /** WEEKLY: ISO weekdays (1 = Monday ... 7 = Sunday), comma-separated: "1,3,5". */
+  @IsOptional()
+  @Matches(/^[1-7](,[1-7]){0,6}$/)
+  repeatWeekdays?: string;
+
+  /** The series ends with the last occurrence due on this day. */
+  @IsOptional()
+  @IsDateString()
+  repeatUntil?: string;
+
+  /** Occurrences left, the current one included. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(100000)
+  repeatCount?: number;
+
   @IsOptional()
   @IsInt()
   @Min(1)

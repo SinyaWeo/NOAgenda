@@ -102,6 +102,9 @@ describe('NodeService announces changes', () => {
   });
 
   describe('repeating tasks', () => {
+    const sqlCalls = (query: jest.Mock, fragment: string) =>
+      query.mock.calls.filter(([sql]) => String(sql).includes(fragment)) as [string, unknown[]][];
+
     const repeating = (over: Partial<Node> = {}) =>
       task({
         status: NodeStatus.OPEN,
@@ -120,7 +123,7 @@ describe('NodeService announces changes', () => {
         expect.objectContaining({ status: NodeStatus.OPEN, percentDone: 0, dueDate: new Date('2030-01-17T09:00:00Z') }),
       );
       expect(repo.update.mock.calls[0][1]).not.toHaveProperty('shiftMs');
-      const [sql, params] = repo.manager.query.mock.calls[0];
+      const [sql, params] = sqlCalls(repo.manager.query, 'UPDATE task_reminders')[0];
       expect(sql).toContain('UPDATE task_reminders');
       expect(params[0]).toBe(7 * 24 * 3600);
       expect(params.slice(-1)).toEqual([5]);
@@ -143,9 +146,60 @@ describe('NodeService announces changes', () => {
 
     it('leaves reminders alone when there was no due date to move them by', async () => {
       const { svc, repo } = build([repeating({ dueDate: undefined })]);
-      repo.manager.query = jest.fn();
+      repo.manager.query = jest.fn(async () => []);
       await svc.update(5, { status: NodeStatus.DONE });
-      expect(repo.manager.query).not.toHaveBeenCalled();
+      expect(sqlCalls(repo.manager.query, 'UPDATE task_reminders')).toHaveLength(0);
+    });
+
+    it('works out the next date in the time zone of whoever completes it', async () => {
+      // Due 09:00 in Prague on the Saturday before the clocks go forward (2030-03-31): a week later it is
+      // still 09:00 in Prague, which is one hour earlier in UTC.
+      const { svc, repo } = build([repeating({ dueDate: new Date('2030-03-30T08:00:00Z') })]);
+      repo.manager.query = jest.fn(async (sql: string) =>
+        sql.includes('FROM users') ? [{ timezone: 'Europe/Prague' }] : [],
+      );
+      await svc.update(5, { status: NodeStatus.DONE }, 9);
+      expect(repo.update).toHaveBeenCalledWith(
+        5,
+        expect.objectContaining({ dueDate: new Date('2030-04-06T07:00:00Z') }),
+      );
+    });
+
+    it('records every completion of a repeating task, who made it and for which due date', async () => {
+      const { svc, repo } = build([repeating()]);
+      repo.manager.query = jest.fn(async () => []);
+      await svc.update(5, { status: NodeStatus.DONE }, 9);
+      const [, params] = sqlCalls(repo.manager.query, 'INSERT INTO task_completions')[0];
+      expect(params[0]).toBe(5);
+      expect(params[2]).toBe(9);
+      expect(params[3]).toEqual(new Date('2030-01-10T09:00:00Z'));
+    });
+
+    it('a new cycle reopens done subtasks', async () => {
+      const { svc, repo } = build([repeating()]);
+      repo.manager.query = jest.fn(async (sql: string) =>
+        sql.includes('WITH RECURSIVE') ? [{ id: 8 }, { id: 9 }] : [],
+      );
+      await svc.update(5, { status: NodeStatus.DONE });
+      const [sql, params] = sqlCalls(repo.manager.query, 'UPDATE nodes SET status')[0];
+      expect(sql).toContain("status = 'open'");
+      expect(params).toEqual([8, 9]);
+    });
+
+    it('the last occurrence of a limited series is just done, and is still recorded', async () => {
+      const { svc, repo } = build([repeating({ repeatCount: 1 })]);
+      repo.manager.query = jest.fn(async () => []);
+      await svc.update(5, { status: NodeStatus.DONE });
+      expect(repo.update).toHaveBeenCalledWith(5, { status: NodeStatus.DONE });
+      expect(sqlCalls(repo.manager.query, 'INSERT INTO task_completions')).toHaveLength(1);
+      expect(sqlCalls(repo.manager.query, 'UPDATE task_reminders')).toHaveLength(0);
+    });
+
+    it('counts occurrences down', async () => {
+      const { svc, repo } = build([repeating({ repeatCount: 3 })]);
+      repo.manager.query = jest.fn(async () => []);
+      await svc.update(5, { status: NodeStatus.DONE });
+      expect(repo.update).toHaveBeenCalledWith(5, expect.objectContaining({ status: NodeStatus.OPEN, repeatCount: 2 }));
     });
 
     it('bulk completion: repeating tasks start a new cycle, the others become done', async () => {
@@ -162,7 +216,8 @@ describe('NodeService announces changes', () => {
         5,
         expect.objectContaining({ status: NodeStatus.OPEN, dueDate: new Date('2030-01-17T09:00:00Z') }),
       );
-      expect(query).toHaveBeenCalledTimes(1);
+      expect(sqlCalls(query, 'UPDATE task_reminders')).toHaveLength(1);
+      expect(sqlCalls(query, 'INSERT INTO task_completions')).toHaveLength(1); // only the repeating one
     });
   });
 });

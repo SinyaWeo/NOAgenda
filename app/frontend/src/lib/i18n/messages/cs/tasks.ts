@@ -90,7 +90,86 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.repeat.periods': 'dní',
 	'tasks.repeat.months': 'měsíců',
 	'tasks.repeat.fromCurrent': 'dní od dokončení',
+	'tasks.repeat.kind.none': 'Neopakuje se',
+	'tasks.repeat.kind.weekly': 'týdnů',
+	'tasks.repeat.kind.monthlyWeekday': 'měsíců, ve stejný den v týdnu (např. 2. úterý)',
+	'tasks.repeat.kind.monthEnd': 'měsíců, poslední den v měsíci',
+	'tasks.repeat.weekdays': 'V',
+	'tasks.repeat.weekdaysHint': 'Nic nevybráno: den v týdnu podle termínu.',
+	'tasks.repeat.ends': 'Konec',
+	'tasks.repeat.end.never': 'Nikdy',
+	'tasks.repeat.end.until': 'K datu',
+	'tasks.repeat.end.count': 'Po',
+	'tasks.repeat.occurrences': 'dalších opakováních, včetně tohoto',
 	'tasks.repeat.hint':
-		'Po označení úkolu jako hotového se znovu otevře s dalším termínem. Hodnota 0 znamená bez opakování.',
-	'tasks.repeat.nextCycle': 'Hotovo. Úkol se opakuje: další termín {date}.'
+		'Když úkol označíte jako hotový, znovu se otevře s dalším termínem a s odškrtnutými podúkoly, dokud řada neskončí. Datum se počítá ve vašem časovém pásmu.',
+	'tasks.repeat.nextCycle': 'Hotovo. Úkol se opakuje: další termín {date}.',
+	'tasks.repeat.finished': 'Hotovo. To bylo poslední opakování tohoto úkolu.',
+	'tasks.repeat.summaryLabel': 'Opakování',
+	'tasks.repeat.summary.daily': {
+		one: 'Každý den',
+		few: 'Každé {count} dny',
+		many: 'Každého {count} dne',
+		other: 'Každých {count} dní'
+	},
+	'tasks.repeat.summary.weekly': {
+		one: 'Každý týden',
+		few: 'Každé {count} týdny',
+		many: 'Každého {count} týdne',
+		other: 'Každých {count} týdnů'
+	},
+	'tasks.repeat.summary.weeklyOn': {
+		one: 'Každý týden: {days}',
+		few: 'Každé {count} týdny: {days}',
+		many: 'Každého {count} týdne: {days}',
+		other: 'Každých {count} týdnů: {days}'
+	},
+	'tasks.repeat.summary.monthly': {
+		one: 'Každý měsíc',
+		few: 'Každé {count} měsíce',
+		many: 'Každého {count} měsíce',
+		other: 'Každých {count} měsíců'
+	},
+	'tasks.repeat.summary.monthlyWeekday': {
+		one: 'Každý měsíc ve stejný den v týdnu',
+		few: 'Každé {count} měsíce ve stejný den v týdnu',
+		many: 'Každého {count} měsíce ve stejný den v týdnu',
+		other: 'Každých {count} měsíců ve stejný den v týdnu'
+	},
+	'tasks.repeat.summary.monthEnd': {
+		one: 'Každý měsíc poslední den',
+		few: 'Každé {count} měsíce poslední den',
+		many: 'Každého {count} měsíce poslední den',
+		other: 'Každých {count} měsíců poslední den'
+	},
+	'tasks.repeat.summary.afterCompletion': {
+		one: '1 den po dokončení',
+		few: '{count} dny po dokončení',
+		many: '{count} dne po dokončení',
+		other: '{count} dní po dokončení'
+	},
+	'tasks.repeat.summary.left': {
+		one: 'zbývá 1 opakování',
+		few: 'zbývají {count} opakování',
+		many: 'zbývá {count} opakování',
+		other: 'zbývá {count} opakování'
+	},
+	'tasks.repeat.summary.until': 'do {date}',
+	'tasks.repeat.history.title': 'Dokončené cykly',
+	'tasks.repeat.history.total': {
+		one: 'Dokončeno 1×',
+		few: 'Dokončeno {count}×',
+		many: 'Dokončeno {count}×',
+		other: 'Dokončeno {count}×'
+	},
+	'tasks.repeat.history.streak': {
+		one: 'Včas 1× v řadě',
+		few: 'Včas {count}× v řadě',
+		many: 'Včas {count}× v řadě',
+		other: 'Včas {count}× v řadě'
+	},
+	'tasks.repeat.history.onTime': 'včas',
+	'tasks.repeat.history.late': 'pozdě',
+	'tasks.repeat.history.dueFor': 'termín {date}',
+	'tasks.repeat.history.loadFailed': 'Historii se nepodařilo načíst.'
 };

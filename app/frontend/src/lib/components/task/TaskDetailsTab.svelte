@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { t, fmt, type MessageKey } from '$lib/i18n';
 	import type { Label, Task, TaskAssignee, TaskLabel } from '$lib/types';
+	import { describeRepeat } from '$lib/repeat';
+	import RepeatHistory from './RepeatHistory.svelte';
 	import { Button, Card, Progressbar, Select } from 'flowbite-svelte';
 
 	let {
@@ -25,6 +27,11 @@
 		onPercentDone: (value: number) => void;
 		onDefer: (days: number) => void;
 	} = $props();
+
+	const repeatSummary = $derived.by(() => {
+		void $t; // re-runs when the language changes
+		return describeRepeat(task);
+	});
 
 	/** Labels not on the task yet. */
 	const available = $derived(allLabels.filter((l) => !taskLabels.some((tl) => tl.label?.id === l.id)));
@@ -84,6 +91,15 @@
 		{/if}
 	</div>
 
+	{#if repeatSummary}
+		<div class="mb-4">
+			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+				{$t('tasks.repeat.summaryLabel')}
+			</p>
+			<p class="text-sm text-gray-900 dark:text-white m-0">{repeatSummary}</p>
+		</div>
+	{/if}
+
 	<div class="mb-4">
 		<div class="flex items-center justify-between mb-2">
 			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
@@ -106,6 +122,12 @@
 			<Button size="xs" color="light" onclick={() => onDefer(1)}>{$t('tasks.details.defer1')}</Button>
 			<Button size="xs" color="light" onclick={() => onDefer(3)}>{$t('tasks.details.defer3')}</Button>
 			<Button size="xs" color="light" onclick={() => onDefer(7)}>{$t('tasks.details.defer7')}</Button>
+		</div>
+	{/if}
+
+	{#if task.repeatAfter}
+		<div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+			<RepeatHistory taskId={task.id} version={task.updatedAt} />
 		</div>
 	{/if}
 

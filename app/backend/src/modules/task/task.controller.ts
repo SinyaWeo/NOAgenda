@@ -86,7 +86,7 @@ export class TaskController {
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
       await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, existing.id);
     }
-    const task = await this.taskService.update(id, safeBody);
+    const task = await this.taskService.update(id, safeBody, req.user.userId);
     if (!task) throw new NotFoundException();
     return task;
   }

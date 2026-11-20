@@ -39,6 +39,38 @@ describe('task/project DTOs', () => {
     await expect(pipe.transform({ name: 'P', description: 'x' }, body(ProjectCreateDto))).resolves.toBeDefined();
   });
 
+  it('accepts the repeat rules the UI sends, and lets them be cleared with null', async () => {
+    await expect(
+      pipe.transform(
+        {
+          repeatMode: 'weekly',
+          repeatAfter: 2,
+          repeatWeekdays: '1,3,5',
+          repeatUntil: '2030-12-31T12:00:00.000Z',
+          repeatCount: 10,
+        },
+        body(TaskUpdateDto),
+      ),
+    ).resolves.toBeDefined();
+    for (const repeatMode of ['monthly_weekday', 'month_end']) {
+      await expect(pipe.transform({ repeatMode, repeatAfter: 1 }, body(TaskUpdateDto))).resolves.toBeDefined();
+    }
+    await expect(
+      pipe.transform({ repeatWeekdays: null, repeatUntil: null, repeatCount: null }, body(TaskUpdateDto)),
+    ).resolves.toBeDefined();
+  });
+
+  it.each([
+    ['weekday 0', { repeatWeekdays: '0,1' }],
+    ['weekday 8', { repeatWeekdays: '8' }],
+    ['weekdays with spaces', { repeatWeekdays: '1, 3' }],
+    ['too many weekdays', { repeatWeekdays: '1,2,3,4,5,6,7,1' }],
+    ['bad until date', { repeatUntil: 'later' }],
+    ['zero count', { repeatCount: 0 }],
+    ['fractional count', { repeatCount: 1.5 }],
+    ['unknown mode', { repeatMode: 'yearly' }],
+  ])('rejects %s in a repeat rule', (_name, value) => rejects(value, body(TaskUpdateDto)));
+
   it.each([
     ['missing title', {}],
     ['empty title', { title: '' }],

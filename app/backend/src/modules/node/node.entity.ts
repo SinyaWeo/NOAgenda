@@ -18,6 +18,12 @@ export enum RepeatMode {
   DEFAULT = 'default',
   MONTHLY = 'monthly',
   FROM_CURRENT_DATE = 'from_current_date',
+  /** Every N weeks on the weekdays in `repeatWeekdays` (the due date's weekday when none are given). */
+  WEEKLY = 'weekly',
+  /** Every N months on the same weekday position as the due date ("second Tuesday", "last Friday"). */
+  MONTHLY_WEEKDAY = 'monthly_weekday',
+  /** Every N months on the last day of the month. */
+  MONTH_END = 'month_end',
 }
 
 @Entity('nodes')
@@ -61,6 +67,18 @@ export class Node extends BaseEntity {
 
   @Column({ nullable: true, type: 'int' })
   repeatAfter?: number;
+
+  /** WEEKLY: comma-separated ISO weekdays (1 = Monday ... 7 = Sunday), e.g. "1,3,5". */
+  @Column({ type: 'varchar', length: 13, nullable: true })
+  repeatWeekdays?: string | null;
+
+  /** The series ends with the last occurrence due on this day (inclusive). */
+  @Column({ nullable: true, type: 'datetime' })
+  repeatUntil?: Date | null;
+
+  /** Occurrences left, this one included; the series ends when completing the last. Null = no limit. */
+  @Column({ nullable: true, type: 'int' })
+  repeatCount?: number | null;
 
   @Column({ nullable: true, type: 'datetime' })
   startDate?: Date;

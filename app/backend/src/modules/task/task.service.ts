@@ -62,8 +62,8 @@ export class TaskService {
     return this.nodeService.create({ ...this.normalizeTaskPayload(data), type: NodeType.TASK });
   }
 
-  async update(id: number, data: Partial<Node>): Promise<Node | null> {
-    return this.nodeService.update(id, this.normalizeTaskPayload(data));
+  async update(id: number, data: Partial<Node>, actorId?: number): Promise<Node | null> {
+    return this.nodeService.update(id, this.normalizeTaskPayload(data), actorId);
   }
 
   async duplicate(id: number, createdBy?: number): Promise<Node | null> {
@@ -74,10 +74,10 @@ export class TaskService {
     return this.nodeService.update(id, { position });
   }
 
-  async bulkUpdate(ids: number[], data: Partial<Node>, _userId?: number): Promise<Node[]> {
+  async bulkUpdate(ids: number[], data: Partial<Node>, userId?: number): Promise<Node[]> {
     const normalizedData = this.normalizeTaskPayload(data);
     if (!Object.keys(normalizedData).length) throw new BadRequestException('No fields to update');
-    return this.nodeService.updateMany(ids, normalizedData);
+    return this.nodeService.updateMany(ids, normalizedData, userId);
   }
 
   async remove(id: number): Promise<void> {

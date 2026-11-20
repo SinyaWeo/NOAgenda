@@ -7,7 +7,8 @@ import { existsSync, unlink } from 'fs';
 import { resolve } from 'path';
 import { Node, NodeType, NodeStatus } from './node.entity';
 import { DomainEvents } from '../../common/domain-events';
-import { recurrenceOnCompletion } from './node-recurrence';
+import { isRecurring, recurrenceOnCompletion } from './node-recurrence';
+import { safeTimeZone } from '../../common/zoned-time';
 
 export interface NodeFilter {
   userId?: number;
@@ -201,23 +202,80 @@ export class NodeService {
 
   /**
    * Completing a repeating task does not leave it done: it starts its next cycle (open again, no
-   * progress, dates and reminders moved on). Everything else is a plain update.
+   * progress, subtasks unticked, dates and reminders moved on) until its series ends. Every completion
+   * of a repeating task is kept in its history. Everything else is a plain update.
+   * `actorId` is who saves it: the next date is worked out in their time zone.
    */
-  async update(id: number, data: Partial<Node>): Promise<Node | null> {
+  async update(id: number, data: Partial<Node>, actorId?: number): Promise<Node | null> {
+    const m = this.nodeRepository.manager;
     let change = data;
     let shiftMs: number | null = null;
+    let completed: Node | null = null;
+    let cycled = false;
     if (data.status === NodeStatus.DONE) {
       const existing = await this.nodeRepository.findOne({ where: { id } });
-      const recurrence = existing ? recurrenceOnCompletion(existing, data) : null;
-      if (recurrence) {
-        ({ shiftMs, ...change } = recurrence);
+      if (existing && this.completesRepeatingTask(existing, data)) {
+        completed = existing;
+        const recurrence = recurrenceOnCompletion(existing, data, new Date(), await this.timeZoneOf(m, actorId));
+        if (recurrence) {
+          ({ shiftMs, ...change } = recurrence);
+          cycled = true;
+        }
       }
     }
     await this.nodeRepository.update(id, change);
-    if (change !== data) await this.rearmReminders(this.nodeRepository.manager, [id], shiftMs);
+    if (completed) await this.recordCompletion(m, completed, data, actorId);
+    if (cycled) {
+      await this.rearmReminders(m, [id], shiftMs);
+      await this.reopenSubtasks(m, [id]);
+    }
     const node = await this.findById(id);
     if (node) this.announce('updated', node);
     return node;
+  }
+
+  /** Is saving `change` over `existing` the completion of a task that repeats (whether or not it goes on)? */
+  private completesRepeatingTask(existing: Node, change: Partial<Node>): boolean {
+    if (change.status !== NodeStatus.DONE || existing.status === NodeStatus.DONE) return false;
+    return isRecurring({
+      type: existing.type,
+      repeatAfter: change.repeatAfter !== undefined ? change.repeatAfter : existing.repeatAfter,
+    });
+  }
+
+  private async timeZoneOf(m: EntityManager, userId?: number): Promise<string> {
+    if (!userId) return 'UTC';
+    const rows = await m.query('SELECT timezone FROM users WHERE id = ?', [userId]);
+    return safeTimeZone(rows?.[0]?.timezone);
+  }
+
+  /** One row in the task's completion history: when it was ticked off, by whom, and which due date it was for. */
+  private async recordCompletion(m: EntityManager, task: Node, change: Partial<Node>, actorId?: number): Promise<void> {
+    const due = change.dueDate !== undefined ? change.dueDate : task.dueDate;
+    await m.query('INSERT INTO task_completions (nodeId, completedAt, completedBy, dueDate) VALUES (?, ?, ?, ?)', [
+      task.id,
+      new Date(),
+      actorId ?? null,
+      due ?? null,
+    ]);
+  }
+
+  /** A new cycle starts with a clean slate: done subtasks (at any depth) are open again. */
+  private async reopenSubtasks(m: EntityManager, parentIds: number[]): Promise<void> {
+    const rows = await m.query(
+      `WITH RECURSIVE tree (id, depth) AS (
+         SELECT id, 1 FROM nodes WHERE parentId IN (${marks(parentIds.length)})
+         UNION
+         SELECT n.id, t.depth + 1 FROM nodes n JOIN tree t ON n.parentId = t.id WHERE t.depth < ${MAX_TREE_DEPTH}
+       )
+       SELECT n.id FROM nodes n JOIN tree ON tree.id = n.id WHERE n.type = 'task' AND n.status = 'done'`,
+      parentIds,
+    );
+    const ids: number[] = (rows ?? []).map((r: { id: number }) => r.id);
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const part = ids.slice(i, i + CHUNK);
+      await m.query(`UPDATE nodes SET status = 'open', percentDone = 0 WHERE id IN (${marks(part.length)})`, part);
+    }
   }
 
   /**
@@ -238,23 +296,27 @@ export class NodeService {
   }
 
   /** Apply the same changes to many nodes atomically: all of them or none. */
-  async updateMany(ids: number[], data: Partial<Node>): Promise<Node[]> {
+  async updateMany(ids: number[], data: Partial<Node>, actorId?: number): Promise<Node[]> {
     const existing = data.status === NodeStatus.DONE ? await this.nodeRepository.find({ where: { id: In(ids) } }) : [];
     await this.nodeRepository.manager.transaction(async (m) => {
       const repo = m.getRepository(Node);
-      // Repeating tasks that this completes each start their next cycle; the rest get the plain change.
-      const recurring = new Map<number, ReturnType<typeof recurrenceOnCompletion>>();
-      for (const node of existing) {
-        const r = recurrenceOnCompletion(node, data);
-        if (r) recurring.set(node.id, r);
+      // Repeating tasks that this completes each start their next cycle (or end their series); the rest get the plain change.
+      const repeating = existing.filter((node) => this.completesRepeatingTask(node, data));
+      const timeZone = repeating.length ? await this.timeZoneOf(m, actorId) : 'UTC';
+      const cycles = new Map<number, NonNullable<ReturnType<typeof recurrenceOnCompletion>>>();
+      for (const node of repeating) {
+        const r = recurrenceOnCompletion(node, data, new Date(), timeZone);
+        if (r) cycles.set(node.id, r);
       }
-      const plain = ids.filter((id) => !recurring.has(id));
+      const plain = ids.filter((id) => !cycles.has(id));
       if (plain.length) await repo.update(plain, data);
-      for (const [id, r] of recurring) {
-        const { shiftMs, ...change } = r!;
+      for (const [id, r] of cycles) {
+        const { shiftMs, ...change } = r;
         await repo.update(id, change);
         await this.rearmReminders(m, [id], shiftMs);
       }
+      if (cycles.size) await this.reopenSubtasks(m, [...cycles.keys()]);
+      for (const node of repeating) await this.recordCompletion(m, node, data, actorId);
     });
     const nodes = await this.nodeRepository.find({
       where: { id: In(ids) },

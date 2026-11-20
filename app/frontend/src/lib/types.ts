@@ -63,6 +63,12 @@ export interface Node {
 	startDate?: string | null;
 	repeatAfter?: number | null;
 	repeatMode?: string | null;
+	/** Weekly rule: ISO weekdays, comma-separated ("1,3,5"; 1 = Monday). */
+	repeatWeekdays?: string | null;
+	/** The series ends with the last occurrence due on this day. */
+	repeatUntil?: string | null;
+	/** Occurrences left, the current one included. */
+	repeatCount?: number | null;
 	position?: number | null;
 	isArchived?: boolean;
 	ownerId?: number | null;
@@ -223,4 +229,12 @@ export interface SavedFilter {
 	name: string;
 	description?: string | null;
 	filters?: FilterCriteria | null;
+}
+
+/** GET /tasks/:id/completions: how often a repeating task was completed. */
+export interface CompletionHistory {
+	total: number;
+	/** Latest completions in a row made on time. */
+	streak: number;
+	items: { id: number; completedAt: string; dueDate: string | null; completedBy: number | null }[];
 }

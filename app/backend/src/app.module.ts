@@ -27,6 +27,7 @@ import { ProjectUserModule } from './modules/project-user/project-user.module';
 import { ProjectTeamModule } from './modules/project-team/project-team.module';
 import { ProjectViewModule } from './modules/project-view/project-view.module';
 import { TaskReminderModule } from './modules/task-reminder/task-reminder.module';
+import { TaskCompletionModule } from './modules/task-completion/task-completion.module';
 import { FavoriteModule } from './modules/favorite/favorite.module';
 import { SavedFilterModule } from './modules/saved-filter/saved-filter.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
@@ -90,6 +91,7 @@ import { MailModule } from './modules/mail/mail.module';
     ProjectTeamModule,
     ProjectViewModule,
     TaskReminderModule,
+    TaskCompletionModule,
     FavoriteModule,
     SavedFilterModule,
     SubscriptionModule,

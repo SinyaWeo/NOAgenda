@@ -22,6 +22,11 @@ describe('announceRecurrence', () => {
 		expect(showToast).toHaveBeenCalledWith('tasks.repeat.nextCycle:D(2026-03-17T09:00:00Z)', 'success', 5000);
 	});
 
+	it('says so when a repeating task was done for good (its series has ended)', () => {
+		expect(announceRecurrence('done', 'open', reopened({ status: 'done' }))).toBe(true);
+		expect(showToast).toHaveBeenCalledWith('tasks.repeat.finished:', 'success', 5000);
+	});
+
 	it('stays silent when the task really is done (it does not repeat)', () => {
 		expect(announceRecurrence('done', 'open', reopened({ status: 'done', repeatAfter: null }))).toBe(false);
 		expect(showToast).not.toHaveBeenCalled();

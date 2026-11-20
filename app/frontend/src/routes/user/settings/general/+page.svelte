@@ -10,23 +10,13 @@
 	import { refreshCurrentUser } from '$lib/auth';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
 	import { CaretLeftSolid } from 'flowbite-svelte-icons';
-
-	// IANA zone names for the autocomplete list (older browsers lack Intl.supportedValuesOf).
-	const zones: string[] = (() => {
-		try {
-			return (
-				(Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.(
-					'timeZone'
-				) ?? []
-			);
-		} catch {
-			return [];
-		}
-	})();
+	import { timeZoneOptions } from '$lib/timezones';
 
 	const name = writable('');
 	const language = writable<string>(get(locale));
 	const timezone = writable('UTC');
+	// Recomputed once the saved zone is known so that it is always one of the choices.
+	let zones = $state(timeZoneOptions());
 	const theme = writable('light');
 	const defaultProjectId = writable<number | null>(null);
 	const projects = writable<Project[]>([]);
@@ -41,6 +31,7 @@
 			name.set(s.name ?? '');
 			language.set(isLocale(s.language) ? s.language : get(locale));
 			timezone.set(s.timezone ?? 'UTC');
+			zones = timeZoneOptions(s.timezone ?? 'UTC');
 			theme.set(s.theme ?? 'light');
 			const list = await apiGetAuth<Project[]>('/projects').catch((): Project[] => []);
 			projects.set(list);
@@ -102,16 +93,9 @@
 			</div>
 			<div>
 				<Label for="gen-timezone" class="mb-1">{$t('settings.general.timezone')}</Label>
-				<Input
-					id="gen-timezone"
-					type="text"
-					list="gen-timezone-list"
-					bind:value={$timezone}
-					placeholder={$t('settings.general.timezonePlaceholder')}
-				/>
-				<datalist id="gen-timezone-list">
-					{#each zones as z (z)}<option value={z}></option>{/each}
-				</datalist>
+				<Select id="gen-timezone" bind:value={$timezone}>
+					{#each zones as z (z.value)}<option value={z.value}>{z.label}</option>{/each}
+				</Select>
 			</div>
 			<div>
 				<Label for="gen-language" class="mb-1">{$t('common.field.language')}</Label>

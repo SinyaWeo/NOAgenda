@@ -11,6 +11,8 @@
 	import { showToast } from '$lib/toast';
 	import { errMessage } from '$lib/errors';
 	import type { Task } from '$lib/types';
+	import { emptyRepeat, formFromTask, repeatPayload, type RepeatForm } from '$lib/repeat';
+	import RepeatFields from '$lib/components/task/RepeatFields.svelte';
 
 	const title = writable('');
 	const description = writable('');
@@ -18,8 +20,7 @@
 	const startDate = writable('');
 	const priority = writable(0);
 	const percentDone = writable(0);
-	const repeatAfter = writable(0);
-	const repeatMode = writable('default');
+	let repeat = $state<RepeatForm>(emptyRepeat());
 	const error = writable('');
 	const loading = writable(true);
 	const saving = writable(false);
@@ -33,8 +34,7 @@
 		startDate.set(isoToDateInput(task.startDate));
 		priority.set(task.priority ?? 0);
 		percentDone.set(task.percentDone ?? 0);
-		repeatAfter.set(task.repeatAfter ?? 0);
-		repeatMode.set(task.repeatMode ?? 'default');
+		repeat = formFromTask(task);
 	}
 
 	loadOnParamChange(() => page.params.id ?? '', loadTask, loading, error);
@@ -51,8 +51,7 @@
 				startDate: dateInputToIso($startDate),
 				priority: $priority,
 				percentDone: $percentDone,
-				repeatAfter: $repeatAfter || null,
-				repeatMode: $repeatAfter ? $repeatMode : null
+				...repeatPayload(repeat)
 			});
 			showToast(tr('tasks.toast.saved'), 'success');
 			goto(`/tasks/${page.params.id}`);
@@ -117,21 +116,7 @@
 					</Select>
 				</div>
 			</div>
-			<fieldset class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-				<legend class="text-sm font-medium text-gray-700 dark:text-gray-300 px-1"
-					>{$t('tasks.repeat.legend')}</legend
-				>
-				<div class="flex items-center gap-2 flex-wrap">
-					<span class="text-sm text-gray-500">{$t('tasks.repeat.every')}</span>
-					<Input type="number" bind:value={$repeatAfter} min={0} class="w-16" />
-					<Select bind:value={$repeatMode} class="w-auto">
-						<option value="default">{$t('tasks.repeat.periods')}</option>
-						<option value="monthly">{$t('tasks.repeat.months')}</option>
-						<option value="from_current_date">{$t('tasks.repeat.fromCurrent')}</option>
-					</Select>
-				</div>
-				<p class="text-xs text-gray-400 mt-2 mb-0">{$t('tasks.repeat.hint')}</p>
-			</fieldset>
+			<RepeatFields bind:form={repeat} />
 			<div class="flex gap-2">
 				<Button type="submit" disabled={$saving}
 					>{$saving ? $t('common.saving') : $t('tasks.form.saveChanges')}</Button
