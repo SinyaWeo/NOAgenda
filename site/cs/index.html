@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOAgenda: vlastní správa úkolů a projektů</title>
+<meta name="description" content="NOAgenda je svobodná open-source aplikace pro správu úkolů a projektů na vlastním serveru: projekty, úkoly, kanban, týmy, připomínky a další. Vyzkoušejte veřejné demo.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0284c7">
+<meta property="og:title" content="NOAgenda: vlastní správa úkolů a projektů">
+<meta property="og:description" content="NOAgenda je svobodná open-source aplikace pro správu úkolů a projektů na vlastním serveru: projekty, úkoly, kanban, týmy, připomínky a další. Vyzkoušejte veřejné demo.">
+<meta property="og:type" content="website">
+<link rel="alternate" hreflang="en" href="/">
+<link rel="alternate" hreflang="cs" href="/cs/">
+<link rel="icon" href="../favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+<a class="skip" href="#main">Přeskočit na obsah</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="index.html">
+<picture><source srcset="../logo-dark.png" media="(prefers-color-scheme: dark)"><img src="../logo-light.png" width="32" height="32" alt=""></picture>
+NOAgenda</a>
+<nav class="nav" aria-label="Main">
+<a href="#features">Funkce</a><a href="#self-hosting">Vlastní hosting</a><a href="#open-source">Open source</a>
+<a class="lang" href="../index.html" hreflang="en" lang="en">EN</a>
+<a class="btn btn-sm" href="https://demo.noagenda.app">Vyzkoušet demo</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<section class="hero">
+<div class="wrap">
+<div>
+<span class="eyebrow">Open source · Vlastní hosting</span>
+<h1>Úkoly a projekty na vašem vlastním serveru.</h1>
+<p class="lead">NOAgenda spojuje projekty, úkoly, kanban nástěnky, týmy a připomínky v jedné rychlé aplikaci, kterou si sami provozujete. Vaše data zůstávají vaše.</p>
+<div class="cta">
+<a class="btn" href="https://demo.noagenda.app">Vyzkoušet demo</a>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zobrazit na GitHubu</a>
+</div>
+<p class="fineprint">Demo je veřejné a pravidelně se vrací do původního stavu. Ukázkoví uživatelé a jejich hesla jsou na přihlašovací stránce. Nezadávejte skutečná data.</p>
+</div>
+<div class="mock" aria-hidden="true">
+<div class="mock-bar"><i></i><i></i><i></i><span>Relaunch webu</span></div>
+<div class="mock-board"><div class="col"><h4>K řešení</h4><div class="card">Napsat texty ke spuštění<small><span class="tag green"></span>Po</small></div><div class="card">Sehnat reference<small><span class="tag amber"></span>Pá</small></div></div><div class="col"><h4>Rozpracováno</h4><div class="card">Předělat stránku s cenami<small><span class="tag red"></span>Zítra<span class="bar"><b style="width:60%"></b></span></small></div><div class="card">Nastavit přesměrování<small><span class="tag green"></span>Čt<span class="bar"><b style="width:30%"></b></span></small></div></div><div class="col"><h4>Hotovo</h4><div class="card">Audit mapy webu<small><span class="tag green"></span>Hotovo</small></div><div class="card">Vybrat CMS<small><span class="tag green"></span>Hotovo</small></div></div></div>
+</div>
+</div>
+</section>
+
+<section id="features">
+<div class="wrap">
+<div class="section-head"><h2>Vše, co potřebujete k práci</h2><p>Jednotný model projektů a úkolů s pohledy a nástroji pro spolupráci, které malý tým opravdu používá.</p></div>
+<div class="grid cols-3"><div class="tile"><div class="icon" aria-hidden="true">▤</div><h3>Projekty, úkoly a podúkoly</h3><p>Jedna hierarchie pro všechno. Stavy, priority, termíny, procento dokončení, opakované úkoly a vazby mezi úkoly.</p></div><div class="tile"><div class="icon" aria-hidden="true">▦</div><h3>Kanban, nadcházející a myšlenková mapa</h3><p>Stejnou práci uvidíte jako kanban sloupce, seznam nejbližších termínů nebo myšlenkovou mapu.</p></div><div class="tile"><div class="icon" aria-hidden="true">☺</div><h3>Týmy a sdílení</h3><p>Sdílejte projekty s oprávněními, přiřazujte lidi, komentujte a reagujte.</p></div><div class="tile"><div class="icon" aria-hidden="true">⌕</div><h3>Štítky, filtry a vyhledávání</h3><p>Třiďte pomocí štítků, ukládejte filtry, označujte oblíbené a hledejte napříč úkoly i projekty.</p></div><div class="tile"><div class="icon" aria-hidden="true">⏰</div><h3>Připomínky, webhooky a API</h3><p>Nechte si připomínat termíny, propojte jiné nástroje přes webhooky a skriptujte přes API tokeny jen pro čtení nebo pro čtení i zápis.</p></div><div class="tile"><div class="icon" aria-hidden="true">⇩</div><h3>Přílohy a export</h3><p>Přikládejte soubory v rámci kvót na uživatele a kdykoli exportujte všechna svá data.</p></div></div>
+</div>
+</section>
+
+<section class="alt">
+<div class="wrap split">
+<div>
+<h2>Zabezpečení ve výchozím stavu</h2>
+<p class="lead">Zabezpečení je součástí návrhu, ne dodatek.</p>
+</div>
+<div>
+<ul class="checks"><li>Krátkodobé JWT přístupové tokeny a rotující refresh cookies</li><li>Zakázané trasy ve výchozím stavu, omezení počtu požadavků a zamykání účtů</li><li>Ověření e-mailu a smazání účtu s ochrannou lhůtou</li><li>Zabezpečené kontejnery za Caddy s automatickým HTTPS</li><li>K dispozici v češtině a angličtině. E-maily a upozornění používají jazyk uložený u každého uživatele.</li></ul>
+</div>
+</div>
+</section>
+
+<section id="self-hosting">
+<div class="wrap split">
+<div>
+<h2>Vlastní hosting za pár minut</h2>
+<p class="lead">Spusťte ji na malém VPS se 2 až 4 GB RAM. Hotové kontejnerové image, jeden sdílený Caddy pro HTTPS, MariaDB ve vnitřní síti a skripty pro zálohování a obnovu.</p>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda/blob/main/DEPLOYMENT.md">Přečíst návod k nasazení</a>
+</div>
+<pre><code># on your server
+cp docker/.env.production.example docker/.env.production
+$EDITOR docker/.env.production
+docker/deploy.sh</code></pre>
+</div>
+</section>
+
+<section id="open-source" class="alt">
+<div class="wrap split">
+<div>
+<h2>Svobodný software, AGPL-3.0</h2>
+<p class="lead">NOAgenda je licencována pod GNU Affero General Public License v3.0 nebo novější. Můžete si ji přečíst, spustit i upravit. Pokud upravenou verzi provozujete jako síťovou službu, musíte uživatelům nabídnout její zdrojový kód.</p>
+</div>
+<div>
+<p>Postaveno na NestJS, MariaDB, Svelte 5 a SvelteKit, TailwindCSS a Dockeru.</p>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zdrojový kód a licence</a>
+</div>
+</div>
+</section>
+
+<section class="cta-band">
+<div class="wrap">
+<h2>Přesvědčte se sami</h2>
+<p>Přihlaste se do veřejného dema jedním z ukázkových uživatelů. Bez registrace.</p>
+<div class="cta">
+<a class="btn" href="https://demo.noagenda.app">Vyzkoušet demo</a>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zobrazit na GitHubu</a>
+</div>
+</div>
+</section>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>© NOAgenda. Svobodný software pod licencí AGPL-3.0-or-later.</span>
+<nav aria-label="Footer">
+<a href="privacy.html">Ochrana soukromí</a>
+<a href="terms.html">Podmínky</a>
+<a href="https://github.com/SinyaWeo/NOAgenda">Zdrojový kód</a>
+</nav>
+</div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NOAgenda: self-hosted task and project management</title>
+<meta name="description" content="NOAgenda is a free, open-source, self-hosted task and project manager: projects, tasks, kanban boards, teams, reminders and more. Try the public demo.">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#0284c7">
+<meta property="og:title" content="NOAgenda: self-hosted task and project management">
+<meta property="og:description" content="NOAgenda is a free, open-source, self-hosted task and project manager: projects, tasks, kanban boards, teams, reminders and more. Try the public demo.">
+<meta property="og:type" content="website">
+<link rel="alternate" hreflang="en" href="/">
+<link rel="alternate" hreflang="cs" href="/cs/">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="site-header">
+<div class="wrap">
+<a class="brand" href="index.html">
+<picture><source srcset="logo-dark.png" media="(prefers-color-scheme: dark)"><img src="logo-light.png" width="32" height="32" alt=""></picture>
+NOAgenda</a>
+<nav class="nav" aria-label="Main">
+<a href="#features">Features</a><a href="#self-hosting">Self-hosting</a><a href="#open-source">Open source</a>
+<a class="lang" href="cs/index.html" hreflang="cs" lang="cs">CS</a>
+<a class="btn btn-sm" href="https://demo.noagenda.app">Try the demo</a>
+</nav>
+</div>
+</header>
+<main id="main">
+<section class="hero">
+<div class="wrap">
+<div>
+<span class="eyebrow">Open source · Self-hosted</span>
+<h1>Tasks and projects, on your own server.</h1>
+<p class="lead">NOAgenda brings projects, tasks, kanban boards, teams and reminders into one fast app that you host yourself. Your data stays yours.</p>
+<div class="cta">
+<a class="btn" href="https://demo.noagenda.app">Try the demo</a>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">View on GitHub</a>
+</div>
+<p class="fineprint">The demo is public and resets regularly. Example users and their passwords are listed on its login page. Don't enter real data.</p>
+</div>
+<div class="mock" aria-hidden="true">
+<div class="mock-bar"><i></i><i></i><i></i><span>Website relaunch</span></div>
+<div class="mock-board"><div class="col"><h4>To do</h4><div class="card">Write launch copy<small><span class="tag green"></span>Mon</small></div><div class="card">Collect testimonials<small><span class="tag amber"></span>Fri</small></div></div><div class="col"><h4>In progress</h4><div class="card">Redesign pricing page<small><span class="tag red"></span>Tomorrow<span class="bar"><b style="width:60%"></b></span></small></div><div class="card">Set up redirects<small><span class="tag green"></span>Thu<span class="bar"><b style="width:30%"></b></span></small></div></div><div class="col"><h4>Done</h4><div class="card">Audit sitemap<small><span class="tag green"></span>Done</small></div><div class="card">Pick a CMS<small><span class="tag green"></span>Done</small></div></div></div>
+</div>
+</div>
+</section>
+
+<section id="features">
+<div class="wrap">
+<div class="section-head"><h2>Everything you need to get work done</h2><p>A single, consistent model for projects and tasks, with the views and collaboration tools a small team actually uses.</p></div>
+<div class="grid cols-3"><div class="tile"><div class="icon" aria-hidden="true">▤</div><h3>Projects, tasks and subtasks</h3><p>One hierarchy for everything. Statuses, priorities, due dates, percent done, recurring tasks and task relations.</p></div><div class="tile"><div class="icon" aria-hidden="true">▦</div><h3>Kanban, upcoming and mind map</h3><p>See the same work as kanban buckets, a list of what is due next, or a mind map.</p></div><div class="tile"><div class="icon" aria-hidden="true">☺</div><h3>Teams and sharing</h3><p>Share projects with permissions, assign people, comment and react.</p></div><div class="tile"><div class="icon" aria-hidden="true">⌕</div><h3>Labels, filters and search</h3><p>Organise with labels, save filters, mark favourites and search across tasks and projects.</p></div><div class="tile"><div class="icon" aria-hidden="true">⏰</div><h3>Reminders, webhooks and API</h3><p>Get reminded, connect other tools with webhooks, and script it with read-only or read and write API tokens.</p></div><div class="tile"><div class="icon" aria-hidden="true">⇩</div><h3>Attachments and export</h3><p>Attach files within per-user quotas, and export all your data at any time.</p></div></div>
+</div>
+</section>
+
+<section class="alt">
+<div class="wrap split">
+<div>
+<h2>Secure by default</h2>
+<p class="lead">Hardening is part of the design, not an add-on.</p>
+</div>
+<div>
+<ul class="checks"><li>Short-lived JWT access tokens with rotating refresh cookies</li><li>Default-deny routes, rate limiting and account lockout</li><li>Email verification and account deletion with a grace period</li><li>Hardened containers behind Caddy with automatic HTTPS</li><li>Available in English and Czech. Emails and notifications use each user's saved language.</li></ul>
+</div>
+</div>
+</section>
+
+<section id="self-hosting">
+<div class="wrap split">
+<div>
+<h2>Self-host in minutes</h2>
+<p class="lead">Run it on a small VPS with 2 to 4 GB of RAM. Prebuilt container images, one shared Caddy for HTTPS, MariaDB on an internal network, plus backup and restore scripts.</p>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda/blob/main/DEPLOYMENT.md">Read the deployment guide</a>
+</div>
+<pre><code># on your server
+cp docker/.env.production.example docker/.env.production
+$EDITOR docker/.env.production
+docker/deploy.sh</code></pre>
+</div>
+</section>
+
+<section id="open-source" class="alt">
+<div class="wrap split">
+<div>
+<h2>Free software, AGPL-3.0</h2>
+<p class="lead">NOAgenda is licensed under the GNU Affero General Public License v3.0 or later. Read the code, run it, change it. If you run a modified version as a network service, you offer its source to your users.</p>
+</div>
+<div>
+<p>Built with NestJS, MariaDB, Svelte 5 and SvelteKit, TailwindCSS and Docker.</p>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Source code and license</a>
+</div>
+</div>
+</section>
+
+<section class="cta-band">
+<div class="wrap">
+<h2>See it for yourself</h2>
+<p>Log in to the public demo with one of the example users. No sign-up needed.</p>
+<div class="cta">
+<a class="btn" href="https://demo.noagenda.app">Try the demo</a>
+<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">View on GitHub</a>
+</div>
+</div>
+</section>
+</main>
+<footer class="site-footer">
+<div class="wrap">
+<span>© NOAgenda. Free software under AGPL-3.0-or-later.</span>
+<nav aria-label="Footer">
+<a href="privacy.html">Privacy</a>
+<a href="terms.html">Terms</a>
+<a href="https://github.com/SinyaWeo/NOAgenda">Source</a>
+</nav>
+</div>
+</footer>
+</body>
+</html>
