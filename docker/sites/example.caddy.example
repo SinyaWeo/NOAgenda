@@ -1,0 +1,11 @@
+# Copy to docker/sites/<instance>.caddy (only *.caddy files are loaded), one per instance.
+#
+# Caddy does HTTPS itself (ports 80/443 free on this host):
+#   demo.example.net {
+#       import noagenda demo
+#   }
+#
+# Apache/nginx in front terminates TLS and forwards to this Caddy on 127.0.0.1:8080: plain HTTP, Host header kept.
+http://demo.example.net {
+	import noagenda demo
+}

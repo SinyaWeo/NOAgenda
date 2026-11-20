@@ -90,11 +90,13 @@ what each script covers.
 
 ## Deployment
 
-The production stack is Caddy (HTTPS) in front of the frontend and backend, with MariaDB on an internal network. CI
+The production stack is one shared Caddy (HTTPS, routes by hostname) in front of the frontend and backend of each instance, with MariaDB on an internal network. CI
 builds the images and publishes them to GitHub Container Registry; the server only pulls them:
 
 ```bash
-cp docker/.env.production.example docker/.env.production   # then edit: domain and secrets
+docker compose -f docker/docker-compose.edge.yml up -d       # the shared Caddy, once per host
+cp docker/.env.production.example docker/.env.production   # then edit: domain, instance name, secrets
+# add docker/sites/<instance>.caddy, see DEPLOYMENT.md
 docker/deploy.sh
 ```
 

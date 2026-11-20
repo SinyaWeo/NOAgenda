@@ -2,20 +2,23 @@
 
 > **Going live?** Follow [PRELAUNCH.md](PRELAUNCH.md): a step-by-step checklist with scripts that verify your configuration (`docker/preflight.sh`) and your backups (`docker/verify-backup.sh`).
 
-Production stack (`docker/docker-compose.prod.yml`):
+Production stack: **one shared Caddy** (`docker/docker-compose.edge.yml`) in front of one or more **instances**
+(`docker/docker-compose.prod.yml`, one compose project each):
 
 ```
-Internet ──443──> Caddy (automatic HTTPS) ──/api/*──> backend (NestJS) ──> MariaDB
-                                          └─ /*   ──> frontend (SvelteKit, adapter-node)
+Internet ──443──> Caddy (automatic HTTPS, routes by hostname) ──/api/*──> <instance>-backend (NestJS) ──> MariaDB
+                                                             └─ /*   ──> <instance>-frontend (SvelteKit)
 ```
 
-Only Caddy publishes ports (80/443). MariaDB, the API and the UI live on an internal Docker network.
+Only Caddy publishes ports (80/443). Instances publish nothing: Caddy reaches them over the `noagenda-edge` Docker network,
+and each instance's MariaDB stays on its own private network. Which hostname goes to which instance is set in
+`docker/sites/<instance>.caddy` (see below).
 
-**Server already running Apache/nginx on 80/443?** Keep it as the HTTPS front door and put Caddy behind it on loopback
+**Server already running Apache/nginx on 80/443?** Keep it as the HTTPS front door and put the shared Caddy behind it on loopback
 (see [Behind an existing Apache](#behind-an-existing-apache-ports-80443-already-in-use)):
 
 ```
-Internet ──443──> Apache (certbot HTTPS) ──> Caddy 127.0.0.1:8080 (plain HTTP, loopback only) ──> backend / frontend
+Internet ──443──> Apache (certbot HTTPS) ──> Caddy 127.0.0.1:8080 (plain HTTP, loopback only) ──> instances
 ```
 
 The UI and API share one origin (the API is under `/api`), so there is no CORS to set up by hand: compose passes `CORS_ORIGIN` to the backend from `DOMAIN`.
@@ -29,12 +32,24 @@ The UI and API share one origin (the API is under `/api`), so there is no CORS t
 ## First deployment
 ```bash
 git clone <repo> /opt/noagenda && cd /opt/noagenda
+
+# 1. The shared proxy, once per host (skip the edit when Caddy may own ports 80/443)
+cp docker/.env.edge.example docker/.env.edge && chmod 600 docker/.env.edge     # behind Apache: see the comments in it
+docker compose -f docker/docker-compose.edge.yml --env-file docker/.env.edge up -d
+
+# 2. The instance
 cp docker/.env.production.example docker/.env.production
-$EDITOR docker/.env.production      # DOMAIN + the three secrets (see comments in the file)
+$EDITOR docker/.env.production      # DOMAIN, INSTANCE + the three secrets (see comments in the file)
 chmod 600 docker/.env.production
+
+# 3. Tell Caddy which hostname belongs to it (file name = INSTANCE; see docker/sites/example.caddy.example)
+printf '%s {\n\timport noagenda %s\n}\n' "$DOMAIN" "$INSTANCE" > docker/sites/$INSTANCE.caddy
+docker compose -f docker/docker-compose.edge.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
 
 docker/deploy.sh                    # pulls the prebuilt images from GHCR (see "Updating" below)
 ```
+(Set `DOMAIN` / `INSTANCE` in your shell first, or write the site file by hand. Behind Apache the site address is
+`http://<domain>`, not the bare domain.)
 No CI images yet, or a big enough server? Build locally instead:
 `docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d --build`.
 
@@ -72,16 +87,16 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 If the server already runs Apache (or nginx) on 80/443, keep it as the public HTTPS front door and let it proxy
 to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:8080` -> backend/frontend.
 
-1. In `docker/.env.production` add (see the example file):
+1. In `docker/.env.edge` set (see the example file):
    ```
    BIND_ADDR=127.0.0.1
    HTTP_PORT=8080
    HTTPS_PORT=8443
-   SITE_ADDRESS=http://example.net
-   TRUST_PROXY=2
    ```
-   Keep `DOMAIN=example.net`; the public origin stays `https://example.net`. Start the stack as usual and check
-   `curl -H 'Host: example.net' http://127.0.0.1:8080/api/health`.
+   In `docker/.env.production` set `TRUST_PROXY=2` and keep `DOMAIN=example.net`; the public origin stays `https://example.net`.
+   The site file is plain HTTP, because Apache terminates TLS: `docker/sites/app.caddy` with the address `http://example.net`
+   (see `docker/sites/example.caddy.example`).
+   Start the edge and the stack as usual and check `curl -H 'Host: example.net' http://127.0.0.1:8080/api/health`.
    **The backend must see the visitor's real address** (rate limits and login lockouts are per address). The Caddyfile
    trusts `X-Forwarded-For` from private network ranges only (`trusted_proxies static private_ranges`), so Apache's header
    passes through while a visitor on the public internet cannot forge one. Verify once after setup: attempt a login with a wrong
@@ -113,19 +128,34 @@ to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:808
 
 ## Several instances on one host (e.g. production plus a public demo)
 
-Run each instance as its own compose project with its own env file, so volumes, containers and secrets never mix.
+There is only ever **one** Caddy. Run each instance as its own compose project with its own env file, so volumes,
+containers and secrets never mix, and add one site file per instance to `docker/sites/`.
 Example with two instances (replace `example.net` with your domain):
 
-| Instance | Project (`COMPOSE_PROJECT`) | Env file | `HTTP_PORT` | Host proxy |
+| Instance | `INSTANCE` | Project (`COMPOSE_PROJECT`) | Env file | Site file |
 | --- | --- | --- | --- | --- |
-| `app.example.net` | `noagenda-app` | `app.env` | `8081` | vhost -> `127.0.0.1:8081` |
-| `demo.example.net` | `noagenda-demo` | `demo.env` | `8082` | vhost -> `127.0.0.1:8082` |
+| `app.example.net` | `app` | `noagenda-app` | `app.env` | `docker/sites/app.caddy` |
+| `demo.example.net` | `demo` | `noagenda-demo` | `demo.env` | `docker/sites/demo.caddy` |
 
-Each env file uses proxy mode (`SITE_ADDRESS=http://<hostname>`, `BIND_ADDR=127.0.0.1`, `TRUST_PROXY=2`) and has its own
-`DOMAIN`, `JWT_SECRET` and `MYSQL_*` values. Give every instance its own host-proxy vhost and certificate (see the Apache
-example above) and deploy each one with
+Each env file has its own `INSTANCE`, `DOMAIN`, `JWT_SECRET` and `MYSQL_*` values (behind Apache also `TRUST_PROXY=2`).
+**`INSTANCE` must differ between instances**: Caddy finds an instance as `<INSTANCE>-backend`, so a duplicate would send
+requests to the wrong database. Each site file is
+```
+http://app.example.net {      # no http:// when Caddy does HTTPS itself
+	import noagenda app       # = INSTANCE
+}
+```
+then reload Caddy (`docker compose -f docker/docker-compose.edge.yml exec caddy caddy reload --config /etc/caddy/Caddyfile`).
+Behind Apache, give every hostname its own vhost and certificate (see the Apache example above); all of them proxy to the same
+`127.0.0.1:8080`. Deploy each instance with
 `COMPOSE_PROJECT=noagenda-app ENV_FILE=/opt/noagenda/app.env docker/deploy.sh`. The same `COMPOSE_PROJECT` and `ENV_FILE` variables work
 for `docker/backup.sh`. Any other site on the host (for example static pages on the bare domain) is just another vhost.
+`deploy.sh` refuses to run while the shared proxy is down.
+
+**Moving from a per-instance Caddy** (older versions had a `caddy` service in each stack): start the edge, add the site files,
+then run `deploy.sh` for each instance. `--remove-orphans` removes the old Caddy container; databases and uploads are untouched.
+Do this one instance at a time, because the old Caddy still holds the ports until it is removed: set the new edge ports
+(e.g. 8080) only after the last old one is gone, or use temporary ports and switch the Apache vhosts afterwards.
 
 ### Public demo instance
 
@@ -148,7 +178,7 @@ session open and test a second login). It never touches Apache/nginx. The list b
 Done once, before the first deployment:
 - **Virtualisation must be KVM**: `systemd-detect-virt` prints `kvm` (Docker misbehaves on OpenVZ/LXC).
 - **Memory**: 4 GB is comfortable. On 1-2 GB add a 2 GB swap file, never build on the server, and lower the limits in
-  `docker/.env.production`: `MARIADB_BUFFER_POOL=128M`, `BACKEND_MEM_LIMIT=384m`, `FRONTEND_MEM_LIMIT=256m`, `CADDY_MEM_LIMIT=128m`.
+  `docker/.env.production`: `MARIADB_BUFFER_POOL=128M`, `BACKEND_MEM_LIMIT=384m`, `FRONTEND_MEM_LIMIT=256m` (and `CADDY_MEM_LIMIT=128m` in `docker/.env.edge`).
   Then watch `docker stats --no-stream` and `free -h` for a few days. A 1 GB server that already runs other sites (e.g. Apache + PHP apps)
   may not have room for this stack at all: check `free -h` for the *available* memory first.
 - **Access**: SSH keys only (`PasswordAuthentication no`), a non-root user in the `docker` group, `ufw allow 22,80,443/tcp` then `ufw enable`,
@@ -268,14 +298,15 @@ advice, so have them reviewed before you accept real users.
 ## Configuration reference
 | Variable | Where | Notes |
 |---|---|---|
-| `DOMAIN` | `.env.production` | Public hostname, used by Caddy and CORS |
+| `DOMAIN` | `.env.production` | Public hostname of the instance, used for CORS and the public origin (the Caddy site file carries the hostname for routing) |
+| `INSTANCE` | `.env.production` | Required. Short name, unique on the host; Caddy reaches the instance as `<INSTANCE>-backend` / `-frontend` |
 | `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` | `.env.production` | Required, strong random values |
 | `JWT_SECRET` | `.env.production` | Required, **>= 32 chars** (backend refuses to start otherwise) |
 | `PUBLIC_ORIGIN` | optional | Only for a non-default origin, e.g. a non-standard port |
 | `DB_SYNCHRONIZE` / `DB_MIGRATIONS_RUN` | backend | Defaults: sync off + migrations on in production |
 | `TRUST_PROXY` | `.env.production` | Reverse-proxy hops in front of the backend so rate limits see real client IPs. Default 1 (Caddy); use 2 for Apache -> Caddy |
-| `BIND_ADDR`, `HTTP_PORT`, `HTTPS_PORT` | optional | Where Caddy publishes. Defaults `0.0.0.0` / 80 / 443; proxy mode: `127.0.0.1` / 8080 / 8443 |
-| `SITE_ADDRESS` | optional | Caddy site address. Default `DOMAIN` (Caddy does HTTPS itself); proxy mode: `http://<DOMAIN>` (plain HTTP, no certificate) |
+| `BIND_ADDR`, `HTTP_PORT`, `HTTPS_PORT` | `.env.edge` | Where the shared Caddy publishes. Defaults `0.0.0.0` / 80 / 443; proxy mode: `127.0.0.1` / 8080 / 8443 |
+| `SITES_DIR` | `.env.edge` | Directory with the `*.caddy` site files (default `docker/sites`) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | `.env.production` | Outgoing mail (see above) |
 | `REQUIRE_EMAIL_VERIFICATION` | `.env.production` | Default: on if `SMTP_HOST` is set |
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL_DAYS` | backend | Defaults `15m` / `30` |
@@ -287,7 +318,8 @@ advice, so have them reviewed before you accept real users.
 | `ALLOW_DEMO_SEED` | environment of `demo-reset.sh` | `true` lets `seed.js` run with `NODE_ENV=production` (set by `docker/demo-reset.sh`) |
 | `USER_STORAGE_QUOTA_MB` | backend | Attachment storage per user (default `200`) |
 | `WEBHOOK_ALLOW_PRIVATE` | backend | `true` allows webhook URLs that point at internal addresses (default off) |
-| `BACKEND_MEM_LIMIT`, `FRONTEND_MEM_LIMIT`, `CADDY_MEM_LIMIT` | `.env.production` | Container memory caps (defaults `768m` / `512m` / `256m`) |
+| `BACKEND_MEM_LIMIT`, `FRONTEND_MEM_LIMIT` | `.env.production` | Container memory caps (defaults `768m` / `512m`) |
+| `CADDY_MEM_LIMIT` | `.env.edge` | Memory cap of the shared Caddy (default `256m`) |
 | `IMAGE_REPO`, `IMAGE_TAG` | `.env.production` | Image name prefix (default `ghcr.io/sinyaweo/noagenda`) and tag (default `latest`; `docker/deploy.sh` manages the tag) |
 | `MARIADB_BUFFER_POOL` | `.env.production` | InnoDB buffer pool size (default `256M`; `128M` on a 1 GB server) |
 | `BACKUP_RCLONE_REMOTE` | environment of `backup.sh` | rclone destination for an off-server copy of each backup |

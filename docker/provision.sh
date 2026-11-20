@@ -84,7 +84,7 @@ if [ "$mem_mb" -lt 900 ]; then warn "under 1 GB of RAM: this stack will not fit"
 listeners="$( (ss -ltnH '( sport = :80 or sport = :443 )' 2>/dev/null || true) | awk '{print $4}' | tr '\n' ' ')"
 if [ -n "$listeners" ]; then
   note "Something already listens on: ${listeners}"
-  note "-> use the 'Behind an existing Apache' mode in DEPLOYMENT.md (Caddy on 127.0.0.1:8080); do not free those ports."
+  note "-> use the 'Behind an existing Apache' mode in DEPLOYMENT.md (shared Caddy on 127.0.0.1:8080); do not free those ports."
 fi
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -246,5 +246,5 @@ if [ "$mem_mb" -lt 1800 ]; then
   note "   MARIADB_BUFFER_POOL=128M"
   note "   BACKEND_MEM_LIMIT=384m"
   note "   FRONTEND_MEM_LIMIT=256m"
-  note "   CADDY_MEM_LIMIT=128m"
+  note "   (and CADDY_MEM_LIMIT=128m in docker/.env.edge)"
 fi

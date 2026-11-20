@@ -6,4 +6,6 @@ backups/
 # Secrets: any docker/.env* (.env, .env.production, .env.staging, ...) except the committed examples
 docker/.env*
 !docker/.env*.example
+# Per-host Caddy site files (docker/sites/*.caddy); only the example is committed
+docker/sites/*.caddy
 findings

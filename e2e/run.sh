@@ -20,9 +20,8 @@ ENV_FILE="$WORK/stack.env"
 # Throwaway secrets, different on every run.
 cat > "$ENV_FILE" <<ENV
 DOMAIN=localhost
+INSTANCE=e2e
 PUBLIC_ORIGIN=https://localhost:${HTTPS_PORT}
-HTTP_PORT=${HTTP_PORT:-8088}
-HTTPS_PORT=${HTTPS_PORT}
 MYSQL_ROOT_PASSWORD=$(openssl rand -hex 12)
 MYSQL_PASSWORD=$(openssl rand -hex 12)
 JWT_SECRET=$(openssl rand -hex 48)
@@ -31,6 +30,14 @@ CONTACT_EMAIL=privacy@example.test
 REQUIRE_TERMS_ACCEPTANCE=true
 ENV
 
+# The shared reverse proxy (own project) in front of the stack, with a throwaway site file.
+SITES="$WORK/sites"; mkdir -p "$SITES"; chmod 755 "$SITES"   # the container runs without DAC_OVERRIDE
+printf 'localhost {\n\timport noagenda e2e\n}\n' > "$SITES/e2e.caddy"
+chmod 644 "$SITES/e2e.caddy"
+EDGE_ENV="$WORK/edge.env"
+printf 'HTTP_PORT=%s\nHTTPS_PORT=%s\nSITES_DIR=%s\n' "${HTTP_PORT:-8088}" "$HTTPS_PORT" "$SITES" > "$EDGE_ENV"
+EDGE=(docker compose -p noagenda-e2e-edge -f "$ROOT/docker/docker-compose.edge.yml" --env-file "$EDGE_ENV")
+
 DC=(docker compose -p "$PROJECT" -f "$ROOT/docker/docker-compose.prod.yml" -f "$HERE/docker-compose.e2e.yml" --env-file "$ENV_FILE")
 
 cleanup() {
@@ -38,21 +45,25 @@ cleanup() {
   if [ "$status" -ne 0 ]; then
     echo "--- container logs (last 80 lines each) ---"
     mkdir -p "$HERE/artifacts"
-    "${DC[@]}" logs --no-color > "$HERE/artifacts/stack.log" 2>&1 || true
-    "${DC[@]}" logs --no-color --tail 80 backend frontend caddy 2>&1 || true
+    { "${DC[@]}" logs --no-color; "${EDGE[@]}" logs --no-color; } > "$HERE/artifacts/stack.log" 2>&1 || true
+    "${DC[@]}" logs --no-color --tail 80 backend frontend 2>&1 || true
+    "${EDGE[@]}" logs --no-color --tail 80 caddy 2>&1 || true
   fi
   if [ "${KEEP:-}" = "1" ]; then
     echo "Stack left running at https://localhost:${HTTPS_PORT} (project $PROJECT). Remove with:"
     echo "  docker compose -p $PROJECT -f docker/docker-compose.prod.yml -f e2e/docker-compose.e2e.yml --env-file $ENV_FILE down -v --rmi local"
+    echo "  docker compose -p noagenda-e2e-edge -f docker/docker-compose.edge.yml --env-file $EDGE_ENV down -v"
   else
     "${DC[@]}" down -v --rmi local >/dev/null 2>&1 || true
+    "${EDGE[@]}" down -v >/dev/null 2>&1 || true
     rm -rf "$WORK"
   fi
   exit "$status"
 }
 trap cleanup EXIT
 
-echo "== building and starting the production stack"
+echo "== starting the shared proxy and building the production stack"
+"${EDGE[@]}" up -d
 "${DC[@]}" up -d --build
 
 echo "== waiting for the stack"

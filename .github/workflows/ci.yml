@@ -286,5 +286,6 @@ jobs:
           docker build --build-arg VITE_API_BASE=/api -t noagenda-frontend app/frontend
       - name: Validate production compose file
         run: |
-          DOMAIN=example.com MYSQL_ROOT_PASSWORD=x MYSQL_PASSWORD=y JWT_SECRET=z \
+          INSTANCE=app DOMAIN=example.com MYSQL_ROOT_PASSWORD=x MYSQL_PASSWORD=y JWT_SECRET=z \
             docker compose -f docker/docker-compose.prod.yml config -q
+          docker compose -f docker/docker-compose.edge.yml config -q

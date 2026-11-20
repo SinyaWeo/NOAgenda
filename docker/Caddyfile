@@ -1,7 +1,15 @@
-# Reverse proxy + automatic HTTPS (Let's Encrypt). {$DOMAIN} comes from the compose env.
-# With DOMAIN=localhost Caddy issues a local self-signed certificate (for testing).
-# {$SITE_ADDRESS} defaults to the domain. Set it to http://<domain> when another reverse proxy
-# (Apache/nginx) terminates TLS in front of Caddy: Caddy then serves plain HTTP only.
+# The ONE shared reverse proxy (docker/docker-compose.edge.yml). It routes by hostname to any number of
+# NOAgenda instances, each a separate compose project that joins the `noagenda-edge` network.
+#
+# One file per instance in docker/sites/ (see sites/example.caddy.example):
+#
+#   demo.example.net {                  # http://demo.example.net when Apache/nginx terminates TLS in front
+#       import noagenda demo            # "demo" = INSTANCE in that instance's env file
+#   }
+#
+# A plain hostname gets an automatic Let's Encrypt certificate (DNS name -> this server, ports 80/443 reachable);
+# `localhost` gets a local self-signed one (testing). After adding or changing a site file:
+#   docker compose -p noagenda-edge -f docker/docker-compose.edge.yml exec caddy caddy reload --config /etc/caddy/Caddyfile
 {
 	servers {
 		# Keep the client address that a proxy in front of us (Apache/nginx on the same host or
@@ -21,7 +29,9 @@
 	}
 }
 
-{$SITE_ADDRESS} {
+# Everything an instance needs. {args[0]} is the instance name: it reaches that instance's containers
+# through the network aliases <name>-backend and <name>-frontend (set in docker-compose.prod.yml).
+(noagenda) {
 	encode zstd gzip
 
 	header {
@@ -34,11 +44,13 @@
 		request_body {
 			max_size 12MB
 		}
-		reverse_proxy backend:3000
+		reverse_proxy {args[0]}-backend:3000
 	}
 
 	# Everything else: the web UI.
 	handle {
-		reverse_proxy frontend:3000
+		reverse_proxy {args[0]}-frontend:3000
 	}
 }
+
+import /etc/caddy/sites/*.caddy

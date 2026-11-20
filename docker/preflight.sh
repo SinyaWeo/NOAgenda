@@ -40,6 +40,11 @@ check_config() {
     *) pass "DOMAIN = $d" ;;
   esac
 
+  local i; i="$(val INSTANCE)"
+  if [ -z "$i" ]; then fail "INSTANCE is not set (a short name, unique on this host: the shared Caddy finds the instance by it)"
+  elif ! [[ "$i" =~ ^[a-z0-9][a-z0-9-]*$ ]]; then fail "INSTANCE '$i' must be lowercase letters, digits and dashes"
+  else pass "INSTANCE = $i"; fi
+
   local v
   for k in MYSQL_ROOT_PASSWORD MYSQL_PASSWORD; do
     v="$(val $k)"

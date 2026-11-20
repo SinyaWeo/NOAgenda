@@ -34,7 +34,7 @@ docker/preflight.sh remote https://your.domain           # is the LIVE site corr
       `--firewall` and `--ssh-harden` are opt-in. Several items below are then already done: verify them.
 - [ ] **DNS**: an `A` (and `AAAA` if you have IPv6) record for your domain pointing at the server.
 - [ ] **Ports 80/443 already used** by Apache/nginx (e.g. other sites on the same VPS)? Do **not** replace it (PHP apps
-      such as Leantime would break). Use the proxy mode: web server terminates HTTPS, Caddy listens on `127.0.0.1:8080`.
+      such as Leantime would break). Use the proxy mode: web server terminates HTTPS, the shared Caddy listens on `127.0.0.1:8080`.
       Follow "Behind an existing Apache" in [DEPLOYMENT.md](DEPLOYMENT.md) and tick the **Shared server** items below.
 - [ ] **Firewall**: allow only SSH (22), 80, 443. (The compose file publishes only Caddy's 80/443 (in proxy mode only `127.0.0.1:8080`); the database and
       app are on an internal network. Note Docker bypasses `ufw` for published ports, which is why that matters.)
@@ -65,8 +65,8 @@ openssl rand -base64 24    # MYSQL_PASSWORD
 openssl rand -hex 48       # JWT_SECRET
 ```
 
-- [ ] On a shared server also set `BIND_ADDR=127.0.0.1`, `HTTP_PORT=8080`, `HTTPS_PORT=8443`,
-      `SITE_ADDRESS=http://<your domain>`, `TRUST_PROXY=2` (see the example file). `PUBLIC_ORIGIN` stays `https://<domain>`.
+- [ ] On a shared server set `BIND_ADDR=127.0.0.1`, `HTTP_PORT=8080`, `HTTPS_PORT=8443` in `docker/.env.edge`, use
+      `http://<your domain>` in `docker/sites/<instance>.caddy`, and set `TRUST_PROXY=2` in the instance env file (see the example files). `PUBLIC_ORIGIN` stays `https://<domain>`.
 - [ ] Fill in `DOMAIN`, the three secrets, SMTP (section 3), `OPERATOR_NAME`, `CONTACT_EMAIL`, `REQUIRE_TERMS_ACCEPTANCE=true`.
 - [ ] **Save the file in a password manager.** Gotchas:
   - The two database passwords are only applied the *first* time the database volume is created. Editing them later

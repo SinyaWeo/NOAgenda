@@ -1,0 +1,51 @@
+# The single shared reverse proxy for every NOAgenda instance on this host.
+#
+#   cp docker/.env.edge.example docker/.env.edge        # then edit (ports); optional
+#   docker compose -p noagenda-edge -f docker/docker-compose.edge.yml --env-file docker/.env.edge up -d
+#
+# It owns the `noagenda-edge` network. Instances (docker-compose.prod.yml) join it and are reached by hostname,
+# configured in docker/sites/*.caddy (see docker/Caddyfile). Start this BEFORE the first instance.
+name: noagenda-edge
+
+services:
+  caddy:
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    # Needs to bind ports 80/443 inside the container: that one capability, nothing else.
+    cap_add: [NET_BIND_SERVICE]
+    read_only: true
+    tmpfs: ["/tmp"]
+    pids_limit: 256
+    mem_limit: ${CADDY_MEM_LIMIT:-256m}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      # Behind Apache/nginx: BIND_ADDR=127.0.0.1 HTTP_PORT=8080 HTTPS_PORT=8443 (the proxy forwards to 8080).
+      - "${BIND_ADDR:-0.0.0.0}:${HTTP_PORT:-80}:80"
+      - "${BIND_ADDR:-0.0.0.0}:${HTTPS_PORT:-443}:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${SITES_DIR:-./sites}:/etc/caddy/sites:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    healthcheck:
+      # Caddy's admin API listens on localhost inside the container.
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:2019/config/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [edge]
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  edge:
+    name: noagenda-edge

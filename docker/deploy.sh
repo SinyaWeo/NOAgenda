@@ -28,6 +28,12 @@ healthy() {
   return 1
 }
 
+# Instances are reached through the one shared Caddy, which owns this network.
+docker network inspect noagenda-edge >/dev/null 2>&1 || {
+  echo "The shared proxy is not running. Start it once: docker compose -p noagenda-edge -f $HERE/docker-compose.edge.yml up -d" >&2
+  exit 1
+}
+
 # Back up first when the stack is already running (migrations run on start and cannot be undone).
 if [ -n "$("${DC[@]}" ps -q mariadb 2>/dev/null)" ]; then
   "$HERE/backup.sh" "$BACKUP_DIR"
