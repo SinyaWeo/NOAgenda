@@ -25,8 +25,6 @@ export interface FavoriteRow {
 export interface AppInfo {
 	name?: string;
 	version?: string;
-	builtAt?: string;
-	commit?: string;
 }
 
 /** POST /tokens: the raw token is only returned once. */

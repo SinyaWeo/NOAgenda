@@ -3,6 +3,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { DataSource } from 'typeorm';
 import { AppSettingsService } from './modules/app-settings/app-settings.service';
 import { Public } from './common/decorators/public.decorator';
+import { APP_VERSION } from './common/constants/version';
 
 @Controller()
 export class AppController {
@@ -33,6 +34,6 @@ export class AppController {
   @Public()
   @Get('info')
   async getInfo(): Promise<{ version: string; name: string }> {
-    return { version: process.env.npm_package_version ?? '0.1.0', name: await this.appSettings.getAppName() };
+    return { version: APP_VERSION, name: await this.appSettings.getAppName() };
   }
 }

@@ -1,6 +1,7 @@
 {
   "name": "noagenda-backend",
-  "version": "0.1.0",
+  "private": true,
+  "version": "0.2.0",
   "description": "NOAgenda backend (NestJS + TypeORM + MariaDB)",
   "license": "AGPL-3.0-or-later",
   "main": "dist/main.js",

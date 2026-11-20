@@ -79,8 +79,6 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.title': 'O aplikaci {app}',
 	'auth.about.tagline': 'Správce úkolů zaměřený na projekty, vytvořený v NestJS a SvelteKitu.',
 	'auth.about.version': 'Verze',
-	'auth.about.builtAt': 'Sestaveno',
-	'auth.about.commit': 'Commit',
 	'auth.about.source': 'Zdrojový kód',
 	'auth.about.license': 'Licence'
 };

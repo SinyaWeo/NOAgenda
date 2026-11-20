@@ -39,10 +39,6 @@
 				<dd class="text-gray-900 dark:text-white font-medium m-0">{$info.name ?? $appName}</dd>
 				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.version')}</dt>
 				<dd class="text-gray-900 dark:text-white font-medium m-0">{$info.version ?? '—'}</dd>
-				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.builtAt')}</dt>
-				<dd class="text-gray-900 dark:text-white font-medium m-0">{$info.builtAt ?? '—'}</dd>
-				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.commit')}</dt>
-				<dd class="font-mono text-sm text-gray-900 dark:text-white m-0">{$info.commit ?? '—'}</dd>
 				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.source')}</dt>
 				<dd class="text-gray-900 dark:text-white font-medium m-0">
 					<a

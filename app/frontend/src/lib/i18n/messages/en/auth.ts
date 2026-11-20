@@ -77,8 +77,6 @@ export const messages = {
 	'auth.about.title': 'About {app}',
 	'auth.about.tagline': 'A project-focused task manager built with NestJS and SvelteKit.',
 	'auth.about.version': 'Version',
-	'auth.about.builtAt': 'Built at',
-	'auth.about.commit': 'Commit',
 	'auth.about.source': 'Source code',
 	'auth.about.license': 'License'
 } as const;
