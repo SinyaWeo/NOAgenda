@@ -117,7 +117,8 @@
 			min="0"
 			max="100"
 			step="10"
-			class="w-full h-2 cursor-pointer accent-primary-600"
+			class="progress-slider w-full cursor-pointer"
+			style:--pct="{progress}%"
 			value={progress}
 			oninput={(e) => (dragValue = Number((e.target as HTMLInputElement).value))}
 			onchange={(e) => {
