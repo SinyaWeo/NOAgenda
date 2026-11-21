@@ -52,7 +52,7 @@
 		{ href: '/labels', label: 'layout.nav.labels', icon: TagOutline },
 		{ href: '/filters', label: 'layout.nav.filters', icon: FilterOutline }
 	];
-	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.admin', icon: CogOutline };
+	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.adminOverview', icon: CogOutline };
 	const ABOUT: NavItem = { href: '/about', label: 'layout.nav.about', icon: InfoCircleOutline };
 
 	let collapsed = $state(false);
@@ -156,8 +156,11 @@
 		{#each WORK as item (item.href)}{@render navItem(item)}{/each}
 		{@render sectionTitle($t('layout.nav.organize'))}
 		{#each ORGANIZE as item (item.href)}{@render navItem(item)}{/each}
+		{#if showAdmin}
+			{@render sectionTitle($t('layout.nav.admin'))}
+			{@render navItem(ADMIN)}
+		{/if}
 		<li class="nav-spacer"></li>
-		{#if showAdmin}{@render navItem(ADMIN)}{/if}
 		{@render navItem(ABOUT)}
 	</ul>
 </nav>

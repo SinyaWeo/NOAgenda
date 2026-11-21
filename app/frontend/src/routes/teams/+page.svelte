@@ -6,7 +6,7 @@
 	import type { TeamWithMembers } from '$lib/types-misc';
 	import type { TeamMember } from '$lib/types';
 	import { derived, writable } from 'svelte/store';
-	import { canManageTeam } from '$lib/roles';
+	import { canManageTeam, isAdmin } from '$lib/roles';
 	import { Alert, Button, Card } from 'flowbite-svelte';
 	import { UsersGroupOutline, PlusOutline } from 'flowbite-svelte-icons';
 	import { t } from '$lib/i18n';
@@ -82,5 +82,11 @@
 			{$t('teams.empty.text')}
 			<a href="/teams/new" class="text-primary-600 hover:underline">{$t('teams.empty.link')}</a>
 		</p>
+		{#if isAdmin($currentUser)}
+			<p class="text-sm">
+				{$t('teams.empty.adminHint')}
+				<a href="/admin/teams" class="text-primary-600 hover:underline">{$t('teams.empty.adminLink')}</a>
+			</p>
+		{/if}
 	</div>
 {/if}

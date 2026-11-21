@@ -19,6 +19,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'teams.view': 'Zobrazit',
 	'teams.empty.text': 'Zatím žádné týmy.',
 	'teams.empty.link': 'Vytvořit tým.',
+	'teams.empty.adminHint': 'Tato stránka zobrazuje jen vaše vlastní týmy. Hledáte správu týmů?',
+	'teams.empty.adminLink': 'Otevřít Správa → Týmy.',
 	'teams.userFallback': 'Uživatel č. {id}',
 	'teams.memberFallback': 'Člen č. {id}',
 	'teams.members': 'Členové',

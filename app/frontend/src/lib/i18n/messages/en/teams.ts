@@ -11,6 +11,8 @@ export const messages = {
 	'teams.view': 'View',
 	'teams.empty.text': 'No teams yet.',
 	'teams.empty.link': 'Create a team.',
+	'teams.empty.adminHint': 'This page lists only your own teams. Looking for team management?',
+	'teams.empty.adminLink': 'Open Admin → Teams.',
 	'teams.userFallback': 'User #{id}',
 	'teams.memberFallback': 'Member #{id}',
 	'teams.members': 'Members',

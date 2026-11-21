@@ -42,6 +42,7 @@ export const messages = {
 	'layout.nav.labels': 'Labels',
 	'layout.nav.filters': 'Saved Filters',
 	'layout.nav.admin': 'Admin',
+	'layout.nav.adminOverview': 'Overview',
 	'layout.nav.about': 'About',
 	'layout.nav.expand': 'Expand sidebar',
 	'layout.nav.collapse': 'Collapse sidebar',
