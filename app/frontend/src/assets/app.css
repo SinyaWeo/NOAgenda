@@ -524,3 +524,10 @@ html.dark .svelte-flow .svelte-flow__attribution a {
 html.dark .svelte-flow .svelte-flow__controls-button svg {
 	fill: currentColor;
 }
+
+/* Keep room for the chevron; Flowbite's px-* size classes otherwise override the plugin's padding. */
+@layer utilities {
+	select:not([size]) {
+		padding-inline-end: 2.5rem;
+	}
+}
