@@ -99,7 +99,7 @@
 				</div>
 				<div>
 					<Label for="edit-priority" class="mb-1">{$t('common.field.priority')}</Label>
-					<Select id="edit-priority" bind:value={$priority}>
+					<Select placeholder="" id="edit-priority" bind:value={$priority}>
 						<option value={0}>{$t('tasks.form.priorityUnset')}</option>
 						<option value={1}>{$t('common.priority.1')}</option><option value={2}
 							>{$t('common.priority.2')}</option
@@ -110,7 +110,7 @@
 				</div>
 				<div>
 					<Label for="edit-percent" class="mb-1">{$t('tasks.form.percentDone')}</Label>
-					<Select id="edit-percent" bind:value={$percentDone}>
+					<Select placeholder="" id="edit-percent" bind:value={$percentDone}>
 						{#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p (p)}<option value={p}>{p}%</option
 							>{/each}
 					</Select>

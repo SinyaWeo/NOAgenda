@@ -57,6 +57,7 @@
 				{$t('common.field.status')}
 			</p>
 			<Select
+				placeholder=""
 				value={task.status ?? 'open'}
 				onchange={(e) => onStatus((e.target as HTMLSelectElement).value)}
 				class="w-full"
@@ -172,6 +173,7 @@
 				{/each}
 				{#if available.length}
 					<Select
+						placeholder=""
 						size="sm"
 						class="w-auto"
 						value=""
@@ -199,6 +201,7 @@
 					{$t('tasks.details.assignee')}
 				</p>
 				<Select
+					placeholder=""
 					value={assignees[0]?.user?.id ?? ''}
 					onchange={(e) => onAssign(Number((e.target as HTMLSelectElement).value))}
 					class="w-full max-w-xs"

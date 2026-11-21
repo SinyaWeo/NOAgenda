@@ -135,7 +135,7 @@
 			placeholder={$t('tasks.relations.idPlaceholder')}
 			class="w-28"
 		/>
-		<Select bind:value={newRelationKind} class="w-auto">
+		<Select placeholder="" bind:value={newRelationKind} class="w-auto">
 			{#each RELATION_KINDS as k (k)}<option value={k}>{$t(relationKindKey(k))}</option>{/each}
 		</Select>
 		<Button size="sm" onclick={submitRelation}>{$t('common.add')}</Button>

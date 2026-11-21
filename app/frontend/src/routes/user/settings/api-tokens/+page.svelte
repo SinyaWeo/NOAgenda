@@ -109,6 +109,7 @@
 		<div>
 			<Label for="token-scope" class="mb-1">{$t('settings.tokens.access')}</Label>
 			<Select
+				placeholder=""
 				id="token-scope"
 				bind:value={newTokenScope}
 				items={[

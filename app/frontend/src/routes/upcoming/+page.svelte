@@ -75,7 +75,7 @@
 			<Label for="days-select" class="text-sm text-gray-500 whitespace-nowrap"
 				>{$t('dashboard.upcoming.showNext')}</Label
 			>
-			<Select id="days-select" bind:value={daysAhead} onchange={loadTasks} class="w-auto">
+			<Select placeholder="" id="days-select" bind:value={daysAhead} onchange={loadTasks} class="w-auto">
 				<option value={7}>{$t('dashboard.upcoming.days', { count: 7 })}</option>
 				<option value={14}>{$t('dashboard.upcoming.days', { count: 14 })}</option>
 				<option value={30}>{$t('dashboard.upcoming.days', { count: 30 })}</option>

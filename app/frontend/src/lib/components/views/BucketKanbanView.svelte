@@ -77,6 +77,7 @@
 		>
 		{#if task.dueDate}<div class="text-xs text-gray-400">{$fmt.date(task.dueDate)}</div>{/if}
 		<Select
+			placeholder=""
 			value={task.bucketId ?? ''}
 			onchange={(e) => onMove(task.id, Number((e.target as HTMLSelectElement).value))}
 			class="mt-2 text-xs"

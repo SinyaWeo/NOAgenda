@@ -186,7 +186,7 @@
 					placeholder={$t('dashboard.quickAdd.titlePlaceholder')}
 					class="flex-1 min-w-36"
 				/>
-				<Select bind:value={quickProjectId} class="flex-1 min-w-36">
+				<Select placeholder="" bind:value={quickProjectId} class="flex-1 min-w-36">
 					<option value="">{$t('dashboard.quickAdd.selectProject')}</option>
 					{#each $allProjects as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
 				</Select>

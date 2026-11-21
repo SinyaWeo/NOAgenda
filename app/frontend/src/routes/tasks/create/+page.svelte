@@ -108,7 +108,7 @@
 			</div>
 			<div>
 				<Label for="task-priority" class="mb-1">{$t('common.field.priority')}</Label>
-				<Select id="task-priority" bind:value={$priority}>
+				<Select placeholder="" id="task-priority" bind:value={$priority}>
 					<option value={0}>{$t('tasks.form.priorityUnset')}</option>
 					<option value={1}>{$t('common.priority.1')}</option><option value={2}
 						>{$t('common.priority.2')}</option
@@ -123,7 +123,7 @@
 				<Label for="task-project" class="mb-1"
 					>{$t('common.field.project')} <span class="text-red-500">*</span></Label
 				>
-				<Select id="task-project" bind:value={$projectId} required>
+				<Select placeholder="" id="task-project" bind:value={$projectId} required>
 					<option value={undefined}>{$t('tasks.form.selectProject')}</option>
 					{#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
 				</Select>
@@ -132,7 +132,7 @@
 		{#if $assignable.length > 1}
 			<div>
 				<Label for="task-assignee" class="mb-1">{$t('tasks.form.assignee')}</Label>
-				<Select id="task-assignee" bind:value={$assigneeId}>
+				<Select placeholder="" id="task-assignee" bind:value={$assigneeId}>
 					{#each $assignable as u (u.id)}
 						<option value={u.id}>{u.name || u.username}</option>
 					{/each}

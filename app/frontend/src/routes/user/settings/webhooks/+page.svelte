@@ -102,7 +102,7 @@
 		<div class="grid grid-cols-2 gap-4">
 			<div>
 				<Label for="wh-event" class="mb-1">{$t('settings.webhooks.event')}</Label>
-				<Select id="wh-event" bind:value={newEvent}>
+				<Select placeholder="" id="wh-event" bind:value={newEvent}>
 					<option value="*">{$t('settings.webhooks.allEvents')}</option>
 					{#each EVENT_OPTIONS as ev}<option value={ev}>{ev}</option>{/each}
 				</Select>

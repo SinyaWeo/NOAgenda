@@ -120,6 +120,7 @@
 				bind:this={picker}
 			/>
 			<Select
+				placeholder=""
 				bind:value={newPermission}
 				class="w-auto self-start mt-6"
 				aria-label={$t('projects.share.permission')}
@@ -158,7 +159,7 @@
 		</h2>
 		<form onsubmit={addTeam} class="flex gap-2 mb-4 flex-wrap">
 			{#if $allTeams.length}
-				<Select bind:value={newTeamId} required class="flex-1 min-w-36">
+				<Select placeholder="" bind:value={newTeamId} required class="flex-1 min-w-36">
 					<option value="">{$t('projects.share.selectTeam')}</option>
 					{#each $allTeams as t (t.id)}<option value={String(t.id)}>{t.name}</option>{/each}
 				</Select>
@@ -172,7 +173,7 @@
 					class="w-28"
 				/>
 			{/if}
-			<Select bind:value={newPermission} class="w-auto">
+			<Select placeholder="" bind:value={newPermission} class="w-auto">
 				<option value="read">{$t('common.permission.read')}</option><option value="write"
 					>{$t('common.permission.write')}</option
 				><option value="admin">{$t('common.permission.admin')}</option>

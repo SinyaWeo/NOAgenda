@@ -80,7 +80,7 @@
 		</div>
 		<div>
 			<Label for="view-type" class="mb-1">{$t('projects.views.type')}</Label>
-			<Select id="view-type" bind:value={newViewType}>
+			<Select placeholder="" id="view-type" bind:value={newViewType}>
 				<option value="list">{$t('projects.viewType.list')}</option>
 				<option value="kanban">{$t('projects.viewType.kanban')}</option>
 				<option value="gantt">{$t('projects.viewType.gantt')}</option>

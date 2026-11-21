@@ -35,7 +35,7 @@
 				class="w-20"
 				aria-label={$t('tasks.repeat.every')}
 			/>{/if}
-		<Select bind:value={form.kind} class="w-auto" aria-label={$t('tasks.repeat.legend')}>
+		<Select placeholder="" bind:value={form.kind} class="w-auto" aria-label={$t('tasks.repeat.legend')}>
 			{#each REPEAT_KINDS as kind (kind)}<option value={kind}>{kindLabel(kind)}</option>{/each}
 		</Select>
 	</div>
@@ -65,7 +65,7 @@
 	{#if repeats}
 		<div class="flex items-center gap-2 flex-wrap mt-3">
 			<span class="text-sm text-gray-500">{$t('tasks.repeat.ends')}</span>
-			<Select bind:value={form.end} class="w-auto" aria-label={$t('tasks.repeat.ends')}>
+			<Select placeholder="" bind:value={form.end} class="w-auto" aria-label={$t('tasks.repeat.ends')}>
 				{#each ENDS as end (end)}<option value={end}>{endLabel(end)}</option>{/each}
 			</Select>
 			{#if form.end === 'until'}

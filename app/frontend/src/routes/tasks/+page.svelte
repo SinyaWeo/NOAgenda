@@ -417,6 +417,7 @@
 					>{$t('views.bulk.selected', { count: selected.length })}</span
 				>
 				<Select
+					placeholder=""
 					size="sm"
 					class="w-auto"
 					disabled={bulkBusy}
@@ -434,6 +435,7 @@
 					<option value="done">{$t('common.status.done')}</option>
 				</Select>
 				<Select
+					placeholder=""
 					size="sm"
 					class="w-auto"
 					disabled={bulkBusy}

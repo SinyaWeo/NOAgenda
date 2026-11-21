@@ -93,19 +93,19 @@
 			</div>
 			<div>
 				<Label for="gen-timezone" class="mb-1">{$t('settings.general.timezone')}</Label>
-				<Select id="gen-timezone" bind:value={$timezone}>
+				<Select placeholder="" id="gen-timezone" bind:value={$timezone}>
 					{#each zones as z (z.value)}<option value={z.value}>{z.label}</option>{/each}
 				</Select>
 			</div>
 			<div>
 				<Label for="gen-language" class="mb-1">{$t('common.field.language')}</Label>
-				<Select id="gen-language" bind:value={$language}>
+				<Select placeholder="" id="gen-language" bind:value={$language}>
 					{#each LOCALES as l (l.code)}<option value={l.code}>{l.label}</option>{/each}
 				</Select>
 			</div>
 			<div>
 				<Label for="gen-theme" class="mb-1">{$t('common.field.theme')}</Label>
-				<Select id="gen-theme" bind:value={$theme}>
+				<Select placeholder="" id="gen-theme" bind:value={$theme}>
 					<option value="light">{$t('common.theme.light')}</option><option value="dark"
 						>{$t('common.theme.dark')}</option
 					><option value="system">{$t('common.theme.system')}</option>
@@ -113,7 +113,7 @@
 			</div>
 			<div>
 				<Label for="gen-project" class="mb-1">{$t('settings.general.defaultProject')}</Label>
-				<Select id="gen-project" bind:value={$defaultProjectId}>
+				<Select placeholder="" id="gen-project" bind:value={$defaultProjectId}>
 					<option value={null}>{$t('settings.general.noDefaultProject')}</option>
 					{#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
 				</Select>
