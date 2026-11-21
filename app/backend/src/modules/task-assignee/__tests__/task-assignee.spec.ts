@@ -150,11 +150,24 @@ describe('TaskAssigneeService', () => {
     expect(repo.find).toHaveBeenCalledWith({ where: { node: { id: 7 } }, relations: { user: true, node: true } });
   });
 
-  it('add creates and saves the link', async () => {
-    const repo: Mocks = { create: jest.fn((x: object) => x), save: jest.fn(async (x: object) => ({ id: 1, ...x })) };
+  it('add replaces the previous assignee (one per task) and saves the link', async () => {
+    const repo: Mocks = {
+      delete: jest.fn(),
+      findOne: jest.fn(async () => null),
+      create: jest.fn((x: object) => x),
+      save: jest.fn(async (x: object) => ({ id: 1, ...x })),
+    };
     const res = await new TaskAssigneeService(asMock<Repository<TaskAssignee>>(repo)).add(7, 5);
+    expect(repo.delete).toHaveBeenCalledTimes(1);
     expect(repo.create).toHaveBeenCalledWith({ node: { id: 7 }, user: { id: 5 } });
     expect(res.id).toBe(1);
+  });
+
+  it('add is idempotent when the user is already the assignee', async () => {
+    const repo: Mocks = { delete: jest.fn(), findOne: jest.fn(async () => ({ id: 9 })), save: jest.fn() };
+    const res = await new TaskAssigneeService(asMock<Repository<TaskAssignee>>(repo)).add(7, 5);
+    expect(res.id).toBe(9);
+    expect(repo.save).not.toHaveBeenCalled();
   });
 
   it('remove deletes only that task/user pair', async () => {

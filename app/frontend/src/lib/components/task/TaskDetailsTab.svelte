@@ -196,7 +196,7 @@
 		{#if assignable.length > 1}
 			<div>
 				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-					{$t('tasks.details.assignees')}
+					{$t('tasks.details.assignee')}
 				</p>
 				<Select
 					value={assignees[0]?.user?.id ?? ''}
@@ -210,7 +210,7 @@
 		{:else if assignees.length}
 			<div>
 				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-					{$t('tasks.details.assignees')}
+					{$t('tasks.details.assignee')}
 				</p>
 				<p class="text-sm text-gray-700 dark:text-gray-300 m-0">
 					{assignees

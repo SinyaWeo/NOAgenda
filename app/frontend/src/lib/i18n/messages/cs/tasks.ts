@@ -37,7 +37,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.details.defer3': '+3 dny',
 	'tasks.details.defer7': '+1 týden',
 	'tasks.details.labels': 'Štítky',
-	'tasks.details.assignees': 'Řešitelé',
+	'tasks.details.assignee': 'Řešitel',
 	'tasks.details.labelFallback': 'Štítek č. {id}',
 	'tasks.details.userFallback': 'Uživatel č. {id}',
 

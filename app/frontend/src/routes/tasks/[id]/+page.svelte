@@ -37,7 +37,7 @@
 	let task = $state<Task | null>(null);
 	let comments = $state<Comment[]>([]);
 	let assignees = $state<TaskAssignee[]>([]);
-	/** People the creator may assign this task to (themselves + members of teams they own). */
+	/** People the creator may assign this task to (themselves + members of teams they own); the backend enforces who may actually assign. */
 	let assignable = $state<UserSummary[]>([]);
 	let taskLabels = $state<TaskLabel[]>([]);
 	let allLabels = $state<Label[]>([]); // the user's own labels: the ones that can be attached
@@ -86,20 +86,16 @@
 		allLabels = mine;
 		const me = $authSession.user;
 		assignable =
-			me && t.createdBy === me.id && members.length
+			me && members.length
 				? [{ id: me.id, username: me.username, name: me.name }, ...members.filter((m) => m.id !== me.id)]
 				: [];
 	}
 
-	/** Make `userId` the (only) assignee: add them first so the task is never left unassigned on failure. */
+	/** Assign the task to `userId`; the backend replaces the previous assignee (a task has exactly one). */
 	async function assignTo(userId: number) {
 		const id = page.params.id;
 		try {
-			if (!assignees.some((a) => a.user?.id === userId))
-				await apiPostAuth(`/tasks/${id}/assignees`, { userId });
-			for (const a of assignees) {
-				if (a.user && a.user.id !== userId) await apiDeleteAuth(`/tasks/${id}/assignees/${a.user.id}`);
-			}
+			await apiPostAuth(`/tasks/${id}/assignees`, { userId });
 			assignees = await apiGetAuth<TaskAssignee[]>(`/tasks/${id}/assignees`);
 		} catch (e: unknown) {
 			fail(e);

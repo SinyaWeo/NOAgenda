@@ -36,7 +36,7 @@ export const messages = {
 	'tasks.details.defer3': '+3 days',
 	'tasks.details.defer7': '+1 week',
 	'tasks.details.labels': 'Labels',
-	'tasks.details.assignees': 'Assignees',
+	'tasks.details.assignee': 'Assignee',
 	'tasks.details.labelFallback': 'Label #{id}',
 	'tasks.details.userFallback': 'User #{id}',
 
