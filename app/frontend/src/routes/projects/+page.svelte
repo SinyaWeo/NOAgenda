@@ -89,7 +89,8 @@
 							/>{/if}
 					</button>
 				</div>
-				{#if project.isArchived}<span class="text-xs font-medium tone-gray">{$t('projects.archived')}</span>{/if}
+				{#if project.isArchived}<span class="text-xs font-medium tone-gray">{$t('projects.archived')}</span
+					>{/if}
 				{@const stats = $taskStats[project.id]}
 				{#if stats && stats.total > 0}
 					<div class="mt-1">

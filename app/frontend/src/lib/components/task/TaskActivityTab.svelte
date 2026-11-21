@@ -76,7 +76,8 @@
 					<span class="flex-1 text-sm text-gray-700 dark:text-gray-300"
 						>{$fmt.dateTime(rem.reminderDate)}</span
 					>
-					{#if rem.sentAt}<span class="text-xs font-medium tone-green">{$t('tasks.reminders.sent')}</span>{/if}
+					{#if rem.sentAt}<span class="text-xs font-medium tone-green">{$t('tasks.reminders.sent')}</span
+						>{/if}
 					<Button
 						size="xs"
 						color="light"

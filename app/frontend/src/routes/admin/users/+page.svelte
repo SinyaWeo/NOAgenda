@@ -137,7 +137,9 @@
 						<span class="text-xs font-medium {u.role === 'admin' ? 'tone-red' : 'tone-blue'}"
 							>{$t(`admin.users.badge.${u.role}` as MessageKey)}</span
 						>
-						{#if u.isLocked}<span class="ml-1 text-xs font-medium tone-yellow">{$t('admin.users.badge.locked')}</span>{/if}
+						{#if u.isLocked}<span class="ml-1 text-xs font-medium tone-yellow"
+								>{$t('admin.users.badge.locked')}</span
+							>{/if}
 					</TableBodyCell>
 					<TableBodyCell>
 						{$fmt.date(u.createdAt)}

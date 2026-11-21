@@ -115,10 +115,7 @@
 		>
 		<span class="block text-xs text-gray-500">@{user.username}</span>
 		{#if isAdmin(user)}
-			<span
-				class="inline-block mt-1 text-xs font-medium tone-red"
-				>{$t('layout.user.admin')}</span
-			>
+			<span class="inline-block mt-1 text-xs font-medium tone-red">{$t('layout.user.admin')}</span>
 		{/if}
 	</DropdownHeader>
 	<DropdownItem href="/user/profile" class="flex items-center">

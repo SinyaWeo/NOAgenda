@@ -148,9 +148,7 @@
 							<div class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5">
 								{$t('common.field.status')}
 							</div>
-							<span
-								class="inline-flex items-center text-xs font-semibold"
-								data-status={task.status}
+							<span class="inline-flex items-center text-xs font-semibold" data-status={task.status}
 								>{task.status ? $t(`common.status.${task.status}` as MessageKey) : task.status}</span
 							>
 						</div>

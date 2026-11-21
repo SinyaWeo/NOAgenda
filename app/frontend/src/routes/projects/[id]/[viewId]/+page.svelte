@@ -132,7 +132,9 @@
 				<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
 					{$view?.title}
 				</h1>
-				<span class="text-xs font-medium tone-blue">{$view ? $t(`projects.viewType.${$view.viewType}` as MessageKey) : ''}</span>
+				<span class="text-xs font-medium tone-blue"
+					>{$view ? $t(`projects.viewType.${$view.viewType}` as MessageKey) : ''}</span
+				>
 			{/if}
 		</div>
 		<Button href="/projects/{page.params.id}/settings/views" color="light" size="sm"

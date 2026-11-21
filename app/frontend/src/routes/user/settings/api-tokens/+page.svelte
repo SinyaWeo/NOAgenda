@@ -138,7 +138,9 @@
 					<p class="font-bold text-sm text-gray-900 dark:text-white m-0">
 						{token.name}
 						<span
-							class="ml-2 align-middle text-xs font-medium {token.scope === 'write' ? 'tone-yellow' : 'tone-gray'}"
+							class="ml-2 align-middle text-xs font-medium {token.scope === 'write'
+								? 'tone-yellow'
+								: 'tone-gray'}"
 							data-testid="token-scope"
 							>{token.scope === 'write'
 								? $t('settings.tokens.badge.write')

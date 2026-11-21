@@ -34,8 +34,10 @@
 			data: { label: n.name ?? n.title ?? tr('views.mindmap.nodeFallback', { id: n.id }) },
 			style:
 				n.type === 'project'
-					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;' + common
-					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;' + common
+					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;' +
+						common
+					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;' +
+						common
 		};
 	}
 

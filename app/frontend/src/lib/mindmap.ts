@@ -30,8 +30,7 @@ export function layoutForest<T>(
 
 	const place = (tree: Tree, left: number, depth: number) => {
 		positions.set(getId(tree.item), { x: left + (tree.width - NODE_W) / 2, y: depth * V_GAP });
-		const kidsWidth =
-			tree.kids.reduce((s, k) => s + k.width, 0) + H_GAP * Math.max(0, tree.kids.length - 1);
+		const kidsWidth = tree.kids.reduce((s, k) => s + k.width, 0) + H_GAP * Math.max(0, tree.kids.length - 1);
 		let cursor = left + (tree.width - kidsWidth) / 2;
 		for (const k of tree.kids) {
 			place(k, cursor, depth + 1);

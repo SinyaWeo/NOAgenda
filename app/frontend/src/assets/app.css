@@ -259,37 +259,93 @@ a.text-gray-900 {
 /* ─────────────────────────────────────────────────────────────────
    STATUS / PRIORITY  (data-attribute selectors)
 ───────────────────────────────────────────────────────────────── */
-[data-status='open'] { color: #047857; }
-[data-status='in_progress'] { color: #b45309; }
-[data-status='done'] { color: #15803d; }
-[data-status='overdue'] { color: #b91c1c; }
-.dark [data-status='open'] { color: #6ee7b7; }
-.dark [data-status='in_progress'] { color: #fcd34d; }
-.dark [data-status='done'] { color: #86efac; }
-.dark [data-status='overdue'] { color: #fca5a5; }
+[data-status='open'] {
+	color: #047857;
+}
+[data-status='in_progress'] {
+	color: #b45309;
+}
+[data-status='done'] {
+	color: #15803d;
+}
+[data-status='overdue'] {
+	color: #b91c1c;
+}
+.dark [data-status='open'] {
+	color: #6ee7b7;
+}
+.dark [data-status='in_progress'] {
+	color: #fcd34d;
+}
+.dark [data-status='done'] {
+	color: #86efac;
+}
+.dark [data-status='overdue'] {
+	color: #fca5a5;
+}
 
-[data-priority='1'] { color: #15803d; }
-[data-priority='2'] { color: #a16207; }
-[data-priority='3'] { color: #c2410c; }
-[data-priority='4'] { color: #b91c1c; }
-[data-priority='5'] { color: #7e22ce; }
-.dark [data-priority='1'] { color: #86efac; }
-.dark [data-priority='2'] { color: #fef08a; }
-.dark [data-priority='3'] { color: #fdba74; }
-.dark [data-priority='4'] { color: #fca5a5; }
-.dark [data-priority='5'] { color: #d8b4fe; }
+[data-priority='1'] {
+	color: #15803d;
+}
+[data-priority='2'] {
+	color: #a16207;
+}
+[data-priority='3'] {
+	color: #c2410c;
+}
+[data-priority='4'] {
+	color: #b91c1c;
+}
+[data-priority='5'] {
+	color: #7e22ce;
+}
+.dark [data-priority='1'] {
+	color: #86efac;
+}
+.dark [data-priority='2'] {
+	color: #fef08a;
+}
+.dark [data-priority='3'] {
+	color: #fdba74;
+}
+.dark [data-priority='4'] {
+	color: #fca5a5;
+}
+.dark [data-priority='5'] {
+	color: #d8b4fe;
+}
 
 /* Text-only tone utilities for role / state labels (no background) */
-.tone-red { color: #b91c1c; }
-.tone-blue { color: #1d4ed8; }
-.tone-green { color: #15803d; }
-.tone-yellow { color: #a16207; }
-.tone-gray { color: #4b5563; }
-.dark .tone-red { color: #f87171; }
-.dark .tone-blue { color: #60a5fa; }
-.dark .tone-green { color: #86efac; }
-.dark .tone-yellow { color: #fde047; }
-.dark .tone-gray { color: #9ca3af; }
+.tone-red {
+	color: #b91c1c;
+}
+.tone-blue {
+	color: #1d4ed8;
+}
+.tone-green {
+	color: #15803d;
+}
+.tone-yellow {
+	color: #a16207;
+}
+.tone-gray {
+	color: #4b5563;
+}
+.dark .tone-red {
+	color: #f87171;
+}
+.dark .tone-blue {
+	color: #60a5fa;
+}
+.dark .tone-green {
+	color: #86efac;
+}
+.dark .tone-yellow {
+	color: #fde047;
+}
+.dark .tone-gray {
+	color: #9ca3af;
+}
 
 /* ─────────────────────────────────────────────────────────────────
    LABEL COLOR DOT

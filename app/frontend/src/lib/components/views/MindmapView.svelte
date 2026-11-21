@@ -33,7 +33,11 @@
 	/** Re-run the tidy-tree layout over all loaded nodes so no subtrees overlap. */
 	function relayout() {
 		if (!rootNode) return;
-		const pos = layoutForest([rootNode], (n) => childMap.get(Number(n.id)) ?? [], (n) => Number(n.id));
+		const pos = layoutForest(
+			[rootNode],
+			(n) => childMap.get(Number(n.id)) ?? [],
+			(n) => Number(n.id)
+		);
 		mmNodes = mmNodes.map((n) => {
 			const p = pos.get(Number(n.id));
 			return p ? { ...n, position: p } : n;
@@ -49,8 +53,10 @@
 			data: { label: n.name ?? n.title ?? tr('views.mindmap.nodeFallback', { id: n.id }) },
 			style:
 				n.type === 'project'
-					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;' + common
-					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;' + common
+					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;' +
+						common
+					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;' +
+						common
 		};
 	}
 
@@ -118,7 +124,11 @@
 			mmEdges = [...mmEdges, { id: `e-${parent.id}-${node.id}`, source: parent.id, target: node.id }];
 			// keep the layout tree in sync with the new parent
 			const moved = [...childMap.values()].flat().find((c) => String(c.id) === node.id);
-			for (const [k, list] of childMap) childMap.set(k, list.filter((c) => String(c.id) !== node.id));
+			for (const [k, list] of childMap)
+				childMap.set(
+					k,
+					list.filter((c) => String(c.id) !== node.id)
+				);
 			if (moved) childMap.set(Number(parent.id), [...(childMap.get(Number(parent.id)) ?? []), moved]);
 			showToast(tr('views.toast.moved'), 'success');
 		} catch (e: unknown) {

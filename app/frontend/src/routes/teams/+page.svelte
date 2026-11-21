@@ -50,9 +50,7 @@
 								</p>{/if}
 						</div>
 						{#if ownsTeam($currentUser, team)}
-							<span
-								class="shrink-0 text-xs font-medium tone-blue"
-							>
+							<span class="shrink-0 text-xs font-medium tone-blue">
 								{$t('teams.owner')}
 							</span>
 						{/if}

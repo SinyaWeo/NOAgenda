@@ -22,9 +22,8 @@
 				<a href="/tasks/{task.id}" class="flex-1 font-medium text-gray-800 dark:text-gray-200 hover:underline"
 					>{task.title}</a
 				>
-				<span
-					class="inline-flex items-center text-xs font-semibold shrink-0"
-					data-status={task.status}>{$t(`common.status.${task.status ?? 'open'}` as MessageKey)}</span
+				<span class="inline-flex items-center text-xs font-semibold shrink-0" data-status={task.status}
+					>{$t(`common.status.${task.status ?? 'open'}` as MessageKey)}</span
 				>
 				{#if task.dueDate}<span class="text-xs shrink-0 {isOverdue(task) ? 'text-red-500' : 'text-gray-400'}"
 						>{$fmt.date(task.dueDate)}</span
