@@ -1,13 +1,44 @@
 <script lang="ts">
 	import type { Task } from '$lib/types';
-	import type { KanbanColumn } from '$lib/types-views';
+	import type { KanbanColumn, StatusChangeHandler } from '$lib/types-views';
 	import { t, fmt, type MessageKey } from '$lib/i18n';
 
 	interface Props {
 		tasks: Task[];
 		columns: KanbanColumn[];
+		/** Called when a card is dropped on another column; omit for a read-only board. */
+		onStatusChange?: StatusChangeHandler;
 	}
-	let { tasks, columns }: Props = $props();
+	let { tasks, columns, onStatusChange }: Props = $props();
+
+	let draggingId = $state<number | null>(null);
+	let overCol = $state<string | null>(null);
+
+	function onDragStart(e: DragEvent, task: Task) {
+		if (!onStatusChange || !e.dataTransfer) return;
+		e.dataTransfer.effectAllowed = 'move';
+		e.dataTransfer.setData('text/plain', String(task.id));
+		draggingId = task.id;
+	}
+
+	function onDragEnd() {
+		draggingId = null;
+		overCol = null;
+	}
+
+	function onDragOver(e: DragEvent, key: string) {
+		if (draggingId == null) return;
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		overCol = key;
+	}
+
+	function onDrop(e: DragEvent, key: KanbanColumn['key']) {
+		e.preventDefault();
+		const task = tasks.find((x) => x.id === draggingId);
+		onDragEnd();
+		if (task && task.status !== key) onStatusChange?.(task.id, key);
+	}
 </script>
 
 <div class="board-cols">

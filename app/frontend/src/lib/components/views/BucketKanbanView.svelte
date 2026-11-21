@@ -28,6 +28,34 @@
 	let editTitle = $state('');
 	let editLimit = $state('');
 	let busy = $state(false);
+	let draggingId = $state<number | null>(null);
+	let overBucket = $state<number | null>(null);
+
+	function onDragStart(e: DragEvent, task: Task) {
+		if (!e.dataTransfer) return;
+		e.dataTransfer.effectAllowed = 'move';
+		e.dataTransfer.setData('text/plain', String(task.id));
+		draggingId = task.id;
+	}
+
+	function onDragEnd() {
+		draggingId = null;
+		overBucket = null;
+	}
+
+	function onDragOver(e: DragEvent, bucketId: number) {
+		if (draggingId == null) return;
+		e.preventDefault();
+		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+		overBucket = bucketId;
+	}
+
+	function onDrop(e: DragEvent, bucketId: number) {
+		e.preventDefault();
+		const task = tasks.find((x) => x.id === draggingId);
+		onDragEnd();
+		if (task && task.bucketId !== bucketId) onMove(task.id, bucketId);
+	}
 
 	async function run(fn: () => void | Promise<void>) {
 		busy = true;
