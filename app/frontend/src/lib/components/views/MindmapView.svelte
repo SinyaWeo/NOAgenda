@@ -3,7 +3,7 @@
 	import { apiGetAuth, apiPatchAuth } from '$lib/api';
 	import { errMessage } from '$lib/errors';
 	import { t, tr } from '$lib/i18n';
-	import { findDropTarget } from '$lib/mindmap';
+	import { findDropTarget, layoutForest, NODE_W } from '$lib/mindmap';
 	import { showToast } from '$lib/toast';
 	import type { Node as AppNode } from '$lib/types';
 	import {
@@ -27,29 +27,48 @@
 	let loaded = $state(false);
 	const expandedMmIds = new Set<number>();
 
+	let rootNode: AppNode | null = null;
+	const childMap = new Map<number, AppNode[]>();
+
+	/** Re-run the tidy-tree layout over all loaded nodes so no subtrees overlap. */
+	function relayout() {
+		if (!rootNode) return;
+		const pos = layoutForest([rootNode], (n) => childMap.get(Number(n.id)) ?? [], (n) => Number(n.id));
+		mmNodes = mmNodes.map((n) => {
+			const p = pos.get(Number(n.id));
+			return p ? { ...n, position: p } : n;
+		});
+	}
+
 	function appNodeToFlowNode(n: AppNode, x: number, y: number): FlowNode {
+		const common = `width:${NODE_W}px;box-sizing:border-box;text-align:center;overflow:hidden;text-overflow:ellipsis;`;
 		return {
 			id: String(n.id),
 			position: { x, y },
+			width: NODE_W,
 			data: { label: n.name ?? n.title ?? tr('views.mindmap.nodeFallback', { id: n.id }) },
 			style:
 				n.type === 'project'
-					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;'
-					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;'
+					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;' + common
+					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;' + common
 		};
 	}
 
 	async function loadMindmapTree(id: string) {
 		try {
 			const projectNode = await apiGetAuth<AppNode>(`/nodes/${id}`);
-			mmNodes = [appNodeToFlowNode(projectNode, 400, 0)];
+			rootNode = projectNode;
+			childMap.clear();
+			mmNodes = [appNodeToFlowNode(projectNode, 0, 0)];
 			mmEdges = [];
 			const children = await apiGetAuth<AppNode[]>(`/nodes/${id}/children`);
-			children.forEach((child, i) => {
-				mmNodes = [...mmNodes, appNodeToFlowNode(child, i * 200, 120)];
+			childMap.set(Number(projectNode.id), children);
+			children.forEach((child) => {
+				mmNodes = [...mmNodes, appNodeToFlowNode(child, 0, 0)];
 				mmEdges = [...mmEdges, { id: `e-${id}-${child.id}`, source: id, target: String(child.id) }];
 				expandedMmIds.add(child.id);
 			});
+			relayout();
 		} catch (e: unknown) {
 			showToast(errMessage(e, tr('views.toast.mindmapLoadFailed')), 'error');
 		} finally {
@@ -63,13 +82,8 @@
 		expandedMmIds.add(nodeId);
 		try {
 			const children = await apiGetAuth<AppNode[]>(`/nodes/${nodeId}/children`);
-			const parent = mmNodes.find((n) => n.id === String(nodeId));
-			const baseX = parent?.position.x ?? 0;
-			const baseY = (parent?.position.y ?? 0) + 120;
-			mmNodes = [
-				...mmNodes,
-				...children.map((c, i) => appNodeToFlowNode(c, baseX + i * 180 - (children.length - 1) * 90, baseY))
-			];
+			childMap.set(nodeId, children);
+			mmNodes = [...mmNodes, ...children.map((c) => appNodeToFlowNode(c, 0, 0))];
 			mmEdges = [
 				...mmEdges,
 				...children.map((c) => ({
@@ -78,6 +92,7 @@
 					target: String(c.id)
 				}))
 			];
+			relayout();
 		} catch (e: unknown) {
 			expandedMmIds.delete(nodeId); // let the user retry
 			showToast(errMessage(e, tr('views.toast.childrenLoadFailed')), 'error');
@@ -101,6 +116,10 @@
 			await apiPatchAuth(`/nodes/${node.id}/move`, { parentId: Number(parent.id) });
 			mmEdges = mmEdges.filter((e) => e.target !== node.id);
 			mmEdges = [...mmEdges, { id: `e-${parent.id}-${node.id}`, source: parent.id, target: node.id }];
+			// keep the layout tree in sync with the new parent
+			const moved = [...childMap.values()].flat().find((c) => String(c.id) === node.id);
+			for (const [k, list] of childMap) childMap.set(k, list.filter((c) => String(c.id) !== node.id));
+			if (moved) childMap.set(Number(parent.id), [...(childMap.get(Number(parent.id)) ?? []), moved]);
 			showToast(tr('views.toast.moved'), 'success');
 		} catch (e: unknown) {
 			showToast(errMessage(e, tr('views.toast.moveFailed')), 'error');

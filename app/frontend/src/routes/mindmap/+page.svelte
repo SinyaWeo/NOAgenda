@@ -13,7 +13,7 @@
 	import '@xyflow/svelte/dist/style.css';
 	import { authSession } from '$lib/auth';
 	import { apiGetAuth, apiPatchAuth } from '$lib/api';
-	import { findDropTarget } from '$lib/mindmap';
+	import { findDropTarget, layoutForest, NODE_W, V_GAP } from '$lib/mindmap';
 	import { showToast } from '$lib/toast';
 	import { errMessage } from '$lib/errors';
 	import { t, tr } from '$lib/i18n';
@@ -26,14 +26,16 @@
 	let edges = $state<Edge[]>([]);
 
 	function toFlowNode(n: AppNode, x: number, y: number): FlowNode {
+		const common = `width:${NODE_W}px;box-sizing:border-box;text-align:center;overflow:hidden;text-overflow:ellipsis;`;
 		return {
 			id: String(n.id),
 			position: { x, y },
+			width: NODE_W,
 			data: { label: n.name ?? n.title ?? tr('views.mindmap.nodeFallback', { id: n.id }) },
 			style:
 				n.type === 'project'
-					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;'
-					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;'
+					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;' + common
+					: 'background:#f3f4f6;color:#111;border-radius:6px;padding:6px 12px;border:1px solid #d1d5db;' + common
 		};
 	}
 
@@ -53,39 +55,27 @@
 
 			const graphNodes: FlowNode[] = [];
 			const graphEdges: Edge[] = [];
-			const visited = new Set<number>();
 
-			const placeChildren = (parentId: number, parentX: number, parentY: number) => {
-				const children = (byParent.get(parentId) ?? []).filter((c) => !visited.has(Number(c.id)));
-				if (!children.length) return;
+			const childrenOf = (n: AppNode) => byParent.get(Number(n.id)) ?? [];
+			const positions = layoutForest(projects, childrenOf, (n) => Number(n.id));
 
-				const gap = 190;
-				const startX = parentX - ((children.length - 1) * gap) / 2;
-				const childY = parentY + 120;
-
-				children.forEach((child, i) => {
-					const childId = Number(child.id);
-					visited.add(childId);
-					const childX = startX + i * gap;
-
-					graphNodes.push(toFlowNode(child, childX, childY));
-					graphEdges.push({
-						id: `e-${parentId}-${childId}`,
-						source: String(parentId),
-						target: String(childId)
-					});
-
-					placeChildren(childId, childX, childY);
-				});
+			// Emit nodes/edges in tree order; an edge is only drawn for children laid out directly
+			// below this parent (cycles/duplicates are skipped by the layout).
+			const emitted = new Set<number>();
+			const walk = (n: AppNode) => {
+				const id = Number(n.id);
+				const pos = positions.get(id);
+				if (!pos || emitted.has(id)) return;
+				emitted.add(id);
+				graphNodes.push(toFlowNode(n, pos.x, pos.y));
+				for (const c of childrenOf(n)) {
+					const cp = positions.get(Number(c.id));
+					if (!cp || emitted.has(Number(c.id)) || cp.y !== pos.y + V_GAP) continue;
+					graphEdges.push({ id: `e-${n.id}-${c.id}`, source: String(n.id), target: String(c.id) });
+					walk(c);
+				}
 			};
-
-			projects.forEach((p, i) => {
-				const projectId = Number(p.id);
-				visited.add(projectId);
-				const projectX = i * 260;
-				graphNodes.push(toFlowNode(p, projectX, 0));
-				placeChildren(projectId, projectX, 0);
-			});
+			projects.forEach(walk);
 
 			nodes = graphNodes;
 			edges = graphEdges;
