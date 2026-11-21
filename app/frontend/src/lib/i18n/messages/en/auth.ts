@@ -87,6 +87,9 @@ export const messages = {
 	'auth.about.source': 'Source code',
 	'auth.about.license': 'License',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.teams.title': 'Team roles and admin tools',
+	'auth.about.timeline.teams.body':
+		'Team managers and members, a separate app admin with its own team management page and sidebar section, safer account deletion for the last manager of a team.',
 	'auth.about.timeline.views.title': 'Task views',
 	'auth.about.timeline.views.body':
 		'Kanban drag & drop, Gantt timeline, project name and priority on every task card, progress slider, assigning tasks to team members and a better MindMap.',
