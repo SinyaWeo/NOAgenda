@@ -28,7 +28,7 @@ describe('TaskController', () => {
           },
         },
         { provide: getRepositoryToken(TaskAssignee), useValue: { save: jest.fn(), create: jest.fn((x) => x) } },
-        { provide: TeamService, useValue: { isOwnerOrOwnedTeamMember: jest.fn() } },
+        { provide: TeamService, useValue: { isSelfOrManagedTeamMember: jest.fn() } },
         { provide: UserService, useValue: { assertActive: jest.fn() } },
         { provide: NotificationService, useValue: { notify: jest.fn() } },
         {

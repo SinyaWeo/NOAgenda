@@ -5,6 +5,9 @@ import { UserRole } from '../../user/user-role.enum';
 import type { UserService } from '../../user/user.service';
 import type { AccountService } from '../../account/account.service';
 import type { SessionService } from '../../session/session.service';
+import type { TeamService } from '../../team/team.service';
+import type { TeamMemberService } from '../../team-member/team-member.service';
+import { TeamRole } from '../../team-member/team-member.entity';
 import { asMock, authReq, invalid } from '../../../common/__tests__/test-utils';
 
 function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin', password: 'HASH' }) {
@@ -18,15 +21,21 @@ function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin',
   };
   const accounts = { purgeUser: jest.fn(async () => undefined) };
   const sessions = { revokeAllForUser: jest.fn(async () => undefined) };
+  const teams = { findAllWithMembers: jest.fn(async () => [{ id: 7, members: [] }]) };
+  const teamMembers = { setRole: jest.fn(async (_t: number, id: number, role: TeamRole) => ({ id, role })) };
   return {
     ctrl: new AdminController(
       asMock<UserService>(users),
       asMock<AccountService>(accounts),
       asMock<SessionService>(sessions),
+      asMock<TeamService>(teams),
+      asMock<TeamMemberService>(teamMembers),
     ),
     users,
     accounts,
     sessions,
+    teams,
+    teamMembers,
   };
 }
 const req = authReq(1);
@@ -99,5 +108,17 @@ describe('AdminController', () => {
       await expect(ctrl.removeUser(99, req)).rejects.toBeInstanceOf(NotFoundException);
       expect(accounts.purgeUser).not.toHaveBeenCalled();
     });
+  });
+
+  it('lists every team with its members', async () => {
+    const { ctrl } = build();
+    expect(await ctrl.findAllTeams()).toEqual([{ id: 7, members: [] }]);
+  });
+
+  it('setTeamMemberRole coerces ids and returns the new role', async () => {
+    const { ctrl, teamMembers } = build();
+    const res = await ctrl.setTeamMemberRole(invalid<number>('7'), invalid<number>('3'), { role: TeamRole.MANAGER });
+    expect(teamMembers.setRole).toHaveBeenCalledWith(7, 3, TeamRole.MANAGER);
+    expect(res).toEqual({ id: 3, role: TeamRole.MANAGER });
   });
 });

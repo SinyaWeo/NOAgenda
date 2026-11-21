@@ -13,46 +13,48 @@ import {
 } from '@nestjs/common';
 import { TeamMemberService } from './team-member.service';
 import { TeamService } from '../team/team.service';
-import { TeamMember } from './team-member.entity';
+import { TeamAccessService } from '../team/team-access.service';
+import { TeamMember, TeamRole } from './team-member.entity';
 import { AddTeamMemberDto } from './dto/team-member.dto';
+import { UserRole } from '../user/user-role.enum';
+import { orConflict } from '../../common/db-errors';
 
 @Controller('team-members')
 export class TeamMemberController {
   constructor(
     private readonly teamMemberService: TeamMemberService,
     private readonly teamService: TeamService,
+    private readonly teamAccess: TeamAccessService,
   ) {}
 
   @Get()
   async findAll(@Query('teamId') teamId: string | undefined, @Request() req: AuthRequest): Promise<TeamMember[]> {
     if (teamId) {
-      // Verify caller is owner or member of this team
-      const team = await this.teamService.findById(Number(teamId));
-      if (!team) throw new NotFoundException();
-      const accessibleTeams = await this.teamService.findAll(req.user.userId);
-      if (!accessibleTeams.some((t) => t.id === Number(teamId))) throw new ForbiddenException();
+      await this.teamAccess.assertView(req.user, Number(teamId));
+      return this.teamMemberService.findAll(Number(teamId));
     }
-    if (teamId) return this.teamMemberService.findAll(Number(teamId));
-    // Without a teamId filter, scope to teams the caller owns or belongs to (filtered in SQL)
+    // Without a teamId filter, scope to the teams the caller belongs to (filtered in SQL)
     const accessibleTeams = await this.teamService.findAll(req.user.userId);
     return this.teamMemberService.findByTeamIds(accessibleTeams.map((t) => t.id));
   }
 
+  /** A manager adds regular members to their own team. */
   @Post()
   async add(@Body() body: AddTeamMemberDto, @Request() req: AuthRequest): Promise<TeamMember> {
-    const team = await this.teamService.findById(body.teamId);
-    if (!team) throw new NotFoundException();
-    if (team.ownerId !== req.user.userId) throw new ForbiddenException();
-    return this.teamMemberService.add(body.userId, body.teamId);
+    await this.teamAccess.assertManage(req.user, body.teamId);
+    return orConflict(this.teamMemberService.add(body.userId, body.teamId), 'That user is already in the team');
   }
 
+  /** A manager removes regular members; removing a manager is up to the app admin. */
   @Delete(':id')
   async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
-    const member = await this.teamMemberService.findById(id);
+    const member = await this.teamMemberService.findById(Number(id));
     if (!member) throw new NotFoundException();
-    const team = await this.teamService.findById(member.team?.id);
-    if (!team) throw new NotFoundException();
-    if (team.ownerId !== req.user.userId) throw new ForbiddenException();
-    return this.teamMemberService.remove(id);
+    await this.teamAccess.assertManage(req.user, member.team.id);
+    if (member.role === TeamRole.MANAGER) {
+      if (req.user.role !== UserRole.ADMIN) throw new ForbiddenException('Only an admin can remove a manager');
+      await this.teamMemberService.assertNotLastManager(member);
+    }
+    return this.teamMemberService.remove(member.id);
   }
 }

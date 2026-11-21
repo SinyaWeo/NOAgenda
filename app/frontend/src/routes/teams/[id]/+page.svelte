@@ -2,16 +2,19 @@
 	import { page } from '$app/state';
 	import { apiGetAuth } from '$lib/api';
 	import { loadOnParamChange } from '$lib/param-loader.svelte';
-	import { writable } from 'svelte/store';
+	import { derived, writable } from 'svelte/store';
 	import type { Team, TeamMember } from '$lib/types';
 	import { Alert, Button, Card } from 'flowbite-svelte';
 	import { CaretLeftSolid } from 'flowbite-svelte-icons';
-	import { t } from '$lib/i18n';
+	import { t, type MessageKey } from '$lib/i18n';
+	import { authSession } from '$lib/auth';
+	import { canManageTeam } from '$lib/roles';
 
 	const team = writable<Team | null>(null);
 	const members = writable<TeamMember[]>([]);
 	const loading = writable(true);
 	const error = writable('');
+	const canManage = derived([authSession, members], ([$s, $m]) => canManageTeam($s.user, $m));
 
 	async function loadTeam(id: string, isStale: () => boolean) {
 		const [t, m] = await Promise.all([
@@ -40,7 +43,9 @@
 				{$team.name}
 			</h1>
 		</div>
-		<Button href="/teams/{$team.id}/edit" color="light" size="sm">{$t('teams.detail.edit')}</Button>
+		{#if $canManage}
+			<Button href="/teams/{$team.id}/edit" color="light" size="sm">{$t('teams.detail.edit')}</Button>
+		{/if}
 	</div>
 	{#if $team.description}<p class="text-gray-500 mb-4">
 			{$team.description}
@@ -66,6 +71,10 @@
 						>{member.user?.name ||
 							member.user?.username ||
 							$t('teams.userFallback', { id: member.user?.id ?? member.id })}</span
+					>
+					<span
+						class="ml-auto text-xs font-medium {member.role === 'manager' ? 'tone-blue' : 'tone-gray'}"
+						data-team-role={member.role}>{$t(`teams.role.${member.role}` as MessageKey)}</span
 					>
 				</div>
 			{/each}

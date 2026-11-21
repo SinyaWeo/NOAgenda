@@ -21,6 +21,10 @@ import { UserRole } from '../user/user-role.enum';
 import { User } from '../user/user.entity';
 import { AccountService } from '../account/account.service';
 import { SessionService } from '../session/session.service';
+import { AdminTeam, TeamService } from '../team/team.service';
+import { TeamMemberService } from '../team-member/team-member.service';
+import { SetTeamMemberRoleDto } from '../team-member/dto/team-member.dto';
+import { TeamMember } from '../team-member/team-member.entity';
 
 @Controller('admin')
 @UseGuards(RolesGuard)
@@ -30,6 +34,8 @@ export class AdminController {
     private readonly userService: UserService,
     private readonly accounts: AccountService,
     private readonly sessions: SessionService,
+    private readonly teams: TeamService,
+    private readonly teamMembers: TeamMemberService,
   ) {}
 
   @Get('users')
@@ -77,5 +83,22 @@ export class AdminController {
     if (req.user.userId === userId) throw new ForbiddenException('Cannot delete your own account');
     if (!(await this.userService.findById(userId))) throw new NotFoundException();
     await this.accounts.purgeUser(userId);
+  }
+
+  /** Every team with its members and their roles. */
+  @Get('teams')
+  async findAllTeams(): Promise<AdminTeam[]> {
+    return this.teams.findAllWithMembers();
+  }
+
+  /** Only the app admin decides who manages a team. A team keeps at least one manager. */
+  @Patch('teams/:teamId/members/:memberId/role')
+  async setTeamMemberRole(
+    @Param('teamId') teamId: number,
+    @Param('memberId') memberId: number,
+    @Body() body: SetTeamMemberRoleDto,
+  ): Promise<{ id: number; role: TeamMember['role'] }> {
+    const member = await this.teamMembers.setRole(Number(teamId), Number(memberId), body.role);
+    return { id: member.id, role: member.role };
   }
 }

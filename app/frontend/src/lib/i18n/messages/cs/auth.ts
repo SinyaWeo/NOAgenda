@@ -18,7 +18,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.demo.title': 'Demo účty',
 	'auth.demo.hint':
 		'Kliknutím na účet vyplníte přihlašovací formulář. Demo se každou noc o půlnoci obnoví. Nahrávání souborů (příloh, avatarů) je vypnuto.',
-	'auth.demo.role.admin': 'Admin',
+	'auth.demo.role.admin': 'Admin aplikace',
+	'auth.demo.role.manager': 'Manažer týmu',
+	'auth.demo.role.member': 'Člen týmu',
 	'auth.demo.role.user': 'Uživatel',
 	'auth.noAccount': 'Nemáte účet?',
 	'auth.register': 'Zaregistrovat se',

@@ -53,7 +53,7 @@ jobs:
       - run: npm audit --omit=dev --audit-level=high
 
   # Starts the real API against MariaDB and runs the authorization regression
-  # script (users must not reach each other's data; role escalation is blocked).
+  # script (users must not reach each other's data; role escalation is blocked; team roles hold).
   authz:
     runs-on: ubuntu-latest
     services:
@@ -95,7 +95,9 @@ jobs:
           cat api.log; exit 1
       - name: Authorization smoke test
         working-directory: app/backend
-        run: BASE_URL=http://127.0.0.1:3000 python3 scripts/authz-smoke.py
+        run: |
+          SQL_CMD="mysql --protocol=TCP -h127.0.0.1 -uroot -pci-root-password noagenda_ci -N" \
+          BASE_URL=http://127.0.0.1:3000 python3 scripts/authz-smoke.py
       - name: Validation, export and account-deletion test
         working-directory: app/backend
         run: |

@@ -1,5 +1,5 @@
 /**
- * Fill the database with example data: 5 users, 3 teams, personal projects per user and shared
+ * Fill the database with example data: 10 users (1 admin, 3 team managers, 6 members), 3 teams, personal projects per user and shared
  * projects per team (with views, kanban buckets, tasks, labels and assignees).
  *
  *   npm run seed                 # no-op if the example users already exist
@@ -15,7 +15,7 @@ import { DEMO_PASSWORD, DEMO_USERS } from '../common/demo-users';
 import { User } from '../modules/user/user.entity';
 import { UserRole } from '../modules/user/user-role.enum';
 import { Team } from '../modules/team/team.entity';
-import { TeamMember } from '../modules/team-member/team-member.entity';
+import { TeamMember, TeamRole } from '../modules/team-member/team-member.entity';
 import { Node, NodeStatus, NodeType } from '../modules/node/node.entity';
 import { Permission, ProjectUser } from '../modules/project-user/project-user.entity';
 import { ProjectTeam } from '../modules/project-team/project-team.entity';
@@ -33,7 +33,8 @@ const USERS = DEMO_USERS;
 interface SeedTeam {
   name: string;
   description: string;
-  owner: string;
+  /** The team's manager (also recorded as its creator). */
+  manager: string;
   members: string[];
   projects: { name: string; permission: Permission; kanban?: boolean }[];
 }
@@ -42,8 +43,8 @@ const TEAMS: SeedTeam[] = [
   {
     name: 'Engineering',
     description: 'Product development and infrastructure',
-    owner: 'alice',
-    members: ['bob', 'carol'],
+    manager: 'bob',
+    members: ['erin', 'frank'],
     projects: [
       { name: 'Platform Rewrite', permission: Permission.WRITE, kanban: true },
       { name: 'CI/CD Improvements', permission: Permission.WRITE },
@@ -53,8 +54,8 @@ const TEAMS: SeedTeam[] = [
   {
     name: 'Marketing',
     description: 'Campaigns, content and brand',
-    owner: 'dave',
-    members: ['erin', 'bob'],
+    manager: 'carol',
+    members: ['grace', 'heidi'],
     projects: [
       { name: 'Spring Campaign', permission: Permission.WRITE, kanban: true },
       { name: 'Website Content', permission: Permission.WRITE },
@@ -64,8 +65,8 @@ const TEAMS: SeedTeam[] = [
   {
     name: 'Operations',
     description: 'Office, finance and support',
-    owner: 'carol',
-    members: ['erin', 'alice'],
+    manager: 'dave',
+    members: ['ivan', 'judy'],
     projects: [
       { name: 'Quarterly Budget', permission: Permission.WRITE },
       { name: 'Support Backlog', permission: Permission.WRITE, kanban: true },
@@ -97,6 +98,16 @@ const TASK_TITLES = [
   'Write documentation',
 ];
 
+const SUBTASK_TITLES = [
+  'Gather requirements',
+  'Write a first draft',
+  'Ask for a second opinion',
+  'Update the plan',
+  'Test the result',
+  'Send a summary',
+  'Archive old notes',
+];
+
 const LABELS = [
   { title: 'urgent', color: '#ef4444' },
   { title: 'idea', color: '#3b82f6' },
@@ -122,6 +133,8 @@ async function removeSeedData(m: EntityManager): Promise<void> {
     await m.update(Node, { id: In(nodeIds) }, { parentId: null });
     await m.delete(Node, { id: In(nodeIds) });
   }
+  // Teams outlive their creator (ownerId is only SET NULL), so remove the example teams explicitly.
+  await m.delete(Team, { ownerId: In(ids) });
   await m.delete(User, { id: In(ids) });
 }
 
@@ -187,6 +200,34 @@ async function seed(m: EntityManager): Promise<Record<string, number>> {
         )
       : [];
 
+    /** Adds `count` child tasks under `parent`; the first one gets two children of its own when `deep`. */
+    async function addSubtasks(
+      parent: Node,
+      count: number,
+      assignee: string | undefined,
+      deep: boolean,
+    ): Promise<void> {
+      for (let k = 0; k < count; k++) {
+        const status = STATUSES[(parent.id + k) % STATUSES.length];
+        const sub = await m.save(
+          m.create(Node, {
+            type: NodeType.TASK,
+            title: SUBTASK_TITLES[(parent.id + k) % SUBTASK_TITLES.length],
+            status,
+            priority: ((parent.id + k) % 5) + 1,
+            position: (k + 1) * 1024,
+            percentDone: status === NodeStatus.DONE ? 100 : status === NodeStatus.IN_PROGRESS ? 50 : 0,
+            dueDate: parent.dueDate,
+            parentId: parent.id,
+            createdBy: ownerUser.id,
+          }),
+        );
+        counts.tasks++;
+        if (assignee) await m.save(m.create(TaskAssignee, { node: sub, user: userOf(assignee) }));
+        if (deep && k === 0) await addSubtasks(sub, 2, assignee, false);
+      }
+    }
+
     const taskCount = 3 + (opts.seedIndex % 4);
     const labels = labelsByUser.get(owner) ?? [];
     for (let i = 0; i < taskCount; i++) {
@@ -211,8 +252,11 @@ async function seed(m: EntityManager): Promise<Record<string, number>> {
         await m.save(m.create(TaskLabel, { node: task, label: labels[i % labels.length] }));
       }
       const assignees = opts.assignees ?? [];
-      if (assignees.length) {
-        await m.save(m.create(TaskAssignee, { node: task, user: userOf(assignees[i % assignees.length]) }));
+      const assignee = assignees.length ? assignees[i % assignees.length] : undefined;
+      if (assignee) await m.save(m.create(TaskAssignee, { node: task, user: userOf(assignee) }));
+      // Every other task has subtasks (2-3 each); the first of those also shows a second level.
+      if ((opts.seedIndex + i) % 2 === 0) {
+        await addSubtasks(task, 2 + ((opts.seedIndex + i) % 2), assignee, i === 0 || i === 2);
       }
     }
     return project;
@@ -243,15 +287,16 @@ async function seed(m: EntityManager): Promise<Record<string, number>> {
 
   // Teams and their shared projects.
   for (const t of TEAMS) {
-    const owner = userOf(t.owner);
-    const team = await m.save(m.create(Team, { name: t.name, description: t.description, ownerId: owner.id }));
+    const manager = userOf(t.manager);
+    const team = await m.save(m.create(Team, { name: t.name, description: t.description, ownerId: manager.id }));
     counts.teams++;
-    const everyone = [t.owner, ...t.members];
+    const everyone = [t.manager, ...t.members];
     for (const username of everyone) {
-      await m.save(m.create(TeamMember, { team, user: userOf(username) }));
+      const role = username === t.manager ? TeamRole.MANAGER : TeamRole.MEMBER;
+      await m.save(m.create(TeamMember, { team, user: userOf(username), role }));
     }
     for (const p of t.projects) {
-      const project = await createProject(t.owner, p.name, {
+      const project = await createProject(t.manager, p.name, {
         kanban: p.kanban,
         assignees: everyone,
         seedIndex: index++,
@@ -290,7 +335,7 @@ async function main(): Promise<void> {
       `Seeded ${counts.users} users, ${counts.teams} teams, ${counts.projects} projects, ${counts.tasks} tasks, ${counts.labels} labels.`,
     );
     console.log(
-      `Sign in as any of: ${USERS.map((u) => u.username).join(', ')} (password: ${PASSWORD}; alice is an admin).`,
+      `Sign in as any of: ${USERS.map((u) => u.username).join(', ')} (password: ${PASSWORD}). alice is the app admin; bob, carol and dave manage one team each.`,
     );
   } finally {
     await dataSource.destroy();

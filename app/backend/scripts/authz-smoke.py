@@ -1,23 +1,30 @@
 #!/usr/bin/env python3
 """
-Authorization smoke test for the NOAgenda API (55 checks).
+Authorization smoke test for the NOAgenda API (95 checks, 80 without SQL_CMD).
 
 Registers three throwaway users (alice, bob, carol) and verifies that one user
 cannot read or change another user's projects/tasks/comments/attachments/
 webhooks/etc., that mass-assignment and id-takeover attempts fail, that the
-role-escalation payload is rejected, and that read/write sharing behaves.
+role-escalation payload is rejected, that read/write sharing behaves, and that
+team roles hold: a manager runs only their own team, members and outsiders
+cannot, only the app admin appoints managers, and a team always keeps a manager.
+
+The app-admin part needs an admin. With SQL_CMD set (a command that reads SQL from
+stdin, e.g. SQL_CMD='mysql -h127.0.0.1 -uroot -pSECRET noagenda_ci -N') a fourth user
+is promoted through the database; without it those checks are skipped.
 
 !! Run ONLY against a disposable database. It creates users and data, and the
    registration rate limit (10/hour/IP) means a second run needs a restart.
 
-Usage:  BASE_URL=http://127.0.0.1:3000 python3 scripts/authz-smoke.py
+Usage:  BASE_URL=http://127.0.0.1:3000 [SQL_CMD=...] python3 scripts/authz-smoke.py
         (self-signed HTTPS, e.g. a local Caddy: add AUTHZ_INSECURE=1)
 """
 import json, sys, urllib.request, urllib.error
-import os, ssl
+import os, ssl, subprocess
 B = os.environ.get('BASE_URL', 'http://127.0.0.1:3000')
 CTX = ssl._create_unverified_context() if os.environ.get('AUTHZ_INSECURE') == '1' else None
 results = []
+SQL = os.environ.get('SQL_CMD')
 
 def call(method, path, body=None, token=None):
     data = json.dumps(body).encode() if body is not None else None
@@ -33,7 +40,8 @@ def call(method, path, body=None, token=None):
         except Exception: return e.code, t
 
 def check(name, got, expect):
-    ok = got in expect if isinstance(expect, (list, tuple, set)) else got == expect
+    exact = isinstance(got, (list, tuple))  # compare lists/tuples whole; a scalar may match any of several answers
+    ok = got in expect if isinstance(expect, (list, tuple, set)) and not exact else got == expect
     results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + f'  (got {got}, want {expect})')
 
 def user(n):
@@ -125,5 +133,64 @@ s, _ = call('PUT', f'/tasks/{tid}', {'projectId': 999999}, Bt); check('cannot mo
 s, _ = call('GET', f'/tasks/{tid}', None, C); check('carol still locked out', s, 403)
 s, _ = call('POST', '/favorites', {'entityType': 'project', 'entityId': pid}, Bt); check('bob(read+) can favorite shared project', s, 201)
 s, _ = call('POST', '/reactions', {'entityType': 'weird', 'entityId': tid, 'reaction': 'x'}, A); check('reaction bad entityType rejected', s, 400)
+
+# --- 5. team roles: manager (own team only) / member / outsider / app admin
+def team_role(tok, team_id, username):
+    s, ms = call('GET', f'/team-members?teamId={team_id}', None, tok)
+    return next((m for m in ms if m['user']['username'] == username), None) if s == 200 else None
+
+s, team = call('POST', '/teams', {'name': 'Smoke team'}, A); check('alice creates a team (a one-person team is fine)', s, 201)
+tm = team['id']
+s, ms = call('GET', f'/team-members?teamId={tm}', None, A)
+check('the creator is the first manager', [(m['user']['username'], m['role']) for m in ms], [('alice', 'manager')])
+s, _ = call('GET', f'/teams/{tm}', None, C); check('outsider cannot view the team', s, 403)
+s, _ = call('GET', f'/team-members?teamId={tm}', None, C); check('outsider cannot list its members', s, 403)
+s, lst = call('GET', '/teams', None, C); check('team is not in the outsider list', tm in [t['id'] for t in lst], False)
+s, _ = call('POST', '/team-members', {'teamId': tm, 'userId': cid}, C); check('outsider cannot add themselves', s, 403)
+s, _ = call('POST', '/team-members', {'teamId': tm, 'userId': bid, 'role': 'manager'}, A)
+check('a manager cannot add someone as manager (role field rejected)', s, 400)
+s, _ = call('POST', '/team-members', {'teamId': tm, 'userId': bid}, A); check('manager adds a member', s, 201)
+check('new members are plain members', (team_role(A, tm, 'bob') or {}).get('role'), 'member')
+s, _ = call('POST', '/team-members', {'teamId': tm, 'userId': bid}, A); check('adding twice is a conflict', s, 409)
+s, _ = call('GET', f'/teams/{tm}', None, Bt); check('member can view the team', s, 200)
+s, _ = call('PUT', f'/teams/{tm}', {'name': 'x'}, Bt); check('member cannot edit the team', s, 403)
+s, _ = call('POST', '/team-members', {'teamId': tm, 'userId': cid}, Bt); check('member cannot add members', s, 403)
+s, _ = call('DELETE', f'/team-members/{team_role(A, tm, "alice")["id"]}', None, Bt); check('member cannot remove members', s, 403)
+s, _ = call('DELETE', f'/teams/{tm}', None, Bt); check('member cannot delete the team', s, 403)
+s, au = call('GET', '/teams/assignable-users', None, Bt); check('member can assign to nobody via the team', au, [])
+s, au = call('GET', '/teams/assignable-users', None, A); check('manager can assign to every team member', [u['username'] for u in au], ['bob'])
+s, other = call('POST', '/teams', {'name': 'Carol team'}, C); check('carol creates her own team', s, 201)
+s, _ = call('PUT', f'/teams/{tm}', {'name': 'x'}, C); check("another team's manager cannot edit this team", s, 403)
+s, _ = call('POST', '/team-members', {'teamId': tm, 'userId': cid}, C); check("another team's manager cannot add to this team", s, 403)
+s, _ = call('PUT', f'/teams/{tm}', {'description': 'edited by its manager'}, A); check('manager edits their own team', s, 200)
+s, _ = call('DELETE', f'/team-members/{team_role(A, tm, "alice")["id"]}', None, A); check('a manager cannot remove a manager (not even themselves)', s, 403)
+s, _ = call('PATCH', f'/admin/teams/{tm}/members/{team_role(A, tm, "bob")["id"]}/role', {'role': 'manager'}, A)
+check('a manager cannot appoint managers', s, 403)
+s, _ = call('GET', '/admin/teams', None, A); check('a manager cannot use the admin team list', s, 403)
+
+if SQL:
+    did, D = user('dave')
+    subprocess.run(SQL, shell=True, input="UPDATE users SET role='admin' WHERE username='dave';", text=True, check=True, capture_output=True)
+    bm = team_role(A, tm, 'bob')['id']; am = team_role(A, tm, 'alice')['id']
+    s, all_teams = call('GET', '/admin/teams', None, D)
+    check('app admin lists every team with members', (s, {tm, other['id']} <= {t['id'] for t in all_teams}), (200, True))
+    s, _ = call('GET', f'/teams/{tm}', None, D); check('app admin can view any team', s, 200)
+    s, _ = call('PATCH', f'/admin/teams/{tm}/members/{bm}/role', {'role': 'owner'}, D); check('unknown team role rejected', s, 400)
+    s, _ = call('PATCH', f'/admin/teams/{tm}/members/{bm}/role', {'role': 'manager'}, D); check('app admin appoints a manager', s, 200)
+    s, _ = call('PUT', f'/teams/{tm}', {'description': 'edited by bob'}, Bt); check('the new manager can edit the team', s, 200)
+    s, _ = call('DELETE', f'/team-members/{am}', None, Bt); check('a manager still cannot remove another manager', s, 403)
+    s, _ = call('PATCH', f'/admin/teams/{tm}/members/{am}/role', {'role': 'member'}, D); check('app admin demotes a manager', s, 200)
+    s, _ = call('PUT', f'/teams/{tm}', {'name': 'x'}, A); check('a demoted manager loses the rights', s, 403)
+    s, r = call('PATCH', f'/admin/teams/{tm}/members/{bm}/role', {'role': 'member'}, D); check('the last manager cannot be demoted', s, 400)
+    s, _ = call('DELETE', f'/team-members/{bm}', None, D); check('the last manager cannot be removed, even by the admin', s, 400)
+    s, r = call('DELETE', f'/admin/users/{bid}', None, D)
+    check('the last manager of a team cannot be deleted', (s, 'only manager of: Smoke team' in str(r)), (409, True))
+    s, r = call('DELETE', f'/admin/users/{cid}', None, D)
+    check('the last manager of a one-person team cannot be deleted either', (s, 'only manager of: Carol team' in str(r)), (409, True))
+    s, _ = call('PATCH', f'/admin/teams/{tm}/members/{am}/role', {'role': 'manager'}, D); check('app admin appoints a second manager', s, 200)
+    s, _ = call('DELETE', f'/admin/users/{bid}', None, D); check('a manager can be deleted once another manager remains', s, 204)
+    s, _ = call('GET', f'/teams/{tm}', None, A); check('the team survives its manager', s, 200)
+else:
+    print('SKIP app-admin team checks (set SQL_CMD to run them)')
 
 print(f'\n{sum(results)}/{len(results)} passed'); sys.exit(0 if all(results) else 1)

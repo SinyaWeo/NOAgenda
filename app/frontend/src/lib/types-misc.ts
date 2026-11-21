@@ -1,8 +1,13 @@
-import type { Permission, SessionInfo, Team, TeamMember, UserSummary } from './types';
+import type { Permission, SessionInfo, Team, TeamMember, TeamRole, UserSummary } from './types';
 
 export type { Team, TeamMember, ProjectMember, Label, SessionInfo, ApiTokenInfo, WebhookInfo } from './types';
 
 /** GET /teams items; `members` is only present when the backend joined them. */
+/** A team with its members, as the app admin sees every team. */
+export interface AdminTeam extends Team {
+	members: { id: number; role: TeamRole; user: UserSummary }[];
+}
+
 export interface TeamWithMembers extends Team {
 	members?: TeamMember[];
 }

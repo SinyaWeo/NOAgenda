@@ -2,7 +2,7 @@ import { resolve } from 'path';
 
 jest.mock('fs', () => ({ ...jest.requireActual('fs'), existsSync: jest.fn(() => true), unlink: jest.fn() }));
 import * as fs from 'fs';
-import type { Logger } from '@nestjs/common';
+import { ConflictException, type Logger } from '@nestjs/common';
 import type { DataSource } from 'typeorm';
 import { asMock } from '../../../common/__tests__/test-utils';
 import { AccountService } from '../account.service';
@@ -41,6 +41,14 @@ describe('AccountService', () => {
   });
 
   describe('deletion request', () => {
+    it('refuses while the user is the only manager of a team (one-person teams included)', async () => {
+      const { svc, calls } = build((sql) =>
+        sql.startsWith('SELECT t.name FROM teams') ? [{ name: 'Ops' }] : undefined,
+      );
+      await expect(svc.requestDeletion(5)).rejects.toBeInstanceOf(ConflictException);
+      expect(calls.some((c) => c.sql.startsWith('UPDATE users'))).toBe(false);
+    });
+
     it('schedules deletion after the grace period for that user only', async () => {
       const { svc, ds } = build();
       const before = Date.now();
@@ -48,7 +56,7 @@ describe('AccountService', () => {
       const days = (scheduledAt.getTime() - before) / 86_400_000;
       expect(days).toBeGreaterThan(svc.graceDays - 0.01);
       expect(days).toBeLessThan(svc.graceDays + 0.01);
-      const [sql, params] = ds.query.mock.calls[0];
+      const [sql, params] = ds.query.mock.calls.find(([q]) => /^UPDATE users SET isDeletionRequested = 1/.test(q))!;
       expect(sql).toMatch(/UPDATE users SET isDeletionRequested = 1/);
       expect(params).toEqual([scheduledAt, 5]);
     });
@@ -91,7 +99,6 @@ describe('AccountService', () => {
       if (sql.startsWith('SELECT path FROM attachments WHERE nodeId'))
         return [{ path: `${UPLOADS}/a.txt` }, { path: '/etc/passwd' }];
       if (sql.startsWith('SELECT path FROM attachments WHERE uploaderId')) return [{ path: `${UPLOADS}/b.txt` }];
-      if (sql.startsWith('SELECT id FROM teams')) return [{ id: 40 }];
       return undefined;
     };
 
@@ -108,7 +115,18 @@ describe('AccountService', () => {
       expect(calls.some((c) => c.sql === 'UPDATE nodes SET createdBy = NULL WHERE createdBy = ?')).toBe(true);
       expect(calls.some((c) => c.sql.startsWith('DELETE FROM api_tokens WHERE userId'))).toBe(true);
       expect(calls.some((c) => c.sql.startsWith('DELETE FROM user_sessions WHERE userId'))).toBe(true);
-      expect(calls.some((c) => c.sql.startsWith('DELETE FROM team_members WHERE teamId IN'))).toBe(true);
+      // teams survive the user; only their memberships are removed
+      expect(calls.some((c) => c.sql.startsWith('DELETE FROM teams'))).toBe(false);
+      expect(calls.some((c) => c.sql === 'DELETE FROM team_members WHERE userId = ?' && c.params[0] === 9)).toBe(true);
+    });
+
+    it('is refused, deleting nothing, when the user is the last manager of a team', async () => {
+      const { svc, calls } = build((sql, params) => {
+        if (sql.startsWith('SELECT t.name FROM teams')) return [{ name: 'Ops' }, { name: 'Sales' }];
+        return handler(sql, params);
+      });
+      await expect(svc.purgeUser(9)).rejects.toThrow(/only manager of: Ops, Sales\. Delete the team/);
+      expect(calls.some((c) => c.sql.startsWith('DELETE'))).toBe(false);
     });
 
     it('unlinks files after commit, only from inside uploads/ (avatar included)', async () => {

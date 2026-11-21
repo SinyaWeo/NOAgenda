@@ -7,7 +7,7 @@ A self-hosted task and project management app: projects, tasks, kanban boards, t
 - **Projects and tasks** in a single hierarchy (projects, tasks and subtasks share one `node` model), with statuses,
   priorities, due dates, percent done, recurring tasks and task relations
 - **Views**: project views with kanban buckets, an upcoming-tasks page and a mind map
-- **Collaboration**: teams, project sharing with permissions, comments, reactions, assignees, notifications
+- **Collaboration**: teams with managers and members, project sharing with permissions, comments, reactions, assignees, notifications
 - **Organization**: labels, saved filters, favorites, search across tasks and projects
 - **Reminders** and **webhooks** for integrations, plus **API tokens** (read-only or read & write)
 - **Attachments** with per-user storage quotas, and a data export for every account
@@ -59,7 +59,8 @@ To start the pieces by hand: `docker compose -f docker/docker-compose.yml up -d`
 
 ```bash
 cd app/backend
-npm run seed             # 5 example users, 3 teams and shared projects (password: password123)
+npm run seed             # 10 example users (1 admin, 3 team managers, 6 members), 3 teams, shared projects
+                         # and subtasks (password: password123)
 npm run seed -- --reset  # wipe and re-seed
 ```
 

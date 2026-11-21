@@ -1,16 +1,18 @@
 <script lang="ts">
-	import { writable } from 'svelte/store';
-	import { apiGetAuth, apiPutAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
+	import { derived, writable } from 'svelte/store';
+	import { apiGetAuth, apiPutAuth, apiPostAuth, apiPatchAuth, apiDeleteAuth } from '$lib/api';
 	import { loadOnParamChange } from '$lib/param-loader.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
+	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
 	import { ExclamationCircleOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 	import UserPicker from '$lib/components/UserPicker.svelte';
 	import { errMessage } from '$lib/errors';
 	import { showToast } from '$lib/toast';
-	import { t, tr } from '$lib/i18n';
+	import { t, tr, type MessageKey } from '$lib/i18n';
 	import type { Team, TeamMember, UserSummary } from '$lib/types';
+	import { authSession } from '$lib/auth';
+	import { canManageTeam, isAdmin } from '$lib/roles';
 
 	const team = writable<Team | null>(null);
 	const members = writable<TeamMember[]>([]);
@@ -19,6 +21,8 @@
 	const loading = writable(true);
 	const error = writable('');
 	const saving = writable(false);
+	const canManage = derived([authSession, members], ([$s, $m]) => canManageTeam($s.user, $m));
+	const admin = derived(authSession, ($s) => isAdmin($s.user));
 	let newMember = $state<UserSummary | null>(null);
 	let picker: UserPicker | undefined = $state();
 
@@ -73,6 +77,17 @@
 		}
 	}
 
+	/** App admin only: appoint or remove a manager. */
+	async function changeRole(member: TeamMember, select: HTMLSelectElement) {
+		try {
+			await apiPatchAuth(`/admin/teams/${page.params.id}/members/${member.id}/role`, { role: select.value });
+			await fetchMembers(page.params.id);
+		} catch (e: unknown) {
+			select.value = member.role; // the change did not happen: show the role the member really has
+			showToast(errMessage(e, tr('teams.role.failed')), 'error');
+		}
+	}
+
 	async function removeMember(memberId: number) {
 		try {
 			await apiDeleteAuth(`/team-members/${memberId}`);
@@ -105,6 +120,8 @@
 
 {#if $loading}
 	<p class="text-gray-400">{$t('common.loading')}</p>
+{:else if !$canManage}
+	<Alert color="yellow">{$t('teams.edit.managerOnly')}</Alert>
 {:else}
 	<Card class="max-w-xl mb-4">
 		<form onsubmit={handleSave} class="flex flex-col gap-4">
@@ -131,6 +148,7 @@
 		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
 			{$t('teams.members')}
 		</h2>
+		<p class="text-xs text-gray-500 mt-0 mb-3">{$t('teams.edit.managerHint')}</p>
 		<form onsubmit={addMember} class="flex gap-2 mb-4 items-start">
 			<UserPicker
 				id="team-member-picker"
@@ -154,7 +172,29 @@
 							? member.user.name || member.user.username || $t('teams.userFallback', { id: member.user.id })
 							: $t('teams.memberFallback', { id: member.id })}</span
 					>
-					<Button size="xs" color="red" onclick={() => removeMember(member.id)}>{$t('common.remove')}</Button>
+					{#if $admin}
+						<Select
+							placeholder=""
+							size="sm"
+							class="w-auto"
+							value={member.role}
+							aria-label={$t('teams.role.change', { name: member.user?.name || member.user?.username || '' })}
+							onchange={(e: Event) => changeRole(member, e.currentTarget as HTMLSelectElement)}
+						>
+							<option value="member">{$t('teams.role.member')}</option>
+							<option value="manager">{$t('teams.role.manager')}</option>
+						</Select>
+					{:else}
+						<span
+							class="text-xs font-medium {member.role === 'manager' ? 'tone-blue' : 'tone-gray'}"
+							data-team-role={member.role}>{$t(`teams.role.${member.role}` as MessageKey)}</span
+						>
+					{/if}
+					{#if member.role !== 'manager' || $admin}
+						<Button size="xs" color="red" onclick={() => removeMember(member.id)}
+							>{$t('common.remove')}</Button
+						>
+					{/if}
 				</div>
 			{/each}
 		{:else}

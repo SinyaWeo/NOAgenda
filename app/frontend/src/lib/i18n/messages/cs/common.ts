@@ -56,7 +56,7 @@ export const messages: Record<keyof typeof en, Message> = {
 
 	'common.permission.read': 'Čtení',
 	'common.permission.write': 'Zápis',
-	'common.permission.admin': 'Správce',
+	'common.permission.admin': 'Manažer',
 
 	'common.theme.light': 'Světlý',
 	'common.theme.dark': 'Tmavý',

@@ -6,6 +6,8 @@ export const messages = {
 	'admin.dashboard.title': 'Admin Dashboard',
 	'admin.dashboard.users': 'Users',
 	'admin.dashboard.usersHint': 'Manage user roles, lock and delete accounts',
+	'admin.dashboard.teams': 'Teams',
+	'admin.dashboard.teamsHint': 'See all teams and appoint team managers',
 	'admin.dashboard.quotes': 'Quotes',
 	'admin.dashboard.quotesHint': 'Manage motivational quotes',
 	'admin.dashboard.settings': 'Settings',
@@ -34,6 +36,14 @@ export const messages = {
 	'admin.users.deleteFailed': 'Could not delete {username}: {reason}',
 	'admin.users.confirmDelete':
 		'Permanently delete {username} and all their projects, tasks and data? This cannot be undone.',
+
+	'admin.teams.pageTitle': 'Admin — Teams',
+	'admin.teams.title': 'Teams',
+	'admin.teams.loadFailed': 'Failed to load teams.',
+	'admin.teams.empty': 'There are no teams yet.',
+	'admin.teams.hint': 'Every team keeps at least one manager. Managers run their own team only.',
+	'admin.teams.roleFailed': 'Could not change the role of {username}: {reason}',
+	'admin.teams.noMembers': 'No members.',
 
 	'admin.quotes.pageTitle': 'Admin — Quotes',
 	'admin.quotes.title': 'Motivational Quotes',

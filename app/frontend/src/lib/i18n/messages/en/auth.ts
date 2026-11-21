@@ -15,7 +15,9 @@ export const messages = {
 	'auth.demo.title': 'Demo accounts',
 	'auth.demo.hint':
 		'Click an account to fill in the sign-in form. The demo resets every night at midnight. File uploads (attachments, avatars) are disabled.',
-	'auth.demo.role.admin': 'Admin',
+	'auth.demo.role.admin': 'App admin',
+	'auth.demo.role.manager': 'Team manager',
+	'auth.demo.role.member': 'Team member',
 	'auth.demo.role.user': 'User',
 	'auth.noAccount': "Don't have an account?",
 	'auth.register': 'Register',

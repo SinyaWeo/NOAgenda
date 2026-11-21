@@ -6,7 +6,10 @@ export const messages: Record<keyof typeof en, Message> = {
 	'teams.title': 'Týmy',
 	'teams.new': 'Nový tým',
 	'teams.loading': 'Načítání týmů…',
-	'teams.owner': 'Vlastník týmu',
+	'teams.role.manager': 'Manažer',
+	'teams.role.member': 'Člen',
+	'teams.role.change': 'Role uživatele {name}',
+	'teams.role.failed': 'Roli se nepodařilo změnit',
 	'teams.memberCount': {
 		one: '{count} člen',
 		few: '{count} členové',
@@ -33,8 +36,11 @@ export const messages: Record<keyof typeof en, Message> = {
 	'teams.edit.title': 'Upravit tým',
 	'teams.edit.saveChanges': 'Uložit změny',
 	'teams.edit.addMemberLabel': 'Přidat člena',
+	'teams.edit.managerOnly': 'Tento tým může upravovat jen jeho manažer.',
+	'teams.edit.managerHint': 'Manažeři přidávají a odebírají členy. Manažery jmenuje a odebírá jen admin.',
 	'teams.edit.dangerZone': 'Nebezpečná zóna',
 	'teams.edit.deleteTitle': 'Smazat tým',
-	'teams.edit.deleteDesc': 'Trvale odstraní tento tým i všechny jeho členy.',
+	'teams.edit.deleteDesc':
+		'Trvale odstraní tento tým i všechny jeho členy. Projekty sdílené s týmem přestanou být sdílené.',
 	'teams.edit.confirmDelete': 'Smazat tento tým?'
 };

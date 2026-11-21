@@ -9,6 +9,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.dashboard.title': 'Přehled správy',
 	'admin.dashboard.users': 'Uživatelé',
 	'admin.dashboard.usersHint': 'Správa rolí, zamykání a mazání účtů',
+	'admin.dashboard.teams': 'Týmy',
+	'admin.dashboard.teamsHint': 'Přehled všech týmů a jmenování manažerů týmů',
 	'admin.dashboard.quotes': 'Citáty',
 	'admin.dashboard.quotesHint': 'Správa motivačních citátů',
 	'admin.dashboard.settings': 'Nastavení',
@@ -37,6 +39,14 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.users.deleteFailed': 'Uživatele {username} se nepodařilo smazat: {reason}',
 	'admin.users.confirmDelete':
 		'Trvale smazat uživatele {username} včetně všech jeho projektů, úkolů a dat? Tuto akci nelze vrátit.',
+
+	'admin.teams.pageTitle': 'Správa — Týmy',
+	'admin.teams.title': 'Týmy',
+	'admin.teams.loadFailed': 'Týmy se nepodařilo načíst.',
+	'admin.teams.empty': 'Zatím nejsou žádné týmy.',
+	'admin.teams.hint': 'Každý tým má vždy alespoň jednoho manažera. Manažeři řídí jen svůj tým.',
+	'admin.teams.roleFailed': 'Roli uživatele {username} se nepodařilo změnit: {reason}',
+	'admin.teams.noMembers': 'Žádní členové.',
 
 	'admin.quotes.pageTitle': 'Správa — Citáty',
 	'admin.quotes.title': 'Motivační citáty',

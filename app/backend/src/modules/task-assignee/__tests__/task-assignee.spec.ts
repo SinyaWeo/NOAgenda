@@ -27,7 +27,7 @@ describe('TaskAssigneeController', () => {
     service = { findByTask: jest.fn(async () => []), add: jest.fn(async () => ({ id: 1 })), remove: jest.fn() };
     tasks = { findById: jest.fn(async () => ({ id: 7, title: 'Ship it' })) };
     access = { assertRead: jest.fn(), assertWrite: jest.fn(), level: jest.fn(async () => 1) };
-    teams = { isOwnerOrOwnedTeamMember: jest.fn(async () => false) };
+    teams = { isSelfOrManagedTeamMember: jest.fn(async () => false) };
     users = { assertActive: jest.fn(async () => undefined) };
     notifications = { notify: jest.fn(async () => undefined) };
     controller = new TaskAssigneeController(
@@ -60,9 +60,9 @@ describe('TaskAssigneeController', () => {
 
   it('add lets a task admin assign a member of a team they own who cannot see the task yet', async () => {
     access.level.mockImplementation(async (uid: number) => (uid === 5 ? 0 : 3));
-    teams.isOwnerOrOwnedTeamMember.mockResolvedValue(true);
+    teams.isSelfOrManagedTeamMember.mockResolvedValue(true);
     await controller.add(7, { userId: 5 }, req);
-    expect(teams.isOwnerOrOwnedTeamMember).toHaveBeenCalledWith(2, 5);
+    expect(teams.isSelfOrManagedTeamMember).toHaveBeenCalledWith(2, 5);
     expect(service.add).toHaveBeenCalledWith(7, 5);
   });
 

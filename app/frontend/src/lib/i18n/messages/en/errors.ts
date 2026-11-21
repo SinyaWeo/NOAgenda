@@ -22,6 +22,12 @@ export const messages = {
 	'errors.server.sessionExpired': 'Your session has expired',
 	'errors.server.ownRole': 'You cannot change your own role',
 	'errors.server.ownLock': 'You cannot lock your own account',
+	'errors.server.lastManager': 'A team must keep at least one manager',
+	'errors.server.managerRemoval': 'Only an admin can remove a manager',
+	'errors.server.alreadyInTeam': 'That user is already in the team',
+	'errors.server.teamNameTaken': 'You already have a team with that name',
+	'errors.server.onlyManagerOf':
+		'You are the only manager of: {teams}. Delete the team or ask an admin to appoint another manager first.',
 	'errors.server.ownDelete': 'You cannot delete your own account',
 	'errors.server.accountLocked': 'This account is locked. Contact an administrator.',
 	'errors.server.alreadySubscribed': 'You are already subscribed',

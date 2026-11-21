@@ -2,7 +2,7 @@
 	import { appName } from '$lib/appName';
 	import { Card } from 'flowbite-svelte';
 	import { t } from '$lib/i18n';
-	import { UsersGroupOutline, QuoteOutline, CogOutline } from 'flowbite-svelte-icons';
+	import { UsersGroupOutline, UsersGroupSolid, QuoteOutline, CogOutline } from 'flowbite-svelte-icons';
 </script>
 
 <svelte:head>
@@ -13,7 +13,7 @@
 	<h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
 		{$t('admin.dashboard.title')}
 	</h1>
-	<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-stretch">
+	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
 		<a href="/admin/users" class="no-underline">
 			<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
 				<div class="flex items-center gap-3">
@@ -23,6 +23,19 @@
 							{$t('admin.dashboard.users')}
 						</p>
 						<p class="text-sm text-gray-500">{$t('admin.dashboard.usersHint')}</p>
+					</div>
+				</div>
+			</Card>
+		</a>
+		<a href="/admin/teams" class="no-underline">
+			<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
+				<div class="flex items-center gap-3">
+					<UsersGroupSolid class="w-8 h-8 text-primary-600" />
+					<div>
+						<p class="font-semibold text-gray-900 dark:text-white">
+							{$t('admin.dashboard.teams')}
+						</p>
+						<p class="text-sm text-gray-500">{$t('admin.dashboard.teamsHint')}</p>
 					</div>
 				</div>
 			</Card>

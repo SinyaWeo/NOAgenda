@@ -101,14 +101,14 @@ export class TaskController {
 
   /**
    * Another user may be assigned a new task when they can read its project, or (personal task)
-   * when they are a member of a team the creator owns.
+   * when they are a member of a team the creator manages.
    */
   private async assertCanAssign(callerId: number, assigneeId: number, parentId?: number | null): Promise<void> {
     await this.users.assertActive(assigneeId);
     const allowed =
       parentId != null
         ? (await this.access.level(assigneeId, Number(parentId))) >= Access.READ
-        : await this.teams.isOwnerOrOwnedTeamMember(callerId, assigneeId);
+        : await this.teams.isSelfOrManagedTeamMember(callerId, assigneeId);
     if (!allowed) throw new ForbiddenException('You cannot assign this task to that user');
   }
 

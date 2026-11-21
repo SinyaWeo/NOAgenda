@@ -2,10 +2,21 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Team } from './team.entity';
-import { TeamMember } from '../team-member/team-member.entity';
+import { TeamMember, TeamRole } from '../team-member/team-member.entity';
 import { User } from '../user/user.entity';
 
 export type UserSummary = Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>;
+
+export interface AdminTeam extends Team {
+  members: { id: number; role: TeamRole; user: UserSummary }[];
+}
+
+const summary = (user: User): UserSummary => ({
+  id: user.id,
+  username: user.username,
+  name: user.name,
+  avatarUrl: user.avatarUrl,
+});
 
 @Injectable()
 export class TeamService {
@@ -16,41 +27,73 @@ export class TeamService {
     private readonly memberRepository: Repository<TeamMember>,
   ) {}
 
-  /** True when `userId` is `ownerId` themselves or a member of a team `ownerId` owns. */
-  async isOwnerOrOwnedTeamMember(ownerId: number, userId: number): Promise<boolean> {
-    if (ownerId === userId) return true;
-    return this.memberRepository.exists({ where: { user: { id: userId }, team: { ownerId } } });
+  /** Members of the teams `managerId` manages (the people they may assign tasks to). */
+  private async managedMembers(managerId: number): Promise<TeamMember[]> {
+    return this.memberRepository
+      .createQueryBuilder('m')
+      .innerJoinAndSelect('m.user', 'user')
+      .innerJoin('team_members', 'mgr', 'mgr.teamId = m.teamId AND mgr.userId = :managerId AND mgr.role = :role', {
+        managerId,
+        role: TeamRole.MANAGER,
+      })
+      .getMany();
   }
 
-  /** Members of the teams `ownerId` owns (the people they may assign tasks to, besides themselves). */
-  async findAssignableUsers(ownerId: number): Promise<UserSummary[]> {
-    const members = await this.memberRepository.find({
-      where: { team: { ownerId } },
-      relations: { user: true },
-    });
+  /** True when `userId` is `callerId` themselves or a member of a team `callerId` manages. */
+  async isSelfOrManagedTeamMember(callerId: number, userId: number): Promise<boolean> {
+    if (callerId === userId) return true;
+    return this.memberRepository
+      .createQueryBuilder('m')
+      .innerJoin('team_members', 'mgr', 'mgr.teamId = m.teamId AND mgr.userId = :callerId AND mgr.role = :role', {
+        callerId,
+        role: TeamRole.MANAGER,
+      })
+      .where('m.userId = :userId', { userId })
+      .getExists();
+  }
+
+  /** Members of the teams `managerId` manages (the people they may assign tasks to, besides themselves). */
+  async findAssignableUsers(managerId: number): Promise<UserSummary[]> {
     const byId = new Map<number, UserSummary>();
-    for (const { user } of members) {
-      if (user) byId.set(user.id, { id: user.id, username: user.username, name: user.name, avatarUrl: user.avatarUrl });
+    for (const { user } of await this.managedMembers(managerId)) {
+      if (user && user.id !== managerId) byId.set(user.id, summary(user));
     }
     return [...byId.values()];
   }
 
+  /** Teams the user is a member of (managers included). */
   async findAll(userId: number): Promise<Team[]> {
-    // Return teams the user owns or is a member of
     return this.teamRepository
       .createQueryBuilder('team')
-      .leftJoin('team_members', 'tm', 'tm.teamId = team.id AND tm.userId = :userId', { userId })
-      .where('(team.ownerId = :userId OR tm.userId = :userId)', { userId })
+      .innerJoin('team_members', 'tm', 'tm.teamId = team.id AND tm.userId = :userId', { userId })
       .getMany();
+  }
+
+  /** Every team with its members, for the app admin. */
+  async findAllWithMembers(): Promise<AdminTeam[]> {
+    const [teams, members] = await Promise.all([
+      this.teamRepository.find({ order: { name: 'ASC' } }),
+      this.memberRepository.find({ relations: { user: true, team: true }, order: { id: 'ASC' } }),
+    ]);
+    return teams.map((team) => ({
+      ...team,
+      members: members
+        .filter((m) => m.team.id === team.id)
+        .map((m) => ({ id: m.id, role: m.role, user: summary(m.user) })),
+    }));
   }
 
   async findById(id: number): Promise<Team | null> {
     return this.teamRepository.findOne({ where: { id } });
   }
 
-  async create(team: Partial<Team>): Promise<Team> {
-    const newTeam = this.teamRepository.create(team);
-    return this.teamRepository.save(newTeam);
+  /** Creates the team and makes its creator the first manager, atomically. */
+  async create(team: Partial<Team>, creatorId: number): Promise<Team> {
+    return this.teamRepository.manager.transaction(async (m) => {
+      const saved = await m.save(m.create(Team, { ...team, ownerId: creatorId }));
+      await m.save(m.create(TeamMember, { team: saved, user: { id: creatorId }, role: TeamRole.MANAGER }));
+      return saved;
+    });
   }
 
   async update(id: number, data: Partial<Team>): Promise<Team | null> {

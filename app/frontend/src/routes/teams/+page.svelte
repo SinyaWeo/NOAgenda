@@ -4,8 +4,9 @@
 	import { apiGetAuth } from '$lib/api';
 	import { authSession } from '$lib/auth';
 	import type { TeamWithMembers } from '$lib/types-misc';
+	import type { TeamMember } from '$lib/types';
 	import { derived, writable } from 'svelte/store';
-	import { ownsTeam } from '$lib/roles';
+	import { canManageTeam } from '$lib/roles';
 	import { Alert, Button, Card } from 'flowbite-svelte';
 	import { UsersGroupOutline, PlusOutline } from 'flowbite-svelte-icons';
 	import { t } from '$lib/i18n';
@@ -17,7 +18,11 @@
 
 	onMount(async () => {
 		try {
-			teams.set(await apiGetAuth<TeamWithMembers[]>('/teams'));
+			const [list, members] = await Promise.all([
+				apiGetAuth<TeamWithMembers[]>('/teams'),
+				apiGetAuth<TeamMember[]>('/team-members')
+			]);
+			teams.set(list.map((tm) => ({ ...tm, members: members.filter((m) => m.team?.id === tm.id) })));
 		} catch (e: unknown) {
 			error.set(errMessage(e));
 		} finally {
@@ -49,9 +54,9 @@
 									{team.description}
 								</p>{/if}
 						</div>
-						{#if ownsTeam($currentUser, team)}
+						{#if canManageTeam($currentUser, team.members ?? [])}
 							<span class="shrink-0 text-xs font-medium tone-blue">
-								{$t('teams.owner')}
+								{$t('teams.role.manager')}
 							</span>
 						{/if}
 					</div>
@@ -62,7 +67,9 @@
 					{/if}
 					<div class="flex gap-2 mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
 						<Button href="/teams/{team.id}" color="light" size="sm">{$t('teams.view')}</Button>
-						<Button href="/teams/{team.id}/edit" color="light" size="sm">{$t('common.edit')}</Button>
+						{#if canManageTeam($currentUser, team.members ?? [])}
+							<Button href="/teams/{team.id}/edit" color="light" size="sm">{$t('common.edit')}</Button>
+						{/if}
 					</div>
 				</div>
 			</Card>

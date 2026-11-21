@@ -1,5 +1,5 @@
 import { SqlRunner, sqlRunner } from '../../common/sql';
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { existsSync, unlink } from 'fs';
 import { basename, join, resolve } from 'path';
@@ -31,10 +31,12 @@ function parseJson(value: unknown): unknown {
  * complete JSON export of a user's own data.
  *
  * Deleting an account removes the user, every project they own (with all tasks,
- * comments, attachments, views, webhooks inside), their personal tasks, labels,
- * teams they own, filters, tokens, sessions, notifications and their comments and
+ * comments, attachments, views, webhooks inside), their personal tasks, labels, their
+ * team memberships, filters, tokens, sessions, notifications and their comments and
  * uploads elsewhere. Tasks they created inside other people's projects are kept
- * (shared work) but anonymised. Projects shared WITH them are not affected.
+ * (shared work) but anonymized. Projects shared WITH them are not affected. Teams survive their
+ * creator (one-person teams are fine), so the account of the last manager of any team cannot be
+ * deleted: the team has to be deleted, or another manager appointed by an admin, first.
  */
 @Injectable()
 export class AccountService implements OnModuleInit, OnModuleDestroy {
@@ -60,7 +62,27 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
 
   // ---------------------------------------------------------------- deletion request
 
+  /** Names of the teams for which `userId` is the only manager (with or without other members). */
+  private async teamsNeedingManager(q: SqlRunner, userId: number): Promise<string[]> {
+    const rows = await q<{ name: string }>(
+      `SELECT t.name FROM teams t
+         JOIN team_members me ON me.teamId = t.id AND me.userId = ? AND me.role = 'manager'
+        WHERE NOT EXISTS (SELECT 1 FROM team_members o WHERE o.teamId = t.id AND o.userId <> ? AND o.role = 'manager')`,
+      [userId, userId],
+    );
+    return rows.map((r) => r.name);
+  }
+
+  private assertNoOrphanedTeams(names: string[]): void {
+    if (names.length) {
+      throw new ConflictException(
+        `You are the only manager of: ${names.join(', ')}. Delete the team or ask an admin to appoint another manager first.`,
+      );
+    }
+  }
+
   async requestDeletion(userId: number): Promise<{ scheduledAt: Date }> {
+    this.assertNoOrphanedTeams(await this.teamsNeedingManager(sqlRunner(this.ds), userId));
     const scheduledAt = new Date(Date.now() + GRACE_DAYS * 24 * 60 * 60 * 1000);
     await this.ds.query('UPDATE users SET isDeletionRequested = 1, deletionScheduledAt = ? WHERE id = ?', [
       scheduledAt,
@@ -126,6 +148,8 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       );
       if (!user) return;
 
+      this.assertNoOrphanedTeams(await this.teamsNeedingManager(q, userId));
+
       // Owned projects and personal (top-level) tasks, with everything below them.
       const roots: number[] = (
         await q<{ id: number }>(
@@ -155,17 +179,10 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       await q('DELETE FROM attachments WHERE uploaderId = ?', [userId]);
       await q('DELETE FROM comments WHERE authorId = ?', [userId]);
 
-      // Shared work they created in other people's projects stays, anonymised.
+      // Shared work they created in other people's projects stays, anonymized.
       await q('UPDATE nodes SET createdBy = NULL WHERE createdBy = ?', [userId]);
 
-      // Teams they own (and all memberships), and their memberships elsewhere.
-      const teams: number[] = (await q<{ id: number }>('SELECT id FROM teams WHERE ownerId = ?', [userId])).map(
-        (r) => r.id,
-      );
-      for (const part of chunks(teams)) {
-        await q(`DELETE FROM team_members WHERE teamId IN (${marks(part.length)})`, part);
-      }
-      await q('DELETE FROM teams WHERE ownerId = ?', [userId]);
+      // Teams stay (assertNoOrphanedTeams); only the user's own memberships go.
       await q('DELETE FROM team_members WHERE userId = ?', [userId]);
 
       await q('DELETE FROM labels WHERE createdBy = ?', [userId]); // task_labels cascade
@@ -232,7 +249,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
 
     const teamsOwned = await q('SELECT id, name, description, createdAt FROM teams WHERE ownerId = ?', [userId]);
     const memberships = await q(
-      `SELECT t.id AS teamId, t.name AS teamName, m.createdAt
+      `SELECT t.id AS teamId, t.name AS teamName, m.role, m.createdAt
          FROM team_members m JOIN teams t ON t.id = m.teamId WHERE m.userId = ?`,
       [userId],
     );

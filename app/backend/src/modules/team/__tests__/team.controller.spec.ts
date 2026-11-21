@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TeamController } from '../team.controller';
 import { TeamService } from '../team.service';
+import { TeamAccessService } from '../team-access.service';
 
 describe('TeamController', () => {
   let controller: TeamController;
@@ -14,6 +15,7 @@ describe('TeamController', () => {
           provide: TeamService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },
         },
+        { provide: TeamAccessService, useValue: { assertView: jest.fn(), assertManage: jest.fn() } },
       ],
     }).compile();
     controller = module.get<TeamController>(TeamController);

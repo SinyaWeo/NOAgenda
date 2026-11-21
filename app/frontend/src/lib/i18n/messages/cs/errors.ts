@@ -26,6 +26,12 @@ export const messages: Record<keyof typeof en, Message> = {
 	'errors.server.sessionExpired': 'Platnost přihlášení vypršela',
 	'errors.server.ownRole': 'Vlastní roli nelze změnit',
 	'errors.server.ownLock': 'Vlastní účet nelze zamknout',
+	'errors.server.lastManager': 'Tým musí mít vždy alespoň jednoho manažera',
+	'errors.server.managerRemoval': 'Manažera může odebrat jen admin',
+	'errors.server.alreadyInTeam': 'Tento uživatel už v týmu je',
+	'errors.server.teamNameTaken': 'Tým s tímto názvem už máte',
+	'errors.server.onlyManagerOf':
+		'Jste jediný manažer týmů: {teams}. Nejdřív tým smažte, nebo požádejte admina o jmenování dalšího manažera.',
 	'errors.server.ownDelete': 'Vlastní účet nelze smazat',
 	'errors.server.accountLocked': 'Tento účet je zamknutý. Kontaktujte správce.',
 	'errors.server.alreadySubscribed': 'Odběr už máte zapnutý',

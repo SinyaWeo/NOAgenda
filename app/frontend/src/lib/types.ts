@@ -136,8 +136,11 @@ export interface TaskAssignee {
 	user?: UserSummary;
 }
 
+export type TeamRole = 'member' | 'manager';
+
 export interface TeamMember {
 	id: number;
+	role: TeamRole;
 	user?: UserSummary;
 	team?: Team;
 }

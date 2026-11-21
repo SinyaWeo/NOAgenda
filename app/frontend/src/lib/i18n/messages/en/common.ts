@@ -53,7 +53,7 @@ export const messages = {
 
 	'common.permission.read': 'Read',
 	'common.permission.write': 'Write',
-	'common.permission.admin': 'Admin',
+	'common.permission.admin': 'Manager',
 
 	'common.theme.light': 'Light',
 	'common.theme.dark': 'Dark',

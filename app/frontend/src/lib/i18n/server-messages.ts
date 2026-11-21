@@ -24,6 +24,10 @@ const EXACT: Record<string, MessageKey> = {
 	'Cannot change your own role': 'errors.server.ownRole',
 	'Cannot lock your own account': 'errors.server.ownLock',
 	'Cannot delete your own account': 'errors.server.ownDelete',
+	'A team must keep at least one manager': 'errors.server.lastManager',
+	'Only an admin can remove a manager': 'errors.server.managerRemoval',
+	'That user is already in the team': 'errors.server.alreadyInTeam',
+	'You already have a team with that name': 'errors.server.teamNameTaken',
 	'Account is locked': 'errors.server.accountLocked',
 	'Already subscribed': 'errors.server.alreadySubscribed',
 	'A node cannot be its own parent': 'errors.server.ownParent',
@@ -54,6 +58,10 @@ const EXACT: Record<string, MessageKey> = {
 
 /** class-validator messages: "<field> must be ...". The field name stays as the API calls it. */
 const PATTERNS: [RegExp, (m: RegExpExecArray) => [MessageKey, Params]][] = [
+	[
+		/^You are the only manager of: (.+)\. Delete the team or ask an admin to appoint another manager first\.$/,
+		(m) => ['errors.server.onlyManagerOf', { teams: m[1] }]
+	],
 	[
 		/^(\w+) must be longer than or equal to (\d+) characters$/,
 		(m) => ['errors.validation.minLength', { field: m[1], n: m[2] }]

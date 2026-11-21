@@ -40,11 +40,19 @@
 	});
 
 	let registrationEnabled = $state(true);
-	let demoUsers = $state<{ username: string; name: string; password: string; role: string }[]>([]);
+	let demoUsers = $state<
+		{ username: string; name: string; password: string; role: string; teamRole?: string | null }[]
+	>([]);
 	onMount(async () => {
 		const cfg: {
 			registrationEnabled?: boolean;
-			demoUsers?: { username: string; name: string; password: string; role: string }[];
+			demoUsers?: {
+				username: string;
+				name: string;
+				password: string;
+				role: string;
+				teamRole?: string | null;
+			}[];
 		} = await apiFetch('/auth/config')
 			.then((r) => (r.ok ? r.json() : {}))
 			.catch(() => ({}));
@@ -149,7 +157,13 @@
 								<td class="py-1 pr-2 font-mono">{u.username}</td>
 								<td class="py-1 pr-2 font-mono">{u.password}</td>
 								<td class="py-1 text-right text-gray-500"
-									>{u.role === 'admin' ? $t('auth.demo.role.admin') : $t('auth.demo.role.user')}</td
+									>{u.role === 'admin'
+										? $t('auth.demo.role.admin')
+										: u.teamRole === 'manager'
+											? $t('auth.demo.role.manager')
+											: u.teamRole === 'member'
+												? $t('auth.demo.role.member')
+												: $t('auth.demo.role.user')}</td
 								>
 							</tr>
 						{/each}

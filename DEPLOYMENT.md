@@ -75,6 +75,15 @@ MAIL_FROM=NOAgenda <no-reply@your-domain>
   `UPDATE users SET isEmailConfirmed = 1;` once.
 - Your mail provider will usually require SPF/DKIM for your sending domain, or mail lands in spam.
 
+### Roles
+- **App admin** (`users.role = admin`): runs the platform (users, all teams, settings). Has no automatic access to
+  other people's projects.
+- **Team manager / member** (`team_members.role`): a manager edits their own team, adds and removes regular members and
+  can assign tasks to its members; a member only belongs to it. Only an app admin appoints or removes managers
+  (Admin → Teams), and every team keeps at least one. A team's creator becomes its first manager.
+- **Project permission** (`read` / `write` / `admin`, shown as Manager), granted to users or whole teams; independent
+  of team roles.
+
 ### Create the first administrator
 There is no default admin. Register an account in the UI, then promote it:
 ```bash
@@ -166,7 +175,7 @@ Do this one instance at a time, because the old Caddy still holds the ports unti
 
 For a demo that visitors can try without signing up, add to its env file:
 
-- `DEMO_MODE=true`: the login page lists the example users (with password and role), and the password, email and
+- `DEMO_MODE=true`: the login page lists the example users (with password and role: app admin, team manager or team member), and the password, email and
   account-deletion endpoints are disabled so visitors cannot lock each other out. Attachment and avatar uploads are
   disabled too (HTTP 403), so the public demo cannot be used to store files.
 - `REGISTRATION_ENABLED=false` and an empty `SMTP_HOST`.
@@ -261,8 +270,10 @@ advice, so have them reviewed before you accept real users.
 - **Delete**: Settings → Delete account (password required). The account is scheduled and **purged after a
   7-day grace period** (`ACCOUNT_DELETION_GRACE_DAYS`); the user can cancel until then. The purge removes the user,
   every project they own (with its tasks, comments, attachments, views, webhooks), their personal tasks, labels,
-  teams they own, filters, tokens, sessions, notifications, and their comments/uploads elsewhere. Tasks they
+  their team memberships, filters, tokens, sessions, notifications, and their comments/uploads elsewhere. Tasks they
   created inside other people's projects are kept but anonymised; projects shared *with* them are untouched.
+  Teams survive their creator. A user who is the **only manager of a team** (one-person teams included) cannot
+  request deletion, and an admin cannot delete them, until the team is deleted or an admin appoints another manager.
   Collaborators lose any project its owner deletes. A background sweep runs hourly
   (`ACCOUNT_PURGE_INTERVAL_SECONDS`). Backups still contain the data until they age out (see backup retention).
 
