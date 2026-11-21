@@ -44,7 +44,17 @@
 <div class="board-cols">
 	{#each columns as col (col.key)}
 		{@const colTasks = tasks.filter((t) => t.status === col.key)}
-		<div class="board-col">
+		<div
+			class="board-col"
+			class:board-col-over={overCol === col.key}
+			role="group"
+			aria-label={col.label}
+			ondragover={(e) => onDragOver(e, col.key)}
+			ondragleave={(e) => {
+				if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) overCol = null;
+			}}
+			ondrop={(e) => onDrop(e, col.key)}
+		>
 			<div class="board-col-header">
 				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 m-0">
 					{col.label}
@@ -53,7 +63,14 @@
 			</div>
 			<div class="board-col-body">
 				{#each colTasks as task (task.id)}
-					<div class="board-card mb-2">
+					<div
+						class="board-card mb-2"
+						class:board-card-dragging={draggingId === task.id}
+						role="listitem"
+						draggable={onStatusChange ? 'true' : undefined}
+						ondragstart={(e) => onDragStart(e, task)}
+						ondragend={onDragEnd}
+					>
 						<a
 							href="/tasks/{task.id}"
 							class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline">{task.title}</a

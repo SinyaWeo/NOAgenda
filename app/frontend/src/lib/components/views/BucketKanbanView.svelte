@@ -99,7 +99,14 @@
 </script>
 
 {#snippet card(task: Task)}
-	<div class="board-card mb-2">
+	<div
+		class="board-card mb-2"
+		class:board-card-dragging={draggingId === task.id}
+		role="listitem"
+		draggable="true"
+		ondragstart={(e) => onDragStart(e, task)}
+		ondragend={onDragEnd}
+	>
 		<a href="/tasks/{task.id}" class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline"
 			>{task.title}</a
 		>
@@ -136,7 +143,17 @@
 		{#each buckets as bucket, i (bucket.id)}
 			{@const bucketTasks = tasks.filter((t) => t.bucketId === bucket.id)}
 			{@const overLimit = bucket.limit != null && bucketTasks.length > bucket.limit}
-			<div class="board-col">
+			<div
+				class="board-col"
+				class:board-col-over={overBucket === bucket.id}
+				role="group"
+				aria-label={bucket.title}
+				ondragover={(e) => onDragOver(e, bucket.id)}
+				ondragleave={(e) => {
+					if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) overBucket = null;
+				}}
+				ondrop={(e) => onDrop(e, bucket.id)}
+			>
 				<div class="board-col-header">
 					{#if editingId === bucket.id}
 						<form onsubmit={saveEdit} class="flex flex-col gap-2 w-full">
