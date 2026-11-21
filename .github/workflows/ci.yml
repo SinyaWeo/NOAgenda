@@ -77,6 +77,7 @@ jobs:
       CORS_ORIGIN: http://localhost:5173
       PORT: 3000
       LOGIN_RATE_LIMIT: 100
+      DELETION_REQUEST_LIMIT: 100
       ACCOUNT_PURGE_INTERVAL_SECONDS: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -3,7 +3,7 @@
 Input validation, error handling, data export and account deletion smoke test.
 
 Needs a DISPOSABLE database, an API with email verification OFF (no SMTP),
-LOGIN_RATE_LIMIT=100 and ACCOUNT_PURGE_INTERVAL_SECONDS=3, plus a way to run SQL:
+LOGIN_RATE_LIMIT=100, DELETION_REQUEST_LIMIT=100 and ACCOUNT_PURGE_INTERVAL_SECONDS=3, plus a way to run SQL:
 
   SQL_CMD='mysql -h127.0.0.1 -uroot -pSECRET noagenda_ci -N' \
   BASE_URL=http://127.0.0.1:3000 python3 scripts/validation-account-smoke.py
@@ -115,7 +115,7 @@ s, _, _ = call('POST', '/labels', {'title': 'bug', 'color': 'red'}, A); check('n
 s, _, _ = call('POST', '/labels', {'title': 'bug', 'color': '#ff0000'}, A); check('label created', s, 201)
 s, _, _ = call('POST', '/labels', {'title': 'bug', 'color': '#00ff00'}, A); check('duplicate label for the same user is 409, not 500', s, 409)
 s, _, _ = call('POST', '/labels', {'title': 'bug', 'color': '#0000ff'}, Bt); check('another user may use the same label name', s, 201)
-s, _, _ = call('POST', '/teams', {'name': 'Core'}, A); check('team created', s, 201)
+s, core, _ = call('POST', '/teams', {'name': 'Core'}, A); check('team created', s, 201)
 s, _, _ = call('POST', '/teams', {'name': 'Core'}, Bt); check('another user may reuse a team name', s, 201)
 s, wh, _ = call('POST', '/webhooks', {'url': 'https://hooks.example.com/x', 'projectId': pid}, A)
 check('webhook without an event is accepted and defaults to all events', (s, wh.get('event')), (201, '*'))
@@ -156,6 +156,9 @@ s, _, _ = call('GET', '/user/export'); check('export needs authentication', s, 4
 s, _, _ = call('POST', '/user/deletion/request', {}, A); check('deletion request without a password rejected', s, 400)
 s, _, _ = call('POST', '/user/deletion/request', {'password': 'wrong password'}, A); check('deletion request with a wrong password is a 400 (not a 401, which would sign the user out)', s, 400)
 s, _, _ = call('POST', '/user/deletion/request', {'password': PW}, tk['rawToken']); check('an API token cannot request deletion', s, 403)
+s, r, _ = call('POST', '/user/deletion/request', {'password': PW}, A)
+check('the only manager of a team (even a one-person team) cannot request deletion', (s, 'only manager of: Core' in str(r)), (409, True))
+s, _, _ = call('DELETE', f"/teams/{core['id']}", token=A); check('...until the team is deleted', s, 200)
 s, r, _ = call('POST', '/user/deletion/request', {'password': PW}, A); check('deletion scheduled', s, 201)
 days = (time.mktime(time.strptime(r['scheduledAt'][:19], '%Y-%m-%dT%H:%M:%S')) - time.time()) / 86400
 check('...for about 7 days from now', 6 < days < 8, True)
@@ -202,7 +205,11 @@ else:
     paths = [vatt.get('path'), vatt2.get('path')]
     if LOCAL_FILES: check('uploads exist on disk before deletion', all(os.path.exists(p) for p in paths), True)
 
-    s, _, _ = call('POST', '/user/deletion/request', {'password': PW}, V); check('vic requests deletion', s, 201)
+    s, r, _ = call('POST', '/user/deletion/request', {'password': PW}, V)
+    check('vic is the only manager of a team that has another member: deletion refused', (s, 'only manager of: Vic team' in str(r)), (409, True))
+    # an admin would appoint a second manager; do it through the database
+    sql(f"UPDATE team_members SET role = 'manager' WHERE teamId = {vteam['id']} AND userId = {oid};")
+    s, _, _ = call('POST', '/user/deletion/request', {'password': PW}, V); check('vic requests deletion once the team has another manager', s, 201)
     print('   ...backdating the grace period and waiting for the purge sweep')
     sql(f"UPDATE users SET deletionScheduledAt = DATE_SUB(NOW(), INTERVAL 2 DAY) WHERE id = {vid};")
     gone = False
@@ -218,7 +225,7 @@ else:
     check("vic's comments and uploads are gone", (count('comments', f'authorId = {vid}'), count('attachments', f'uploaderId = {vid}')), (0, 0))
     check("vic's webhooks, views, buckets are gone", (count('webhook', f'userId = {vid} OR projectId = {vp["id"]}'), count('project_views', f'projectId = {vp["id"]}'), count('kanban_buckets', f'projectId = {vp["id"]}')), (0, 0, 0))
     check("vic's labels, filters, tokens, sessions, favorites are gone", sum(count(t, f'{c} = {vid}') for t, c in [('labels', 'createdBy'), ('saved_filters', 'userId'), ('api_tokens', 'userId'), ('user_sessions', 'userId'), ('favorites', 'userId')]), 0)
-    check("vic's team and memberships are gone", (count('teams', "name = 'Vic team'"), count('team_members', f'userId = {vid} OR teamId = {vteam["id"]}')), (0, 0))
+    check("vic's team survives with its other manager; vic's memberships are gone", (count('teams', f"id = {vteam['id']}"), count('team_members', f'userId = {vid}'), count('team_members', f"teamId = {vteam['id']} AND userId = {oid} AND role = 'manager'")), (1, 0, 1))
     check('vic no longer appears in other projects', count('project_users', f'userId = {vid}'), 0)
     if LOCAL_FILES: check("vic's files were removed from disk", any(os.path.exists(p) for p in paths), False)
 

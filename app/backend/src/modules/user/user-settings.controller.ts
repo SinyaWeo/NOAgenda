@@ -23,6 +23,8 @@ import { unlink } from 'fs';
 import { basename, resolve, sep } from 'path';
 
 /** Where avatar files live (the multer destination below is relative to the working directory). */
+/** Account-deletion requests per hour per IP (the password is checked each time). Raised only for automated tests. */
+const deletionRequestLimit = Number(process.env.DELETION_REQUEST_LIMIT || 5);
 const AVATARS_DIR = resolve(process.cwd(), 'uploads', 'avatars');
 
 const AVATAR_MIME_EXT: Record<string, string> = {
@@ -179,7 +181,7 @@ export class UserSettingsController {
   /** POST /user/deletion/request — schedule deletion after a grace period (password required). */
   @Post('deletion/request')
   @UseGuards(NoApiTokenGuard, NotInDemoGuard)
-  @Throttle({ default: { ttl: 3600000, limit: 5 } })
+  @Throttle({ default: { ttl: 3600000, limit: deletionRequestLimit } })
   async requestDeletion(@Request() req: AuthRequest, @Body() body: DeletionRequestDto) {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();

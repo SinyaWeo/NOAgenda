@@ -366,7 +366,7 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
   `USER_STORAGE_QUOTA_MB=1` and `LOGIN_RATE_LIMIT=100` (see the file header).
 - `app/backend/scripts/validation-account-smoke.py` — input validation, error handling, data export, and the full
   account purge (including that other users' data is untouched). Needs `LOGIN_RATE_LIMIT=100`,
-  `ACCOUNT_PURGE_INTERVAL_SECONDS=3` and a way to run SQL (see the file header).
+  `DELETION_REQUEST_LIMIT=100` (default 5 per hour per IP), `ACCOUNT_PURGE_INTERVAL_SECONDS=3` and a way to run SQL (see the file header).
 - `e2e/run.sh` — real-browser test (Chromium) of the production Docker stack; see `e2e/README.md`. It builds and tears down its own
   isolated stack, so it never touches a real deployment. CI runs it on every push.
 - All of these create users/data: run them against a **disposable** database only. CI runs the three scripts on every push.
