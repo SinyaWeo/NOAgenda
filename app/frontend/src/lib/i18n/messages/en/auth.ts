@@ -83,5 +83,40 @@ export const messages = {
 	'auth.about.tagline': 'A project-focused task manager built with NestJS and SvelteKit.',
 	'auth.about.version': 'Version',
 	'auth.about.source': 'Source code',
-	'auth.about.license': 'License'
+	'auth.about.license': 'License',
+	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.views.title': 'Task views',
+	'auth.about.timeline.views.body':
+		'Kanban drag & drop, Gantt timeline, project name and priority on every task card, progress slider, assigning tasks to team members and a better MindMap.',
+	'auth.about.timeline.demo.title': 'Demo and multi-instance deployment',
+	'auth.about.timeline.demo.body':
+		'Demo instance with nightly reset, multi-instance deployment scripts, terms and privacy pages, richer recurring tasks and version management.',
+	'auth.about.timeline.branding.title': 'Branding and dark theme polish',
+	'auth.about.timeline.branding.body':
+		'Logo and favicons for both themes, dark theme color fixes, quote seeder and a provisioning script.',
+	'auth.about.timeline.containers.title': 'Containers and open source',
+	'auth.about.timeline.containers.body':
+		'Frontend and backend containerization, release workflow, README, AGPL-3.0 license, demo data seeder and a single initial database migration.',
+	'auth.about.timeline.automation.title': 'Automation, localization and upgrades',
+	'auth.about.timeline.automation.body':
+		'Webhooks, notifications, reminders, recurring tasks, Kanban buckets, task labels, uploads, English and Czech localization, user lock/unlock/delete and major dependency upgrades (NestJS 12, TypeORM 1, SvelteKit 3, Vite 8, Node 26).',
+	'auth.about.timeline.hardening.title': 'Security hardening and deployment',
+	'auth.about.timeline.hardening.body':
+		'Security fixes, several rounds of code review fixes and deployment behind an Apache front door.',
+	'auth.about.timeline.theme.title': 'Light and dark theme',
+	'auth.about.timeline.theme.body': 'Cosmetic polish and a switchable light/dark theme.',
+	'auth.about.timeline.ux.title': 'UX refactor',
+	'auth.about.timeline.ux.body':
+		'Laws of UX refactor, consistent padding and equal-height cards across the app, back and forward icons.',
+	'auth.about.timeline.roles.title': 'User roles and quotes',
+	'auth.about.timeline.roles.body': 'User roles with role-based access, plus inspirational quotes.',
+	'auth.about.timeline.nodes.title': 'Unified nodes',
+	'auth.about.timeline.nodes.body':
+		'Projects and tasks merged into one generic node entity, with fixes to task and subtask creation.',
+	'auth.about.timeline.flowbite.title': 'New UI foundation',
+	'auth.about.timeline.flowbite.body':
+		'Migration from custom CSS to Flowbite Svelte, Material icons and the first basic functionality.',
+	'auth.about.timeline.start.title': 'First commit',
+	'auth.about.timeline.start.body':
+		'The project begins: backend modules, a shared base entity and simplified start/stop scripts.'
 } as const;
