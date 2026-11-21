@@ -76,7 +76,7 @@
 							{$t('common.field.status')}
 						</div>
 						<select
-							class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent"
+							class="text-xs rounded-full ps-2 pe-8 py-0.5 font-semibold border-0 cursor-pointer bg-transparent"
 							data-status={task.status}
 							value={task.status}
 							onchange={(e) =>

@@ -187,7 +187,7 @@
 						</span>
 					{/if}
 					<select
-						class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent shrink-0"
+						class="text-xs rounded-full ps-2 pe-8 py-0.5 font-semibold border-0 cursor-pointer bg-transparent shrink-0"
 						data-status={task.status}
 						value={task.status}
 						onchange={(e) => updateTaskStatus(task.id, (e.target as HTMLSelectElement).value)}
