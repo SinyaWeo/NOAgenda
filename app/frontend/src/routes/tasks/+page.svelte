@@ -472,9 +472,9 @@
 		</div>
 	{/if}
 {:else if viewMode === 'kanban'}
-	<StatusKanbanView tasks={$tasks} columns={KANBAN_COLS} onStatusChange={updateTaskStatus} />
+	<StatusKanbanView tasks={$tasks} columns={KANBAN_COLS} onStatusChange={updateTaskStatus} {projectNames} />
 {:else if viewMode === 'table'}
-	<TableView tasks={$tasks} large />
+	<TableView tasks={$tasks} large {projectNames} />
 	{#if $tasks.length}{@render pager('mt-4')}{/if}
 {:else if viewMode === 'gantt'}
 	<GanttView tasks={$tasks} large />

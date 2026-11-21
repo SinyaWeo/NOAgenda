@@ -9,8 +9,10 @@
 		tasks: Task[];
 		/** Larger empty-state icon + the global page's wording. */
 		large?: boolean;
+		/** When given, a Project column is shown. */
+		projectNames?: Record<number, string>;
 	}
-	let { tasks, large = false }: Props = $props();
+	let { tasks, large = false, projectNames }: Props = $props();
 </script>
 
 {#if tasks.length}
@@ -18,6 +20,7 @@
 		<TableHead>
 			<TableHeadCell>#</TableHeadCell>
 			<TableHeadCell>{$t('common.field.title')}</TableHeadCell>
+			{#if projectNames}<TableHeadCell>{$t('common.field.project')}</TableHeadCell>{/if}
 			<TableHeadCell>{$t('common.field.status')}</TableHeadCell>
 			<TableHeadCell>{$t('common.field.priority')}</TableHeadCell>
 			<TableHeadCell>{$t('common.field.dueDate')}</TableHeadCell>
@@ -32,13 +35,18 @@
 							>{task.title}</a
 						></TableBodyCell
 					>
+					{#if projectNames}<TableBodyCell class="text-gray-400"
+							>{(task.parentId != null && projectNames[task.parentId]) || '—'}</TableBodyCell
+						>{/if}
 					<TableBodyCell
 						><span class="inline-flex items-center text-xs font-semibold" data-status={task.status}
 							>{task.status ? $t(`common.status.${task.status}` as MessageKey) : '—'}</span
 						></TableBodyCell
 					>
-					<TableBodyCell class="text-gray-400"
-						>{task.priority ? $t(`common.priorityShort.${task.priority}` as MessageKey) : '—'}</TableBodyCell
+					<TableBodyCell
+						><span class="text-xs" data-priority={task.priority}
+							>{task.priority ? $t(`common.priorityShort.${task.priority}` as MessageKey) : '—'}</span
+						></TableBodyCell
 					>
 					<TableBodyCell class={isOverdue(task) ? 'text-red-500' : 'text-gray-400'}
 						>{task.dueDate ? $fmt.date(task.dueDate) : '—'}</TableBodyCell

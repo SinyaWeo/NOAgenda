@@ -8,8 +8,9 @@
 		columns: KanbanColumn[];
 		/** Called when a card is dropped on another column; omit for a read-only board. */
 		onStatusChange?: StatusChangeHandler;
+		projectNames?: Record<number, string>;
 	}
-	let { tasks, columns, onStatusChange }: Props = $props();
+	let { tasks, columns, onStatusChange, projectNames = {} }: Props = $props();
 
 	let draggingId = $state<number | null>(null);
 	let overCol = $state<string | null>(null);
@@ -75,13 +76,18 @@
 							href="/tasks/{task.id}"
 							class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline">{task.title}</a
 						>
+						{#if task.parentId != null && projectNames[task.parentId]}<div
+								class="text-xs text-gray-400 mt-0.5"
+							>
+								{projectNames[task.parentId]}
+							</div>{/if}
 						{#if task.dueDate}
 							{@const overdue = new Date(task.dueDate) < new Date() && task.status !== 'done'}
 							<div class="text-xs {overdue ? 'text-red-500' : 'text-gray-400'} mt-1">
 								{$fmt.date(task.dueDate)}
 							</div>
 						{/if}
-						{#if task.priority && task.priority > 0}<div class="text-xs text-gray-400 mt-0.5">
+						{#if task.priority && task.priority > 0}<div class="text-xs mt-0.5" data-priority={task.priority}>
 								{$t(`common.priorityShort.${task.priority}` as MessageKey)}
 							</div>{/if}
 					</div>
