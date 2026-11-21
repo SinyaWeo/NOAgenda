@@ -19,3 +19,23 @@ export function isoToDateInput(iso: string | null | undefined): string {
 	const pad = (n: number) => String(n).padStart(2, '0');
 	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
+
+/** Local midnight of the calendar day `value` falls on. */
+export function startOfDay(value: string | Date): Date {
+	const d = new Date(value);
+	return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** `days` calendar days after `date` (DST-safe: works on date parts, not milliseconds). */
+export function addDays(date: Date, days: number): Date {
+	return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+/** Whole calendar days from `a` to `b` (positive when b is later), ignoring time of day and DST. */
+export function diffDays(a: Date, b: Date): number {
+	return Math.round(
+		(Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) -
+			Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) /
+			86400000
+	);
+}
