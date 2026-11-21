@@ -4,7 +4,7 @@
 	import { showToast } from '$lib/toast';
 	import { t, tr, fmt } from '$lib/i18n';
 	import type { WebhookInfo } from '$lib/types';
-	import { Badge, Button } from 'flowbite-svelte';
+	import { Button } from 'flowbite-svelte';
 
 	/** What a webhook did last, plus "send test" and (for a switched-off one) "turn on again". */
 	let { webhook, onChanged }: { webhook: WebhookInfo; onChanged: () => void | Promise<void> } = $props();
@@ -47,14 +47,14 @@
 
 <div class="flex items-center gap-2 flex-wrap text-xs text-gray-500 dark:text-gray-400">
 	{#if !webhook.active}
-		<Badge color="red">{$t('settings.webhooks.statusOff')}</Badge>
+		<span class="text-xs font-medium tone-red">{$t('settings.webhooks.statusOff')}</span>
 	{/if}
 	{#if webhook.lastDeliveryAt}
 		{#if webhook.lastError}
-			<Badge color="yellow">{$t('settings.webhooks.statusFailed')}</Badge>
+			<span class="text-xs font-medium tone-yellow">{$t('settings.webhooks.statusFailed')}</span>
 			<span>{webhook.lastError}</span>
 		{:else}
-			<Badge color="green">{webhook.lastStatus ?? 'OK'}</Badge>
+			<span class="text-xs font-medium tone-green">{webhook.lastStatus ?? 'OK'}</span>
 		{/if}
 		<span>{$fmt.dateTime(webhook.lastDeliveryAt)}</span>
 	{:else}

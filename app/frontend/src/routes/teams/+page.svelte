@@ -51,7 +51,7 @@
 						</div>
 						{#if ownsTeam($currentUser, team)}
 							<span
-								class="shrink-0 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 px-1.5 py-0.5 rounded"
+								class="shrink-0 text-xs font-medium tone-blue"
 							>
 								{$t('teams.owner')}
 							</span>

@@ -34,7 +34,7 @@
 					>
 					<TableBodyCell
 						><span
-							class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+							class="inline-flex items-center text-xs font-semibold"
 							data-status={task.status}
 							>{task.status ? $t(`common.status.${task.status}` as MessageKey) : '—'}</span
 						></TableBodyCell

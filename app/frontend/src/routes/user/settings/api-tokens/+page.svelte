@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-	import { Alert, Badge, Button, Card, Input, Label, Select } from 'flowbite-svelte';
+	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
 	import { ApiKeyOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
 	import { errMessage } from '$lib/errors';
 	import { showToast } from '$lib/toast';
@@ -137,13 +137,12 @@
 				<div class="flex-1">
 					<p class="font-bold text-sm text-gray-900 dark:text-white m-0">
 						{token.name}
-						<Badge
-							color={token.scope === 'write' ? 'yellow' : 'gray'}
-							class="ml-2 align-middle"
+						<span
+							class="ml-2 align-middle text-xs font-medium {token.scope === 'write' ? 'tone-yellow' : 'tone-gray'}"
 							data-testid="token-scope"
 							>{token.scope === 'write'
 								? $t('settings.tokens.badge.write')
-								: $t('settings.tokens.badge.read')}</Badge
+								: $t('settings.tokens.badge.read')}</span
 						>
 					</p>
 					<p class="text-xs text-gray-400 m-0">

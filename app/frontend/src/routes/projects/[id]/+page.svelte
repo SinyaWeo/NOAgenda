@@ -174,7 +174,7 @@
 							? 'line-through text-gray-400'
 							: ''}">{task.title}</a
 					>
-					{#if task.priority}<span class="text-xs shrink-0 dark:text-gray-400" data-priority={task.priority}
+					{#if task.priority}<span class="text-xs shrink-0" data-priority={task.priority}
 							>{$t(`common.priority.${task.priority}` as MessageKey)}</span
 						>{/if}
 					{#if task.dueDate}
@@ -187,7 +187,7 @@
 						</span>
 					{/if}
 					<select
-						class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent shrink-0 dark:text-white"
+						class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent shrink-0"
 						data-status={task.status}
 						value={task.status}
 						onchange={(e) => updateTaskStatus(task.id, (e.target as HTMLSelectElement).value)}

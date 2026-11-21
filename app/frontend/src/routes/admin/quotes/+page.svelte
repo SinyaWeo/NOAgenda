@@ -4,7 +4,6 @@
 	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
 	import { writable } from 'svelte/store';
 	import {
-		Badge,
 		Button,
 		Checkbox,
 		Input,
@@ -156,8 +155,8 @@
 						</TableBodyCell>
 						<TableBodyCell>{q.author ?? '—'}</TableBodyCell>
 						<TableBodyCell>
-							<Badge color={q.isActive ? 'green' : 'gray'}
-								>{q.isActive ? $t('admin.quotes.active') : $t('admin.quotes.inactive')}</Badge
+							<span class="text-xs font-medium {q.isActive ? 'tone-green' : 'tone-gray'}"
+								>{q.isActive ? $t('admin.quotes.active') : $t('admin.quotes.inactive')}</span
 							>
 						</TableBodyCell>
 						<TableBodyCell>

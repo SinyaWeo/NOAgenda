@@ -65,7 +65,7 @@
 						<div class="text-[10px] text-gray-400 uppercase tracking-wide leading-none mb-0.5">
 							{$t('common.field.priority')}
 						</div>
-						<span class="text-xs dark:text-gray-400" data-priority={task.priority}>
+						<span class="text-xs" data-priority={task.priority}>
 							{task.priority && task.priority > 0
 								? $t(`common.priority.${task.priority}` as MessageKey)
 								: '—'}
@@ -76,7 +76,7 @@
 							{$t('common.field.status')}
 						</div>
 						<select
-							class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent dark:text-white"
+							class="text-xs rounded-full px-2 py-0.5 font-semibold border-0 cursor-pointer bg-transparent"
 							data-status={task.status}
 							value={task.status}
 							onchange={(e) =>

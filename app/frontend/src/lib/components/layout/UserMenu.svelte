@@ -116,7 +116,7 @@
 		<span class="block text-xs text-gray-500">@{user.username}</span>
 		{#if isAdmin(user)}
 			<span
-				class="inline-block mt-1 text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 px-1.5 py-0.5 rounded"
+				class="inline-block mt-1 text-xs font-medium tone-red"
 				>{$t('layout.user.admin')}</span
 			>
 		{/if}

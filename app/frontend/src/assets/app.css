@@ -259,79 +259,37 @@ a.text-gray-900 {
 /* ─────────────────────────────────────────────────────────────────
    STATUS / PRIORITY  (data-attribute selectors)
 ───────────────────────────────────────────────────────────────── */
-[data-status='open'] {
-	background: #d1fae5;
-	color: #065f46;
-}
-[data-status='in_progress'] {
-	background: #fef3c7;
-	color: #92400e;
-}
-[data-status='done'] {
-	background: #dcfce7;
-	color: #166534;
-}
-.dark [data-status='open'] {
-	background: #082f49;
-	color: #7dd3fc;
-}
-.dark [data-status='in_progress'] {
-	background: #1c1300;
-	color: #fcd34d;
-}
-.dark [data-status='done'] {
-	background: #052e16;
-	color: #86efac;
-}
-[data-status='overdue'] {
-	background: #fee2e2;
-	color: #991b1b;
-}
-.dark [data-status='overdue'] {
-	background: #7f1d1d;
-	color: #fca5a5;
-}
+[data-status='open'] { color: #047857; }
+[data-status='in_progress'] { color: #b45309; }
+[data-status='done'] { color: #15803d; }
+[data-status='overdue'] { color: #b91c1c; }
+.dark [data-status='open'] { color: #6ee7b7; }
+.dark [data-status='in_progress'] { color: #fcd34d; }
+.dark [data-status='done'] { color: #86efac; }
+.dark [data-status='overdue'] { color: #fca5a5; }
 
-[data-priority='1'] {
-	background: #f0fdf4;
-	color: #166534;
-}
-[data-priority='2'] {
-	background: #fefce8;
-	color: #713f12;
-}
-[data-priority='3'] {
-	background: #fff7ed;
-	color: #9a3412;
-}
-[data-priority='4'] {
-	background: #fef2f2;
-	color: #991b1b;
-}
-[data-priority='5'] {
-	background: #fdf4ff;
-	color: #7e22ce;
-}
-.dark [data-priority='1'] {
-	background: #052e16;
-	color: #86efac;
-}
-.dark [data-priority='2'] {
-	background: #1c1300;
-	color: #fef08a;
-}
-.dark [data-priority='3'] {
-	background: #1c0a00;
-	color: #fdba74;
-}
-.dark [data-priority='4'] {
-	background: #450a0a;
-	color: #fca5a5;
-}
-.dark [data-priority='5'] {
-	background: #2e1065;
-	color: #d8b4fe;
-}
+[data-priority='1'] { color: #15803d; }
+[data-priority='2'] { color: #a16207; }
+[data-priority='3'] { color: #c2410c; }
+[data-priority='4'] { color: #b91c1c; }
+[data-priority='5'] { color: #7e22ce; }
+.dark [data-priority='1'] { color: #86efac; }
+.dark [data-priority='2'] { color: #fef08a; }
+.dark [data-priority='3'] { color: #fdba74; }
+.dark [data-priority='4'] { color: #fca5a5; }
+.dark [data-priority='5'] { color: #d8b4fe; }
+
+/* Text-only tone utilities for role / state labels (no background) */
+.tone-red { color: #b91c1c; }
+.tone-blue { color: #1d4ed8; }
+.tone-green { color: #15803d; }
+.tone-yellow { color: #a16207; }
+.tone-gray { color: #4b5563; }
+.dark .tone-red { color: #f87171; }
+.dark .tone-blue { color: #60a5fa; }
+.dark .tone-green { color: #86efac; }
+.dark .tone-yellow { color: #fde047; }
+.dark .tone-gray { color: #9ca3af; }
 
 /* ─────────────────────────────────────────────────────────────────
    LABEL COLOR DOT

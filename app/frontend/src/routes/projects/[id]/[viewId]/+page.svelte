@@ -12,7 +12,7 @@
 	import TableView from '$lib/components/views/TableView.svelte';
 	import GanttView from '$lib/components/views/GanttView.svelte';
 	import MindmapView from '$lib/components/views/MindmapView.svelte';
-	import { Alert, Badge, Button } from 'flowbite-svelte';
+	import { Alert, Button } from 'flowbite-svelte';
 	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
 	const view = writable<ProjectView | null>(null);
@@ -132,7 +132,7 @@
 				<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
 					{$view?.title}
 				</h1>
-				<Badge color="indigo">{$view ? $t(`projects.viewType.${$view.viewType}` as MessageKey) : ''}</Badge>
+				<span class="text-xs font-medium tone-blue">{$view ? $t(`projects.viewType.${$view.viewType}` as MessageKey) : ''}</span>
 			{/if}
 		</div>
 		<Button href="/projects/{page.params.id}/settings/views" color="light" size="sm"

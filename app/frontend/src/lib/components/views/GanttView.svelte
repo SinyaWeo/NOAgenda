@@ -28,7 +28,7 @@
 					? 'border-b border-gray-100 dark:border-gray-700'
 					: ''}"
 			>
-				<span class="w-2 h-2 rounded-full shrink-0" data-status={overdue ? 'overdue' : task.status}></span>
+				<span class="w-2 h-2 rounded-full shrink-0 bg-current" data-status={overdue ? 'overdue' : task.status}></span>
 				<a
 					href="/tasks/{task.id}"
 					class="flex-1 font-medium text-gray-800 dark:text-gray-200 hover:underline {large &&
@@ -40,7 +40,7 @@
 					>{$fmt.date(task.dueDate as string)}</span
 				>
 				<span
-					class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
+					class="inline-flex items-center text-xs font-semibold shrink-0"
 					data-status={task.status}>{$t(`common.status.${task.status ?? 'open'}` as MessageKey)}</span
 				>
 			</div>

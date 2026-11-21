@@ -23,7 +23,7 @@
 					>{task.title}</a
 				>
 				<span
-					class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
+					class="inline-flex items-center text-xs font-semibold shrink-0"
 					data-status={task.status}>{$t(`common.status.${task.status ?? 'open'}` as MessageKey)}</span
 				>
 				{#if task.dueDate}<span class="text-xs shrink-0 {isOverdue(task) ? 'text-red-500' : 'text-gray-400'}"

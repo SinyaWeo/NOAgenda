@@ -5,7 +5,7 @@
 	import type { Project } from '$lib/types';
 	import type { FavoriteRow } from '$lib/types-misc';
 	import { writable } from 'svelte/store';
-	import { Alert, Badge, Button, Card, Progressbar } from 'flowbite-svelte';
+	import { Alert, Button, Card, Progressbar } from 'flowbite-svelte';
 	import { t } from '$lib/i18n';
 	import { FolderOutline, PlusOutline, StarOutline, StarSolid } from 'flowbite-svelte-icons';
 
@@ -89,7 +89,7 @@
 							/>{/if}
 					</button>
 				</div>
-				{#if project.isArchived}<Badge color="gray">{$t('projects.archived')}</Badge>{/if}
+				{#if project.isArchived}<span class="text-xs font-medium tone-gray">{$t('projects.archived')}</span>{/if}
 				{@const stats = $taskStats[project.id]}
 				{#if stats && stats.total > 0}
 					<div class="mt-1">

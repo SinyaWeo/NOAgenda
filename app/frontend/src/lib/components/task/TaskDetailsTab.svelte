@@ -61,7 +61,7 @@
 			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
 				{$t('common.field.priority')}
 			</p>
-			<p class="text-sm text-gray-900 dark:text-white" data-priority={task.priority}>
+			<p class="text-sm" data-priority={task.priority}>
 				{$t(`common.priority.${task.priority ?? 0}` as MessageKey)}
 			</p>
 		</div>

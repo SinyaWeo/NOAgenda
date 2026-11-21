@@ -69,7 +69,7 @@
 						class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline">{sub.title}</a
 					>
 					<span
-						class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold shrink-0"
+						class="inline-flex items-center text-xs font-semibold shrink-0"
 						data-status={sub.status ?? 'open'}
 						>{$t(`common.status.${sub.status ?? 'open'}` as MessageKey)}</span
 					>
