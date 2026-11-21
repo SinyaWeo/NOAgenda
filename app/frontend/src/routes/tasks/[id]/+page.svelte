@@ -25,7 +25,8 @@
 		Task,
 		TaskAssignee,
 		TaskLabel,
-		TaskRelation
+		TaskRelation,
+		UserSummary
 	} from '$lib/types';
 	import TaskDetailsTab from '$lib/components/task/TaskDetailsTab.svelte';
 	import TaskWorkTab from '$lib/components/task/TaskWorkTab.svelte';
@@ -36,6 +37,8 @@
 	let task = $state<Task | null>(null);
 	let comments = $state<Comment[]>([]);
 	let assignees = $state<TaskAssignee[]>([]);
+	/** People the creator may assign this task to (themselves + members of teams they own). */
+	let assignable = $state<UserSummary[]>([]);
 	let taskLabels = $state<TaskLabel[]>([]);
 	let allLabels = $state<Label[]>([]); // the user's own labels: the ones that can be attached
 	let attachments = $state<Attachment[]>([]);
@@ -59,7 +62,7 @@
 	}
 
 	async function loadTask(id: string, isStale: () => boolean) {
-		const [t, c, a, l, att, rem, rel, sub, mine] = await Promise.all([
+		const [t, c, a, l, att, rem, rel, sub, mine, members] = await Promise.all([
 			apiGetAuth<Task>(`/tasks/${id}`),
 			apiGetAuth<Comment[]>(`/comments?taskId=${id}`),
 			apiGetAuth<TaskAssignee[]>(`/tasks/${id}/assignees`),
@@ -68,7 +71,8 @@
 			apiGetAuth<Reminder[]>(`/tasks/${id}/reminders`).catch(() => []),
 			apiGetAuth<TaskRelation[]>(`/tasks/${id}/relations`).catch(() => []),
 			apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`).catch(() => []),
-			apiGetAuth<Label[]>('/labels').catch((): Label[] => [])
+			apiGetAuth<Label[]>('/labels').catch((): Label[] => []),
+			apiGetAuth<UserSummary[]>('/teams/assignable-users').catch((): UserSummary[] => [])
 		]);
 		if (isStale()) return; // the user already moved on to another task
 		task = t;
@@ -80,6 +84,26 @@
 		relations = rel;
 		subtasks = sub;
 		allLabels = mine;
+		const me = $authSession.user;
+		assignable =
+			me && t.createdBy === me.id && members.length
+				? [{ id: me.id, username: me.username, name: me.name }, ...members.filter((m) => m.id !== me.id)]
+				: [];
+	}
+
+	/** Make `userId` the (only) assignee: add them first so the task is never left unassigned on failure. */
+	async function assignTo(userId: number) {
+		const id = page.params.id;
+		try {
+			if (!assignees.some((a) => a.user?.id === userId))
+				await apiPostAuth(`/tasks/${id}/assignees`, { userId });
+			for (const a of assignees) {
+				if (a.user && a.user.id !== userId) await apiDeleteAuth(`/tasks/${id}/assignees/${a.user.id}`);
+			}
+			assignees = await apiGetAuth<TaskAssignee[]>(`/tasks/${id}/assignees`);
+		} catch (e: unknown) {
+			fail(e);
+		}
 	}
 
 	// Reloads when only the id changes (subtask / relation links keep this component mounted).
@@ -324,6 +348,8 @@
 			{taskLabels}
 			{allLabels}
 			{assignees}
+			{assignable}
+			onAssign={assignTo}
 			onAddLabel={addLabel}
 			onRemoveLabel={removeLabel}
 			onStatus={updateStatus}

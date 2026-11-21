@@ -54,7 +54,7 @@ export class NodeService {
     if (filter.userId !== undefined) {
       // Same rules as NodeAccessService.level(): a node is visible when it sits at or
       // below a project the user owns or was granted (directly or via a team), or
-      // below a personal top-level task they created. Any depth; cycle-safe (UNION).
+      // below a personal top-level task they created or are assigned to. Any depth; cycle-safe (UNION).
       qb.andWhere(
         `node.id IN (
           WITH RECURSIVE tree (id) AS (
@@ -64,7 +64,9 @@ export class NodeService {
                       OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.projectId = p.id AND pu.userId = :uid)
                       OR EXISTS (SELECT 1 FROM project_teams pt JOIN team_members tm ON tm.teamId = pt.teamId
                                   WHERE pt.projectId = p.id AND tm.userId = :uid)))
-                OR (p.type = 'task' AND p.parentId IS NULL AND p.createdBy = :uid)
+                OR (p.type = 'task' AND p.parentId IS NULL AND (
+                      p.createdBy = :uid
+                      OR EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.nodeId = p.id AND ta.userId = :uid)))
             UNION
             SELECT c.id FROM nodes c JOIN tree t ON c.parentId = t.id
           )

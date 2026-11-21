@@ -17,6 +17,7 @@ import { TaskService } from '../task/task.service';
 import { TaskAssignee } from './task-assignee.entity';
 import { NotificationService } from '../notification/notification.service';
 import { UserService } from '../user/user.service';
+import { TeamService } from '../team/team.service';
 
 @Controller('tasks/:taskId/assignees')
 export class TaskAssigneeController {
@@ -26,6 +27,7 @@ export class TaskAssigneeController {
     private readonly access: NodeAccessService,
     private readonly notifications: NotificationService,
     private readonly users: UserService,
+    private readonly teams: TeamService,
   ) {}
 
   @Get()
@@ -47,8 +49,14 @@ export class TaskAssigneeController {
     await this.access.assertWrite(req.user.userId, Number(taskId));
     // Only real, active users who can already see the task: no notifying strangers.
     await this.users.assertActive(body.userId);
-    if ((await this.access.level(body.userId, Number(taskId))) < Access.READ) {
-      throw new BadRequestException('That user has no access to this task');
+    // Users who cannot see the task yet can still be assigned when the caller (ADMIN on it, e.g. its
+    // creator) owns a team they belong to; being assigned then grants them access (NodeAccessService).
+    const canSee = (await this.access.level(body.userId, Number(taskId))) >= Access.READ;
+    if (!canSee) {
+      const isAdmin = (await this.access.level(req.user.userId, Number(taskId))) >= Access.ADMIN;
+      if (!isAdmin || !(await this.teams.isOwnerOrOwnedTeamMember(req.user.userId, body.userId))) {
+        throw new BadRequestException('That user has no access to this task');
+      }
     }
     const assignee = await this.taskAssigneeService.add(taskId, body.userId);
     void this.notifications.notify({

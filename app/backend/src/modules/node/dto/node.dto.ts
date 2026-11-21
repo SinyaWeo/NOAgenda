@@ -129,6 +129,12 @@ export class TaskCreateDto extends NodeCommonDto {
   @IsNotEmpty()
   @MaxLength(255)
   title!: string;
+
+  /** Who the new task is assigned to; defaults to the creator. */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  assigneeId?: number;
 }
 
 export class TaskUpdateDto extends NodeCommonDto {

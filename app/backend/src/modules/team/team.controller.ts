@@ -11,7 +11,7 @@ import {
   ForbiddenException,
   Request,
 } from '@nestjs/common';
-import { TeamService } from './team.service';
+import { TeamService, UserSummary } from './team.service';
 import { Team } from './team.entity';
 import { CreateTeamDto, UpdateTeamDto } from './dto/team.dto';
 
@@ -22,6 +22,12 @@ export class TeamController {
   @Get()
   async findAll(@Request() req: AuthRequest): Promise<Team[]> {
     return this.teamService.findAll(req.user.userId);
+  }
+
+  /** Members of the teams the caller owns: who they can assign tasks to. Declared before ':id'. */
+  @Get('assignable-users')
+  async assignableUsers(@Request() req: AuthRequest): Promise<UserSummary[]> {
+    return this.teamService.findAssignableUsers(req.user.userId);
   }
 
   @Get(':id')

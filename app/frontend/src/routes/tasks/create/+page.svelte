@@ -11,7 +11,7 @@
 	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 	import { showToast } from '$lib/toast';
 	import { errMessage } from '$lib/errors';
-	import type { Project, Task } from '$lib/types';
+	import type { Project, Task, UserSummary } from '$lib/types';
 
 	const title = writable('');
 	const description = writable('');
@@ -21,12 +21,27 @@
 	const error = writable('');
 	const loading = writable(false);
 	const projects = writable<Project[]>([]);
+	const assigneeId = writable<number | undefined>(undefined);
+	const assignable = writable<UserSummary[]>([]);
 
 	onMount(async () => {
 		const me = await getCurrentUser();
 		if (!me) {
 			goto('/user/login');
 			return;
+		}
+		assigneeId.set(me.id);
+		try {
+			// Members of the teams I own; empty (so no picker) for everyone else.
+			const members = await apiGetAuth<UserSummary[]>('/teams/assignable-users');
+			if (members.length) {
+				assignable.set([
+					{ id: me.id, username: me.username, name: me.name },
+					...members.filter((m) => m.id !== me.id)
+				]);
+			}
+		} catch {
+			// no picker: the task is assigned to its creator
 		}
 		const pid = page.url.searchParams.get('projectId');
 		if (pid) projectId.set(Number(pid));
@@ -51,7 +66,8 @@
 				description: get(description),
 				...(pid ? { project: { id: pid } } : {}),
 				dueDate: dateInputToIso(get(dueDate)) ?? undefined,
-				priority: Number(get(priority))
+				priority: Number(get(priority)),
+				assigneeId: get(assigneeId)
 			});
 			showToast(tr('tasks.toast.created'), 'success');
 			goto(`/tasks/${task.id}`);
@@ -110,6 +126,16 @@
 				<Select id="task-project" bind:value={$projectId} required>
 					<option value={undefined}>{$t('tasks.form.selectProject')}</option>
 					{#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
+				</Select>
+			</div>
+		{/if}
+		{#if $assignable.length > 1}
+			<div>
+				<Label for="task-assignee" class="mb-1">{$t('tasks.form.assignee')}</Label>
+				<Select id="task-assignee" bind:value={$assigneeId}>
+					{#each $assignable as u (u.id)}
+						<option value={u.id}>{u.name || u.username}</option>
+					{/each}
 				</Select>
 			</div>
 		{/if}

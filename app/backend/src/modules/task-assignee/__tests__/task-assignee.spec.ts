@@ -7,6 +7,7 @@ import { TaskService } from '../../task/task.service';
 import { NodeAccessService } from '../../node/node-access.service';
 import { NotificationService } from '../../notification/notification.service';
 import { UserService } from '../../user/user.service';
+import { TeamService } from '../../team/team.service';
 import { asMock, authReq, type Mocks } from '../../../common/__tests__/test-utils';
 
 import { AddAssigneeDto, AddTaskLabelDto, AddRelationDto } from '../dto/task-links.dto';
@@ -19,12 +20,14 @@ describe('TaskAssigneeController', () => {
   let access: Mocks;
   let notifications: Mocks;
   let users: Mocks;
+  let teams: Mocks;
   let controller: TaskAssigneeController;
 
   beforeEach(() => {
     service = { findByTask: jest.fn(async () => []), add: jest.fn(async () => ({ id: 1 })), remove: jest.fn() };
     tasks = { findById: jest.fn(async () => ({ id: 7, title: 'Ship it' })) };
     access = { assertRead: jest.fn(), assertWrite: jest.fn(), level: jest.fn(async () => 1) };
+    teams = { isOwnerOrOwnedTeamMember: jest.fn(async () => false) };
     users = { assertActive: jest.fn(async () => undefined) };
     notifications = { notify: jest.fn(async () => undefined) };
     controller = new TaskAssigneeController(
@@ -33,6 +36,7 @@ describe('TaskAssigneeController', () => {
       asMock<NodeAccessService>(access),
       asMock<NotificationService>(notifications),
       asMock<UserService>(users),
+      asMock<TeamService>(teams),
     );
   });
 
@@ -52,6 +56,20 @@ describe('TaskAssigneeController', () => {
     access.assertRead.mockRejectedValue(new ForbiddenException());
     await expect(controller.findAll(7, req)).rejects.toBeInstanceOf(ForbiddenException);
     expect(service.findByTask).not.toHaveBeenCalled();
+  });
+
+  it('add lets a task admin assign a member of a team they own who cannot see the task yet', async () => {
+    access.level.mockImplementation(async (uid: number) => (uid === 5 ? 0 : 3));
+    teams.isOwnerOrOwnedTeamMember.mockResolvedValue(true);
+    await controller.add(7, { userId: 5 }, req);
+    expect(teams.isOwnerOrOwnedTeamMember).toHaveBeenCalledWith(2, 5);
+    expect(service.add).toHaveBeenCalledWith(7, 5);
+  });
+
+  it('add rejects a user without access who is not in a team the caller owns', async () => {
+    access.level.mockImplementation(async (uid: number) => (uid === 5 ? 0 : 3));
+    await expect(controller.add(7, { userId: 5 }, req)).rejects.toBeInstanceOf(BadRequestException);
+    expect(service.add).not.toHaveBeenCalled();
   });
 
   it('add asserts write, saves and notifies the assignee with the actor', async () => {

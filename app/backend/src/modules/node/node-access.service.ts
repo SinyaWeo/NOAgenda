@@ -30,7 +30,8 @@ const PROTECTED_NODE_FIELDS = ['id', 'ownerId', 'createdBy', 'parent', 'children
  * - A task inside a project: exactly the access the user has on that project
  *   (being the task's creator adds nothing, so removing someone from a project
  *   also removes their access to what they created there).
- * - A personal task (no project above it): its creator => ADMIN.
+ * - A personal task (no project above it): its creator => ADMIN; a user assigned to
+ *   its top-level task (`task_assignees`) => WRITE.
  * - Anything else (including nodes with no owner / creator and no grant): NONE.
  *   Missing ownership information never grants access.
  */
@@ -52,12 +53,22 @@ export class NodeAccessService {
     for (let depth = 0; cur && depth < MAX_DEPTH; depth++) {
       if (cur.type === NodeType.PROJECT) return this.projectLevel(userId, cur);
       if (cur.parentId == null) {
-        const personal = start.type === NodeType.TASK && start.createdBy != null && start.createdBy === userId;
-        return personal ? Access.ADMIN : Access.NONE;
+        if (start.type !== NodeType.TASK) return Access.NONE;
+        if (start.createdBy != null && start.createdBy === userId) return Access.ADMIN;
+        // A personal task's assignee may work on it (and its subtasks): WRITE, never ADMIN.
+        return cur.type === NodeType.TASK && (await this.isAssignee(userId, cur.id)) ? Access.WRITE : Access.NONE;
       }
       cur = await this.nodeRepository.findOne({ where: { id: cur.parentId } });
     }
     return Access.NONE; // broken or over-deep chain: fail closed
+  }
+
+  private async isAssignee(userId: number, taskId: number): Promise<boolean> {
+    const rows: unknown[] = await this.nodeRepository.manager.query(
+      'SELECT 1 FROM task_assignees WHERE nodeId = ? AND userId = ? LIMIT 1',
+      [taskId, userId],
+    );
+    return rows.length > 0;
   }
 
   private async projectLevel(userId: number, project: Node): Promise<Access> {

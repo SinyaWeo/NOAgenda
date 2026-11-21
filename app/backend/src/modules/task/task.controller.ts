@@ -1,8 +1,26 @@
 import type { AuthRequest } from '../../common/auth-user';
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, NotFoundException, Request } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  NotFoundException,
+  ForbiddenException,
+  Request,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { TaskService, TaskFilter } from './task.service';
 import { Node, NodeType } from '../node/node.entity';
-import { NodeAccessService } from '../node/node-access.service';
+import { Access, NodeAccessService } from '../node/node-access.service';
+import { TaskAssignee } from '../task-assignee/task-assignee.entity';
+import { TeamService } from '../team/team.service';
+import { UserService } from '../user/user.service';
+import { NotificationService } from '../notification/notification.service';
 import {
   TaskCreateDto,
   TaskUpdateDto,
@@ -16,6 +34,11 @@ export class TaskController {
   constructor(
     private readonly taskService: TaskService,
     private readonly access: NodeAccessService,
+    @InjectRepository(TaskAssignee)
+    private readonly assignees: Repository<TaskAssignee>,
+    private readonly teams: TeamService,
+    private readonly users: UserService,
+    private readonly notifications: NotificationService,
   ) {}
 
   /** Load a node and require it to be a task: /tasks/* must never act on projects. */
@@ -54,9 +77,39 @@ export class TaskController {
 
   @Post()
   async create(@Body() body: TaskCreateDto, @Request() req: AuthRequest): Promise<Node> {
-    const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
+    const { assigneeId, ...rest } = body;
+    const data = this.taskService.normalizeTaskPayload(this.access.sanitize(rest));
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
-    return this.taskService.create({ ...data, createdBy: req.user.userId });
+    const assignee = assigneeId ?? req.user.userId;
+    if (assignee !== req.user.userId) await this.assertCanAssign(req.user.userId, assignee, data.parentId);
+    const task = await this.taskService.create({ ...data, createdBy: req.user.userId });
+    // Every new task is assigned: to its creator unless they picked someone else.
+    await this.assignees.save(this.assignees.create({ node: { id: task.id }, user: { id: assignee } }));
+    if (assignee !== req.user.userId) {
+      void this.notifications.notify({
+        type: 'task_assigned',
+        recipients: [assignee],
+        actorId: req.user.userId,
+        actorName: req.user.username,
+        nodeId: task.id,
+        kind: 'task',
+        title: task.title ?? '',
+      });
+    }
+    return task;
+  }
+
+  /**
+   * Another user may be assigned a new task when they can read its project, or (personal task)
+   * when they are a member of a team the creator owns.
+   */
+  private async assertCanAssign(callerId: number, assigneeId: number, parentId?: number | null): Promise<void> {
+    await this.users.assertActive(assigneeId);
+    const allowed =
+      parentId != null
+        ? (await this.access.level(assigneeId, Number(parentId))) >= Access.READ
+        : await this.teams.isOwnerOrOwnedTeamMember(callerId, assigneeId);
+    if (!allowed) throw new ForbiddenException('You cannot assign this task to that user');
   }
 
   @Post('bulk')

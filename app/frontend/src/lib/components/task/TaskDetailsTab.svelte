@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t, fmt, type MessageKey } from '$lib/i18n';
-	import type { Label, Task, TaskAssignee, TaskLabel } from '$lib/types';
+	import type { Label, Task, TaskAssignee, TaskLabel, UserSummary } from '$lib/types';
 	import { describeRepeat } from '$lib/repeat';
 	import RepeatHistory from './RepeatHistory.svelte';
 	import { Button, Card, Select } from 'flowbite-svelte';
@@ -10,6 +10,8 @@
 		taskLabels,
 		allLabels,
 		assignees,
+		assignable,
+		onAssign,
 		onAddLabel,
 		onRemoveLabel,
 		onStatus,
@@ -21,6 +23,9 @@
 		/** The user's own labels (only these can be attached). */
 		allLabels: Label[];
 		assignees: TaskAssignee[];
+		/** Who the creator may assign to; empty when the viewer cannot reassign. */
+		assignable: UserSummary[];
+		onAssign: (userId: number) => void;
 		onAddLabel: (labelId: number) => void;
 		onRemoveLabel: (labelId: number) => void;
 		onStatus: (status: string) => void;
@@ -188,7 +193,21 @@
 				{/if}
 			</div>
 		</div>
-		{#if assignees.length}
+		{#if assignable.length > 1}
+			<div>
+				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+					{$t('tasks.details.assignees')}
+				</p>
+				<Select
+					value={assignees[0]?.user?.id ?? ''}
+					onchange={(e) => onAssign(Number((e.target as HTMLSelectElement).value))}
+					class="w-full max-w-xs"
+				>
+					{#if !assignees.length}<option value="">{$t('tasks.form.assignee')}</option>{/if}
+					{#each assignable as u (u.id)}<option value={u.id}>{u.name || u.username}</option>{/each}
+				</Select>
+			</div>
+		{:else if assignees.length}
 			<div>
 				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
 					{$t('tasks.details.assignees')}

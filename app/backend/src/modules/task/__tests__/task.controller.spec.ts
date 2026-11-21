@@ -2,6 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NodeAccessService } from '../../node/node-access.service';
 import { TaskController } from '../task.controller';
 import { TaskService } from '../task.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { TaskAssignee } from '../../task-assignee/task-assignee.entity';
+import { TeamService } from '../../team/team.service';
+import { UserService } from '../../user/user.service';
+import { NotificationService } from '../../notification/notification.service';
 
 describe('TaskController', () => {
   let controller: TaskController;
@@ -22,6 +27,10 @@ describe('TaskController', () => {
             sanitize: jest.fn((x) => x),
           },
         },
+        { provide: getRepositoryToken(TaskAssignee), useValue: { save: jest.fn(), create: jest.fn((x) => x) } },
+        { provide: TeamService, useValue: { isOwnerOrOwnedTeamMember: jest.fn() } },
+        { provide: UserService, useValue: { assertActive: jest.fn() } },
+        { provide: NotificationService, useValue: { notify: jest.fn() } },
         {
           provide: TaskService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },

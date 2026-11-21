@@ -85,6 +85,7 @@ export const messages = {
 	'tasks.form.percentDone': 'Percent Done',
 	'tasks.form.selectProject': 'Select a project…',
 	'tasks.form.saveChanges': 'Save Changes',
+	'tasks.form.assignee': 'Assignee',
 	'tasks.form.createButton': 'Create Task',
 	'tasks.form.creating': 'Creating…',
 	'tasks.repeat.legend': 'Repeat',

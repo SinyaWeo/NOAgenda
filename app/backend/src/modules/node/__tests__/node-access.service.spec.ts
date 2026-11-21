@@ -5,13 +5,15 @@ import { NodeType } from '../node.entity';
 
 type N = { id: number; type: NodeType; ownerId?: number | null; createdBy?: number | null; parentId?: number | null };
 
-function build(nodes: N[], grants: Record<number, string[]> = {}) {
+function build(nodes: N[], grants: Record<number, string[]> = {}, assigned: [number, number][] = []) {
   const repo = {
     findOne: jest.fn(async ({ where }: { where: { id: number } }) => nodes.find((n) => n.id === where.id) ?? null),
     manager: {
       // args: [projectId, userId, projectId, userId]
-      query: jest.fn(async (_sql: string, args: number[]) =>
-        (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission })),
+      query: jest.fn(async (sql: string, args: number[]) =>
+        sql.includes('task_assignees')
+          ? assigned.filter(([t, u]) => t === args[0] && u === args[1]).map(() => ({ 1: 1 }))
+          : (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission })),
       ),
     },
   };
@@ -29,6 +31,13 @@ const task = (id: number, parentId: number | null, createdBy: number | null): N 
 });
 
 describe('NodeAccessService', () => {
+  it('an assignee of a personal task gets WRITE (not ADMIN), also on its subtasks; others NONE', async () => {
+    const svc = build([task(11, null, OTHER), task(12, 11, OTHER)], {}, [[11, ME]]);
+    expect(await svc.level(ME, 11)).toBe(Access.WRITE);
+    expect(await svc.level(ME, 12)).toBe(Access.WRITE);
+    expect(await svc.level(3, 11)).toBe(Access.NONE);
+  });
+
   it('owner has ADMIN on project and on its tasks/subtasks', async () => {
     const svc = build([project(10, ME), task(11, 10, OTHER), task(12, 11, OTHER)]);
     expect(await svc.level(ME, 10)).toBe(Access.ADMIN);
