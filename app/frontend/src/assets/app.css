@@ -508,3 +508,19 @@ a.text-gray-900 {
 .dark .brand-text {
 	color: var(--color-primary-400);
 }
+
+/* Svelte Flow (mindmap): dark theme for zoom controls and attribution link */
+html.dark .svelte-flow {
+	--xy-controls-button-background-color: #1f2937;
+	--xy-controls-button-background-color-hover: #374151;
+	--xy-controls-button-color: #e5e7eb;
+	--xy-controls-button-color-hover: #fff;
+	--xy-controls-button-border-color: #374151;
+	--xy-attribution-background-color: rgba(31, 41, 55, 0.7);
+}
+html.dark .svelte-flow .svelte-flow__attribution a {
+	color: #9ca3af;
+}
+html.dark .svelte-flow .svelte-flow__controls-button svg {
+	fill: currentColor;
+}
