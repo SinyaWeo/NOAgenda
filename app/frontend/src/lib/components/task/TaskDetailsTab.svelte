@@ -3,7 +3,7 @@
 	import type { Label, Task, TaskAssignee, TaskLabel } from '$lib/types';
 	import { describeRepeat } from '$lib/repeat';
 	import RepeatHistory from './RepeatHistory.svelte';
-	import { Button, Card, Progressbar, Select } from 'flowbite-svelte';
+	import { Button, Card, Select } from 'flowbite-svelte';
 
 	let {
 		task,
@@ -27,6 +27,10 @@
 		onPercentDone: (value: number) => void;
 		onDefer: (days: number) => void;
 	} = $props();
+
+	/** Live value while dragging the slider; null once the change is committed. */
+	let dragValue = $state<number | null>(null);
+	const progress = $derived(dragValue ?? task.percentDone ?? 0);
 
 	const repeatSummary = $derived.by(() => {
 		void $t; // re-runs when the language changes
@@ -102,18 +106,25 @@
 
 	<div class="mb-4">
 		<div class="flex items-center justify-between mb-2">
-			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
+			<label for="task-progress" class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
 				{$t('common.field.progress')}
-			</p>
-			<Select
-				value={task.percentDone ?? 0}
-				onchange={(e) => onPercentDone(Number((e.target as HTMLSelectElement).value))}
-				class="w-auto"
-			>
-				{#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p (p)}<option value={p}>{p}%</option>{/each}
-			</Select>
+			</label>
+			<span class="text-sm font-medium">{progress}%</span>
 		</div>
-		<Progressbar progress={task.percentDone ?? 0} />
+		<input
+			id="task-progress"
+			type="range"
+			min="0"
+			max="100"
+			step="10"
+			class="w-full h-2 cursor-pointer accent-primary-600"
+			value={progress}
+			oninput={(e) => (dragValue = Number((e.target as HTMLInputElement).value))}
+			onchange={(e) => {
+				onPercentDone(Number((e.target as HTMLInputElement).value));
+				dragValue = null;
+			}}
+		/>
 	</div>
 
 	{#if task.dueDate}
