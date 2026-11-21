@@ -42,7 +42,7 @@
 			{task.description}
 		</p>{/if}
 
-	<div class="grid grid-cols-2 gap-4 mb-4 sm:grid-cols-4">
+	<div class="grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-4 mb-4">
 		<div>
 			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
 				{$t('common.field.status')}
