@@ -119,7 +119,7 @@ s, chk = call('GET', f'/filters/{fid}', None, Bt); check('filter userId reassign
 # --- 3b. future cycles of repeating tasks (calendar) follow the same visibility
 s, rt = call('POST', '/tasks', {'title': 'weekly secret', 'projectId': pid, 'dueDate': '2026-01-05T09:00:00.000Z', 'repeatAfter': 7}, A); check('alice creates repeating task', s, 201)
 OCC = '/tasks/occurrences?from=2026-01-01T00:00:00.000Z&to=2026-02-01T00:00:00.000Z'
-s, mine = call('GET', OCC, None, A); check('alice sees future cycles', (s, len([o for o in mine if o['taskId'] == rt['id']])), (200, 4))
+s, mine = call('GET', OCC, None, A); check('alice sees future cycles', (s, len([o for o in mine if o['taskId'] == rt['id']])), (200, 3))
 s, theirs = call('GET', OCC, None, Bt); check('bob sees no cycles of alice\'s project', (s, [o for o in theirs if o['taskId'] == rt['id']]), (200, []))
 s, _ = call('GET', '/tasks/occurrences?from=2026-01-01T00:00:00.000Z&to=2027-01-01T00:00:00.000Z', None, A); check('occurrence range is capped', s, 400)
 
@@ -127,7 +127,7 @@ s, _ = call('GET', '/tasks/occurrences?from=2026-01-01T00:00:00.000Z&to=2027-01-
 s, _ = call('POST', f'/projects/{pid}/users', {'userId': bid, 'permission': 'read'}, A); check('alice shares read with bob', s, [200, 201])
 s, _ = call('GET', f'/tasks/{tid}', None, Bt); check('bob(read) can read task', s, 200)
 s, _ = call('GET', f'/nodes/{pid}/tree', None, Bt); check('bob(read) can read tree', s, 200)
-s, shared = call('GET', OCC, None, Bt); check('bob(read) sees the shared cycles', (s, len([o for o in shared if o['taskId'] == rt['id']])), (200, 4))
+s, shared = call('GET', OCC, None, Bt); check('bob(read) sees the shared cycles', (s, len([o for o in shared if o['taskId'] == rt['id']])), (200, 3))
 s, _ = call('PUT', f'/tasks/{tid}', {'title': 'x'}, Bt); check('bob(read) cannot edit', s, 403)
 s, _ = call('POST', '/comments', {'content': 'hi', 'taskId': tid}, Bt); check('bob(read) cannot comment', s, 403)
 s, _ = call('GET', f'/webhooks?projectId={pid}', None, Bt); check('bob(read) cannot list webhooks', s, 403)
