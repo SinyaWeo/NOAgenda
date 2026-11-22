@@ -38,6 +38,8 @@
 		label: MessageKey;
 		icon?: Icon; // omitted: the custom mind-map glyph
 		activeIcon?: Icon;
+		/** Active only on this exact path, not on pages below it (the admin overview vs. the other admin pages). */
+		exact?: boolean;
 	}
 
 	const WORK: NavItem[] = [
@@ -53,7 +55,7 @@
 		{ href: '/filters', label: 'layout.nav.filters', icon: FilterOutline },
 		{ href: '/activity', label: 'layout.nav.activity' }
 	];
-	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.adminOverview', icon: CogOutline };
+	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.adminOverview', icon: CogOutline, exact: true };
 	const AUDIT: NavItem = { href: '/admin/activity', label: 'layout.nav.auditLog' };
 	const ABOUT: NavItem = { href: '/about', label: 'layout.nav.about', icon: InfoCircleOutline };
 
@@ -66,8 +68,9 @@
 		} catch (_) {}
 	});
 
-	function isActive(path: string): boolean {
-		return currentPath.startsWith(path);
+	function isActive(item: NavItem): boolean {
+		if (item.exact) return currentPath.replace(/\/+$/, '') === item.href;
+		return currentPath.startsWith(item.href);
 	}
 
 	function toggleSidebar() {
@@ -79,7 +82,7 @@
 </script>
 
 {#snippet navItem(item: NavItem)}
-	{@const active = isActive(item.href)}
+	{@const active = isActive(item)}
 	{@const Icon = active && item.activeIcon ? item.activeIcon : item.icon}
 	<li>
 		<a href={item.href} class="nav-link" class:active>
