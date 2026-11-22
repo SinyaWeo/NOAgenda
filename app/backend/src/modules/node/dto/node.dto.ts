@@ -302,6 +302,21 @@ export class TaskListQueryDto extends PagedQueryDto {
   parentTaskId?: number;
 }
 
+/** Range of a calendar page: future cycles of repeating tasks between `from` and `to`. */
+export class TaskOccurrencesQueryDto {
+  @IsDateString()
+  from!: string;
+
+  @IsDateString()
+  to!: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  projectId?: number;
+}
+
 export class TaskPositionDto {
   @IsNumber()
   position!: number;

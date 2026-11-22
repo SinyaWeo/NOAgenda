@@ -85,6 +85,7 @@
 				<option value="kanban">{$t('projects.viewType.kanban')}</option>
 				<option value="gantt">{$t('projects.viewType.gantt')}</option>
 				<option value="table">{$t('projects.viewType.table')}</option>
+				<option value="calendar">{$t('projects.viewType.calendar')}</option>
 				<option value="mindmap">{$t('projects.viewType.mindmap')}</option>
 			</Select>
 		</div>

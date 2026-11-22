@@ -13,6 +13,10 @@ export interface Formatters {
 	/** Long date with weekday, e.g. "Monday, November 16, 2026". */
 	dateLong(value?: string | Date | null): string;
 	number(value: number | null | undefined): string;
+	/** Short weekday name of a calendar day given as a UTC-noon Date (see lib/calendar.ts keyToDate): "Mon". */
+	weekdayShort(day: Date): string;
+	/** Month and year of such a day: "November 2026". */
+	monthYear(day: Date): string;
 }
 
 function toDate(v: string | Date | null | undefined): Date | null {
@@ -50,6 +54,9 @@ export function makeFormatters(locale: Locale, timeZone?: string): Formatters {
 		day: 'numeric'
 	});
 	const num = new Intl.NumberFormat(locale);
+	// Calendar days are plain dates, not instants: format them in UTC so no zone can move them.
+	const weekday = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', weekday: 'short' });
+	const monthYear = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', month: 'long', year: 'numeric' });
 	return {
 		date: (v) => {
 			const d = toDate(v);
@@ -60,6 +67,8 @@ export function makeFormatters(locale: Locale, timeZone?: string): Formatters {
 			return d ? dateTime.format(d) : '';
 		},
 		dateLong: (v) => dateLong.format(toDate(v) ?? new Date()),
-		number: (v) => (v === null || v === undefined ? '' : num.format(v))
+		number: (v) => (v === null || v === undefined ? '' : num.format(v)),
+		weekdayShort: (day) => weekday.format(day),
+		monthYear: (day) => monthYear.format(day)
 	};
 }

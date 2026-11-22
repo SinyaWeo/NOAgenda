@@ -36,3 +36,14 @@ const INCOMING: Record<RelationKind, MessageKey> = {
 export function relationLabel(kind: RelationKind, incoming: boolean): MessageKey {
 	return (incoming ? INCOMING : OUTGOING)[kind] ?? 'tasks.relation.related';
 }
+
+/** A future cycle of a repeating task, from GET /tasks/occurrences. Read-only: the task row holds only its current cycle. */
+export interface TaskOccurrence {
+	taskId: number;
+	title: string | null;
+	dueDate: string;
+	startDate: string | null;
+	status: 'open' | 'in_progress' | 'done' | null;
+	priority: number | null;
+	projectId: number | null;
+}

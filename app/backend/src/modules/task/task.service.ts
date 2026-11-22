@@ -6,6 +6,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { NodeService, NodeFilter } from '../node/node.service';
 import { Node, NodeType, NodeStatus } from '../node/node.entity';
 import { normalizeParentRefs } from '../node/node-payload';
+import { occurrencesBetween } from '../node/node-recurrence';
 
 // Re-export the shape consumers expect
 export type Task = Node;
@@ -25,6 +26,17 @@ export interface TaskFilter {
   dueAfter?: Date;
   includeUndated?: boolean;
   excludeDone?: boolean;
+}
+
+/** A future cycle of a repeating task (read-only: the task itself holds only its current cycle). */
+export interface TaskOccurrence {
+  taskId: number;
+  title: string | null;
+  dueDate: Date;
+  startDate: Date | null;
+  status: NodeStatus | null;
+  priority: number | null;
+  projectId: number | null;
 }
 
 @Injectable()
@@ -52,6 +64,30 @@ export class TaskService {
     if (filter?.includeUndated) nodeFilter.includeUndated = true;
     if (filter?.excludeDone) nodeFilter.excludeDone = true;
     return this.nodeService.findAll(nodeFilter);
+  }
+
+  /** Future cycles of the user's visible repeating tasks that fall between `from` and `to`. */
+  async occurrences(userId: number, from: Date, to: Date, projectId?: number): Promise<TaskOccurrence[]> {
+    const tasks = await this.nodeService.findAll({
+      type: NodeType.TASK,
+      userId,
+      recurringOnly: true,
+      excludeDone: true,
+      dueBefore: to,
+      ...(projectId !== undefined ? { parentId: projectId } : {}),
+    });
+    const timeZone = await this.nodeService.userTimeZone(userId);
+    return tasks.flatMap((t) =>
+      occurrencesBetween(t, from, to, timeZone).map((o) => ({
+        taskId: t.id,
+        title: t.title ?? null,
+        dueDate: o.dueDate,
+        startDate: o.startDate ?? null,
+        status: t.status ?? null,
+        priority: t.priority ?? null,
+        projectId: t.parentId ?? null,
+      })),
+    );
   }
 
   async findById(id: number): Promise<Node | null> {

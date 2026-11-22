@@ -11,6 +11,7 @@
 	import BucketKanbanView from '$lib/components/views/BucketKanbanView.svelte';
 	import TableView from '$lib/components/views/TableView.svelte';
 	import GanttView from '$lib/components/views/GanttView.svelte';
+	import CalendarView from '$lib/components/views/CalendarView.svelte';
 	import MindmapView from '$lib/components/views/MindmapView.svelte';
 	import { Alert, Button } from 'flowbite-svelte';
 	import { CaretLeftSolid } from 'flowbite-svelte-icons';
@@ -163,6 +164,8 @@
 		<TableView tasks={$tasks} />
 	{:else if $view.viewType === 'gantt' || $view.viewType === 'timeline'}
 		<GanttView tasks={$tasks} />
+	{:else if $view.viewType === 'calendar'}
+		<CalendarView projectId={Number(page.params.id)} />
 	{:else if $view.viewType === 'mindmap'}
 		<MindmapView projectId={page.params.id ?? ''} />
 	{:else}

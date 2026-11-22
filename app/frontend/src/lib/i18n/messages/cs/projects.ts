@@ -98,6 +98,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.viewType.gantt': 'Gantt',
 	'projects.viewType.timeline': 'Časová osa',
 	'projects.viewType.mindmap': 'Myšlenková mapa',
+	'projects.viewType.calendar': 'Kalendář',
 
 	'projects.webhooks.title': 'Webhooky',
 	'projects.webhooks.add': 'Přidat webhook',

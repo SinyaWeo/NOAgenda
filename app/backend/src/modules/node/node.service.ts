@@ -28,6 +28,8 @@ export interface NodeFilter {
   /** With dueBefore: tasks without a due date match too. */
   includeUndated?: boolean;
   excludeDone?: boolean;
+  /** Only tasks that repeat. */
+  recurringOnly?: boolean;
 }
 
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
@@ -93,6 +95,7 @@ export class NodeService {
       qb.andWhere('node.status = :status', { status: filter.status });
     }
     if (filter.excludeDone) qb.andWhere("(node.status IS NULL OR node.status != 'done')");
+    if (filter.recurringOnly) qb.andWhere('node.repeatAfter > 0');
     if (filter.priority !== undefined) qb.andWhere('node.priority = :priority', { priority: filter.priority });
     if (filter.dueBefore) {
       qb.andWhere(
@@ -252,6 +255,11 @@ export class NodeService {
       type: existing.type,
       repeatAfter: change.repeatAfter !== undefined ? change.repeatAfter : existing.repeatAfter,
     });
+  }
+
+  /** The time zone a user's calendar dates are counted in. */
+  async userTimeZone(userId?: number): Promise<string> {
+    return this.timeZoneOf(this.nodeRepository.manager, userId);
   }
 
   private async timeZoneOf(m: EntityManager, userId?: number): Promise<string> {

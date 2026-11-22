@@ -8,13 +8,14 @@ import {
   Body,
   Param,
   Query,
+  BadRequestException,
   NotFoundException,
   ForbiddenException,
   Request,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TaskService, TaskFilter } from './task.service';
+import { TaskService, TaskFilter, TaskOccurrence } from './task.service';
 import { Node, NodeType } from '../node/node.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { TaskAssignee } from '../task-assignee/task-assignee.entity';
@@ -26,8 +27,11 @@ import {
   TaskUpdateDto,
   BulkTaskUpdateDto,
   TaskListQueryDto,
+  TaskOccurrencesQueryDto,
   TaskPositionDto,
 } from '../node/dto/node.dto';
+
+const MAX_OCCURRENCE_RANGE_MS = 100 * 24 * 3600 * 1000;
 
 @Controller('tasks')
 export class TaskController {
@@ -65,6 +69,17 @@ export class TaskController {
     if (q.includeUndated === 'true') filter.includeUndated = true;
     if (q.excludeDone === 'true') filter.excludeDone = true;
     return this.taskService.findAll(filter);
+  }
+
+  /** Future cycles of repeating tasks in a date range (at most 100 days), for calendars. */
+  @Get('occurrences')
+  async occurrences(@Request() req: AuthRequest, @Query() q: TaskOccurrencesQueryDto): Promise<TaskOccurrence[]> {
+    const from = new Date(q.from);
+    const to = new Date(q.to);
+    if (to.getTime() < from.getTime() || to.getTime() - from.getTime() > MAX_OCCURRENCE_RANGE_MS) {
+      throw new BadRequestException('Range must be between 0 and 100 days');
+    }
+    return this.taskService.occurrences(req.user.userId, from, to, q.projectId);
   }
 
   @Get(':id')

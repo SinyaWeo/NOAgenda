@@ -92,6 +92,7 @@ export const messages = {
 	'projects.viewType.gantt': 'Gantt',
 	'projects.viewType.timeline': 'Timeline',
 	'projects.viewType.mindmap': 'Mind map',
+	'projects.viewType.calendar': 'Calendar',
 
 	'projects.webhooks.title': 'Webhooks',
 	'projects.webhooks.add': 'Add Webhook',

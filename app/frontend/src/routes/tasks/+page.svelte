@@ -17,6 +17,7 @@
 	import TaskListView from '$lib/components/views/TaskListView.svelte';
 	import StatusKanbanView from '$lib/components/views/StatusKanbanView.svelte';
 	import TableView from '$lib/components/views/TableView.svelte';
+	import CalendarView from '$lib/components/views/CalendarView.svelte';
 	import GanttView from '$lib/components/views/GanttView.svelte';
 	import CriteriaEditor from '$lib/components/views/CriteriaEditor.svelte';
 	import { Alert, Badge, Button, ButtonGroup, Input, Select } from 'flowbite-svelte';
@@ -61,7 +62,8 @@
 		{ id: 'list', label: 'views.mode.list' },
 		{ id: 'kanban', label: 'views.mode.kanban' },
 		{ id: 'table', label: 'views.mode.table' },
-		{ id: 'gantt', label: 'views.mode.gantt' }
+		{ id: 'gantt', label: 'views.mode.gantt' },
+		{ id: 'calendar', label: 'views.mode.calendar' }
 	];
 
 	const SORT_FIELDS: [string, MessageKey][] = [
@@ -78,7 +80,7 @@
 		{ key: 'done', label: $t('common.status.done') }
 	]);
 
-	const validViews = new Set<string>(['list', 'kanban', 'table', 'gantt']);
+	const validViews = new Set<string>(['list', 'kanban', 'table', 'gantt', 'calendar']);
 	const viewMode = $derived<TaskViewMode>(
 		validViews.has(page.url.searchParams.get('view') ?? '')
 			? (page.url.searchParams.get('view') as TaskViewMode)
@@ -478,4 +480,6 @@
 	{#if $tasks.length}{@render pager('mt-4')}{/if}
 {:else if viewMode === 'gantt'}
 	<GanttView tasks={$tasks} large />
+{:else if viewMode === 'calendar'}
+	<CalendarView {criteria} />
 {/if}

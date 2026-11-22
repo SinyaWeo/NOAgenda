@@ -9,6 +9,7 @@ export enum ViewType {
   GANTT = 'gantt',
   TIMELINE = 'timeline',
   MINDMAP = 'mindmap',
+  CALENDAR = 'calendar',
 }
 
 @Entity('project_views')

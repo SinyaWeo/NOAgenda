@@ -1,7 +1,7 @@
 import type { NodeStatus } from '$lib/types';
 
 /** The view modes of the global task list page. */
-export type TaskViewMode = 'list' | 'kanban' | 'table' | 'gantt';
+export type TaskViewMode = 'list' | 'kanban' | 'table' | 'gantt' | 'calendar';
 
 export interface KanbanColumn {
 	key: NodeStatus;

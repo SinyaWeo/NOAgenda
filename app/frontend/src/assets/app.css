@@ -252,8 +252,7 @@ a.text-gray-900 {
 .calendar-task-chip {
 	display: block;
 	font-size: 0.7rem;
-	background: var(--color-primary-500);
-	color: #fff;
+	background: #f1f5f9;
 	border-radius: 3px;
 	padding: 1px 4px;
 	margin-bottom: 2px;
@@ -261,9 +260,45 @@ a.text-gray-900 {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	cursor: grab;
 }
+.dark .calendar-task-chip {
+	background: #334155;
+}
+.calendar-task-chip:hover {
+	text-decoration: underline;
+}
+/* Overdue shows as colored text (data-status="overdue"), never a colored background. */
 .calendar-task-overdue {
-	background: #ef4444;
+	font-weight: 600;
+}
+.calendar-task-done {
+	text-decoration: line-through;
+}
+/* Future cycle of a repeating task: read-only, so dimmed with a dashed outline and no grab cursor. */
+.calendar-task-future {
+	opacity: 0.65;
+	border: 1px dashed #94a3b8;
+	background: transparent;
+	cursor: pointer;
+}
+.calendar-day-over {
+	outline: 2px dashed #94a3b8;
+	outline-offset: -2px;
+}
+.calendar-day-tall {
+	min-height: 220px;
+}
+.calendar-more {
+	background: none;
+	border: 0;
+	padding: 0;
+	font-size: 0.7rem;
+	color: #64748b;
+	cursor: pointer;
+}
+.calendar-more:hover {
+	text-decoration: underline;
 }
 
 /* ─────────────────────────────────────────────────────────────────

@@ -167,6 +167,32 @@ export function nextOccurrence(task: Repeating, now: Date, timeZone = 'UTC'): Ne
 }
 
 /**
+ * The future cycles of a repeating task that fall in `[from, to]`, for calendars. The task's own current due date is
+ * not included (it is the real task). Each step asks `nextOccurrence` for the first date after the previous one, so
+ * every repeat mode, `repeatUntil` and the year limit apply exactly as when completing the task; `repeatCount`
+ * (occurrences left, this one included) caps the series. At most `max` dates are returned.
+ */
+export function occurrencesBetween(
+  task: Repeating,
+  from: Date,
+  to: Date,
+  timeZone = 'UTC',
+  max = 400,
+): NextOccurrence[] {
+  if (!isRecurring(task) || !task.dueDate) return [];
+  const out: NextOccurrence[] = [];
+  const left = typeof task.repeatCount === 'number' ? task.repeatCount - 1 : Infinity;
+  let cursor = new Date(task.dueDate);
+  for (let i = 0; i < left && out.length < max; i++) {
+    const next = nextOccurrence(task, cursor, timeZone);
+    if (!next || next.dueDate.getTime() <= cursor.getTime() || next.dueDate.getTime() > to.getTime()) break;
+    cursor = next.dueDate;
+    if (cursor.getTime() >= from.getTime()) out.push(next);
+  }
+  return out;
+}
+
+/**
  * The changes to apply when `change` is saved over `existing`, if that completes a repeating task:
  * the task goes back to open with no progress, its dates move on and its occurrence counter goes down.
  * Null when the task is simply done: it does not repeat, or this was the last occurrence
