@@ -20,11 +20,5 @@ export const messages = {
 	'dashboard.recentProjects.empty': 'No projects yet. {link}.',
 	'dashboard.recentProjects.create': 'Create one',
 
-	'dashboard.upcoming.title': 'Upcoming Tasks',
-	'dashboard.upcoming.showNext': 'Show next',
-	'dashboard.upcoming.days': { one: '{count} day', other: '{count} days' },
-	'dashboard.upcoming.includeOverdue': 'Include overdue',
-	'dashboard.upcoming.empty': 'No upcoming tasks in this range.',
-	'dashboard.upcoming.emptyHint': 'Try extending the date range or enabling overdue tasks.',
-	'dashboard.upcoming.notSet': 'Not set'
+	'dashboard.upcoming.title': 'Upcoming Tasks'
 } as const;

@@ -23,16 +23,5 @@ export const messages: Record<keyof typeof en, Message> = {
 	'dashboard.recentProjects.empty': 'Zatím žádné projekty. {link}.',
 	'dashboard.recentProjects.create': 'Vytvořit projekt',
 
-	'dashboard.upcoming.title': 'Nadcházející úkoly',
-	'dashboard.upcoming.showNext': 'Zobrazit příštích',
-	'dashboard.upcoming.days': {
-		one: '{count} den',
-		few: '{count} dny',
-		many: '{count} dne',
-		other: '{count} dní'
-	},
-	'dashboard.upcoming.includeOverdue': 'Včetně úkolů po termínu',
-	'dashboard.upcoming.empty': 'V tomto období nejsou žádné nadcházející úkoly.',
-	'dashboard.upcoming.emptyHint': 'Zkuste prodloužit období nebo zahrnout úkoly po termínu.',
-	'dashboard.upcoming.notSet': 'Nenastaven'
+	'dashboard.upcoming.title': 'Nadcházející úkoly'
 };
