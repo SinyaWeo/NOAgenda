@@ -31,8 +31,10 @@
 		projectId?: number;
 		/** Filters of the global task page; the visible date range replaces their due-date filter. */
 		criteria?: FilterCriteria;
+		/** Start in the week view (compact, e.g. on the dashboard) instead of the month. */
+		initialMode?: 'month' | 'week';
 	}
-	let { projectId, criteria }: Props = $props();
+	let { projectId, criteria, initialMode = 'month' }: Props = $props();
 
 	type Entry =
 		| { kind: 'task'; id: number; date: string; task: Task }
@@ -43,7 +45,7 @@
 	const weekStart = $derived<WeekStart>($locale === 'cs' ? 1 : 0);
 	const todayKey = $derived(dayKeyOf(new Date(), zone));
 
-	let mode = $state<'month' | 'week'>('month');
+	let mode = $state<'month' | 'week'>(untrack(() => initialMode));
 	let anchor = $state<DayKey | null>(null); // a day inside the visible month/week; null = today
 	const focus = $derived(anchor ?? todayKey);
 

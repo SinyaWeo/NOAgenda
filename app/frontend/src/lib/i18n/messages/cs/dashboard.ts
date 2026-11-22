@@ -17,7 +17,6 @@ export const messages: Record<keyof typeof en, Message> = {
 	'dashboard.quickAdd.failed': 'Úkol se nepodařilo přidat',
 	'dashboard.overdue.title': 'Po termínu',
 	'dashboard.upcomingTasks.title': 'Nadcházející úkoly',
-	'dashboard.upcomingTasks.empty': 'Žádné nevyřízené úkoly.',
 	'dashboard.viewAll': 'Zobrazit vše',
 	'dashboard.recentProjects.title': 'Nedávné projekty',
 	'dashboard.recentProjects.empty': 'Zatím žádné projekty. {link}.',

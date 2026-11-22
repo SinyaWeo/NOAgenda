@@ -6,6 +6,7 @@
 	import { goto } from '$app/navigation';
 	import { Alert, Button, Card, Input, Select } from 'flowbite-svelte';
 	import { ExclamationCircleOutline, CaretRightSolid } from 'flowbite-svelte-icons';
+	import CalendarView from '$lib/components/views/CalendarView.svelte';
 	import { showToast } from '$lib/toast';
 	import { errMessage } from '$lib/errors';
 	import { t, fmt, tr } from '$lib/i18n';
@@ -24,12 +25,6 @@
 	let quickTitle = $state('');
 	let quickProjectId = $state('');
 	let addingTask = $state(false);
-
-	const STATUS_DOTS: Record<string, string> = {
-		open: 'bg-primary-500',
-		in_progress: 'bg-amber-400',
-		done: 'bg-green-500'
-	};
 
 	onMount(async () => {
 		const me = $user ?? (await initializeAuth());
@@ -200,7 +195,7 @@
 	<div class="grid grid-cols-2 gap-6 items-stretch">
 		<!-- Overdue -->
 		{#if $overdueTasks.length > 0}
-			<Card class="h-full border-red-300 dark:bg-gray-800 dark:border-red-700">
+			<Card class="col-span-2 border-red-300 dark:bg-gray-800 dark:border-red-700">
 				<div class="flex items-center gap-2 mb-3">
 					<ExclamationCircleOutline class="w-4 h-4 text-red-500" />
 					<h2 class="text-base font-semibold text-red-600 dark:text-red-400 m-0">
@@ -222,7 +217,7 @@
 		{/if}
 
 		<!-- Upcoming tasks -->
-		<Card class={$overdueTasks.length === 0 ? 'col-span-2 h-full' : 'h-full'}>
+		<Card class="col-span-2">
 			<div class="flex justify-between items-center mb-3">
 				<h2 class="text-base font-semibold text-gray-900 dark:text-white m-0">
 					{$t('dashboard.upcomingTasks.title')}
@@ -233,26 +228,7 @@
 					>{$t('dashboard.viewAll')} <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
 				>
 			</div>
-			{#if $upcomingTasks.length === 0}
-				<p class="text-gray-400 text-sm m-0">{$t('dashboard.upcomingTasks.empty')}</p>
-			{:else}
-				{#each $upcomingTasks as task (task.id)}
-					{@const isOverdue = task.dueDate && new Date(task.dueDate) < new Date()}
-					<div
-						class="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0"
-					>
-						<span class="w-2 h-2 rounded-full shrink-0 {STATUS_DOTS[task.status ?? ''] ?? 'bg-gray-400'}"
-						></span>
-						<a
-							href="/tasks/{task.id}"
-							class="text-sm flex-1 truncate text-gray-800 dark:text-gray-200 hover:underline">{task.title}</a
-						>
-						{#if task.dueDate}<span class="text-xs shrink-0 {isOverdue ? 'text-red-500' : 'text-gray-400'}"
-								>{$fmt.date(task.dueDate)}</span
-							>{/if}
-					</div>
-				{/each}
-			{/if}
+			<CalendarView initialMode="week" />
 		</Card>
 
 		<!-- Recent projects -->

@@ -14,7 +14,6 @@ export const messages = {
 	'dashboard.quickAdd.failed': 'Could not add the task',
 	'dashboard.overdue.title': 'Overdue',
 	'dashboard.upcomingTasks.title': 'Upcoming Tasks',
-	'dashboard.upcomingTasks.empty': 'No pending tasks.',
 	'dashboard.viewAll': 'View all',
 	'dashboard.recentProjects.title': 'Recent Projects',
 	'dashboard.recentProjects.empty': 'No projects yet. {link}.',
