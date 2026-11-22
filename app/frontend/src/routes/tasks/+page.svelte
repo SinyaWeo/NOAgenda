@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { onMount } from 'svelte';
-	import { apiGetAuth, apiPostAuth, apiPutAuth } from '$lib/api';
+	import { apiGetAuth, apiPostAuth, apiPutAuth, MAX_PAGE_SIZE } from '$lib/api';
 	import { getCurrentUser } from '$lib/auth';
 	import { errMessage } from '$lib/errors';
 	import { cleanCriteria, criteriaToQuery, describeCriteria, needsClientDueFilter } from '$lib/filters';
@@ -117,7 +117,7 @@
 			let more: boolean;
 			if (needsClientDueFilter(criteria)) {
 				// No server parameter for "no due date": fetch a large page and filter + page here.
-				q.set('limit', '500');
+				q.set('limit', String(MAX_PAGE_SIZE));
 				const all = (await apiGetAuth<Task[]>(`/tasks?${q}`)).filter((t) => !t.dueDate);
 				const start = ($currentPage - 1) * limit;
 				rows = all.slice(start, start + limit);

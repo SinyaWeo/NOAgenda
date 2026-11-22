@@ -3,6 +3,9 @@
 import { tr } from './i18n/translate';
 import { localizeServerMessage } from './i18n/server-messages';
 
+/** Largest `limit` the list endpoints accept (MAX_PAGE_SIZE in the backend's node.dto.ts); a larger one is rejected with 400. */
+export const MAX_PAGE_SIZE = 500;
+
 export const API_BASE: string = (import.meta.env.VITE_API_BASE as string) || 'http://localhost:3000';
 
 function extractApiErrorMessage(rawText: string, fallback = 'Request failed'): string {

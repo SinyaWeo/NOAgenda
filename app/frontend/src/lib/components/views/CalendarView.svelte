@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { apiGetAuth, apiPutAuth } from '$lib/api';
+	import { apiGetAuth, apiPutAuth, MAX_PAGE_SIZE } from '$lib/api';
 	import { authSession } from '$lib/auth';
 	import {
 		addDaysKey,
@@ -80,7 +80,7 @@
 		q.set('dueAfter', from);
 		q.set('dueBefore', to);
 		q.set('sort', 'dueDate');
-		q.set('limit', '1000');
+		q.set('limit', String(MAX_PAGE_SIZE));
 		if (projectId !== undefined) q.set('projectId', String(projectId));
 		const o = new URLSearchParams({ from, to });
 		if (projectId !== undefined) o.set('projectId', String(projectId));

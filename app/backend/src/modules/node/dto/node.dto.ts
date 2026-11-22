@@ -212,6 +212,9 @@ const SORT_FIELDS = ['title', 'name', 'priority', 'status', 'dueDate', 'position
 const upper = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.toUpperCase() : value);
 
 /** Shared paging/sorting. `limit` is capped so a client cannot request an unbounded page. */
+/** Largest `limit` a list endpoint accepts. The frontend mirrors it as MAX_PAGE_SIZE in lib/api.ts. */
+export const MAX_PAGE_SIZE = 500;
+
 export class PagedQueryDto {
   @IsOptional()
   @IsEnum(NodeStatus)
@@ -242,7 +245,7 @@ export class PagedQueryDto {
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(500)
+  @Max(MAX_PAGE_SIZE)
   limit?: number;
 }
 
