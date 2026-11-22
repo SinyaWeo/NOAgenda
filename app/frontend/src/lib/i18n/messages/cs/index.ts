@@ -1,5 +1,6 @@
 import type { Message } from '../../core';
 import type { MessageKey } from '..';
+import { messages as activity } from './activity';
 import { messages as admin } from './admin';
 import { messages as auth } from './auth';
 import { messages as common } from './common';
@@ -16,6 +17,7 @@ import { messages as teams } from './teams';
 import { messages as views } from './views';
 
 export const cs: Record<MessageKey, Message> = {
+	...activity,
 	...admin,
 	...auth,
 	...common,

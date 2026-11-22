@@ -1,0 +1,82 @@
+// Messages for the "activity" area (the audit trail). Keys are prefixed "activity." (see ../README.md).
+export const messages = {
+	'activity.title': 'Activity log',
+	'activity.empty': 'No activity recorded yet.',
+	'activity.loadFailed': 'Could not load the activity log.',
+	'activity.loadMore': 'Load more',
+	'activity.untitled': 'untitled',
+	'activity.noValue': '—',
+	'activity.valueChanged': '{field} changed',
+	'activity.change': '{field}: {from} → {to}',
+
+	'activity.action.task.created': '{actor} created task “{title}”',
+	'activity.action.task.updated': '{actor} updated task “{title}”',
+	'activity.action.task.archived': '{actor} archived task “{title}”',
+	'activity.action.task.restored': '{actor} restored task “{title}”',
+	'activity.action.task.moved': '{actor} moved task “{title}”',
+	'activity.action.task.deleted': '{actor} deleted task “{title}”',
+	'activity.action.task.deletedWith': {
+		one: '{actor} deleted task “{title}” and {count} subtask',
+		other: '{actor} deleted task “{title}” and {count} subtasks'
+	},
+	'activity.action.project.created': '{actor} created project “{title}”',
+	'activity.action.project.updated': '{actor} updated project “{title}”',
+	'activity.action.project.archived': '{actor} archived project “{title}”',
+	'activity.action.project.restored': '{actor} restored project “{title}”',
+	'activity.action.project.moved': '{actor} moved project “{title}”',
+	'activity.action.project.deleted': '{actor} deleted project “{title}”',
+	'activity.action.project.deletedWith': {
+		one: '{actor} deleted project “{title}” and {count} item in it',
+		other: '{actor} deleted project “{title}” and {count} items in it'
+	},
+	'activity.action.comment.created': '{actor} commented on “{title}”',
+	'activity.action.comment.updated': '{actor} edited a comment on “{title}”',
+	'activity.action.comment.deleted': '{actor} deleted a comment on “{title}”',
+	'activity.action.assignee.set': '{actor} assigned “{title}” to {to}',
+	'activity.action.assignee.changed': '{actor} reassigned “{title}” from {from} to {to}',
+	'activity.action.assignee.cleared': '{actor} unassigned {from} from “{title}”',
+	'activity.action.label.added': '{actor} added label {label} to “{title}”',
+	'activity.action.label.removed': '{actor} removed label {label} from “{title}”',
+	'activity.action.relation.added': '{actor} added to “{title}” the relation: {kind} “{other}”',
+	'activity.action.relation.removed': '{actor} removed from “{title}” the relation: {kind} “{other}”',
+	'activity.action.attachment.added': '{actor} attached {file} to “{title}”',
+	'activity.action.attachment.removed': '{actor} removed attachment {file} from “{title}”',
+	'activity.action.unknown': '{actor} changed “{title}”',
+
+	'activity.field.title': 'Title',
+	'activity.field.name': 'Name',
+	'activity.field.description': 'Description',
+	'activity.field.status': 'Status',
+	'activity.field.priority': 'Priority',
+	'activity.field.dueDate': 'Due date',
+	'activity.field.startDate': 'Start date',
+	'activity.field.percentDone': 'Progress',
+	'activity.field.parentId': 'Parent',
+	'activity.field.isArchived': 'Archived',
+	'activity.field.bucketId': 'Kanban column',
+	'activity.field.repeat': 'Repeat',
+
+	// Admin audit page
+	'activity.admin.title': 'Audit log',
+	'activity.admin.pageTitle': 'Audit log — admin',
+	'activity.admin.hint':
+		'Everything that was changed across all projects and personal tasks, including what has since been deleted.',
+	'activity.admin.filterActor': 'User ID',
+	'activity.admin.filterProject': 'Project ID',
+	'activity.admin.filterAction': 'Action',
+	'activity.admin.filterFrom': 'From',
+	'activity.admin.filterTo': 'To',
+	'activity.admin.anyAction': 'Any action',
+	'activity.admin.apply': 'Apply',
+	'activity.admin.reset': 'Reset',
+	'activity.admin.projectNone': 'personal',
+	'activity.admin.projectId': '#{id}',
+
+	// Project and personal feeds
+	'activity.project.title': 'Project activity',
+	'activity.project.link': 'Activity',
+	'activity.project.back': 'Back to project',
+	'activity.mine.title': 'My activity',
+	'activity.mine.hint':
+		'What you changed, plus what happened to your personal tasks and to projects of yours that were deleted.'
+} as const;

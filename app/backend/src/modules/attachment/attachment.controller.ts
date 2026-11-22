@@ -24,6 +24,8 @@ import { diskStorage } from 'multer';
 import { extname, resolve, basename } from 'path';
 import { existsSync, unlink } from 'fs';
 import { NodeAccessService } from '../node/node-access.service';
+import { NodeService } from '../node/node.service';
+import { DomainEvents } from '../../common/domain-events';
 import { randomUUID } from 'crypto';
 import { NotInDemoGuard } from '../../common/guards/not-in-demo.guard';
 import { sniffFile } from '../../common/file-sniff';
@@ -58,7 +60,29 @@ export class AttachmentController {
   constructor(
     private readonly attachmentService: AttachmentService,
     private readonly access: NodeAccessService,
+    private readonly nodes: NodeService,
+    private readonly events: DomainEvents,
   ) {}
+
+  /** Record an upload or removal in the activity log only. Never throws. */
+  private async audit(taskId: number | undefined, actorId: number, filename: string, added: boolean): Promise<void> {
+    try {
+      if (!taskId) return;
+      const task = await this.nodes.findById(taskId);
+      this.events.emit({
+        name: 'task.attachment_changed',
+        data: { taskId },
+        nodeId: taskId,
+        owner: task?.createdBy ?? null,
+        actorId,
+        title: task?.title ?? null,
+        changes: { attachment: added ? { from: null, to: filename } : { from: filename, to: null } },
+        auditOnly: true,
+      });
+    } catch {
+      // the log must never affect the action
+    }
+  }
 
   /** Uploader, or anyone with the given access on the attachment's task. */
   private async assertCan(att: Attachment, userId: number, write: boolean): Promise<void> {
@@ -157,13 +181,15 @@ export class AttachmentController {
       unlink(file.path, () => undefined);
       throw err;
     }
-    return this.attachmentService.create({
+    const created = await this.attachmentService.create({
       filename: file.originalname,
       path: resolve(file.path),
       size: file.size,
       node: { id: taskId },
       uploader: { id: req.user.userId },
     });
+    await this.audit(taskId, req.user.userId, file.originalname, true);
+    return created;
   }
 
   @Delete(':id')
@@ -173,6 +199,7 @@ export class AttachmentController {
     await this.assertCan(attachment, req.user.userId, true);
     const resolvedPath = resolve(attachment.path);
     await this.attachmentService.remove(id);
+    await this.audit(attachment.node?.id, req.user.userId, attachment.filename, false);
     if (resolvedPath.startsWith(UPLOADS_DIR + '/')) unlink(resolvedPath, () => undefined);
   }
 }

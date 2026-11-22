@@ -10,6 +10,8 @@ export const messages = {
 	'admin.dashboard.teamsHint': 'See all teams and appoint team managers',
 	'admin.dashboard.quotes': 'Quotes',
 	'admin.dashboard.quotesHint': 'Manage motivational quotes',
+	'admin.dashboard.audit': 'Audit log',
+	'admin.dashboard.auditHint': 'Who changed what, across all projects',
 	'admin.dashboard.settings': 'Settings',
 	'admin.dashboard.settingsHint': 'App configuration',
 

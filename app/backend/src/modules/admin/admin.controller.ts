@@ -13,6 +13,7 @@ import {
   NotFoundException,
   ForbiddenException,
   Request,
+  Query,
 } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -25,6 +26,8 @@ import { AdminTeam, TeamService } from '../team/team.service';
 import { TeamMemberService } from '../team-member/team-member.service';
 import { SetTeamMemberRoleDto } from '../team-member/dto/team-member.dto';
 import { TeamMember } from '../team-member/team-member.entity';
+import { ActivityPage, ActivityService } from '../activity/activity.service';
+import { AdminActivityQueryDto } from '../activity/dto/activity.dto';
 
 @Controller('admin')
 @UseGuards(RolesGuard)
@@ -36,7 +39,15 @@ export class AdminController {
     private readonly sessions: SessionService,
     private readonly teams: TeamService,
     private readonly teamMembers: TeamMemberService,
+    private readonly activity: ActivityService,
   ) {}
+
+  /** The whole audit trail, across all projects (including deleted ones). */
+  @Get('activity')
+  async activityLog(@Query() q: AdminActivityQueryDto): Promise<ActivityPage> {
+    const { before, limit, ...filter } = q;
+    return this.activity.admin(filter, before, limit);
+  }
 
   @Get('users')
   async findAllUsers(): Promise<Omit<User, 'password'>[]> {

@@ -6,6 +6,7 @@ import { TaskLabelService } from './task-label.service';
 import { TaskService } from '../task/task.service';
 import { LabelService } from '../label/label.service';
 import { TaskLabel } from './task-label.entity';
+import { DomainEvents } from '../../common/domain-events';
 
 @Controller('tasks/:taskId/labels')
 export class TaskLabelController {
@@ -14,7 +15,26 @@ export class TaskLabelController {
     private readonly taskService: TaskService,
     private readonly access: NodeAccessService,
     private readonly labels: LabelService,
+    private readonly events: DomainEvents,
   ) {}
+
+  private audit(
+    task: { id: number; title?: string; createdBy?: number },
+    actorId: number,
+    from: string | null,
+    to: string | null,
+  ) {
+    this.events.emit({
+      name: 'task.label_changed',
+      data: { taskId: task.id },
+      nodeId: task.id,
+      owner: task.createdBy ?? null,
+      actorId,
+      title: task.title ?? null,
+      changes: { label: { from, to } },
+      auditOnly: true,
+    });
+  }
 
   @Get()
   async findAll(@Param('taskId') taskId: number, @Request() req: AuthRequest): Promise<TaskLabel[]> {
@@ -36,7 +56,9 @@ export class TaskLabelController {
     // Labels are per-user: you can only attach your own (no probing other users' labels).
     const label = await this.labels.findById(body.labelId);
     if (!label || label.createdBy !== req.user.userId) throw new NotFoundException();
-    return this.taskLabelService.add(taskId, body.labelId);
+    const added = await this.taskLabelService.add(taskId, body.labelId);
+    this.audit(task, req.user.userId, null, label.title ?? null);
+    return added;
   }
 
   @Delete(':labelId')
@@ -48,6 +70,8 @@ export class TaskLabelController {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));
-    return this.taskLabelService.remove(taskId, labelId);
+    const label = await this.labels.findById(Number(labelId));
+    await this.taskLabelService.remove(taskId, labelId);
+    this.audit(task, req.user.userId, label?.title ?? null, null);
   }
 }

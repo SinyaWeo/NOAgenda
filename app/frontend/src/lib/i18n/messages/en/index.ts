@@ -1,3 +1,4 @@
+import { messages as activity } from './activity';
 import { messages as admin } from './admin';
 import { messages as auth } from './auth';
 import { messages as common } from './common';
@@ -15,6 +16,7 @@ import { messages as views } from './views';
 
 /** English is the source of truth: every key must exist here and in Czech (checked by svelte-check). */
 export const en = {
+	...activity,
 	...admin,
 	...auth,
 	...common,

@@ -368,6 +368,14 @@
 			{attachments}
 			{comments}
 			currentUserId={$authSession.user?.id}
+			activityVersion={[
+				task.updatedAt,
+				comments.length,
+				attachments.length,
+				taskLabels.length,
+				relations.length,
+				assignees.length
+			].join('-')}
 			onAddReminder={addReminder}
 			onDeleteReminder={deleteReminder}
 			onDownload={downloadAttachment}

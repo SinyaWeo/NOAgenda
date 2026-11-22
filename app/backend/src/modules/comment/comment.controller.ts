@@ -85,6 +85,8 @@ export class CommentController {
         },
         nodeId: taskId,
         owner: task.createdBy ?? null,
+        actorId: actor.userId,
+        title: task.title ?? null,
       });
       const assigned = await this.assignees.findByTask(taskId);
       await this.notifications.notify({
@@ -112,6 +114,7 @@ export class CommentController {
     }
     const updated = await this.commentService.update(id, { content: body.content });
     if (!updated) throw new NotFoundException();
+    await this.audit('comment.updated', comment, req.user.userId);
     return updated;
   }
 
@@ -120,6 +123,27 @@ export class CommentController {
     const comment = await this.commentService.findById(id);
     if (!comment) throw new NotFoundException();
     if (comment.author?.id !== req.user.userId) throw new ForbiddenException();
-    return this.commentService.remove(id);
+    await this.commentService.remove(id);
+    await this.audit('comment.deleted', comment, req.user.userId);
+  }
+
+  /** Record a comment edit or removal in the activity log only (webhooks do not get these). Never throws. */
+  private async audit(name: string, comment: Comment, actorId: number): Promise<void> {
+    try {
+      const taskId = comment.node?.id;
+      if (!taskId) return;
+      const task = await this.tasks.findById(taskId);
+      this.events.emit({
+        name,
+        data: { id: comment.id, taskId },
+        nodeId: taskId,
+        owner: task?.createdBy ?? null,
+        actorId,
+        title: task?.title ?? null,
+        auditOnly: true,
+      });
+    } catch {
+      // the log must never affect the action
+    }
   }
 }

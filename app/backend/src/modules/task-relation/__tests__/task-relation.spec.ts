@@ -1,3 +1,4 @@
+import { DomainEvents } from '../../../common/domain-events';
 import { BadRequestException, ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { QueryFailedError, Repository } from 'typeorm';
 import { TaskRelationController } from '../task-relation.controller';
@@ -23,6 +24,7 @@ describe('TaskRelationController', () => {
       asMock<TaskRelationService>(service),
       asMock<TaskService>(tasks),
       asMock<NodeAccessService>(access),
+      asMock<DomainEvents>({ emit: jest.fn() }),
     );
   });
 

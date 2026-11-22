@@ -137,9 +137,14 @@
 				>
 			{/if}
 		</div>
-		<Button href="/projects/{page.params.id}/settings/views" color="light" size="sm"
-			>{$t('views.view.manage')}</Button
-		>
+		<div class="flex gap-2">
+			<Button href="/projects/{page.params.id}/settings/activity" color="light" size="sm"
+				>{$t('activity.project.link')}</Button
+			>
+			<Button href="/projects/{page.params.id}/settings/views" color="light" size="sm"
+				>{$t('views.view.manage')}</Button
+			>
+		</div>
 	</div>
 
 	{#if $view.viewType === 'list'}

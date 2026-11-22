@@ -21,28 +21,28 @@ export class ProjectService {
     return this.nodeService.findById(id);
   }
 
-  async create(data: Partial<Node>): Promise<Node> {
-    return this.nodeService.create({ ...data, type: NodeType.PROJECT });
+  async create(data: Partial<Node>, actorId?: number): Promise<Node> {
+    return this.nodeService.create({ ...data, type: NodeType.PROJECT }, actorId);
   }
 
-  async update(id: number, data: Partial<Node>): Promise<Node | null> {
-    return this.nodeService.update(id, data);
+  async update(id: number, data: Partial<Node>, actorId?: number): Promise<Node | null> {
+    return this.nodeService.update(id, data, actorId);
   }
 
   async duplicate(id: number, ownerId: number): Promise<Node | null> {
     return this.nodeService.duplicate(id, ownerId);
   }
 
-  async remove(id: number): Promise<void> {
-    return this.nodeService.remove(id);
+  async remove(id: number, actorId?: number): Promise<void> {
+    return this.nodeService.remove(id, actorId);
   }
 
-  async archive(id: number): Promise<Node | null> {
-    return this.nodeService.archive(id);
+  async archive(id: number, actorId?: number): Promise<Node | null> {
+    return this.nodeService.archive(id, actorId);
   }
 
-  async unarchive(id: number): Promise<Node | null> {
-    return this.nodeService.unarchive(id);
+  async unarchive(id: number, actorId?: number): Promise<Node | null> {
+    return this.nodeService.unarchive(id, actorId);
   }
 
   async getTaskStats(projectIds: number[]): Promise<Record<number, { total: number; done: number }>> {

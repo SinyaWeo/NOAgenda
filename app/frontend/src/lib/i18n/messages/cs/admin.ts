@@ -13,6 +13,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.dashboard.teamsHint': 'Přehled všech týmů a jmenování manažerů týmů',
 	'admin.dashboard.quotes': 'Citáty',
 	'admin.dashboard.quotesHint': 'Správa motivačních citátů',
+	'admin.dashboard.audit': 'Auditní záznam',
+	'admin.dashboard.auditHint': 'Kdo co změnil, napříč všemi projekty',
 	'admin.dashboard.settings': 'Nastavení',
 	'admin.dashboard.settingsHint': 'Konfigurace aplikace',
 

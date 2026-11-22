@@ -4,10 +4,11 @@ import { UserModule } from '../user/user.module';
 import { AccountModule } from '../account/account.module';
 import { SessionModule } from '../session/session.module';
 import { TeamModule } from '../team/team.module';
+import { ActivityModule } from '../activity/activity.module';
 import { TeamMemberModule } from '../team-member/team-member.module';
 
 @Module({
-  imports: [UserModule, AccountModule, SessionModule, TeamModule, TeamMemberModule],
+  imports: [UserModule, AccountModule, SessionModule, TeamModule, TeamMemberModule, ActivityModule],
   controllers: [AdminController],
 })
 export class AdminModule {}

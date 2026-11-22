@@ -99,6 +99,25 @@ export interface Comment {
 	createdAt: string;
 }
 
+/** One line of the audit trail. `changes` is `{ field: { from, to } }` for edits, or a few facts for deletions. */
+export interface ActivityEntry {
+	id: number;
+	createdAt: string;
+	action: string;
+	nodeId: number;
+	nodeType: 'task' | 'project';
+	nodeTitle: string | null;
+	projectId: number | null;
+	actor: { id: number | null; username: string | null };
+	changes: Record<string, unknown> | null;
+}
+
+export interface ActivityPage {
+	items: ActivityEntry[];
+	/** Pass as `before` to fetch the next, older page; null at the end. */
+	next: number | null;
+}
+
 export interface Attachment {
 	id: number;
 	filename: string;

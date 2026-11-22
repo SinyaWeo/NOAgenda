@@ -12,6 +12,14 @@ export interface DomainEvent {
   projectId?: number | null;
   /** A user who always may hear about it: the project's owner, or a personal task's creator. */
   owner?: number | null;
+  /** Who did it (the signed-in user), when known. Recorded in the activity log. */
+  actorId?: number | null;
+  /** What changed: `{ field: { from, to } }` for an update, or a few facts (e.g. `descendants`) for a delete. */
+  changes?: Record<string, unknown>;
+  /** The node's title or name, for events whose `data` is not the node itself. */
+  title?: string | null;
+  /** Only for the activity log: webhooks never receive it. */
+  auditOnly?: boolean;
 }
 
 type Handler = (event: DomainEvent) => void | Promise<void>;

@@ -1,3 +1,4 @@
+import { DomainEvents } from '../../../common/domain-events';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { TaskLabelController } from '../task-label.controller';
 import { TaskLabelService } from '../task-label.service';
@@ -31,6 +32,7 @@ describe('TaskLabelController', () => {
       asMock<TaskService>(tasks),
       asMock<NodeAccessService>(access),
       asMock<LabelService>(labels),
+      asMock<DomainEvents>({ emit: jest.fn() }),
     );
   });
 

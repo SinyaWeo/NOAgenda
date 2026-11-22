@@ -50,9 +50,11 @@
 		{ href: '/mindmap', label: 'layout.nav.mindmap' },
 		{ href: '/teams', label: 'layout.nav.teams', icon: UsersGroupOutline },
 		{ href: '/labels', label: 'layout.nav.labels', icon: TagOutline },
-		{ href: '/filters', label: 'layout.nav.filters', icon: FilterOutline }
+		{ href: '/filters', label: 'layout.nav.filters', icon: FilterOutline },
+		{ href: '/activity', label: 'layout.nav.activity' }
 	];
 	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.adminOverview', icon: CogOutline };
+	const AUDIT: NavItem = { href: '/admin/activity', label: 'layout.nav.auditLog' };
 	const ABOUT: NavItem = { href: '/about', label: 'layout.nav.about', icon: InfoCircleOutline };
 
 	let collapsed = $state(false);
@@ -159,6 +161,7 @@
 		{#if showAdmin}
 			{@render sectionTitle($t('layout.nav.admin'))}
 			{@render navItem(ADMIN)}
+			{@render navItem(AUDIT)}
 		{/if}
 		<li class="nav-spacer"></li>
 		{@render navItem(ABOUT)}

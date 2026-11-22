@@ -150,6 +150,8 @@ await page.fill('input[placeholder="Add a comment…"]', 'first browser comment'
 await page.click('button:has-text("Post")');
 await page.waitForFunction(() => document.body.innerText.includes('first browser comment'));
 ok('comment posted', true);
+await page.waitForFunction(() => document.body.innerText.includes('commented on'));
+ok('the comment shows in the activity log', true);
 
 await page.click('button:has-text("Work Items")');
 await page.fill('input[placeholder="Add subtask…"]', 'My subtask');

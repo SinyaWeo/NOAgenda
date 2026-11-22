@@ -82,7 +82,7 @@ export class TaskController {
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
     const assignee = assigneeId ?? req.user.userId;
     if (assignee !== req.user.userId) await this.assertCanAssign(req.user.userId, assignee, data.parentId);
-    const task = await this.taskService.create({ ...data, createdBy: req.user.userId });
+    const task = await this.taskService.create({ ...data, createdBy: req.user.userId }, req.user.userId);
     // Every new task is assigned: to its creator unless they picked someone else.
     await this.assignees.save(this.assignees.create({ node: { id: task.id }, user: { id: assignee } }));
     if (assignee !== req.user.userId) {
@@ -170,6 +170,6 @@ export class TaskController {
   async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const existing = await this.requireTask(id);
     await this.access.assertWrite(req.user.userId, existing.id);
-    return this.taskService.remove(id);
+    return this.taskService.remove(id, req.user.userId);
   }
 }

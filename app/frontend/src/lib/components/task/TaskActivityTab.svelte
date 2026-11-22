@@ -3,6 +3,7 @@
 	import type { Attachment, Comment, Reminder } from '$lib/types';
 	import { Button, Card, Input } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
+	import ActivityLog from '$lib/components/ActivityLog.svelte';
 
 	let {
 		taskId,
@@ -10,6 +11,7 @@
 		attachments,
 		comments,
 		currentUserId,
+		activityVersion,
 		onAddReminder,
 		onDeleteReminder,
 		onDownload,
@@ -22,6 +24,8 @@
 		attachments: Attachment[];
 		comments: Comment[];
 		currentUserId: number | undefined;
+		/** Changes whenever something that is recorded in the activity log may have changed. */
+		activityVersion: string;
 		onAddReminder: (localDateTime: string) => Promise<boolean>;
 		onDeleteReminder: (id: number) => void;
 		onDownload: (id: number, filename: string) => void;
@@ -171,4 +175,10 @@
 		/>
 		<Button type="submit" size="sm" disabled={addingComment}>{$t('tasks.comments.post')}</Button>
 	</form>
+</Card>
+
+<!-- Activity log -->
+<Card>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('activity.title')}</h2>
+	<ActivityLog endpoint="/activity?nodeId={taskId}" version={activityVersion} />
 </Card>

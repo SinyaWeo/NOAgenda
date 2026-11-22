@@ -45,6 +45,7 @@
 		['/tasks', 'layout.title.tasks'],
 		['/upcoming', 'layout.title.upcoming'],
 		['/teams', 'layout.title.teams'],
+		['/activity', 'layout.title.activity'],
 		['/labels', 'layout.title.labels'],
 		['/filters', 'layout.title.filters'],
 		['/mindmap', 'layout.title.mindmap'],

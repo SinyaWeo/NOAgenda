@@ -75,7 +75,7 @@ export class NodeController {
     } else {
       data.createdBy = req.user.userId;
     }
-    return this.nodeService.create(data);
+    return this.nodeService.create(data, req.user.userId);
   }
 
   @Put(':id')
@@ -112,7 +112,7 @@ export class NodeController {
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
     await this.access.assertCanUseAsParent(req.user.userId, body.parentId, existing.id);
-    const node = await this.nodeService.move(Number(id), body.parentId ?? null);
+    const node = await this.nodeService.move(Number(id), body.parentId ?? null, req.user.userId);
     if (!node) throw new NotFoundException();
     return node;
   }
@@ -122,7 +122,7 @@ export class NodeController {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
-    const node = await this.nodeService.archive(Number(id));
+    const node = await this.nodeService.archive(Number(id), req.user.userId);
     if (!node) throw new NotFoundException();
     return node;
   }
@@ -132,7 +132,7 @@ export class NodeController {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
-    const node = await this.nodeService.unarchive(Number(id));
+    const node = await this.nodeService.unarchive(Number(id), req.user.userId);
     if (!node) throw new NotFoundException();
     return node;
   }
@@ -142,6 +142,6 @@ export class NodeController {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
-    return this.nodeService.remove(Number(id));
+    return this.nodeService.remove(Number(id), req.user.userId);
   }
 }

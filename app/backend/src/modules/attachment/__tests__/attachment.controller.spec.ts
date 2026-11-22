@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NodeAccessService } from '../../node/node-access.service';
+import { NodeService } from '../../node/node.service';
+import { DomainEvents } from '../../../common/domain-events';
 import { AttachmentController } from '../attachment.controller';
 import { AttachmentService } from '../attachment.service';
 
@@ -22,6 +24,8 @@ describe('AttachmentController', () => {
             sanitize: jest.fn((x) => x),
           },
         },
+        { provide: NodeService, useValue: { findById: jest.fn() } },
+        { provide: DomainEvents, useValue: { emit: jest.fn() } },
         {
           provide: AttachmentService,
           useValue: { findAll: jest.fn(), findById: jest.fn() },

@@ -1,3 +1,4 @@
+import { ActivityService } from '../../activity/activity.service';
 import 'reflect-metadata';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AdminController } from '../admin.controller';
@@ -23,13 +24,16 @@ function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin',
   const sessions = { revokeAllForUser: jest.fn(async () => undefined) };
   const teams = { findAllWithMembers: jest.fn(async () => [{ id: 7, members: [] }]) };
   const teamMembers = { setRole: jest.fn(async (_t: number, id: number, role: TeamRole) => ({ id, role })) };
+  const activity = { admin: jest.fn(async () => ({ items: [], next: null })) };
   return {
+    activity,
     ctrl: new AdminController(
       asMock<UserService>(users),
       asMock<AccountService>(accounts),
       asMock<SessionService>(sessions),
       asMock<TeamService>(teams),
       asMock<TeamMemberService>(teamMembers),
+      asMock<ActivityService>(activity),
     ),
     users,
     accounts,
@@ -43,6 +47,12 @@ const req = authReq(1);
 describe('AdminController', () => {
   it('is restricted to admins', () => {
     expect(Reflect.getMetadata('roles', AdminController)).toEqual([UserRole.ADMIN]);
+  });
+
+  it('activityLog passes the filters, the cursor and the page size to the audit trail', async () => {
+    const { ctrl, activity } = build();
+    await ctrl.activityLog({ actorId: 3, action: 'task.deleted', before: 40, limit: 20 });
+    expect(activity.admin).toHaveBeenCalledWith({ actorId: 3, action: 'task.deleted' }, 40, 20);
   });
 
   it('findAllUsers delegates to findAllAdmin', async () => {

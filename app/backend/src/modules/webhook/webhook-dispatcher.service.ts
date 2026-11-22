@@ -96,6 +96,7 @@ export class WebhookDispatcher implements OnModuleInit {
   }
 
   async dispatch(e: DomainEvent): Promise<void> {
+    if (e.auditOnly) return;
     for (const hook of await this.recipientsOf(e)) {
       this.enqueue(() => this.deliverWithRetries(hook, e.name, e.data));
     }

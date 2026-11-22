@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Authorization smoke test for the NOAgenda API (95 checks, 80 without SQL_CMD).
+Authorization smoke test for the NOAgenda API (110 checks, 94 without SQL_CMD).
 
 Registers three throwaway users (alice, bob, carol) and verifies that one user
 cannot read or change another user's projects/tasks/comments/attachments/
@@ -20,7 +20,7 @@ Usage:  BASE_URL=http://127.0.0.1:3000 [SQL_CMD=...] python3 scripts/authz-smoke
         (self-signed HTTPS, e.g. a local Caddy: add AUTHZ_INSECURE=1)
 """
 import json, sys, urllib.request, urllib.error
-import os, ssl, subprocess
+import os, ssl, subprocess, time
 B = os.environ.get('BASE_URL', 'http://127.0.0.1:3000')
 CTX = ssl._create_unverified_context() if os.environ.get('AUTHZ_INSECURE') == '1' else None
 results = []
@@ -168,6 +168,28 @@ s, _ = call('PATCH', f'/admin/teams/{tm}/members/{team_role(A, tm, "bob")["id"]}
 check('a manager cannot appoint managers', s, 403)
 s, _ = call('GET', '/admin/teams', None, A); check('a manager cannot use the admin team list', s, 403)
 
+# --- 6. activity log: visible only to those who can read the item; deletions stay visible; admin sees all
+time.sleep(1)  # entries are written asynchronously after the action
+eid, E = user('erin')  # has no access to alice's project (bob was shared on it earlier)
+def acts(token, qs):
+    s, r = call('GET', '/activity?' + qs, None, token)
+    return s, ([e['action'] for e in r['items']] if s == 200 else r)
+s, got = acts(A, f'nodeId={tid}'); check('alice sees her task history', (s, 'task.created' in got), (200, True))
+s, got = acts(A, f'projectId={pid}'); check('alice sees her project feed', (s, 'project.created' in got and 'task.created' in got), (200, True))
+s, _ = acts(E, f'nodeId={tid}'); check('a stranger cannot read the history of her task', s, [403, 404])
+s, _ = acts(E, f'projectId={pid}'); check('a stranger cannot read the feed of her project', s, [403, 404])
+s, r = call('GET', '/activity?scope=mine', None, E)
+check("a stranger's own feed holds none of alice's items", (s, [e for e in r['items'] if e['nodeId'] in (tid, pid)]), (200, []))
+s, _ = call('GET', '/activity', None, E); check('activity needs exactly one selector', s, 400)
+s, _ = call('GET', f'/activity?nodeId={tid}&scope=mine', None, A); check('activity rejects two selectors', s, 400)
+s, _ = call('GET', '/admin/activity', None, E); check('a normal user cannot use the admin audit log', s, 403)
+s, gone = call('POST', '/tasks', {'title': 'short lived', 'projectId': pid}, A)
+s, _ = call('DELETE', f'/tasks/{gone["id"]}', None, A); check('alice deletes a task', s, [200, 204])
+time.sleep(1)
+s, got = acts(A, f'projectId={pid}'); check('a deleted task stays in the project feed', (s, 'task.deleted' in got), (200, True))
+s, _ = acts(A, f'nodeId={gone["id"]}'); check('the deleted task itself is gone (404)', s, [403, 404])
+s, _ = acts(E, f'projectId={pid}'); check('the deletion is still hidden from a stranger', s, [403, 404])
+
 if SQL:
     did, D = user('dave')
     subprocess.run(SQL, shell=True, input="UPDATE users SET role='admin' WHERE username='dave';", text=True, check=True, capture_output=True)
@@ -190,6 +212,11 @@ if SQL:
     s, _ = call('PATCH', f'/admin/teams/{tm}/members/{am}/role', {'role': 'manager'}, D); check('app admin appoints a second manager', s, 200)
     s, _ = call('DELETE', f'/admin/users/{bid}', None, D); check('a manager can be deleted once another manager remains', s, 204)
     s, _ = call('GET', f'/teams/{tm}', None, A); check('the team survives its manager', s, 200)
+    s, r = call('GET', f'/admin/activity?projectId={pid}&action=task.deleted', None, D)
+    check('app admin sees the deletion across projects', (s, [e['nodeId'] for e in r['items']] == [gone['id']]), (200, True))
+    s, r = call('GET', '/admin/activity?limit=5', None, D)
+    check('app admin pages the whole audit log', (s, len(r['items']), r['next'] is not None), (200, 5, True))
+    s, _ = call('GET', '/admin/activity?actorId=abc', None, D); check('admin filters are validated', s, 400)
 else:
     print('SKIP app-admin team checks (set SQL_CMD to run them)')
 

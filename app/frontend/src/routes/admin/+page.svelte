@@ -2,7 +2,13 @@
 	import { appName } from '$lib/appName';
 	import { Card } from 'flowbite-svelte';
 	import { t } from '$lib/i18n';
-	import { UsersGroupOutline, UsersGroupSolid, QuoteOutline, CogOutline } from 'flowbite-svelte-icons';
+	import {
+		UsersGroupOutline,
+		UsersGroupSolid,
+		QuoteOutline,
+		CogOutline,
+		ClipboardListOutline
+	} from 'flowbite-svelte-icons';
 </script>
 
 <svelte:head>
@@ -51,6 +57,19 @@
 						<p class="text-sm text-gray-500">
 							{$t('admin.dashboard.quotesHint')}
 						</p>
+					</div>
+				</div>
+			</Card>
+		</a>
+		<a href="/admin/activity" class="no-underline">
+			<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
+				<div class="flex items-center gap-3">
+					<ClipboardListOutline class="w-8 h-8 text-primary-600" />
+					<div>
+						<p class="font-semibold text-gray-900 dark:text-white">
+							{$t('admin.dashboard.audit')}
+						</p>
+						<p class="text-sm text-gray-500">{$t('admin.dashboard.auditHint')}</p>
 					</div>
 				</div>
 			</Card>

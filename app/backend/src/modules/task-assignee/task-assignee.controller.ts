@@ -18,6 +18,7 @@ import { TaskAssignee } from './task-assignee.entity';
 import { NotificationService } from '../notification/notification.service';
 import { UserService } from '../user/user.service';
 import { TeamService } from '../team/team.service';
+import { DomainEvents } from '../../common/domain-events';
 
 @Controller('tasks/:taskId/assignees')
 export class TaskAssigneeController {
@@ -28,7 +29,26 @@ export class TaskAssigneeController {
     private readonly notifications: NotificationService,
     private readonly users: UserService,
     private readonly teams: TeamService,
+    private readonly events: DomainEvents,
   ) {}
+
+  private audit(
+    task: { id: number; title?: string; createdBy?: number },
+    actorId: number,
+    from: string | null,
+    to: string | null,
+  ) {
+    this.events.emit({
+      name: 'task.assignee_changed',
+      data: { taskId: task.id },
+      nodeId: task.id,
+      owner: task.createdBy ?? null,
+      actorId,
+      title: task.title ?? null,
+      changes: { assignee: { from, to } },
+      auditOnly: true,
+    });
+  }
 
   @Get()
   async findAll(@Param('taskId') taskId: number, @Request() req: AuthRequest): Promise<TaskAssignee[]> {
@@ -58,7 +78,12 @@ export class TaskAssigneeController {
         throw new BadRequestException('That user has no access to this task');
       }
     }
+    const before = await this.taskAssigneeService.findByTask(taskId);
     const assignee = await this.taskAssigneeService.add(taskId, body.userId);
+    if (!before.some((a) => a.user?.id === body.userId)) {
+      const to = await this.users.findByIdSafe(body.userId);
+      this.audit(task, req.user.userId, before[0]?.user?.username ?? null, to?.username ?? null);
+    }
     void this.notifications.notify({
       type: 'task_assigned',
       recipients: [body.userId],
@@ -80,6 +105,8 @@ export class TaskAssigneeController {
     const task = await this.taskService.findById(taskId);
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));
-    return this.taskAssigneeService.remove(taskId, userId);
+    const gone = (await this.taskAssigneeService.findByTask(taskId)).find((a) => a.user?.id === Number(userId));
+    await this.taskAssigneeService.remove(taskId, userId);
+    if (gone) this.audit(task, req.user.userId, gone.user?.username ?? null, null);
   }
 }

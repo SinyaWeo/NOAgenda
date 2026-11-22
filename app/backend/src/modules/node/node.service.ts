@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
+import { diffFields } from '../../common/diff-fields';
 import { omit } from '../../common/omit';
 import { sqlRunner } from '../../common/sql';
 import { existsSync, unlink } from 'fs';
@@ -168,7 +169,12 @@ export class NodeService {
   }
 
   /** Tell subscribers (webhooks) what happened to a node. `projectId` is only needed when the node is about to vanish. */
-  private announce(action: 'created' | 'updated' | 'deleted', node: Node, projectId?: number | null) {
+  private announce(
+    action: 'created' | 'updated' | 'deleted',
+    node: Node,
+    projectId?: number | null,
+    audit: { actorId?: number | null; changes?: Record<string, unknown> } = {},
+  ) {
     const isProject = node.type === NodeType.PROJECT;
     // Children and parent are relations, not the node's own fields.
     const data = omit(node, 'parent', 'children');
@@ -178,6 +184,8 @@ export class NodeService {
       nodeId: node.id,
       ...(isProject ? { projectId: node.id } : projectId !== undefined ? { projectId } : {}),
       owner: isProject ? (node.ownerId ?? null) : (node.createdBy ?? null),
+      ...(audit.actorId !== undefined ? { actorId: audit.actorId } : {}),
+      ...(audit.changes ? { changes: audit.changes } : {}),
     });
   }
 
@@ -195,10 +203,10 @@ export class NodeService {
     return null;
   }
 
-  async create(data: Partial<Node>): Promise<Node> {
+  async create(data: Partial<Node>, actorId?: number): Promise<Node> {
     const node = this.nodeRepository.create(data);
     const saved = await this.nodeRepository.save(node);
-    this.announce('created', saved);
+    this.announce('created', saved, undefined, { actorId: actorId ?? null });
     return saved;
   }
 
@@ -214,15 +222,13 @@ export class NodeService {
     let shiftMs: number | null = null;
     let completed: Node | null = null;
     let cycled = false;
-    if (data.status === NodeStatus.DONE) {
-      const existing = await this.nodeRepository.findOne({ where: { id } });
-      if (existing && this.completesRepeatingTask(existing, data)) {
-        completed = existing;
-        const recurrence = recurrenceOnCompletion(existing, data, new Date(), await this.timeZoneOf(m, actorId));
-        if (recurrence) {
-          ({ shiftMs, ...change } = recurrence);
-          cycled = true;
-        }
+    const existing = await this.nodeRepository.findOne({ where: { id } });
+    if (existing && this.completesRepeatingTask(existing, data)) {
+      completed = existing;
+      const recurrence = recurrenceOnCompletion(existing, data, new Date(), await this.timeZoneOf(m, actorId));
+      if (recurrence) {
+        ({ shiftMs, ...change } = recurrence);
+        cycled = true;
       }
     }
     await this.nodeRepository.update(id, change);
@@ -232,7 +238,10 @@ export class NodeService {
       await this.reopenSubtasks(m, [id]);
     }
     const node = await this.findById(id);
-    if (node) this.announce('updated', node);
+    if (node) {
+      const changes = existing ? diffFields(existing, change) : {};
+      this.announce('updated', node, undefined, { actorId: actorId ?? null, changes });
+    }
     return node;
   }
 
@@ -299,11 +308,12 @@ export class NodeService {
 
   /** Apply the same changes to many nodes atomically: all of them or none. */
   async updateMany(ids: number[], data: Partial<Node>, actorId?: number): Promise<Node[]> {
-    const existing = data.status === NodeStatus.DONE ? await this.nodeRepository.find({ where: { id: In(ids) } }) : [];
+    const existing = await this.nodeRepository.find({ where: { id: In(ids) } });
     await this.nodeRepository.manager.transaction(async (m) => {
       const repo = m.getRepository(Node);
       // Repeating tasks that this completes each start their next cycle (or end their series); the rest get the plain change.
-      const repeating = existing.filter((node) => this.completesRepeatingTask(node, data));
+      const repeating =
+        data.status === NodeStatus.DONE ? existing.filter((n) => this.completesRepeatingTask(n, data)) : [];
       const timeZone = repeating.length ? await this.timeZoneOf(m, actorId) : 'UTC';
       const cycles = new Map<number, NonNullable<ReturnType<typeof recurrenceOnCompletion>>>();
       for (const node of repeating) {
@@ -324,14 +334,22 @@ export class NodeService {
       where: { id: In(ids) },
       relations: { parent: true, children: true },
     });
-    nodes.forEach((n) => this.announce('updated', n));
+    const before = new Map(existing.map((n) => [n.id, n]));
+    nodes.forEach((n) => {
+      const old = before.get(n.id);
+      this.announce('updated', n, undefined, { actorId: actorId ?? null, changes: old ? diffFields(old, data) : {} });
+    });
     return nodes;
   }
 
-  async move(id: number, parentId: number | null): Promise<Node | null> {
+  async move(id: number, parentId: number | null, actorId?: number): Promise<Node | null> {
+    const before = await this.nodeRepository.findOne({ where: { id }, select: { id: true, parentId: true } });
     await this.nodeRepository.update(id, { parentId }); // null = top level
     const node = await this.findById(id);
-    if (node) this.announce('updated', node);
+    if (node) {
+      const changes = { parentId: { from: before?.parentId ?? null, to: parentId } };
+      this.announce('updated', node, undefined, { actorId: actorId ?? null, changes });
+    }
     return node;
   }
 
@@ -342,11 +360,12 @@ export class NodeService {
    * Rows without a foreign key to nodes are removed explicitly; attachment files
    * are unlinked only after the commit.
    */
-  async remove(id: number): Promise<void> {
+  async remove(id: number, actorId?: number): Promise<void> {
     // Remember what is being deleted (and where it lived) for subscribers: it is gone afterwards.
     const doomed = await this.findById(id);
     const doomedProjectId = doomed ? await this.projectIdOf(doomed) : null;
     const files: string[] = [];
+    let descendants = 0;
     await this.nodeRepository.manager.transaction(async (m) => {
       const q = sqlRunner(m);
       const all = new Set<number>([id]);
@@ -368,6 +387,7 @@ export class NodeService {
         frontier = next;
       }
       const ids = [...all];
+      descendants = ids.length - 1;
       for (let i = 0; i < ids.length; i += CHUNK) {
         const part = ids.slice(i, i + CHUNK);
         const inList = marks(part.length);
@@ -382,24 +402,36 @@ export class NodeService {
         await q(`DELETE FROM nodes WHERE id IN (${inList})`, part);
       }
     });
-    if (doomed) this.announce('deleted', doomed, doomedProjectId);
+    if (doomed) {
+      const changes = {
+        descendants: { from: descendants, to: 0 },
+        parentId: { from: doomed.parentId ?? null, to: null },
+      };
+      this.announce('deleted', doomed, doomedProjectId, { actorId: actorId ?? null, changes });
+    }
     for (const f of files) {
       const abs = resolve(f);
       if (abs.startsWith(UPLOADS_DIR + '/') && existsSync(abs)) unlink(abs, () => undefined);
     }
   }
 
-  async archive(id: number): Promise<Node | null> {
+  async archive(id: number, actorId?: number): Promise<Node | null> {
     await this.nodeRepository.update(id, { isArchived: true });
     const node = await this.findById(id);
-    if (node) this.announce('updated', node);
+    if (node) {
+      const changes = { isArchived: { from: false, to: true } };
+      this.announce('updated', node, undefined, { actorId: actorId ?? null, changes });
+    }
     return node;
   }
 
-  async unarchive(id: number): Promise<Node | null> {
+  async unarchive(id: number, actorId?: number): Promise<Node | null> {
     await this.nodeRepository.update(id, { isArchived: false });
     const node = await this.findById(id);
-    if (node) this.announce('updated', node);
+    if (node) {
+      const changes = { isArchived: { from: true, to: false } };
+      this.announce('updated', node, undefined, { actorId: actorId ?? null, changes });
+    }
     return node;
   }
 
@@ -408,13 +440,16 @@ export class NodeService {
     if (!original) return null;
     const data = omit(original, 'id', 'createdAt', 'updatedAt', 'parent', 'children');
     const suffix = original.type === NodeType.PROJECT ? ' (copy)' : ' (copy)';
-    return this.create({
-      ...data,
-      name: original.name ? `${original.name}${suffix}` : undefined,
-      title: original.title ? `${original.title}${suffix}` : undefined,
-      ownerId: original.type === NodeType.PROJECT ? userId : original.ownerId,
-      createdBy: original.type === NodeType.TASK ? userId : original.createdBy,
-    });
+    return this.create(
+      {
+        ...data,
+        name: original.name ? `${original.name}${suffix}` : undefined,
+        title: original.title ? `${original.title}${suffix}` : undefined,
+        ownerId: original.type === NodeType.PROJECT ? userId : original.ownerId,
+        createdBy: original.type === NodeType.TASK ? userId : original.createdBy,
+      },
+      userId,
+    );
   }
 
   async getTaskStats(projectIds: number[]): Promise<Record<number, { total: number; done: number }>> {

@@ -58,8 +58,8 @@ export class TaskService {
     return this.nodeService.findById(id);
   }
 
-  async create(data: Partial<Node>): Promise<Node> {
-    return this.nodeService.create({ ...this.normalizeTaskPayload(data), type: NodeType.TASK });
+  async create(data: Partial<Node>, actorId?: number): Promise<Node> {
+    return this.nodeService.create({ ...this.normalizeTaskPayload(data), type: NodeType.TASK }, actorId);
   }
 
   async update(id: number, data: Partial<Node>, actorId?: number): Promise<Node | null> {
@@ -80,7 +80,7 @@ export class TaskService {
     return this.nodeService.updateMany(ids, normalizedData, userId);
   }
 
-  async remove(id: number): Promise<void> {
-    return this.nodeService.remove(id);
+  async remove(id: number, actorId?: number): Promise<void> {
+    return this.nodeService.remove(id, actorId);
   }
 }

@@ -32,6 +32,7 @@ import { FavoriteModule } from './modules/favorite/favorite.module';
 import { SavedFilterModule } from './modules/saved-filter/saved-filter.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { ReactionModule } from './modules/reaction/reaction.module';
+import { ActivityModule } from './modules/activity/activity.module';
 import { ApiTokenModule } from './modules/api-token/api-token.module';
 import { SessionModule } from './modules/session/session.module';
 import { KanbanBucketModule } from './modules/kanban-bucket/kanban-bucket.module';
@@ -96,6 +97,7 @@ import { MailModule } from './modules/mail/mail.module';
     SavedFilterModule,
     SubscriptionModule,
     ReactionModule,
+    ActivityModule,
     ApiTokenModule,
     SessionModule,
     KanbanBucketModule,

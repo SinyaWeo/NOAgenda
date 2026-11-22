@@ -52,7 +52,7 @@ export class ProjectController {
     const data = normalizeParentRefs(this.access.sanitize(body));
     delete data.type;
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
-    return this.projectService.create({ ...data, ownerId: req.user.userId });
+    return this.projectService.create({ ...data, ownerId: req.user.userId }, req.user.userId);
   }
 
   @Put(':id')
@@ -66,7 +66,7 @@ export class ProjectController {
     if (safeBody.parentId !== undefined && safeBody.parentId !== project.parentId) {
       await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, project.id);
     }
-    const updated = await this.projectService.update(id, safeBody);
+    const updated = await this.projectService.update(id, safeBody, req.user.userId);
     if (!updated) throw new NotFoundException();
     return updated;
   }
@@ -88,7 +88,7 @@ export class ProjectController {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     if (project.ownerId !== req.user.userId) throw new ForbiddenException();
-    return this.projectService.remove(id);
+    return this.projectService.remove(id, req.user.userId);
   }
 
   @Patch(':id/archive')
@@ -96,7 +96,7 @@ export class ProjectController {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     if (project.ownerId !== req.user.userId) throw new ForbiddenException();
-    const updated = await this.projectService.archive(id);
+    const updated = await this.projectService.archive(id, req.user.userId);
     if (!updated) throw new NotFoundException();
     return updated;
   }
@@ -106,7 +106,7 @@ export class ProjectController {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     if (project.ownerId !== req.user.userId) throw new ForbiddenException();
-    const updated = await this.projectService.unarchive(id);
+    const updated = await this.projectService.unarchive(id, req.user.userId);
     if (!updated) throw new NotFoundException();
     return updated;
   }

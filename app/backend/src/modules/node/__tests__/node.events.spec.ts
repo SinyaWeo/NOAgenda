@@ -220,4 +220,51 @@ describe('NodeService announces changes', () => {
       expect(sqlCalls(query, 'INSERT INTO task_completions')).toHaveLength(1); // only the repeating one
     });
   });
+
+  it('update: names the actor and the fields that changed', async () => {
+    const { svc, events } = build([task({ title: 'Old', priority: 1 })]);
+    await svc.update(5, { title: 'New', priority: 1 }, 8);
+    expect(events.emit.mock.calls[0][0]).toMatchObject({
+      actorId: 8,
+      changes: { title: { from: 'Old', to: 'New' } },
+    });
+    expect(Object.keys(events.emit.mock.calls[0][0].changes)).toEqual(['title']);
+  });
+
+  it('update: a change of position only is announced with no changes (the log skips it)', async () => {
+    const { svc, events } = build([task({ position: 1 })]);
+    await svc.update(5, { position: 2 }, 8);
+    expect(events.emit.mock.calls[0][0].changes).toEqual({});
+  });
+
+  it('move: records the old and new parent and the actor', async () => {
+    const { svc, events } = build([task({ parentId: 10 })]);
+    await svc.move(5, 11, 8);
+    expect(events.emit.mock.calls[0][0]).toMatchObject({
+      actorId: 8,
+      changes: { parentId: { from: 10, to: 11 } },
+    });
+  });
+
+  it('archive and unarchive record the actor and the flag', async () => {
+    const { svc, events } = build([project()]);
+    await svc.archive(10, 8);
+    await svc.unarchive(10, 8);
+    expect(events.emit.mock.calls[0][0]).toMatchObject({
+      actorId: 8,
+      changes: { isArchived: { from: false, to: true } },
+    });
+    expect(events.emit.mock.calls[1][0]).toMatchObject({
+      actorId: 8,
+      changes: { isArchived: { from: true, to: false } },
+    });
+  });
+
+  it('remove: records the actor and how many descendants went with it', async () => {
+    const { svc, events } = build([task(), project()]);
+    await svc.remove(5, 8);
+    const e = events.emit.mock.calls[0][0];
+    expect(e).toMatchObject({ name: 'task.deleted', actorId: 8, projectId: 10 });
+    expect(e.changes.descendants).toEqual({ from: 0, to: 0 });
+  });
 });

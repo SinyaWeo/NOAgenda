@@ -1,3 +1,4 @@
+import { DomainEvents } from '../../../common/domain-events';
 import { BadRequestException, ForbiddenException, NotFoundException, ValidationPipe, Type } from '@nestjs/common';
 import { TaskAssigneeController } from '../task-assignee.controller';
 import { TaskAssigneeService } from '../task-assignee.service';
@@ -22,13 +23,18 @@ describe('TaskAssigneeController', () => {
   let users: Mocks;
   let teams: Mocks;
   let controller: TaskAssigneeController;
+  let events: Mocks;
 
   beforeEach(() => {
+    events = { emit: jest.fn() };
     service = { findByTask: jest.fn(async () => []), add: jest.fn(async () => ({ id: 1 })), remove: jest.fn() };
     tasks = { findById: jest.fn(async () => ({ id: 7, title: 'Ship it' })) };
     access = { assertRead: jest.fn(), assertWrite: jest.fn(), level: jest.fn(async () => 1) };
     teams = { isSelfOrManagedTeamMember: jest.fn(async () => false) };
-    users = { assertActive: jest.fn(async () => undefined) };
+    users = {
+      assertActive: jest.fn(async () => undefined),
+      findByIdSafe: jest.fn(async () => ({ id: 5, username: 'bob' })),
+    };
     notifications = { notify: jest.fn(async () => undefined) };
     controller = new TaskAssigneeController(
       asMock<TaskAssigneeService>(service),
@@ -37,6 +43,7 @@ describe('TaskAssigneeController', () => {
       asMock<NotificationService>(notifications),
       asMock<UserService>(users),
       asMock<TeamService>(teams),
+      asMock<DomainEvents>(events),
     );
   });
 
@@ -102,6 +109,26 @@ describe('TaskAssigneeController', () => {
     expect(access.level).toHaveBeenCalledWith(5, 7);
     expect(service.add).not.toHaveBeenCalled();
     expect(notifications.notify).not.toHaveBeenCalled();
+  });
+
+  it('add records who was assigned and who it replaced, for the activity log only', async () => {
+    service.findByTask.mockResolvedValue([{ user: { id: 3, username: 'ann' } }]);
+    await controller.add(7, { userId: 5 }, req);
+    expect(events.emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'task.assignee_changed',
+        nodeId: 7,
+        actorId: 2,
+        auditOnly: true,
+        changes: { assignee: { from: 'ann', to: 'bob' } },
+      }),
+    );
+  });
+
+  it('add records nothing when the user was already assigned', async () => {
+    service.findByTask.mockResolvedValue([{ user: { id: 5, username: 'bob' } }]);
+    await controller.add(7, { userId: 5 }, req);
+    expect(events.emit).not.toHaveBeenCalled();
   });
 
   it('add returns the saved assignee', async () => {
