@@ -32,6 +32,7 @@ const PROTECTED_NODE_FIELDS = ['id', 'ownerId', 'createdBy', 'parent', 'children
  *   also removes their access to what they created there).
  * - A personal task (no project above it): its creator => ADMIN; a user assigned to
  *   its top-level task (`task_assignees`) => WRITE.
+ * - An idea: always NONE here (see IdeaService); a parent project never grants access to it.
  * - Anything else (including nodes with no owner / creator and no grant): NONE.
  *   Missing ownership information never grants access.
  */
@@ -46,6 +47,9 @@ export class NodeAccessService {
   async level(userId: number, nodeId: number): Promise<Access> {
     const start = await this.nodeRepository.findOne({ where: { id: nodeId } });
     if (!start) return Access.NONE;
+    // Ideas are private to their creator (and teams they are shared with) and are checked only in IdeaService:
+    // here they never grant access, not even through the project they hang under.
+    if (start.type === NodeType.IDEA) return Access.NONE;
 
     // Climb to the closest project; its grants decide. Creator-ADMIN applies only
     // to personal tasks whose chain verifiably ends at a root without a project.

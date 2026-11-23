@@ -31,6 +31,13 @@ const task = (id: number, parentId: number | null, createdBy: number | null): N 
 });
 
 describe('NodeAccessService', () => {
+  it('an idea never grants access through level(), not even to its creator or a project member', async () => {
+    const idea: N = { id: 13, type: NodeType.IDEA, parentId: 10, createdBy: ME };
+    const svc = build([project(10, OTHER), idea], { [10 * 1000 + ME]: ['admin'] });
+    expect(await svc.level(ME, 13)).toBe(Access.NONE);
+    expect(await svc.level(OTHER, 13)).toBe(Access.NONE);
+  });
+
   it('an assignee of a personal task gets WRITE (not ADMIN), also on its subtasks; others NONE', async () => {
     const svc = build([task(11, null, OTHER), task(12, 11, OTHER)], {}, [[11, ME]]);
     expect(await svc.level(ME, 11)).toBe(Access.WRITE);

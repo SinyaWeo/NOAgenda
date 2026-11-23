@@ -4,7 +4,6 @@
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import type { GeneralSettings } from '$lib/types-misc';
-	import type { Project } from '$lib/types';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth } from '$lib/api';
 	import { refreshCurrentUser } from '$lib/auth';
@@ -18,8 +17,6 @@
 	// Recomputed once the saved zone is known so that it is always one of the choices.
 	let zones = $state(timeZoneOptions());
 	const theme = writable('light');
-	const defaultProjectId = writable<number | null>(null);
-	const projects = writable<Project[]>([]);
 	const error = writable('');
 	const success = writable('');
 	const loading = writable(true);
@@ -33,12 +30,6 @@
 			timezone.set(s.timezone ?? 'UTC');
 			zones = timeZoneOptions(s.timezone ?? 'UTC');
 			theme.set(s.theme ?? 'light');
-			const list = await apiGetAuth<Project[]>('/projects').catch((): Project[] => []);
-			projects.set(list);
-			// A project that was deleted, or that the user lost access to, is simply no longer the default.
-			defaultProjectId.set(
-				list.some((p) => p.id === s.defaultProjectId) ? (s.defaultProjectId ?? null) : null
-			);
 		} catch (e: unknown) {
 			error.set(errMessage(e));
 		} finally {
@@ -56,8 +47,7 @@
 				name: $name,
 				language: $language,
 				timezone: $timezone,
-				theme: $theme,
-				defaultProjectId: $defaultProjectId
+				theme: $theme
 			});
 			if (isLocale($language)) setLocale($language);
 			await refreshCurrentUser(); // header name, avatar and theme follow at once
@@ -111,14 +101,6 @@
 						{$t('common.theme.dark')}
 					</option><option value="system">{$t('common.theme.system')}</option>
 				</Select>
-			</div>
-			<div>
-				<Label for="gen-project" class="mb-1">{$t('settings.general.defaultProject')}</Label>
-				<Select placeholder="" id="gen-project" bind:value={$defaultProjectId}>
-					<option value={null}>{$t('settings.general.noDefaultProject')}</option>
-					{#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
-				</Select>
-				<p class="text-xs text-gray-400 mt-1 mb-0">{$t('settings.general.defaultProjectHint')}</p>
 			</div>
 			<div class="pt-2 border-t border-gray-100 dark:border-gray-700">
 				<Button type="submit" disabled={$saving}>

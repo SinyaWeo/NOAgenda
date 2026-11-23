@@ -123,7 +123,10 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
     while (frontier.length) {
       const next: number[] = [];
       for (const part of chunks(frontier)) {
-        const rows = await q<{ id: number }>(`SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`, part);
+        const rows = await q<{ id: number }>(
+          `SELECT id FROM nodes WHERE type <> 'idea' AND parentId IN (${marks(part.length)})`,
+          part,
+        );
         for (const r of rows)
           if (!all.has(r.id)) {
             all.add(r.id);
@@ -179,6 +182,9 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       await q('DELETE FROM attachments WHERE uploaderId = ?', [userId]);
       await q('DELETE FROM comments WHERE authorId = ?', [userId]);
 
+      // Their private ideas go with them (an idea without a creator would be unreachable).
+      await q("DELETE FROM nodes WHERE type = 'idea' AND createdBy = ?", [userId]);
+
       // Shared work they created in other people's projects stays, anonymized.
       await q('UPDATE nodes SET createdBy = NULL WHERE createdBy = ?', [userId]);
 
@@ -219,7 +225,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
     const q = sqlRunner(this.ds);
 
     const [profile] = await q(
-      `SELECT id, username, email, name, language, timezone, theme, defaultProjectId,
+      `SELECT id, username, email, name, language, timezone, theme,
               avatarUrl, role, isEmailConfirmed, termsAcceptedAt, createdAt
          FROM users WHERE id = ?`,
       [userId],

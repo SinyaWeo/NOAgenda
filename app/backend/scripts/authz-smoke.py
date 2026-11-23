@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Authorization smoke test for the NOAgenda API (110 checks, 94 without SQL_CMD).
+Authorization smoke test for the NOAgenda API (142 checks, 126 without SQL_CMD).
 
 Registers three throwaway users (alice, bob, carol) and verifies that one user
 cannot read or change another user's projects/tasks/comments/attachments/
@@ -175,6 +175,41 @@ s, _ = call('DELETE', f'/team-members/{team_role(A, tm, "alice")["id"]}', None, 
 s, _ = call('PATCH', f'/admin/teams/{tm}/members/{team_role(A, tm, "bob")["id"]}/role', {'role': 'manager'}, A)
 check('a manager cannot appoint managers', s, 403)
 s, _ = call('GET', '/admin/teams', None, A); check('a manager cannot use the admin team list', s, 403)
+
+# --- 5b. ideas: private to the creator; a team share is read-only; a project parent grants nothing
+s, idea = call('POST', '/ideas', {'text': 'private idea', 'projectId': pid}, A); check('alice creates an idea under her project', s, 201)
+iid = idea['id']
+s, _ = call('POST', '/ideas', {'text': 'x', 'projectId': pid}, C); check("carol cannot attach an idea to alice's project", s, [403, 404])
+s, _ = call('POST', '/ideas', {'text': 'x', 'createdBy': aid}, Bt); check('idea createdBy spoof rejected', s, 400)
+ids = lambda rows: [r['id'] for r in rows]
+s, lst = call('GET', '/ideas', None, Bt); check('a project writer does not see the idea in /ideas', (s, iid in ids(lst)), (200, False))
+s, ch = call('GET', f'/nodes/{pid}/children', None, Bt); check("the idea is not among the project's children", (s, iid in ids(ch)), (200, False))
+s, tr = call('GET', f'/nodes/{pid}/tree', None, Bt); check("the idea is not in the project's tree", (s, iid in ids(tr.get('children') or [])), (200, False))
+s, nl = call('GET', '/nodes', None, Bt); check('the idea is not in /nodes', (s, iid in ids(nl)), (200, False))
+s, nl = call('GET', '/nodes?type=idea', None, A); check('/nodes?type=idea lists nothing, not even for the creator', (s, nl), (200, []))
+s, pr = call('GET', f'/projects/{pid}', None, Bt); check("the idea is not in the project's children", (s, iid in ids(pr.get('children') or [])), (200, False))
+for name, m, path, body in [
+    ('bob GET /nodes/:idea', 'GET', f'/nodes/{iid}', None),
+    ('bob PUT /nodes/:idea', 'PUT', f'/nodes/{iid}', {'title': 'x'}),
+    ('bob DELETE /nodes/:idea', 'DELETE', f'/nodes/{iid}', None),
+    ('bob GET /tasks/:idea', 'GET', f'/tasks/{iid}', None),
+    ('bob PUT /ideas/:id', 'PUT', f'/ideas/{iid}', {'text': 'pwned'}),
+    ('bob DELETE /ideas/:id', 'DELETE', f'/ideas/{iid}', None),
+    ('bob share /ideas/:id/teams', 'PUT', f'/ideas/{iid}/teams', {'teamIds': [tm]}),
+]:
+    s, _ = call(m, path, body, Bt); check(name + ' denied', s, [403, 404])
+s, _ = call('PUT', f'/ideas/{iid}/teams', {'teamIds': [other['id']]}, A); check("alice cannot share with a team she is not in", s, 403)
+s, sh = call('PUT', f'/ideas/{iid}/teams', {'teamIds': [tm]}, A); check('alice shares the idea with her team', (s, sh['sharedTeamIds']), (200, [tm]))
+s, lst = call('GET', '/ideas', None, Bt); mine = [i for i in lst if i['id'] == iid]
+check('a team member sees the shared idea, read-only view', (s, len(mine), mine and mine[0]['isMine'], mine and mine[0]['sharedTeamIds']), (200, 1, False, []))
+s, lst = call('GET', '/ideas', None, C); check('a non-member does not see it', (s, iid in ids(lst)), (200, False))
+s, _ = call('PUT', f'/ideas/{iid}', {'text': 'pwned'}, Bt); check('a team member cannot edit the shared idea', s, 403)
+s, _ = call('DELETE', f'/ideas/{iid}', None, Bt); check('a team member cannot delete the shared idea', s, 403)
+s, _ = call('PUT', f'/ideas/{iid}/teams', {'teamIds': []}, Bt); check('a team member cannot change the sharing', s, 403)
+s, _ = call('GET', f'/nodes/{iid}', None, Bt); check('sharing does not open the generic node endpoint', s, [403, 404])
+s, _ = call('PUT', f'/ideas/{iid}/teams', {'teamIds': []}, A); check('alice stops sharing', s, 200)
+s, lst = call('GET', '/ideas', None, Bt); check('the team member loses sight of it', (s, iid in ids(lst)), (200, False))
+s, _ = call('DELETE', f'/ideas/{iid}', None, A); check('alice deletes her idea', s, [200, 204])
 
 # --- 6. activity log: visible only to those who can read the item; deletions stay visible; admin sees all
 time.sleep(1)  # entries are written asynchronously after the action

@@ -1,6 +1,6 @@
 import { MaxBytes } from '../../../common/max-bytes';
 import { IsTimeZone } from '../../../common/is-time-zone';
-import { IsString, IsEmail, IsOptional, IsIn, IsInt, Min, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsIn, MinLength, MaxLength } from 'class-validator';
 
 /** POST /user/settings/general — only these fields may be changed by the user. */
 export class UpdateGeneralSettingsDto {
@@ -24,12 +24,6 @@ export class UpdateGeneralSettingsDto {
   @IsOptional()
   @IsIn(['light', 'dark', 'system'])
   theme?: string;
-
-  /** The project new tasks start in. `null` clears it. */
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  defaultProjectId?: number | null;
 }
 
 /** POST /user/settings/email */

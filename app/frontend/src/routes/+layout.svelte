@@ -43,6 +43,7 @@
 		['/projects', 'layout.title.projects'],
 		['/tasks/create', 'layout.title.newTask'],
 		['/tasks', 'layout.title.tasks'],
+		['/ideas', 'layout.title.ideas'],
 		['/upcoming', 'layout.title.upcoming'],
 		['/teams', 'layout.title.teams'],
 		['/activity', 'layout.title.activity'],

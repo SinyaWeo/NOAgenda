@@ -31,9 +31,6 @@ export const messages: Record<keyof typeof en, Message> = {
 	'settings.general.title': 'Obecné nastavení',
 	'settings.general.displayName': 'Zobrazované jméno',
 	'settings.general.timezone': 'Časové pásmo',
-	'settings.general.defaultProject': 'Výchozí projekt',
-	'settings.general.noDefaultProject': 'Žádný',
-	'settings.general.defaultProjectHint': 'Nové úkoly se vytvářejí v tomto projektu, pokud nevyberete jiný.',
 	'settings.general.saveSettings': 'Uložit nastavení',
 	'settings.general.saved': 'Nastavení bylo uloženo.',
 

@@ -6,6 +6,8 @@ import { KanbanBucket } from '../kanban-bucket/kanban-bucket.entity';
 export enum NodeType {
   PROJECT = 'project',
   TASK = 'task',
+  /** A private note: only handled by the idea module, never by the generic node/project/task paths. */
+  IDEA = 'idea',
 }
 
 export enum NodeStatus {

@@ -95,7 +95,7 @@ describe('AccountService', () => {
     const handler: Handler = (sql) => {
       if (sql.startsWith('SELECT id, avatarUrl FROM users')) return [{ id: 9, avatarUrl: '/uploads/avatars/me.png' }];
       if (sql.includes("type = 'project'")) return [{ id: 100 }];
-      if (sql.startsWith('SELECT id FROM nodes WHERE parentId')) return [{ id: 101 }];
+      if (sql.startsWith("SELECT id FROM nodes WHERE type <> 'idea' AND parentId")) return [{ id: 101 }];
       if (sql.startsWith('SELECT path FROM attachments WHERE nodeId'))
         return [{ path: `${UPLOADS}/a.txt` }, { path: '/etc/passwd' }];
       if (sql.startsWith('SELECT path FROM attachments WHERE uploaderId')) return [{ path: `${UPLOADS}/b.txt` }];
@@ -109,10 +109,11 @@ describe('AccountService', () => {
       const last = calls[calls.length - 1];
       expect(last.sql).toBe('DELETE FROM users WHERE id = ?');
       expect(last.params).toEqual([9]);
-      const nodeDelete = calls.find((c) => c.sql.startsWith('DELETE FROM nodes'))!;
+      const nodeDelete = calls.find((c) => c.sql.startsWith('DELETE FROM nodes WHERE id IN'))!;
       expect(nodeDelete.params.sort()).toEqual([100, 101]);
       expect(calls.some((c) => c.sql === 'DELETE FROM comments WHERE authorId = ?' && c.params[0] === 9)).toBe(true);
       expect(calls.some((c) => c.sql === 'UPDATE nodes SET createdBy = NULL WHERE createdBy = ?')).toBe(true);
+      expect(calls.some((c) => c.sql.includes("type = 'idea' AND createdBy = ?") && c.params[0] === 9)).toBe(true);
       expect(calls.some((c) => c.sql.startsWith('DELETE FROM api_tokens WHERE userId'))).toBe(true);
       expect(calls.some((c) => c.sql.startsWith('DELETE FROM user_sessions WHERE userId'))).toBe(true);
       // teams survive the user; only their memberships are removed
@@ -162,7 +163,7 @@ describe('AccountService', () => {
         return undefined;
       });
       await svc.purgeUser(9);
-      const dels = calls.filter((c) => c.sql.startsWith('DELETE FROM nodes'));
+      const dels = calls.filter((c) => c.sql.startsWith('DELETE FROM nodes WHERE id IN'));
       expect(dels.map((c) => c.params.length)).toEqual([500, 500, 200]);
     });
   });
