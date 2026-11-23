@@ -554,7 +554,15 @@ a.text-gray-900 {
 	color: var(--color-primary-400);
 }
 
-/* Svelte Flow (mindmap): dark theme for zoom controls and attribution link */
+/* Svelte Flow (mindmap): follow the app theme, not the OS (its default is `color-scheme: light dark`) */
+html .svelte-flow {
+	color-scheme: light;
+}
+html.dark .svelte-flow {
+	color-scheme: dark;
+}
+
+/* dark theme for zoom controls and attribution link */
 html.dark .svelte-flow {
 	--xy-controls-button-background-color: #1f2937;
 	--xy-controls-button-background-color-hover: #374151;
