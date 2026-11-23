@@ -96,37 +96,39 @@
 <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{$t('ideas.subtitle')}</p>
 {#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 
-<Card class="mb-4 max-w-none">
-	<form
-		onsubmit={(e) => {
-			e.preventDefault();
-			createIdea();
-		}}
-		class="flex flex-col gap-2"
-	>
-		<Textarea
-			bind:value={newText}
-			rows={3}
-			placeholder={$t('ideas.newPlaceholder')}
-			aria-label={$t('ideas.newPlaceholder')}
-			required
-		/>
-		<div class="flex gap-2 items-center flex-wrap">
-			<Select
-				placeholder=""
-				bind:value={newProjectId}
-				aria-label={$t('ideas.project')}
-				class="flex-1 min-w-36"
-			>
-				<option value="">{$t('ideas.noProject')}</option>
-				{#each projects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
-			</Select>
-			<Button type="submit" disabled={creating || !newText.trim()}>
-				{creating ? $t('ideas.adding') : $t('ideas.add')}
-			</Button>
-		</div>
-	</form>
-</Card>
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-4">
+	<Card class="max-w-none p-4">
+		<form
+			onsubmit={(e) => {
+				e.preventDefault();
+				createIdea();
+			}}
+			class="flex w-full flex-col gap-2"
+		>
+			<Textarea
+				bind:value={newText}
+				rows={4}
+				placeholder={$t('ideas.newPlaceholder')}
+				aria-label={$t('ideas.newPlaceholder')}
+				required
+			/>
+			<div class="flex gap-2 items-center flex-wrap">
+				<Select
+					placeholder=""
+					bind:value={newProjectId}
+					aria-label={$t('ideas.project')}
+					class="flex-1 min-w-36"
+				>
+					<option value="">{$t('ideas.noProject')}</option>
+					{#each projects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
+				</Select>
+				<Button type="submit" disabled={creating || !newText.trim()}>
+					{creating ? $t('ideas.adding') : $t('ideas.add')}
+				</Button>
+			</div>
+		</form>
+	</Card>
+</div>
 
 {#if loading}
 	<p class="text-gray-400">{$t('common.loading')}</p>
