@@ -97,7 +97,7 @@
 {#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-4">
-	<Card class="max-w-none p-4">
+	<Card class="max-w-none p-4 h-full">
 		<form
 			onsubmit={(e) => {
 				e.preventDefault();
