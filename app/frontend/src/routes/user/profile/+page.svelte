@@ -45,7 +45,7 @@
 </script>
 
 {#if $loading}
-	<p class="text-gray-400 text-center py-8">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400 text-center py-8">{$t('common.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $user}
@@ -69,13 +69,13 @@
 					<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
 						{$user.name ?? $user.username}
 					</h1>
-					<p class="text-sm text-gray-400 m-0">@{$user.username}</p>
+					<p class="text-sm text-gray-500 dark:text-gray-400 m-0">@{$user.username}</p>
 				</div>
 			</div>
 			<dl class="divide-y divide-gray-100 dark:divide-gray-700">
 				{#each [[$t('common.field.email'), $user.email ?? '—'], [$t('auth.profile.memberSince'), $user.createdAt ? $fmt.date($user.createdAt) : '—'], [$t('common.field.language'), languageName($user.language)], [$t('auth.profile.timezone'), $user.timezone ?? 'UTC'], [$t('common.field.theme'), themeName($user.theme, $t)]] as [label, value]}
 					<div class="flex justify-between py-2.5 text-sm">
-						<dt class="font-medium text-gray-500">{label}</dt>
+						<dt class="font-medium text-gray-500 dark:text-gray-400">{label}</dt>
 						<dd class="text-gray-800 dark:text-gray-200">{value}</dd>
 					</div>
 				{/each}

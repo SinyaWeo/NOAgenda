@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
@@ -53,15 +54,14 @@
 	}
 </script>
 
-<div class="flex items-center justify-between mb-6">
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('projects.title')}
-	</h1>
-	<Button href="/projects/new"><PlusOutline class="w-4 h-4 mr-1" />{$t('projects.new')}</Button>
-</div>
+<PageHeader title={$t('projects.title')}>
+	{#snippet actions()}
+		<Button href="/projects/new"><PlusOutline class="w-4 h-4 mr-1" />{$t('projects.new')}</Button>
+	{/snippet}
+</PageHeader>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('projects.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('projects.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $projects.length}
@@ -82,7 +82,7 @@
 					</div>
 					<button
 						onclick={() => toggleFavorite(project.id)}
-						class="p-1 text-gray-400 hover:text-amber-400 transition-colors shrink-0"
+						class="p-1 text-gray-500 dark:text-gray-400 hover:text-amber-400 transition-colors shrink-0"
 						title={$favorites.has(project.id) ? $t('projects.favorite.remove') : $t('projects.favorite.add')}
 					>
 						{#if $favorites.has(project.id)}<StarSolid class="w-4 h-4 text-amber-400" />{:else}<StarOutline
@@ -97,10 +97,12 @@
 				{#if stats && stats.total > 0}
 					<div class="mt-1">
 						<div class="flex justify-between items-center mb-1">
-							<span class="text-xs text-gray-400">
+							<span class="text-xs text-gray-500 dark:text-gray-400">
 								{$t('projects.taskStats', { done: stats.done, count: stats.total })}
 							</span>
-							<span class="text-xs text-gray-400">{Math.round((stats.done / stats.total) * 100)}%</span>
+							<span class="text-xs text-gray-500 dark:text-gray-400">
+								{Math.round((stats.done / stats.total) * 100)}%
+							</span>
 						</div>
 						<Progressbar
 							progress={Math.round((stats.done / stats.total) * 100)}
@@ -116,7 +118,10 @@
 					>
 						{$t('projects.open')}
 					</a>
-					<a href="/projects/{project.id}/edit" class="text-sm text-gray-400 no-underline hover:underline">
+					<a
+						href="/projects/{project.id}/edit"
+						class="text-sm text-gray-500 dark:text-gray-400 no-underline hover:underline"
+					>
 						{$t('projects.settings')}
 					</a>
 				</div>
@@ -124,7 +129,7 @@
 		{/each}
 	</div>
 {:else}
-	<div class="text-center py-12 text-gray-400">
+	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<FolderOutline class="w-12 h-12 mx-auto mb-3" />
 		<p>
 			{$t('projects.empty.text')}

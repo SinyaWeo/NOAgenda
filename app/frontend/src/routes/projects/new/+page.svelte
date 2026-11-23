@@ -1,11 +1,11 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { writable } from 'svelte/store';
 	import { apiPostAuth } from '$lib/api';
 	import type { Project } from '$lib/types';
 	import { goto } from '$app/navigation';
 	import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 	import { showToast } from '$lib/toast';
 	import { t, tr } from '$lib/i18n';
 
@@ -33,15 +33,7 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/projects" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('common.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('projects.create.title')}
-	</h1>
-</div>
+<PageHeader title={$t('projects.create.title')} back={{ href: '/projects', label: $t('common.back') }} />
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 

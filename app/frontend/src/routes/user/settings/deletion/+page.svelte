@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '$lib/confirm';
 	import { t, tr, fmt } from '$lib/i18n';
 	import { errMessage } from '$lib/errors';
 	import { writable } from 'svelte/store';
@@ -7,7 +9,7 @@
 	import { get } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import { Alert, Button, Input, Label } from 'flowbite-svelte';
-	import { ExclamationCircleOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
 
 	const error = writable('');
 	const success = writable('');
@@ -26,7 +28,12 @@
 			error.set(tr('settings.deletion.needPassword'));
 			return;
 		}
-		if (!confirm(tr('settings.deletion.confirm', { count: graceDays }))) return;
+		if (
+			!(await confirmDialog(tr('settings.deletion.confirm', { count: graceDays }), {
+				confirmLabel: tr('settings.deletion.request')
+			}))
+		)
+			return;
 		loading.set(true);
 		error.set('');
 		success.set('');
@@ -62,15 +69,10 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('settings.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('settings.deletion.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('settings.deletion.title')}
+	back={{ href: '/user/settings', label: $t('settings.back') }}
+/>
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 {#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
@@ -89,7 +91,7 @@
 			<p class="font-bold text-red-600 m-0">
 				{$t('settings.deletion.warning')}
 			</p>
-			<p class="text-sm text-gray-500 mt-1 m-0">
+			<p class="text-sm text-gray-500 dark:text-gray-400 mt-1 m-0">
 				{#each $t( 'settings.deletion.details', { count: graceDays, link: '\u0001' } ).split('\u0001') as part, pi}{#if pi > 0}<a
 							href="/user/settings/data-export"
 							class="underline"

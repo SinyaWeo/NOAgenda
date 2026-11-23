@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { untrack } from 'svelte';
 	import { onMount } from 'svelte';
 	import { apiGetAuth, apiPostAuth, apiPutAuth, MAX_PAGE_SIZE } from '$lib/api';
@@ -304,12 +305,13 @@
 	}
 </script>
 
-<div class="flex items-center justify-between mb-4">
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">{$t('views.tasks.title')}</h1>
-	<Button href="/tasks/create"><PlusOutline class="w-4 h-4 mr-1" />{$t('views.tasks.create')}</Button>
-</div>
+<PageHeader title={$t('views.tasks.title')}>
+	{#snippet actions()}
+		<Button href="/tasks/create"><PlusOutline class="w-4 h-4 mr-1" />{$t('views.tasks.create')}</Button>
+	{/snippet}
+</PageHeader>
 
-<ButtonGroup class="mb-4 *:ring-primary-700!">
+<ButtonGroup class="mb-4 max-w-full overflow-x-auto *:shrink-0 *:whitespace-nowrap *:ring-primary-700!">
 	{#each VIEWS as v (v.id)}
 		<Button size="sm" color={viewMode === v.id ? 'primary' : 'light'} onclick={() => setView(v.id)}>
 			{$t(v.label)}
@@ -318,7 +320,9 @@
 </ButtonGroup>
 
 <div class="flex items-center gap-2 mb-3 flex-wrap">
-	<label for="saved-filter" class="text-sm text-gray-500">{$t('views.savedFilter.label')}</label>
+	<label for="saved-filter" class="text-sm text-gray-500 dark:text-gray-400">
+		{$t('views.savedFilter.label')}
+	</label>
 	<Select
 		placeholder=""
 		id="saved-filter"
@@ -375,8 +379,8 @@
 
 {#if viewMode !== 'kanban'}
 	<div class="flex items-center gap-2 mb-4 flex-wrap">
-		<span class="text-sm text-gray-500">{$t('views.sort.label')}</span>
-		<ButtonGroup class="*:ring-primary-700!">
+		<span class="text-sm text-gray-500 dark:text-gray-400">{$t('views.sort.label')}</span>
+		<ButtonGroup class="max-w-full overflow-x-auto *:shrink-0 *:whitespace-nowrap *:ring-primary-700!">
 			{#each SORT_FIELDS as [field, label] (field)}
 				<Button size="sm" color={$sort === field ? 'primary' : 'light'} onclick={() => changeSort(field)}>
 					{$t(label)}{$sort === field ? ($order === 'ASC' ? ' ↑' : ' ↓') : ''}
@@ -391,7 +395,9 @@
 		<Button size="sm" color="light" disabled={$currentPage === 1} onclick={prevPage}>
 			<ChevronLeftOutline class="w-4 h-4 mr-1" />{$t('views.pager.prev')}
 		</Button>
-		<span class="text-sm text-gray-400">{$t('common.pageOf', { page: $currentPage })}</span>
+		<span class="text-sm text-gray-500 dark:text-gray-400">
+			{$t('common.pageOf', { page: $currentPage })}
+		</span>
 		<Button size="sm" color="light" disabled={!$hasMore} onclick={nextPage}>
 			{$t('common.next')}<ChevronRightOutline class="w-4 h-4 ml-1" />
 		</Button>
@@ -399,13 +405,13 @@
 {/snippet}
 
 {#if $loading}
-	<p class="text-gray-400">{$t('views.tasks.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('views.tasks.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if viewMode === 'list'}
 	{#if $tasks.length}
 		<div class="flex items-center gap-2 mb-3 flex-wrap">
-			<label class="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer">
+			<label class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 cursor-pointer">
 				<input
 					type="checkbox"
 					class="w-4 h-4"
@@ -466,7 +472,7 @@
 		/>
 		{@render pager('')}
 	{:else}
-		<div class="text-center py-12 text-gray-400">
+		<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 			<CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />
 			<p>
 				{$t('views.tasks.empty')}

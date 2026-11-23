@@ -114,7 +114,7 @@
 		<span class="block text-sm font-semibold text-gray-900 dark:text-white">
 			{user.name ?? user.username}
 		</span>
-		<span class="block text-xs text-gray-500">@{user.username}</span>
+		<span class="block text-xs text-gray-500 dark:text-gray-400">@{user.username}</span>
 		{#if isAdmin(user)}
 			<span class="inline-block mt-1 text-xs font-medium tone-red">{$t('layout.user.admin')}</span>
 		{/if}
@@ -130,10 +130,10 @@
 	<DropdownItem href="/user/settings" class="flex items-center">
 		<CogOutline class="w-4 h-4 mr-2" />{$t('layout.user.settings')}
 	</DropdownItem>
-	<DropdownItem href="/terms" class="flex items-center text-xs text-gray-500">
+	<DropdownItem href="/terms" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
 		{$t('layout.user.terms')}
 	</DropdownItem>
-	<DropdownItem href="/privacy" class="flex items-center text-xs text-gray-500">
+	<DropdownItem href="/privacy" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
 		{$t('layout.user.privacy')}
 	</DropdownItem>
 	<DropdownDivider />

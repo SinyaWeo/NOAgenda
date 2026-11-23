@@ -85,7 +85,7 @@
 {#if failed && !items.length}
 	<p class="text-sm text-red-500 m-0">{$t('tasks.history.loadFailed')}</p>
 {:else if loaded && !items.length}
-	<p class="text-sm text-gray-400 m-0">{$t('tasks.history.empty')}</p>
+	<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('tasks.history.empty')}</p>
 {:else if items.length}
 	<ul class="list-none p-0 m-0">
 		{#each items as r, i (r.id)}
@@ -100,13 +100,13 @@
 						{#if r.description}
 							<p
 								class="{showTitle
-									? 'text-xs text-gray-500'
+									? 'text-xs text-gray-500 dark:text-gray-400'
 									: 'text-sm text-gray-800 dark:text-gray-200'} m-0 whitespace-pre-wrap break-words"
 							>
 								{preview(r.description)}
 							</p>
 						{/if}
-						<p class="text-xs text-gray-400 m-0">
+						<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
 							{$fmt.dateTime(r.createdAt)} · {r.actor.username ?? $t('common.unknown')}
 						</p>
 					</div>
@@ -115,7 +115,9 @@
 							{$t('tasks.history.restore')}
 						</Button>
 					{:else}
-						<span class="text-xs text-gray-400 shrink-0">{$t('tasks.history.current')}</span>
+						<span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
+							{$t('tasks.history.current')}
+						</span>
 					{/if}
 				</div>
 			</li>

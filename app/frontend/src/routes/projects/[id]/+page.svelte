@@ -77,7 +77,7 @@
 </script>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $project}
@@ -145,13 +145,13 @@
 				{$t('common.clear')}
 			</Button>
 		{/if}
-		<span class="text-xs text-gray-400 ml-auto">
+		<span class="text-xs text-gray-500 dark:text-gray-400 ml-auto">
 			{$t('views.project.count', { shown: $filteredTasks.length, total: $tasks.length })}
 		</span>
 	</div>
 
 	{#if $tasks.length === 0}
-		<div class="text-center py-12 text-gray-400">
+		<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 			<CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />
 			<p>
 				{$t('views.project.emptyLead')}
@@ -161,7 +161,7 @@
 			</p>
 		</div>
 	{:else if $filteredTasks.length === 0}
-		<p class="text-gray-400">{$t('views.project.noMatch')}</p>
+		<p class="text-gray-500 dark:text-gray-400">{$t('views.project.noMatch')}</p>
 	{:else}
 		<Card class="p-0 overflow-hidden">
 			{#each $filteredTasks as task, i (task.id)}
@@ -174,7 +174,7 @@
 						href="/tasks/{task.id}"
 						class="flex-1 truncate font-medium text-gray-800 dark:text-gray-200 hover:underline {task.status ===
 						'done'
-							? 'line-through text-gray-400'
+							? 'line-through text-gray-500 dark:text-gray-400'
 							: ''}"
 					>
 						{task.title}
@@ -185,7 +185,9 @@
 					{#if task.dueDate}
 						{@const overdue = new Date(task.dueDate) < new Date() && task.status !== 'done'}
 						<span
-							class="text-xs shrink-0 flex items-center gap-0.5 {overdue ? 'text-red-500' : 'text-gray-400'}"
+							class="text-xs shrink-0 flex items-center gap-0.5 {overdue
+								? 'text-red-500'
+								: 'text-gray-500 dark:text-gray-400'}"
 						>
 							{#if overdue}<ExclamationCircleOutline class="w-3.5 h-3.5 shrink-0" />{/if}
 							{$fmt.date(task.dueDate)}

@@ -60,7 +60,7 @@
 				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 m-0">
 					{col.label}
 				</h3>
-				<span class="text-xs text-gray-400">{colTasks.length}</span>
+				<span class="text-xs text-gray-500 dark:text-gray-400">{colTasks.length}</span>
 			</div>
 			<div class="board-col-body">
 				{#each colTasks as task (task.id)}
@@ -79,13 +79,13 @@
 							{task.title}
 						</a>
 						{#if task.parentId != null && projectNames[task.parentId]}<div
-								class="text-xs text-gray-400 mt-0.5"
+								class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
 							>
 								{projectNames[task.parentId]}
 							</div>{/if}
 						{#if task.dueDate}
 							{@const overdue = new Date(task.dueDate) < new Date() && task.status !== 'done'}
-							<div class="text-xs {overdue ? 'text-red-500' : 'text-gray-400'} mt-1">
+							<div class="text-xs {overdue ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'} mt-1">
 								{$fmt.date(task.dueDate)}
 							</div>
 						{/if}
@@ -95,7 +95,7 @@
 					</div>
 				{/each}
 				{#if !colTasks.length}
-					<p class="text-xs text-gray-400 text-center m-0">{$t('views.column.empty')}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 text-center m-0">{$t('views.column.empty')}</p>
 				{/if}
 			</div>
 		</div>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/confirm';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
@@ -73,7 +75,7 @@
 	}
 
 	async function deleteFilter(id: number) {
-		if (!confirm(tr('filters.confirmDelete'))) return;
+		if (!(await confirmDialog(tr('filters.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/filters/${id}`);
 			await load();
@@ -99,7 +101,7 @@
 	});
 </script>
 
-<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">{$t('filters.title')}</h1>
+<PageHeader title={$t('filters.title')} />
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
 <Card class="mb-4 max-w-none">
@@ -125,9 +127,9 @@
 </Card>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $filters.length === 0}
-	<div class="text-center py-12 text-gray-400">
+	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<FilterOutline class="w-12 h-12 mx-auto mb-3" />
 		<p>{$t('filters.empty')}</p>
 	</div>
@@ -175,7 +177,7 @@
 					<div class="flex gap-2 shrink-0">
 						<Button size="sm" href="/tasks?filter={filter.id}">{$t('common.apply')}</Button>
 						<Button size="sm" color="light" onclick={() => startEdit(filter)}>{$t('common.edit')}</Button>
-						<Button size="sm" color="red" onclick={() => deleteFilter(filter.id)}>
+						<Button size="sm" color="red" outline onclick={() => deleteFilter(filter.id)}>
 							{$t('common.delete')}
 						</Button>
 					</div>

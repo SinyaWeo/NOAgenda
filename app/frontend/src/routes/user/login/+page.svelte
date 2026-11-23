@@ -136,7 +136,7 @@
 					/>
 					<Button type="submit" color="light" class="shrink-0">{$t('auth.resend.button')}</Button>
 				</div>
-				{#if resendStatus}<p class="text-xs text-gray-500">{resendStatus}</p>{/if}
+				{#if resendStatus}<p class="text-xs text-gray-500 dark:text-gray-400">{resendStatus}</p>{/if}
 			</form>
 		{/if}
 
@@ -156,7 +156,7 @@
 							>
 								<td class="py-1 pr-2 font-mono">{u.username}</td>
 								<td class="py-1 pr-2 font-mono">{u.password}</td>
-								<td class="py-1 text-right text-gray-500">
+								<td class="py-1 text-right text-gray-500 dark:text-gray-400">
 									{u.role === 'admin'
 										? $t('auth.demo.role.admin')
 										: u.teamRole === 'manager'
@@ -203,7 +203,7 @@
 		</form>
 
 		{#if registrationEnabled}
-			<p class="text-sm text-center text-gray-500 mt-4">
+			<p class="text-sm text-center text-gray-500 dark:text-gray-400 mt-4">
 				{$t('auth.noAccount')}
 				<a href="/user/register" class="text-primary-600 dark:text-primary-400 hover:underline">
 					{$t('auth.register')}
@@ -211,11 +211,11 @@
 			</p>
 		{/if}
 		<p class="text-sm text-center mt-1">
-			<a href="/user/get-password-reset" class="text-gray-400 hover:underline text-xs">
+			<a href="/user/get-password-reset" class="text-gray-500 dark:text-gray-400 hover:underline text-xs">
 				{$t('auth.forgotPassword')}
 			</a>
 		</p>
-		<p class="text-xs text-center text-gray-400 mt-4">
+		<p class="text-xs text-center text-gray-500 dark:text-gray-400 mt-4">
 			<a href="/terms" class="hover:underline">{$t('auth.terms')}</a> ·
 			<a href="/privacy" class="hover:underline">{$t('auth.privacy')}</a>
 		</p>

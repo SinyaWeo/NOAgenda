@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { t, tr } from '$lib/i18n';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -7,7 +8,6 @@
 	import { dateInputToIso, isoToDateInput } from '$lib/dates';
 	import { writable } from 'svelte/store';
 	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 	import { showToast } from '$lib/toast';
 	import { errMessage } from '$lib/errors';
 	import type { Task } from '$lib/types';
@@ -63,18 +63,13 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/tasks/{page.params.id}" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('tasks.form.backToTask')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('tasks.form.editTitle')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('tasks.form.editTitle')}
+	back={{ href: `/tasks/${page.params.id}`, label: $t('tasks.form.backToTask') }}
+/>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else}
 	{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 	<Card class="max-w-xl">

@@ -100,7 +100,7 @@
 						<p class="font-semibold m-0 {s.danger ? 'text-red-600' : 'text-gray-900 dark:text-white'}">
 							{$t(s.labelKey)}
 						</p>
-						<p class="text-sm text-gray-500 m-0">{$t(s.descKey)}</p>
+						<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t(s.descKey)}</p>
 					</div>
 				</div>
 			</Card>
@@ -121,7 +121,7 @@
 						<p class="font-semibold m-0 text-gray-900 dark:text-white">
 							{$t('settings.quotes.title')}
 						</p>
-						<p class="text-sm text-gray-500 m-0">
+						<p class="text-sm text-gray-500 dark:text-gray-400 m-0">
 							{$t('settings.quotes.desc')}
 						</p>
 					</div>

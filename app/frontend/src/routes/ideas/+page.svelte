@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/confirm';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -61,7 +63,7 @@
 	}
 
 	async function deleteIdea(id: number) {
-		if (!confirm(tr('ideas.confirmDelete'))) return;
+		if (!(await confirmDialog(tr('ideas.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/ideas/${id}`);
 			ideas = ideas.filter((i) => i.id !== id);
@@ -97,8 +99,7 @@
 	});
 </script>
 
-<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$t('ideas.title')}</h1>
-<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{$t('ideas.subtitle')}</p>
+<PageHeader title={$t('ideas.title')} subtitle={$t('ideas.subtitle')} />
 {#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-4">
@@ -136,9 +137,9 @@
 </div>
 
 {#if loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if ideas.length === 0}
-	<div class="text-center py-12 text-gray-400">
+	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<LightbulbOutline class="w-12 h-12 mx-auto mb-3" />
 		<p>{$t('ideas.empty')}</p>
 	</div>
@@ -200,7 +201,9 @@
 							>
 								{$t('tasks.history.title')}
 							</Button>
-							<Button size="xs" color="red" onclick={() => deleteIdea(idea.id)}>{$t('common.delete')}</Button>
+							<Button size="sm" color="red" outline onclick={() => deleteIdea(idea.id)}>
+								{$t('common.delete')}
+							</Button>
 						</div>
 						{#if historyId === idea.id}
 							<div class="border-t border-gray-100 dark:border-gray-700 pt-2">
@@ -223,7 +226,7 @@
 									{$t('ideas.shareWith')}
 								</p>
 								{#if teams.length === 0}
-									<p class="text-sm text-gray-400">{$t('ideas.noTeams')}</p>
+									<p class="text-sm text-gray-500 dark:text-gray-400">{$t('ideas.noTeams')}</p>
 								{:else}
 									<div class="flex flex-col gap-1">
 										{#each teams as team (team.id)}

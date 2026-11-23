@@ -29,13 +29,13 @@
 		<TableBody>
 			{#each tasks as task (task.id)}
 				<TableBodyRow>
-					<TableBodyCell class="text-gray-400">{task.id}</TableBodyCell>
+					<TableBodyCell class="text-gray-500 dark:text-gray-400">{task.id}</TableBodyCell>
 					<TableBodyCell>
 						<a href="/tasks/{task.id}" class="font-medium text-gray-800 dark:text-gray-200 hover:underline">
 							{task.title}
 						</a>
 					</TableBodyCell>
-					{#if projectNames}<TableBodyCell class="text-gray-400">
+					{#if projectNames}<TableBodyCell class="text-gray-500 dark:text-gray-400">
 							{(task.parentId != null && projectNames[task.parentId]) || '—'}
 						</TableBodyCell>{/if}
 					<TableBodyCell>
@@ -48,10 +48,10 @@
 							{task.priority ? $t(`common.priorityShort.${task.priority}` as MessageKey) : '—'}
 						</span>
 					</TableBodyCell>
-					<TableBodyCell class={isOverdue(task) ? 'text-red-500' : 'text-gray-400'}>
+					<TableBodyCell class={isOverdue(task) ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}>
 						{task.dueDate ? $fmt.date(task.dueDate) : '—'}
 					</TableBodyCell>
-					<TableBodyCell class="text-gray-400">
+					<TableBodyCell class="text-gray-500 dark:text-gray-400">
 						{task.createdAt ? $fmt.date(task.createdAt) : '—'}
 					</TableBodyCell>
 				</TableBodyRow>
@@ -59,7 +59,7 @@
 		</TableBody>
 	</Table>
 {:else}
-	<div class="text-center {large ? 'py-12' : 'py-10'} text-gray-400">
+	<div class="text-center {large ? 'py-12' : 'py-10'} text-gray-500 dark:text-gray-400">
 		{#if large}<CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />{/if}
 		<p>{large ? $t('views.tasks.empty') : $t('views.table.empty')}</p>
 	</div>

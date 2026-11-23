@@ -1,10 +1,11 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { t, tr } from '$lib/i18n';
 	import { errMessage } from '$lib/errors';
 	import { writable } from 'svelte/store';
 	import { apiPostAuth } from '$lib/api';
 	import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
-	import { EyeOutline, EyeSlashOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 
 	let oldPassword = $state('');
 	let newPassword = $state('');
@@ -40,15 +41,10 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('settings.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('settings.password.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('settings.password.title')}
+	back={{ href: '/user/settings', label: $t('settings.back') }}
+/>
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 {#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
@@ -72,7 +68,7 @@
 				<button
 					type="button"
 					onclick={() => (showPasswords = !showPasswords)}
-					class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
+					class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400 hover:text-gray-600"
 				>
 					{#if showPasswords}<EyeSlashOutline class="w-4 h-4" />{:else}<EyeOutline class="w-4 h-4" />{/if}
 				</button>
@@ -81,7 +77,7 @@
 		<div>
 			<Label for="new-pw" class="mb-1">
 				{$t('settings.password.new')}
-				<span class="text-xs text-gray-400">{$t('settings.password.min')}</span>
+				<span class="text-xs text-gray-500 dark:text-gray-400">{$t('settings.password.min')}</span>
 			</Label>
 			<Input
 				id="new-pw"

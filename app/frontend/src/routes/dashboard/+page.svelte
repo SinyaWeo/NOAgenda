@@ -157,7 +157,7 @@
 </script>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else}
 	{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 	<!-- Header row: welcome text left, stat cards right -->
@@ -176,7 +176,7 @@
 		<!-- Stat cards -->
 		<div class="flex gap-3 shrink-0">
 			<Card class="p-4 text-center">
-				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
 					{$t('dashboard.stat.projects')}
 				</p>
 				<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
@@ -184,7 +184,7 @@
 				</p>
 			</Card>
 			<Card class="p-4 text-center">
-				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
 					{$t('dashboard.stat.upcoming')}
 				</p>
 				<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
@@ -210,7 +210,7 @@
 		>
 			<p class="text-gray-700 dark:text-gray-200 italic m-0">“{$quote.text}”</p>
 			{#if $quote.author}
-				<footer class="mt-2 text-sm text-gray-400">— {$quote.author}</footer>
+				<footer class="mt-2 text-sm text-gray-500 dark:text-gray-400">— {$quote.author}</footer>
 			{/if}
 		</blockquote>
 	{/if}

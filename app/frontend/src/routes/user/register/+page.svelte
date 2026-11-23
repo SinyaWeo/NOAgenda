@@ -166,7 +166,7 @@
 				</Button>
 			</form>
 
-			<p class="text-sm text-center text-gray-500 mt-4">
+			<p class="text-sm text-center text-gray-500 dark:text-gray-400 mt-4">
 				{$t('auth.register.haveAccount')}
 				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">
 					{$t('auth.signIn')}

@@ -1,7 +1,7 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { t } from '$lib/i18n';
 	import { Button, Card, Input, Label, Select } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 	import ActivityLog from '$lib/components/ActivityLog.svelte';
 
 	const ACTIONS = [
@@ -52,15 +52,12 @@
 	<title>{$t('activity.admin.pageTitle')}</title>
 </svelte:head>
 
-<div class="max-w-4xl mx-auto">
-	<div class="flex items-center justify-between mb-2">
-		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$t('activity.admin.title')}</h1>
-		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
-			<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-			{$t('admin.back')}
-		</a>
-	</div>
-	<p class="text-sm text-gray-500 mt-0 mb-6">{$t('activity.admin.hint')}</p>
+<div class="max-w-4xl">
+	<PageHeader
+		title={$t('activity.admin.title')}
+		back={{ href: '/admin', label: $t('admin.back') }}
+		subtitle={$t('activity.admin.hint')}
+	/>
 
 	<Card class="max-w-none mb-4">
 		<form onsubmit={apply} class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">

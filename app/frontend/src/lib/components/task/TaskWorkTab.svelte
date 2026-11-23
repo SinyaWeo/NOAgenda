@@ -80,7 +80,7 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">{$t('tasks.subtasks.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{$t('tasks.subtasks.empty')}</p>
 	{/if}
 	<form onsubmit={submitSubtask} class="flex gap-2">
 		<Input
@@ -131,7 +131,7 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">{$t('tasks.relations.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{$t('tasks.relations.empty')}</p>
 	{/if}
 	<div class="flex gap-2 flex-wrap">
 		<Input

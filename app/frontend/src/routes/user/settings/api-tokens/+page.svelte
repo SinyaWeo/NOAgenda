@@ -1,10 +1,11 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { t, fmt } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
-	import { ApiKeyOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { ApiKeyOutline } from 'flowbite-svelte-icons';
 	import { errMessage } from '$lib/errors';
 	import { showToast } from '$lib/toast';
 	import type { ApiTokenInfo, TokenScope } from '$lib/types';
@@ -65,15 +66,10 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('settings.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('settings.tokens.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('settings.tokens.title')}
+	back={{ href: '/user/settings', label: $t('settings.back') }}
+/>
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 {#if createdToken}
@@ -103,7 +99,7 @@
 		<div>
 			<Label for="token-expiry" class="mb-1">
 				{$t('settings.tokens.expiry')}
-				<span class="text-xs text-gray-400">({$t('common.optional')})</span>
+				<span class="text-xs text-gray-500 dark:text-gray-400">({$t('common.optional')})</span>
 			</Label>
 			<Input id="token-expiry" type="date" bind:value={newTokenExpiry} />
 		</div>
@@ -127,7 +123,7 @@
 </Card>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $tokens.length}
 	<Card class="p-0 overflow-hidden">
 		{#each $tokens as token, i (token.id)}
@@ -148,7 +144,7 @@
 							{token.scope === 'write' ? $t('settings.tokens.badge.write') : $t('settings.tokens.badge.read')}
 						</span>
 					</p>
-					<p class="text-xs text-gray-400 m-0">
+					<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
 						{token.lastUsedAt
 							? $t('settings.tokens.metaUsed', {
 									created: $fmt.date(token.createdAt),
@@ -161,12 +157,14 @@
 								})}
 					</p>
 				</div>
-				<Button size="xs" color="red" onclick={() => deleteToken(token.id)}>{$t('common.delete')}</Button>
+				<Button size="sm" color="red" outline onclick={() => deleteToken(token.id)}>
+					{$t('common.delete')}
+				</Button>
 			</div>
 		{/each}
 	</Card>
 {:else}
-	<div class="text-center py-10 text-gray-400">
+	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
 		<ApiKeyOutline class="w-10 h-10 mx-auto mb-2" />
 		<p>{$t('settings.tokens.empty')}</p>
 	</div>

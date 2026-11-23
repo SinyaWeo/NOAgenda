@@ -3,6 +3,7 @@ export const messages = {
 	'common.saving': 'Saving…',
 	'common.cancel': 'Cancel',
 	'common.delete': 'Delete',
+	'common.confirm.title': 'Are you sure?',
 	'common.edit': 'Edit',
 	'common.add': 'Add',
 	'common.remove': 'Remove',

@@ -51,7 +51,6 @@ const onFatal = async (err) => {
 process.on('unhandledRejection', onFatal);
 process.on('uncaughtException', onFatal);
 page.setDefaultTimeout(15000);
-page.on('dialog', (d) => d.accept());
 
 const mails = async () => (await (await fetch(`${MP}/api/v1/messages?limit=200`)).json()).messages;
 async function mailText(to, subject, wait = 10000) {
@@ -208,10 +207,12 @@ await page.waitForFunction(() => document.body.innerText.includes('Enter your pa
 ok('deletion needs the password', true);
 await page.fill('#del-password', 'wrong password!!');
 await page.click('button:has-text("Request Account Deletion")');
+await page.click('[data-testid="confirm-accept"]');
 await page.waitForFunction(() => document.body.innerText.includes('Incorrect password'));
 ok('a wrong password is refused', true);
 await page.fill('#del-password', PW);
 await page.click('button:has-text("Request Account Deletion")');
+await page.click('[data-testid="confirm-accept"]');
 await page.waitForFunction(() => document.body.innerText.includes('Deletion scheduled'));
 ok('deletion is scheduled with the real date', true);
 await page.click('button:has-text("Cancel Deletion Request")');

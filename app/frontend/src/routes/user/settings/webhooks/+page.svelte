@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '$lib/confirm';
 	import { t, tr } from '$lib/i18n';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
@@ -7,7 +9,7 @@
 	import { writable } from 'svelte/store';
 	import WebhookStatus from '$lib/components/WebhookStatus.svelte';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
-	import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { LinkOutline } from 'flowbite-svelte-icons';
 
 	const webhooks = writable<WebhookInfo[]>([]);
 	const loading = writable(true);
@@ -65,7 +67,7 @@
 	}
 
 	async function remove(id: number) {
-		if (!confirm(tr('settings.webhooks.confirmDelete'))) return;
+		if (!(await confirmDialog(tr('settings.webhooks.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/webhooks/${id}`);
 			await load();
@@ -75,16 +77,11 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-2">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('settings.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">{$t('settings.webhooks.title')}</h1>
-</div>
-<p class="text-gray-500 mb-4">
-	{$t('settings.webhooks.intro')}
-</p>
+<PageHeader
+	title={$t('settings.webhooks.title')}
+	back={{ href: '/user/settings', label: $t('settings.back') }}
+	subtitle={$t('settings.webhooks.intro')}
+/>
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 {#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
@@ -111,7 +108,7 @@
 			<div>
 				<Label for="wh-secret" class="mb-1">
 					{$t('settings.webhooks.secret')}
-					<span class="text-xs text-gray-400">({$t('common.optional')})</span>
+					<span class="text-xs text-gray-500 dark:text-gray-400">({$t('common.optional')})</span>
 				</Label>
 				<Input
 					id="wh-secret"
@@ -130,7 +127,7 @@
 </Card>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $webhooks.length}
 	<Card class="p-0 overflow-hidden">
 		{#each $webhooks as wh, i (wh.id)}
@@ -143,19 +140,19 @@
 					<p class="font-medium text-sm text-gray-900 dark:text-white m-0 break-all">
 						{wh.url}
 					</p>
-					<p class="text-xs text-gray-400 m-0">
+					<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
 						{#each $t( 'settings.webhooks.eventLine', { event: '\u0001', state: wh.active ? $t('settings.webhooks.active') : $t('settings.webhooks.inactive') } ).split('\u0001') as part, pi}{#if pi > 0}<strong>
 									{wh.event}
 								</strong>{/if}{part}{/each}
 					</p>
 					<WebhookStatus webhook={wh} onChanged={load} />
 				</div>
-				<Button size="xs" color="red" onclick={() => remove(wh.id)}>{$t('common.delete')}</Button>
+				<Button size="sm" color="red" outline onclick={() => remove(wh.id)}>{$t('common.delete')}</Button>
 			</div>
 		{/each}
 	</Card>
 {:else}
-	<div class="text-center py-10 text-gray-400">
+	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
 		<LinkOutline class="w-10 h-10 mx-auto mb-2" />
 		<p>{$t('settings.webhooks.empty')}</p>
 	</div>

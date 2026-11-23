@@ -118,7 +118,7 @@
 
 <div class="relative flex-1 max-w-sm" bind:this={container}>
 	<div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-		<SearchOutline class="w-4 h-4 text-gray-400" />
+		<SearchOutline class="w-4 h-4 text-gray-500 dark:text-gray-400" />
 	</div>
 	<input
 		type="search"
@@ -150,7 +150,7 @@
 				{#if group.items.length > 0}
 					<div
 						role="presentation"
-						class="px-3 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wide"
+						class="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide"
 					>
 						{group.title}
 					</div>

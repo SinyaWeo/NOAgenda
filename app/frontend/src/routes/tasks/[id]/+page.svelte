@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '$lib/confirm';
 	import { t, tr, type MessageKey } from '$lib/i18n';
 	import { page } from '$app/state';
 	import {
@@ -32,7 +34,6 @@
 	import TaskWorkTab from '$lib/components/task/TaskWorkTab.svelte';
 	import TaskActivityTab from '$lib/components/task/TaskActivityTab.svelte';
 	import { Alert, Button } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
 	let task = $state<Task | null>(null);
 	let comments = $state<Comment[]>([]);
@@ -162,7 +163,7 @@
 
 	/** Soft delete: the task and its subtasks go to the trash and can be restored from there. */
 	async function deleteTask() {
-		if (!task || acting || !confirm(tr('tasks.detail.confirmDelete'))) return;
+		if (!task || acting || !(await confirmDialog(tr('tasks.detail.confirmDelete')))) return;
 		acting = true;
 		try {
 			const parent = task.parent;
@@ -303,38 +304,33 @@
 </script>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if task}
-	<div class="flex items-start justify-between gap-4 mb-4">
-		<div class="flex items-center gap-3">
-			<a
-				href={task.parent
-					? `/${task.parent.type === 'project' ? 'projects' : 'tasks'}/${task.parent.id}`
-					: '/tasks'}
-				class="text-gray-400 hover:text-gray-600"
-			>
-				<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-				{$t('tasks.detail.back')}
-			</a>
-			<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
-				{task.title}
-			</h1>
-		</div>
-		<div class="flex items-center gap-2 flex-wrap justify-end">
+	{@const current = task}
+	<PageHeader
+		title={task.title ?? ''}
+		back={{
+			href: task.parent
+				? `/${task.parent.type === 'project' ? 'projects' : 'tasks'}/${task.parent.id}`
+				: '/tasks',
+			label: $t('tasks.detail.back')
+		}}
+	>
+		{#snippet actions()}
 			<Button color="light" size="sm" disabled={acting} onclick={duplicateTask}>
 				{$t('tasks.detail.duplicate')}
 			</Button>
 			<Button color="light" size="sm" disabled={acting} onclick={toggleArchive}>
-				{task.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}
+				{current.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}
 			</Button>
-			<Button href="/tasks/{task.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
+			<Button href="/tasks/{current.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
 			<Button color="red" outline size="sm" disabled={acting} onclick={deleteTask}>
 				{$t('tasks.detail.delete')}
 			</Button>
-		</div>
-	</div>
+		{/snippet}
+	</PageHeader>
 	{#if task.isArchived}
 		<Alert color="yellow" class="mb-4">{$t('tasks.detail.archivedNotice')}</Alert>
 	{/if}
@@ -407,5 +403,5 @@
 		/>
 	{/if}
 {:else}
-	<p class="text-gray-400">{$t('tasks.detail.notFound')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('tasks.detail.notFound')}</p>
 {/if}

@@ -155,7 +155,7 @@
 			{error}
 		</div>
 	{:else if nodes.length === 0}
-		<div class="flex flex-1 items-center justify-center flex-col gap-3 text-gray-400">
+		<div class="flex flex-1 items-center justify-center flex-col gap-3 text-gray-500 dark:text-gray-400">
 			<p class="text-lg">{$t('views.mindmap.noProjects')}</p>
 			<a href="/projects" class="text-primary-600 hover:underline text-sm">
 				{$t('views.mindmap.createProject')}

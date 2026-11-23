@@ -62,7 +62,7 @@
 {#if failed && !items.length}
 	<p class="text-sm text-red-500 m-0">{$t('activity.loadFailed')}</p>
 {:else if loaded && !items.length}
-	<p class="text-sm text-gray-400 m-0">{$t('activity.empty')}</p>
+	<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('activity.empty')}</p>
 {:else if items.length}
 	<ul class="list-none p-0 m-0">
 		{#each items as e, i (e.id)}
@@ -72,9 +72,9 @@
 			>
 				<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{describeActivity(e, $t)}</p>
 				{#each changeLines(e, $t, $fmt.dateTime) as line (line)}
-					<p class="text-xs text-gray-500 m-0 ml-3">{line}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 m-0 ml-3">{line}</p>
 				{/each}
-				<p class="text-xs text-gray-400 m-0">
+				<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
 					{$fmt.dateTime(e.createdAt)}
 					{#if showProject}
 						· {e.projectId

@@ -1,11 +1,13 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '$lib/confirm';
 	import { derived, writable } from 'svelte/store';
 	import { apiGetAuth, apiPutAuth, apiPostAuth, apiPatchAuth, apiDeleteAuth } from '$lib/api';
 	import { loadOnParamChange } from '$lib/param-loader.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
-	import { ExclamationCircleOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
 	import UserPicker from '$lib/components/UserPicker.svelte';
 	import { errMessage } from '$lib/errors';
 	import { showToast } from '$lib/toast';
@@ -98,7 +100,7 @@
 	}
 
 	async function handleDelete() {
-		if (!confirm(tr('teams.edit.confirmDelete'))) return;
+		if (!(await confirmDialog(tr('teams.edit.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/teams/${page.params.id}`);
 			goto('/teams');
@@ -108,19 +110,14 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/teams/{page.params.id}" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('common.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('teams.edit.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('teams.edit.title')}
+	back={{ href: `/teams/${page.params.id}`, label: $t('common.back') }}
+/>
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if !$canManage}
 	<Alert color="yellow">{$t('teams.edit.managerOnly')}</Alert>
 {:else}
@@ -149,7 +146,7 @@
 		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
 			{$t('teams.members')}
 		</h2>
-		<p class="text-xs text-gray-500 mt-0 mb-3">{$t('teams.edit.managerHint')}</p>
+		<p class="text-xs text-gray-500 dark:text-gray-400 mt-0 mb-3">{$t('teams.edit.managerHint')}</p>
 		<form onsubmit={addMember} class="flex gap-2 mb-4 items-start">
 			<UserPicker
 				id="team-member-picker"
@@ -195,14 +192,14 @@
 						</span>
 					{/if}
 					{#if member.role !== 'manager' || $admin}
-						<Button size="xs" color="red" onclick={() => removeMember(member.id)}>
+						<Button size="sm" color="red" outline onclick={() => removeMember(member.id)}>
 							{$t('common.remove')}
 						</Button>
 					{/if}
 				</div>
 			{/each}
 		{:else}
-			<p class="text-sm text-gray-400">{$t('teams.noMembers')}</p>
+			<p class="text-sm text-gray-500 dark:text-gray-400">{$t('teams.noMembers')}</p>
 		{/if}
 	</Card>
 
@@ -213,7 +210,7 @@
 		<div class="flex items-center justify-between gap-3">
 			<div>
 				<p class="text-sm font-bold text-red-600 m-0">{$t('teams.edit.deleteTitle')}</p>
-				<p class="text-xs text-gray-500 m-0">
+				<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
 					{$t('teams.edit.deleteDesc')}
 				</p>
 			</div>

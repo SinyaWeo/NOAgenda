@@ -19,5 +19,5 @@
 {#if allowed}
 	{@render children?.()}
 {:else}
-	<p class="text-gray-400" role="status">{$t('admin.checking')}</p>
+	<p class="text-gray-500 dark:text-gray-400" role="status">{$t('admin.checking')}</p>
 {/if}

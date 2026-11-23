@@ -3,7 +3,7 @@
 </script>
 
 <div
-	class="flex justify-center gap-1 text-xs text-gray-500 mt-3"
+	class="flex justify-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-3"
 	role="group"
 	aria-label={$t('auth.languageSwitcher')}
 >

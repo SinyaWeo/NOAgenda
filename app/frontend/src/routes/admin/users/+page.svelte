@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '$lib/confirm';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
@@ -17,7 +19,7 @@
 		TableHead,
 		TableHeadCell
 	} from 'flowbite-svelte';
-	import { CaretLeftSolid, LockSolid, LockOpenSolid, TrashBinSolid } from 'flowbite-svelte-icons';
+	import { LockSolid, LockOpenSolid, TrashBinSolid } from 'flowbite-svelte-icons';
 	import type { User } from '$lib/types';
 
 	const currentUser = derived(authSession, ($s) => $s.user);
@@ -77,7 +79,7 @@
 	}
 
 	async function removeUser(user: User) {
-		if (!confirm(tr('admin.users.confirmDelete', { username: user.username }))) return;
+		if (!(await confirmDialog(tr('admin.users.confirmDelete', { username: user.username })))) return;
 		saving.set(user.id);
 		try {
 			await apiDeleteAuth(`/admin/users/${user.id}`);
@@ -106,13 +108,7 @@
 </svelte:head>
 
 <div class="max-w-6xl mx-auto">
-	<div class="flex items-center justify-between mb-6">
-		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$t('admin.users.title')}</h1>
-		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
-			<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-			{$t('admin.back')}
-		</a>
-	</div>
+	<PageHeader title={$t('admin.users.title')} back={{ href: '/admin', label: $t('admin.back') }} />
 
 	{#if $error}
 		<Alert color="red" class="mb-4">{$error}</Alert>
@@ -131,7 +127,7 @@
 				<TableBodyRow>
 					<TableBodyCell>
 						<span class="font-medium">{u.username}</span>
-						{#if u.name}<span class="text-gray-400 ml-1">({u.name})</span>{/if}
+						{#if u.name}<span class="text-gray-500 dark:text-gray-400 ml-1">({u.name})</span>{/if}
 					</TableBodyCell>
 					<TableBodyCell>{u.email}</TableBodyCell>
 					<TableBodyCell>
@@ -149,7 +145,7 @@
 						{@const isSelf = $currentUser?.id === u.id}
 						<div class="flex flex-wrap items-center gap-2">
 							{#if isSelf}
-								<span class="text-xs text-gray-400 w-28">{$t('common.you')}</span>
+								<span class="text-xs text-gray-500 dark:text-gray-400 w-28">{$t('common.you')}</span>
 							{:else}
 								<Select
 									size="sm"

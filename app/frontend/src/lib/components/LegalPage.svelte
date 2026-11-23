@@ -13,9 +13,9 @@
 	<div class="max-w-3xl mx-auto px-4 py-8">
 		<p class="text-sm mb-6">
 			<a href="/" class="text-primary-600 dark:text-primary-400 hover:underline">← NOAgenda</a>
-			<span class="mx-2 text-gray-400">·</span>
+			<span class="mx-2 text-gray-500 dark:text-gray-400">·</span>
 			<a href="/terms" class="hover:underline">{$t('layout.legal.terms')}</a>
-			<span class="mx-2 text-gray-400">·</span>
+			<span class="mx-2 text-gray-500 dark:text-gray-400">·</span>
 			<a href="/privacy" class="hover:underline">{$t('layout.legal.privacy')}</a>
 		</p>
 

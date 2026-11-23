@@ -98,9 +98,9 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">{$t('tasks.reminders.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{$t('tasks.reminders.empty')}</p>
 	{/if}
-	<p class="text-xs text-gray-400 mb-2">{$t('tasks.reminders.hint')}</p>
+	<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{$t('tasks.reminders.hint')}</p>
 	<div class="flex gap-2">
 		<Input type="datetime-local" bind:value={newReminderDate} class="flex-1" />
 		<Button size="sm" onclick={submitReminder}>{$t('common.add')}</Button>
@@ -118,7 +118,7 @@
 						? 'border-b border-gray-100 dark:border-gray-700'
 						: ''}"
 				>
-					<PaperClipOutline class="w-4 h-4 text-gray-400 shrink-0" />
+					<PaperClipOutline class="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
 					<button
 						type="button"
 						onclick={() => onDownload(att.id, att.filename)}
@@ -130,7 +130,7 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-3">{$t('tasks.attachments.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{$t('tasks.attachments.empty')}</p>
 	{/if}
 	<label
 		class="inline-flex items-center gap-2 cursor-pointer px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -156,7 +156,7 @@
 							{comment.author?.username ?? $t('common.unknown')}
 						</span>
 						<div class="flex items-center gap-2">
-							<span class="text-xs text-gray-400">{$fmt.dateTime(comment.createdAt)}</span>
+							<span class="text-xs text-gray-500 dark:text-gray-400">{$fmt.dateTime(comment.createdAt)}</span>
 							{#if canDeleteComment(comment)}
 								<Button size="xs" color="light" onclick={() => onDeleteComment(comment.id)}>
 									{$t('common.delete')}
@@ -171,7 +171,7 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-400 mb-4">{$t('tasks.comments.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{$t('tasks.comments.empty')}</p>
 	{/if}
 	<form onsubmit={submitComment} class="flex gap-2">
 		<Input

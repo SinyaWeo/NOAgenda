@@ -1,10 +1,10 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
 	import { loadOnParamChange } from '$lib/param-loader.svelte';
 	import { page } from '$app/state';
 	import { Alert, Button, Card, Input, Select } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 	import UserPicker from '$lib/components/UserPicker.svelte';
 	import { errMessage } from '$lib/errors';
 	import { t, type MessageKey } from '$lib/i18n';
@@ -94,19 +94,14 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('common.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('projects.share.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('projects.share.title')}
+	back={{ href: `/projects/${page.params.id}/edit`, label: $t('common.back') }}
+/>
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else}
 	<Card class="mb-4">
 		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
@@ -146,13 +141,13 @@
 							? u.user.name || u.user.username || $t('projects.share.userFallback', { id: u.user.id })
 							: $t('projects.share.userFallback', { id: u.id })}
 					</span>
-					<span class="text-xs text-gray-400">{permName(u.permission)}</span>
-					<Button size="sm" color="red" onclick={() => removeUser(u.user?.id ?? u.id)}>
+					<span class="text-xs text-gray-500 dark:text-gray-400">{permName(u.permission)}</span>
+					<Button size="sm" color="red" outline onclick={() => removeUser(u.user?.id ?? u.id)}>
 						{$t('common.remove')}
 					</Button>
 				</div>
 			{/each}
-		{:else}<p class="text-sm text-gray-400 m-0">{$t('projects.share.noUsers')}</p>{/if}
+		{:else}<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('projects.share.noUsers')}</p>{/if}
 	</Card>
 
 	<Card>
@@ -194,12 +189,12 @@
 							? (tm.team.name ?? $t('projects.share.teamFallback', { id: tm.team.id }))
 							: $t('projects.share.teamFallback', { id: tm.id })}
 					</span>
-					<span class="text-xs text-gray-400">{permName(tm.permission)}</span>
-					<Button size="sm" color="red" onclick={() => removeTeam(tm.team?.id ?? tm.id)}>
+					<span class="text-xs text-gray-500 dark:text-gray-400">{permName(tm.permission)}</span>
+					<Button size="sm" color="red" outline onclick={() => removeTeam(tm.team?.id ?? tm.id)}>
 						{$t('common.remove')}
 					</Button>
 				</div>
 			{/each}
-		{:else}<p class="text-sm text-gray-400 m-0">{$t('projects.share.noTeams')}</p>{/if}
+		{:else}<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('projects.share.noTeams')}</p>{/if}
 	</Card>
 {/if}

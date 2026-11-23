@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import { getCurrentUser } from '$lib/auth';
@@ -16,12 +17,10 @@
 	});
 </script>
 
-<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0 mb-6">
-	{$t('dashboard.upcoming.title')}
-</h1>
+<PageHeader title={$t('dashboard.upcoming.title')} />
 
 {#if ready}
 	<CalendarView />
 {:else}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {/if}

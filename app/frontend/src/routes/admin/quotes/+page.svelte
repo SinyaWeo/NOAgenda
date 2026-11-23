@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '$lib/confirm';
 	import { onMount } from 'svelte';
 	import { t, tr } from '$lib/i18n';
 	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
@@ -17,13 +19,7 @@
 		TableHeadCell,
 		Textarea
 	} from 'flowbite-svelte';
-	import {
-		PlusOutline,
-		EditOutline,
-		TrashBinOutline,
-		QuoteOutline,
-		CaretLeftSolid
-	} from 'flowbite-svelte-icons';
+	import { PlusOutline, EditOutline, TrashBinOutline, QuoteOutline } from 'flowbite-svelte-icons';
 	import type { Quote } from '$lib/types';
 
 	const quotes = writable<Quote[]>([]);
@@ -95,7 +91,11 @@
 	}
 
 	async function remove(q: Quote) {
-		if (!confirm(tr('admin.quotes.confirmDelete', { author: q.author ?? tr('admin.quotes.unknownAuthor') })))
+		if (
+			!(await confirmDialog(
+				tr('admin.quotes.confirmDelete', { author: q.author ?? tr('admin.quotes.unknownAuthor') })
+			))
+		)
 			return;
 		try {
 			await apiDeleteAuth(`/quotes/${q.id}`);
@@ -110,28 +110,21 @@
 	<title>{$t('admin.quotes.pageTitle')}</title>
 </svelte:head>
 
-<div class="max-w-4xl mx-auto">
-	<div class="flex items-center justify-between mb-6">
-		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-			{$t('admin.quotes.title')}
-		</h1>
-		<div class="flex items-center gap-3">
-			<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
-				<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-				{$t('admin.back')}
-			</a>
+<div class="max-w-4xl">
+	<PageHeader title={$t('admin.quotes.title')} back={{ href: '/admin', label: $t('admin.back') }}>
+		{#snippet actions()}
 			<Button size="sm" onclick={openNew}>
 				<PlusOutline class="w-4 h-4 mr-1" />{$t('admin.quotes.new')}
 			</Button>
-		</div>
-	</div>
+		{/snippet}
+	</PageHeader>
 
 	{#if $loading}
-		<p class="text-gray-400">{$t('common.loading')}</p>
+		<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 	{:else if $error}
 		<p class="text-sm text-gray-500 dark:text-gray-400">{$error}</p>
 	{:else if $quotes.length === 0}
-		<div class="text-center py-12 text-gray-400">
+		<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 			<QuoteOutline class="w-12 h-12 mx-auto mb-3" />
 			<p>
 				{$t('admin.quotes.empty')}
@@ -148,18 +141,22 @@
 		<Table striped>
 			<TableHead>
 				<TableHeadCell>{$t('admin.quotes.col.quote')}</TableHeadCell>
-				<TableHeadCell>{$t('admin.quotes.col.author')}</TableHeadCell>
-				<TableHeadCell>{$t('admin.quotes.col.active')}</TableHeadCell>
+				<TableHeadCell class="hidden sm:table-cell">{$t('admin.quotes.col.author')}</TableHeadCell>
+				<TableHeadCell class="hidden sm:table-cell">{$t('admin.quotes.col.active')}</TableHeadCell>
 				<TableHeadCell></TableHeadCell>
 			</TableHead>
 			<TableBody>
 				{#each $quotes as q (q.id)}
 					<TableBodyRow>
-						<TableBodyCell class="max-w-sm">
+						<TableBodyCell class="max-w-sm whitespace-normal">
 							<p class="line-clamp-2 text-sm">{q.text}</p>
+							<!-- the Author and Active columns are hidden on phones: show them under the quote -->
+							<p class="sm:hidden text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">
+								{q.author ?? '—'} · {q.isActive ? $t('admin.quotes.active') : $t('admin.quotes.inactive')}
+							</p>
 						</TableBodyCell>
-						<TableBodyCell>{q.author ?? '—'}</TableBodyCell>
-						<TableBodyCell>
+						<TableBodyCell class="hidden sm:table-cell">{q.author ?? '—'}</TableBodyCell>
+						<TableBodyCell class="hidden sm:table-cell">
 							<span class="text-xs font-medium {q.isActive ? 'tone-green' : 'tone-gray'}">
 								{q.isActive ? $t('admin.quotes.active') : $t('admin.quotes.inactive')}
 							</span>
@@ -169,7 +166,7 @@
 								<Button size="xs" color="light" onclick={() => openEdit(q)}>
 									<EditOutline class="w-3.5 h-3.5" />
 								</Button>
-								<Button size="xs" color="red" onclick={() => remove(q)}>
+								<Button size="sm" color="red" outline onclick={() => remove(q)}>
 									<TrashBinOutline class="w-3.5 h-3.5" />
 								</Button>
 							</div>

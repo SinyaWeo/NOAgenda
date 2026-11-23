@@ -26,7 +26,7 @@
 		{$t('tasks.repeat.legend')}
 	</legend>
 	<div class="flex items-center gap-2 flex-wrap">
-		{#if repeats}<span class="text-sm text-gray-500">{$t('tasks.repeat.every')}</span>
+		{#if repeats}<span class="text-sm text-gray-500 dark:text-gray-400">{$t('tasks.repeat.every')}</span>
 			<Input
 				type="number"
 				bind:value={form.every}
@@ -43,7 +43,7 @@
 	{#if form.kind === 'weekly'}
 		<div class="mt-3">
 			<div class="flex items-center gap-2 flex-wrap" role="group" aria-label={$t('tasks.repeat.weekdays')}>
-				<span class="text-sm text-gray-500">{$t('tasks.repeat.weekdays')}</span>
+				<span class="text-sm text-gray-500 dark:text-gray-400">{$t('tasks.repeat.weekdays')}</span>
 				{#each [1, 2, 3, 4, 5, 6, 7] as day (day)}
 					<button
 						type="button"
@@ -59,13 +59,13 @@
 					</button>
 				{/each}
 			</div>
-			<p class="text-xs text-gray-400 mt-1 mb-0">{$t('tasks.repeat.weekdaysHint')}</p>
+			<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">{$t('tasks.repeat.weekdaysHint')}</p>
 		</div>
 	{/if}
 
 	{#if repeats}
 		<div class="flex items-center gap-2 flex-wrap mt-3">
-			<span class="text-sm text-gray-500">{$t('tasks.repeat.ends')}</span>
+			<span class="text-sm text-gray-500 dark:text-gray-400">{$t('tasks.repeat.ends')}</span>
 			<Select placeholder="" bind:value={form.end} class="w-auto" aria-label={$t('tasks.repeat.ends')}>
 				{#each ENDS as end (end)}<option value={end}>{endLabel(end)}</option>{/each}
 			</Select>
@@ -80,9 +80,9 @@
 					class="w-24"
 					aria-label={$t('tasks.repeat.end.count')}
 				/>
-				<span class="text-sm text-gray-500">{$t('tasks.repeat.occurrences')}</span>
+				<span class="text-sm text-gray-500 dark:text-gray-400">{$t('tasks.repeat.occurrences')}</span>
 			{/if}
 		</div>
-		<p class="text-xs text-gray-400 mt-3 mb-0">{$t('tasks.repeat.hint')}</p>
+		<p class="text-xs text-gray-500 dark:text-gray-400 mt-3 mb-0">{$t('tasks.repeat.hint')}</p>
 	{/if}
 </fieldset>

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/confirm';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
@@ -47,7 +49,7 @@
 	}
 
 	async function deleteLabel(id: number) {
-		if (!confirm(tr('labels.confirmDelete'))) return;
+		if (!(await confirmDialog(tr('labels.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/labels/${id}`);
 			await loadLabels();
@@ -72,10 +74,10 @@
 	});
 </script>
 
-<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">{$t('labels.title')}</h1>
+<PageHeader title={$t('labels.title')} />
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
-<Card class="mb-4">
+<Card class="max-w-none mb-4">
 	<form
 		onsubmit={(e) => {
 			e.preventDefault();
@@ -101,14 +103,14 @@
 </Card>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $labels.length === 0}
-	<div class="text-center py-12 text-gray-400">
+	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<TagOutline class="w-12 h-12 mx-auto mb-3" />
 		<p>{$t('labels.empty')}</p>
 	</div>
 {:else}
-	<Card class="p-0 overflow-hidden">
+	<Card class="max-w-none p-0 overflow-hidden">
 		{#each $labels as label, i (label.id)}
 			<div
 				class="flex items-center gap-3 p-4 {i < $labels.length - 1
@@ -129,7 +131,9 @@
 					<span class="flex-1 font-medium text-gray-900 dark:text-white">{label.title}</span>
 					<div class="flex gap-2 shrink-0">
 						<Button size="sm" color="light" onclick={() => startEdit(label)}>{$t('common.edit')}</Button>
-						<Button size="sm" color="red" onclick={() => deleteLabel(label.id)}>{$t('common.delete')}</Button>
+						<Button size="sm" color="red" outline onclick={() => deleteLabel(label.id)}>
+							{$t('common.delete')}
+						</Button>
 					</div>
 				{/if}
 			</div>

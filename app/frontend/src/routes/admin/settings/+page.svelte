@@ -1,11 +1,11 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { appName as appNameStore, DEFAULT_APP_NAME } from '$lib/appName';
 	import { onMount } from 'svelte';
 	import { t, tr } from '$lib/i18n';
 	import { apiGetAuth, apiPatchAuth } from '$lib/api';
 	import { writable } from 'svelte/store';
 	import { Alert, Button, Input, Label, Toggle } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 
 	const settings = writable<Record<string, string>>({});
 	const error = writable('');
@@ -56,16 +56,8 @@
 	<title>{$t('admin.settings.pageTitle')}</title>
 </svelte:head>
 
-<div class="max-w-xl mx-auto">
-	<div class="flex items-center justify-between mb-6">
-		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-			{$t('admin.settings.title')}
-		</h1>
-		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
-			<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-			{$t('admin.back')}
-		</a>
-	</div>
+<div class="max-w-xl">
+	<PageHeader title={$t('admin.settings.title')} back={{ href: '/admin', label: $t('admin.back') }} />
 
 	<Alert color="yellow" class="mb-4">
 		{#each noticeParts as part}{#if part === ENABLED}<code>

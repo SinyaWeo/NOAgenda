@@ -53,7 +53,7 @@
 
 	<div class="grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-4 mb-4">
 		<div>
-			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+			<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 				{$t('common.field.status')}
 			</p>
 			<Select
@@ -68,7 +68,7 @@
 			</Select>
 		</div>
 		<div>
-			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+			<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 				{$t('common.field.priority')}
 			</p>
 			<p class="text-sm" data-priority={task.priority}>
@@ -77,7 +77,7 @@
 		</div>
 		{#if task.startDate}
 			<div>
-				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 					{$t('tasks.details.startDate')}
 				</p>
 				<p class="text-sm text-gray-900 dark:text-white">
@@ -87,7 +87,7 @@
 		{/if}
 		{#if task.dueDate}
 			<div>
-				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 					{$t('tasks.details.dueDate')}
 				</p>
 				<p
@@ -103,7 +103,7 @@
 
 	{#if repeatSummary}
 		<div class="mb-4">
-			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+			<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 				{$t('tasks.repeat.summaryLabel')}
 			</p>
 			<p class="text-sm text-gray-900 dark:text-white m-0">{repeatSummary}</p>
@@ -112,7 +112,10 @@
 
 	<div class="mb-4">
 		<div class="flex items-center justify-between mb-2">
-			<label for="task-progress" class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
+			<label
+				for="task-progress"
+				class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0"
+			>
 				{$t('common.field.progress')}
 			</label>
 			<span class="text-sm font-medium">{progress}%</span>
@@ -136,7 +139,7 @@
 
 	{#if task.dueDate}
 		<div class="flex items-center gap-2 flex-wrap">
-			<span class="text-xs text-gray-400">{$t('tasks.details.deferLabel')}</span>
+			<span class="text-xs text-gray-500 dark:text-gray-400">{$t('tasks.details.deferLabel')}</span>
 			<Button size="xs" color="light" onclick={() => onDefer(1)}>{$t('tasks.details.defer1')}</Button>
 			<Button size="xs" color="light" onclick={() => onDefer(3)}>{$t('tasks.details.defer3')}</Button>
 			<Button size="xs" color="light" onclick={() => onDefer(7)}>{$t('tasks.details.defer7')}</Button>
@@ -151,7 +154,7 @@
 
 	<div class="flex gap-6 flex-wrap mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
 		<div>
-			<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+			<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 				{$t('tasks.details.labels')}
 			</p>
 			<div class="flex items-center gap-1.5 flex-wrap">
@@ -164,7 +167,7 @@
 						{#if tl.label}
 							<button
 								type="button"
-								class="bg-transparent border-0 cursor-pointer text-gray-400 hover:text-red-600 p-0 leading-none"
+								class="bg-transparent border-0 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-600 p-0 leading-none"
 								aria-label={$t('tasks.details.removeLabel', { title: tl.label.title })}
 								onclick={() => onRemoveLabel(tl.label!.id)}
 							>
@@ -190,7 +193,7 @@
 						{#each available as l (l.id)}<option value={l.id}>{l.title}</option>{/each}
 					</Select>
 				{:else if !allLabels.length}
-					<span class="text-xs text-gray-400">
+					<span class="text-xs text-gray-500 dark:text-gray-400">
 						{$t('tasks.details.noLabelsYet')}
 						<a href="/labels" class="text-primary-600 hover:underline">{$t('tasks.details.createLabels')}</a>
 					</span>
@@ -199,7 +202,7 @@
 		</div>
 		{#if assignable.length > 1}
 			<div>
-				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 					{$t('tasks.details.assignee')}
 				</p>
 				<Select
@@ -214,7 +217,7 @@
 			</div>
 		{:else if assignees.length}
 			<div>
-				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
 					{$t('tasks.details.assignee')}
 				</p>
 				<p class="text-sm text-gray-700 dark:text-gray-300 m-0">

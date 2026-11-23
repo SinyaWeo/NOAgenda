@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { apiGetAuth } from '$lib/api';
@@ -31,26 +32,27 @@
 	});
 </script>
 
-<div class="flex items-center justify-between mb-4">
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">{$t('teams.title')}</h1>
-	<Button href="/teams/new"><PlusOutline class="w-4 h-4 mr-1" />{$t('teams.new')}</Button>
-</div>
+<PageHeader title={$t('teams.title')}>
+	{#snippet actions()}
+		<Button href="/teams/new"><PlusOutline class="w-4 h-4 mr-1" />{$t('teams.new')}</Button>
+	{/snippet}
+</PageHeader>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('teams.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('teams.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $teams.length}
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
 		{#each $teams as team (team.id)}
-			<Card class="h-full">
+			<Card class="max-w-none h-full">
 				<div class="flex flex-col gap-3 h-full">
 					<div class="flex items-start justify-between gap-2">
 						<div class="min-w-0">
 							<a href="/teams/{team.id}" class="font-bold text-gray-900 dark:text-white hover:underline">
 								{team.name}
 							</a>
-							{#if team.description}<p class="text-sm text-gray-500 mt-1 mb-0">
+							{#if team.description}<p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-0">
 									{team.description}
 								</p>{/if}
 						</div>
@@ -61,7 +63,7 @@
 						{/if}
 					</div>
 					{#if team.members?.length != null}
-						<span class="text-xs text-gray-400">
+						<span class="text-xs text-gray-500 dark:text-gray-400">
 							{$t('teams.memberCount', { count: team.members.length })}
 						</span>
 					{/if}
@@ -76,7 +78,7 @@
 		{/each}
 	</div>
 {:else}
-	<div class="text-center py-12 text-gray-400">
+	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<UsersGroupOutline class="w-12 h-12 mx-auto mb-3" />
 		<p>
 			{$t('teams.empty.text')}

@@ -6,6 +6,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'common.saving': 'Ukládám…',
 	'common.cancel': 'Zrušit',
 	'common.delete': 'Smazat',
+	'common.confirm.title': 'Jste si jisti?',
 	'common.edit': 'Upravit',
 	'common.add': 'Přidat',
 	'common.remove': 'Odebrat',

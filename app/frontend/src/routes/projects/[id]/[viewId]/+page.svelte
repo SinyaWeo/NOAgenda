@@ -107,13 +107,16 @@
 </script>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $view}
 	<div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
 		<div class="flex items-center gap-2 flex-wrap">
-			<a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600 text-sm shrink-0">
+			<a
+				href="/projects/{page.params.id}"
+				class="text-gray-500 dark:text-gray-400 hover:text-gray-600 text-sm shrink-0"
+			>
 				<CaretLeftSolid class="w-4 h-4 inline mr-1" />
 				{$t('common.back')}
 			</a>
@@ -171,6 +174,6 @@
 	{:else if $view.viewType === 'mindmap'}
 		<MindmapView projectId={page.params.id ?? ''} />
 	{:else}
-		<p class="text-gray-400">{$t('views.view.unknownType', { type: $view.viewType })}</p>
+		<p class="text-gray-500 dark:text-gray-400">{$t('views.view.unknownType', { type: $view.viewType })}</p>
 	{/if}
 {/if}

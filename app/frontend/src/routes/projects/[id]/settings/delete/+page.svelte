@@ -1,4 +1,6 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '$lib/confirm';
 	import { errMessage } from '$lib/errors';
 	import { writable } from 'svelte/store';
 	import { apiDeleteAuth } from '$lib/api';
@@ -6,13 +8,13 @@
 	import { goto } from '$app/navigation';
 	import { Alert, Button } from 'flowbite-svelte';
 	import { t, tr } from '$lib/i18n';
-	import { ExclamationCircleOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
 
 	const error = writable('');
 	const loading = writable(false);
 
 	async function handleDelete() {
-		if (!confirm(tr('projects.delete.confirm'))) return;
+		if (!(await confirmDialog(tr('projects.delete.confirm')))) return;
 		loading.set(true);
 		try {
 			await apiDeleteAuth(`/projects/${page.params.id}`);
@@ -24,15 +26,10 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('common.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('projects.delete.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('projects.delete.title')}
+	back={{ href: `/projects/${page.params.id}/edit`, label: $t('common.back') }}
+/>
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
 <div class="border border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/10 rounded-lg p-5 max-w-lg">

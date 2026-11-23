@@ -267,7 +267,7 @@
 	{/each}
 </div>
 
-<p class="text-xs text-gray-400 mt-3">
+<p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
 	{filtered ? $t('views.calendar.filtersNote') : $t('views.calendar.legend')}
 </p>
 {#if loadError}<p class="text-xs text-red-600 mt-1">{$t('views.calendar.loadFailed')}</p>{/if}

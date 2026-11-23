@@ -15,7 +15,7 @@
 	<title>{$t('admin.title', { app: $appName })}</title>
 </svelte:head>
 
-<div class="max-w-3xl mx-auto">
+<div class="max-w-3xl">
 	<h1 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">
 		{$t('admin.dashboard.title')}
 	</h1>
@@ -28,7 +28,7 @@
 						<p class="font-semibold text-gray-900 dark:text-white">
 							{$t('admin.dashboard.users')}
 						</p>
-						<p class="text-sm text-gray-500">{$t('admin.dashboard.usersHint')}</p>
+						<p class="text-sm text-gray-500 dark:text-gray-400">{$t('admin.dashboard.usersHint')}</p>
 					</div>
 				</div>
 			</Card>
@@ -41,7 +41,7 @@
 						<p class="font-semibold text-gray-900 dark:text-white">
 							{$t('admin.dashboard.teams')}
 						</p>
-						<p class="text-sm text-gray-500">{$t('admin.dashboard.teamsHint')}</p>
+						<p class="text-sm text-gray-500 dark:text-gray-400">{$t('admin.dashboard.teamsHint')}</p>
 					</div>
 				</div>
 			</Card>
@@ -54,7 +54,7 @@
 						<p class="font-semibold text-gray-900 dark:text-white">
 							{$t('admin.dashboard.quotes')}
 						</p>
-						<p class="text-sm text-gray-500">
+						<p class="text-sm text-gray-500 dark:text-gray-400">
 							{$t('admin.dashboard.quotesHint')}
 						</p>
 					</div>
@@ -69,7 +69,7 @@
 						<p class="font-semibold text-gray-900 dark:text-white">
 							{$t('admin.dashboard.audit')}
 						</p>
-						<p class="text-sm text-gray-500">{$t('admin.dashboard.auditHint')}</p>
+						<p class="text-sm text-gray-500 dark:text-gray-400">{$t('admin.dashboard.auditHint')}</p>
 					</div>
 				</div>
 			</Card>
@@ -82,7 +82,7 @@
 						<p class="font-semibold text-gray-900 dark:text-white">
 							{$t('admin.dashboard.settings')}
 						</p>
-						<p class="text-sm text-gray-500">{$t('admin.dashboard.settingsHint')}</p>
+						<p class="text-sm text-gray-500 dark:text-gray-400">{$t('admin.dashboard.settingsHint')}</p>
 					</div>
 				</div>
 			</Card>

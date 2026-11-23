@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { confirmDialog } from '$lib/confirm';
 	import type { KanbanBucket, Task } from '$lib/types';
 	import type { BucketMoveHandler } from '$lib/types-views';
 	import { Button, Input, Select } from 'flowbite-svelte';
@@ -93,7 +94,7 @@
 	}
 
 	async function remove(b: KanbanBucket) {
-		if (!onDelete || !confirm(tr('views.kanban.confirmDelete', { title: b.title }))) return;
+		if (!onDelete || !(await confirmDialog(tr('views.kanban.confirmDelete', { title: b.title })))) return;
 		await run(() => onDelete(b.id));
 	}
 </script>
@@ -110,7 +111,9 @@
 		<a href="/tasks/{task.id}" class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline">
 			{task.title}
 		</a>
-		{#if task.dueDate}<div class="text-xs text-gray-400">{$fmt.date(task.dueDate)}</div>{/if}
+		{#if task.dueDate}<div class="text-xs text-gray-500 dark:text-gray-400">
+				{$fmt.date(task.dueDate)}
+			</div>{/if}
 		<Select
 			placeholder=""
 			value={task.bucketId ?? ''}
@@ -183,7 +186,9 @@
 						<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 m-0 flex-1">
 							{bucket.title}
 							<span
-								class="font-normal text-xs {overLimit ? 'text-red-600 dark:text-red-400' : 'text-gray-400'}"
+								class="font-normal text-xs {overLimit
+									? 'text-red-600 dark:text-red-400'
+									: 'text-gray-500 dark:text-gray-400'}"
 								title={overLimit ? tr('views.kanban.overLimit') : undefined}
 							>
 								({bucketTasks.length}{bucket.limit != null ? ` / ${bucket.limit}` : ''})
@@ -194,7 +199,7 @@
 								{#if onReorder}
 									<button
 										type="button"
-										class="px-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+										class="px-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 disabled:opacity-30"
 										disabled={busy || i === 0}
 										aria-label={$t('views.kanban.moveLeft')}
 										onclick={() => run(() => onReorder(bucket.id, -1))}
@@ -203,7 +208,7 @@
 									</button>
 									<button
 										type="button"
-										class="px-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
+										class="px-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 disabled:opacity-30"
 										disabled={busy || i === buckets.length - 1}
 										aria-label={$t('views.kanban.moveRight')}
 										onclick={() => run(() => onReorder(bucket.id, 1))}
@@ -237,14 +242,14 @@
 				<div class="board-col-body">
 					{#each bucketTasks as task (task.id)}{@render card(task)}{/each}
 					{#if !bucketTasks.length}
-						<p class="text-xs text-gray-400 text-center m-0">{$t('views.column.empty')}</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400 text-center m-0">{$t('views.column.empty')}</p>
 					{/if}
 				</div>
 			</div>
 		{/each}
 	</div>
 {:else}
-	<div class="text-center py-10 text-gray-400">
+	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
 		<p>{$t('views.kanban.noBuckets')}</p>
 	</div>
 {/if}

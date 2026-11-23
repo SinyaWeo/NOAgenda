@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
@@ -7,7 +8,7 @@
 	import { page } from '$app/state';
 	import WebhookStatus from '$lib/components/WebhookStatus.svelte';
 	import { Alert, Button, Card, Input } from 'flowbite-svelte';
-	import { LinkOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { LinkOutline } from 'flowbite-svelte-icons';
 	import { t } from '$lib/i18n';
 
 	const webhooks = writable<WebhookInfo[]>([]);
@@ -53,15 +54,10 @@
 	);
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('common.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('projects.webhooks.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('projects.webhooks.title')}
+	back={{ href: `/projects/${page.params.id}/edit`, label: $t('common.back') }}
+/>
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
 <Card class="mb-4">
@@ -81,7 +77,7 @@
 </Card>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $webhooks.length}
 	<Card class="p-0 overflow-hidden">
 		{#each $webhooks as wh, i (wh.id)}
@@ -94,12 +90,14 @@
 					<span class="text-sm text-gray-700 dark:text-gray-300 truncate">{wh.url}</span>
 					<WebhookStatus webhook={wh} onChanged={load} />
 				</div>
-				<Button size="sm" color="red" onclick={() => deleteWebhook(wh.id)}>{$t('common.delete')}</Button>
+				<Button size="sm" color="red" outline onclick={() => deleteWebhook(wh.id)}>
+					{$t('common.delete')}
+				</Button>
 			</div>
 		{/each}
 	</Card>
 {:else}
-	<div class="text-center py-10 text-gray-400">
+	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
 		<LinkOutline class="w-10 h-10 mx-auto mb-2" />
 		<p>{$t('projects.webhooks.empty')}</p>
 	</div>

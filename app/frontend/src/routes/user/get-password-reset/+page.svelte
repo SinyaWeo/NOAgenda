@@ -64,7 +64,7 @@
 				</Button>
 			</form>
 			<p class="text-sm text-center mt-4">
-				<a href="/user/login" class="text-gray-400 hover:underline">
+				<a href="/user/login" class="text-gray-500 dark:text-gray-400 hover:underline">
 					<CaretLeftSolid class="w-4 h-4 inline mr-1" />
 					{$t('auth.backToSignIn')}
 				</a>

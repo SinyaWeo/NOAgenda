@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -7,7 +8,6 @@
 	import type { Project } from '$lib/types';
 	import { writable } from 'svelte/store';
 	import { Alert, Button, Card } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 	import { t } from '$lib/i18n';
 
 	const project = writable<Project | null>(null);
@@ -38,21 +38,14 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-4">
-	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('common.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('projects.duplicate.title')}
-	</h1>
-</div>
-<p class="text-gray-500 dark:text-gray-400 mb-4">
-	{$t('projects.duplicate.intro')}
-</p>
+<PageHeader
+	title={$t('projects.duplicate.title')}
+	back={{ href: `/projects/${page.params.id}/edit`, label: $t('common.back') }}
+	subtitle={$t('projects.duplicate.intro')}
+/>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $project}

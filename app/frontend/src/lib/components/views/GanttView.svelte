@@ -104,7 +104,7 @@
 	>
 		<div class="shrink-0 border-r border-gray-200 dark:border-gray-700" style="width:{TITLE_W}px">
 			<div
-				class="px-3 flex items-center text-xs font-semibold uppercase text-gray-400 border-b border-gray-200 dark:border-gray-700"
+				class="px-3 flex items-center text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700"
 				style="height:{HEADER}px"
 			>
 				{$t('views.gantt.task')}
@@ -118,7 +118,7 @@
 						href="/tasks/{task.id}"
 						class="truncate text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline {large &&
 						task.status === 'done'
-							? 'line-through text-gray-400'
+							? 'line-through text-gray-500 dark:text-gray-400'
 							: ''}"
 						title={task.title}
 					>
@@ -151,7 +151,7 @@
 					{/each}
 					{#each ticks as tk (tk.x)}
 						<div
-							class="absolute top-6 h-6 text-center text-[11px] leading-6 text-gray-400 border-l border-gray-100 dark:border-gray-700"
+							class="absolute top-6 h-6 text-center text-[11px] leading-6 text-gray-500 dark:text-gray-400 border-l border-gray-100 dark:border-gray-700"
 							style="left:{tk.x}px; width:{px}px"
 						>
 							{zoom === 'day' ? tk.label : ''}{zoom === 'week' ? ' ' + tk.label : ''}
@@ -192,7 +192,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="text-center {large ? 'py-12' : 'py-10'} text-gray-400">
+	<div class="text-center {large ? 'py-12' : 'py-10'} text-gray-500 dark:text-gray-400">
 		<CalendarMonthOutline class="{large ? 'w-12 h-12 mb-3' : 'w-10 h-10 mb-2'} mx-auto" />
 		<p>{$t('views.gantt.empty')}</p>
 	</div>

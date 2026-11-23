@@ -65,7 +65,7 @@
 			</dl>
 		</Card>
 	{:else}
-		<p class="text-gray-400">{$t('common.loading')}</p>
+		<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 	{/if}
 
 	<h2 class="text-xl font-bold text-gray-900 dark:text-white mt-10 mb-4">

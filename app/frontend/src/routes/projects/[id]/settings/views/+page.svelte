@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
@@ -6,7 +7,7 @@
 	import type { ProjectView, ViewType } from '$lib/types';
 	import { page } from '$app/state';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
-	import { TableColumnOutline, CaretLeftSolid } from 'flowbite-svelte-icons';
+	import { TableColumnOutline } from 'flowbite-svelte-icons';
 	import { t, type MessageKey } from '$lib/i18n';
 
 	const views = writable<ProjectView[]>([]);
@@ -53,15 +54,10 @@
 	);
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('common.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('projects.views.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('projects.views.title')}
+	back={{ href: `/projects/${page.params.id}`, label: $t('common.back') }}
+/>
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
 <Card class="max-w-xl mb-4">
@@ -95,7 +91,7 @@
 </Card>
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else if $views.length}
 	<Card class="max-w-xl p-0 overflow-hidden">
 		{#each $views as view, i (view.id)}
@@ -111,16 +107,18 @@
 					>
 						{view.title}
 					</a>
-					<span class="text-xs text-gray-400 ml-2">
+					<span class="text-xs text-gray-500 dark:text-gray-400 ml-2">
 						{$t(`projects.viewType.${view.viewType}` as MessageKey)}
 					</span>
 				</div>
-				<Button size="sm" color="red" onclick={() => deleteView(view.id)}>{$t('common.delete')}</Button>
+				<Button size="sm" color="red" outline onclick={() => deleteView(view.id)}>
+					{$t('common.delete')}
+				</Button>
 			</div>
 		{/each}
 	</Card>
 {:else}
-	<div class="text-center py-10 text-gray-400">
+	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
 		<TableColumnOutline class="w-10 h-10 mx-auto mb-2" />
 		<p>{$t('projects.views.empty')}</p>
 	</div>

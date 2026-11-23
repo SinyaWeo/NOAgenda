@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { t, tr, locale, setLocale, isLocale, LOCALES } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { errMessage } from '$lib/errors';
@@ -8,7 +9,6 @@
 	import { apiGetAuth, apiPostAuth } from '$lib/api';
 	import { refreshCurrentUser } from '$lib/auth';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
-	import { CaretLeftSolid } from 'flowbite-svelte-icons';
 	import { timeZoneOptions } from '$lib/timezones';
 
 	const name = writable('');
@@ -60,21 +60,16 @@
 	}
 </script>
 
-<div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
-		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
-		{$t('settings.back')}
-	</a>
-	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
-		{$t('settings.general.title')}
-	</h1>
-</div>
+<PageHeader
+	title={$t('settings.general.title')}
+	back={{ href: '/user/settings', label: $t('settings.back') }}
+/>
 
 {#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 {#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
 
 {#if $loading}
-	<p class="text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else}
 	<Card class="max-w-xl">
 		<form onsubmit={handleSave} class="flex flex-col gap-4">

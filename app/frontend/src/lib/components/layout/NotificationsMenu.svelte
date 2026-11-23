@@ -118,7 +118,7 @@
 		</button>
 	</div>
 	{#if notifications.length === 0}
-		<p class="px-4 py-3 text-sm text-gray-500">{$t('layout.notifications.empty')}</p>
+		<p class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{$t('layout.notifications.empty')}</p>
 	{:else}
 		{#each notifications as n (n.id)}
 			<div
@@ -138,11 +138,11 @@
 					{:else}
 						<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{textOf(n)}</p>
 					{/if}
-					<small class="text-xs text-gray-400">{$fmt.dateTime(n.createdAt)}</small>
+					<small class="text-xs text-gray-500 dark:text-gray-400">{$fmt.dateTime(n.createdAt)}</small>
 				</div>
 				<button
 					type="button"
-					class="bg-transparent border-0 cursor-pointer text-gray-400 hover:text-red-600 p-0.5 leading-none"
+					class="bg-transparent border-0 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-600 p-0.5 leading-none"
 					aria-label={$t('layout.notifications.dismiss')}
 					title={$t('layout.notifications.dismiss')}
 					onclick={() => dismiss(n)}

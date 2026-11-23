@@ -154,11 +154,11 @@
 			<Background variant={BackgroundVariant.Dots} gap={20} size={1} />
 		</SvelteFlow>
 	</div>
-	<p class="text-xs text-gray-400 mt-2">
+	<p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
 		{$t('views.mindmap.hint')}
 	</p>
 {:else if loaded}
-	<div class="text-center py-10 text-gray-400">
+	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
 		<p>{$t('views.mindmap.noTasks')}</p>
 	</div>
 {/if}
