@@ -11,7 +11,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'dashboard.stat.overdue': 'Po termínu',
 	'dashboard.quickAdd.title': 'Rychlé přidání',
 	'dashboard.quickAdd.hint':
-		'Dlouhý nebo víceřádkový text se změní na textové pole. Shift+Enter vloží nový řádek. Přidat jako úkol(y) vytvoří jeden úkol z každého řádku, Přidat jako nápad uloží celý text jako jeden nápad.',
+		'Přidat jako úkol(y) vytvoří jeden úkol z každého řádku, Přidat jako nápad uloží celý text jako jeden nápad. Shift+Enter vloží nový řádek.',
 	'dashboard.quickAdd.placeholder': 'Název úkolu nebo nápad… (jeden úkol na řádek)',
 	'dashboard.quickAdd.noProject': 'Bez projektu',
 	'dashboard.quickAdd.adding': 'Přidávám…',

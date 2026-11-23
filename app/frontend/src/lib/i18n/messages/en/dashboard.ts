@@ -8,7 +8,7 @@ export const messages = {
 	'dashboard.stat.overdue': 'Overdue',
 	'dashboard.quickAdd.title': 'Quick Add',
 	'dashboard.quickAdd.hint':
-		'Long or multi-line text switches to a text area. Press Shift+Enter for a new line. Add as Task(s) makes one task per line, Add as Idea keeps the whole text as one idea.',
+		'Add as Task(s) makes one task per line, Add as Idea keeps the whole text as one idea. Press Shift+Enter for a new line.',
 	'dashboard.quickAdd.placeholder': 'Task title or idea… (one task per line)',
 	'dashboard.quickAdd.noProject': 'No project',
 	'dashboard.quickAdd.adding': 'Adding…',
