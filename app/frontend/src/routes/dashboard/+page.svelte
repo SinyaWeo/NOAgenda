@@ -175,39 +175,31 @@
 
 		<!-- Stat cards -->
 		<div class="flex gap-3 shrink-0">
-			<a href="/projects" class="no-underline">
-				<Card class="p-4 hover:shadow-md transition-shadow cursor-pointer text-center">
-					<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
-						{$t('dashboard.stat.projects')}
-					</p>
-					<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
-						{$projectCount}
-					</p>
-				</Card>
-			</a>
-			<a href="/upcoming" class="no-underline">
-				<Card class="p-4 hover:shadow-md transition-shadow cursor-pointer text-center">
-					<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
-						{$t('dashboard.stat.upcoming')}
-					</p>
-					<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
-						{$upcomingTasks.length}
-					</p>
-				</Card>
-			</a>
+			<Card class="p-4 text-center">
+				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
+					{$t('dashboard.stat.projects')}
+				</p>
+				<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+					{$projectCount}
+				</p>
+			</Card>
+			<Card class="p-4 text-center">
+				<p class="text-xs font-medium text-gray-500 uppercase tracking-wide m-0">
+					{$t('dashboard.stat.upcoming')}
+				</p>
+				<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+					{$upcomingTasks.length}
+				</p>
+			</Card>
 			{#if $overdueTasks.length > 0}
-				<a href="/upcoming" class="no-underline">
-					<Card
-						class="p-4 hover:shadow-md transition-shadow cursor-pointer text-center border-red-300 dark:bg-gray-800 dark:border-red-700"
-					>
-						<p class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0">
-							{$t('dashboard.stat.overdue')}
-						</p>
-						<p class="text-3xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0">
-							{$overdueTasks.length}
-						</p>
-					</Card>
-				</a>
+				<Card class="p-4 text-center border-red-300 dark:bg-gray-800 dark:border-red-700">
+					<p class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0">
+						{$t('dashboard.stat.overdue')}
+					</p>
+					<p class="text-3xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0">
+						{$overdueTasks.length}
+					</p>
+				</Card>
 			{/if}
 		</div>
 	</div>
@@ -298,8 +290,8 @@
 								class="text-sm truncate text-gray-800 dark:text-gray-200 hover:underline"
 							>
 								{task.title}
+								<span class="text-xs text-red-500 shrink-0 ml-2">{$fmt.date(task.dueDate)}</span>
 							</a>
-							<span class="text-xs text-red-500 shrink-0 ml-2">{$fmt.date(task.dueDate)}</span>
 						</div>
 					{/each}
 				</Card>
