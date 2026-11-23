@@ -28,6 +28,14 @@ export const messages = {
 	'tasks.toast.saved': 'Task saved',
 	'tasks.toast.created': 'Task created!',
 
+	'tasks.history.title': 'Version history',
+	'tasks.history.empty': 'No earlier versions saved yet.',
+	'tasks.history.loadFailed': 'Could not load the version history.',
+	'tasks.history.current': 'Current',
+	'tasks.history.restore': 'Restore',
+	'tasks.history.restored': 'Version restored',
+	'tasks.history.restoreFailed': 'Could not restore this version',
+
 	// Details tab
 	'tasks.details.startDate': 'Start Date',
 	'tasks.details.dueDate': 'Due Date',

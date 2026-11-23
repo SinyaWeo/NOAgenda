@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Not, Repository } from 'typeorm';
 import { diffFields } from '../../common/diff-fields';
@@ -8,6 +8,16 @@ import { existsSync, unlink } from 'fs';
 import { resolve } from 'path';
 import { Node, NodeType, NodeStatus } from './node.entity';
 import { DomainEvents } from '../../common/domain-events';
+import {
+  deleteNodes,
+  doneTaskIdsBelow,
+  markTrashed,
+  reopen,
+  subtreeIds,
+  trashedBefore,
+  unmarkTrashed,
+  VISIBLE_TO_USER_SQL,
+} from './node-sql';
 import { isRecurring, recurrenceOnCompletion } from './node-recurrence';
 import { safeTimeZone } from '../../common/zoned-time';
 
@@ -58,25 +68,7 @@ export class NodeService {
       // Same rules as NodeAccessService.level(): a node is visible when it sits at or
       // below a project the user owns or was granted (directly or via a team), or
       // below a personal top-level task they created or are assigned to. Any depth; cycle-safe (UNION).
-      qb.andWhere(
-        `node.id IN (
-          WITH RECURSIVE tree (id) AS (
-            SELECT p.id FROM nodes p
-             WHERE (p.type = 'project' AND (
-                      p.ownerId = :uid
-                      OR EXISTS (SELECT 1 FROM project_users pu WHERE pu.projectId = p.id AND pu.userId = :uid)
-                      OR EXISTS (SELECT 1 FROM project_teams pt JOIN team_members tm ON tm.teamId = pt.teamId
-                                  WHERE pt.projectId = p.id AND tm.userId = :uid)))
-                OR (p.type = 'task' AND p.parentId IS NULL AND (
-                      p.createdBy = :uid
-                      OR EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.nodeId = p.id AND ta.userId = :uid)))
-            UNION
-            SELECT c.id FROM nodes c JOIN tree t ON c.parentId = t.id WHERE c.type <> 'idea'
-          )
-          SELECT id FROM tree
-        )`,
-        { uid: filter.userId },
-      );
+      qb.andWhere(VISIBLE_TO_USER_SQL, { uid: filter.userId });
     }
 
     if (!filter.includeArchived && (filter.type === NodeType.PROJECT || filter.type === undefined)) {
@@ -179,7 +171,7 @@ export class NodeService {
 
   /** Tell subscribers (webhooks) what happened to a node. `projectId` is only needed when the node is about to vanish. */
   private announce(
-    action: 'created' | 'updated' | 'deleted',
+    action: 'created' | 'updated' | 'deleted' | 'restored',
     node: Node,
     projectId?: number | null,
     audit: { actorId?: number | null; changes?: Record<string, unknown> } = {},
@@ -287,20 +279,8 @@ export class NodeService {
 
   /** A new cycle starts with a clean slate: done subtasks (at any depth) are open again. */
   private async reopenSubtasks(m: EntityManager, parentIds: number[]): Promise<void> {
-    const rows = await m.query(
-      `WITH RECURSIVE tree (id, depth) AS (
-         SELECT id, 1 FROM nodes WHERE parentId IN (${marks(parentIds.length)})
-         UNION
-         SELECT n.id, t.depth + 1 FROM nodes n JOIN tree t ON n.parentId = t.id WHERE t.depth < ${MAX_TREE_DEPTH}
-       )
-       SELECT n.id FROM nodes n JOIN tree ON tree.id = n.id WHERE n.type = 'task' AND n.status = 'done'`,
-      parentIds,
-    );
-    const ids: number[] = (rows ?? []).map((r: { id: number }) => r.id);
-    for (let i = 0; i < ids.length; i += CHUNK) {
-      const part = ids.slice(i, i + CHUNK);
-      await m.query(`UPDATE nodes SET status = 'open', percentDone = 0 WHERE id IN (${marks(part.length)})`, part);
-    }
+    const q = sqlRunner(m);
+    await reopen(q, await doneTaskIdsBelow(q, parentIds));
   }
 
   /**
@@ -369,41 +349,87 @@ export class NodeService {
   }
 
   /**
-   * Delete a node together with its whole subtree (ideas under it are not part of it: they are only
-   * detached, ON DELETE SET NULL) and everything hanging off it,
-   * in one transaction. (parentId is ON DELETE SET NULL, so deleting only the row
-   * would leave the children behind as orphaned top-level nodes.)
-   * Rows without a foreign key to nodes are removed explicitly; attachment files
-   * are unlinked only after the commit.
+   * Move a node and its whole live subtree to the trash (ideas under it are not part of it). Nothing
+   * is deleted yet: every row of the subtree gets the same `deletedAt`, so `restore` brings back
+   * exactly that set, and `purgeExpired` removes it for good after the retention period.
+   * Attachments, comments, webhooks etc. stay in place while the node is in the trash.
    */
   async remove(id: number, actorId?: number): Promise<void> {
-    // Remember what is being deleted (and where it lived) for subscribers: it is gone afterwards.
+    // Remember what is being deleted (and where it lived) for subscribers.
     const doomed = await this.findById(id);
-    const doomedProjectId = doomed ? await this.projectIdOf(doomed) : null;
-    const files: string[] = [];
+    if (!doomed) return;
+    const doomedProjectId = await this.projectIdOf(doomed);
+    const at = new Date();
     let descendants = 0;
     await this.nodeRepository.manager.transaction(async (m) => {
       const q = sqlRunner(m);
-      const all = new Set<number>([id]);
-      let frontier = [id];
-      while (frontier.length) {
-        const next: number[] = [];
-        for (let i = 0; i < frontier.length; i += CHUNK) {
-          const part = frontier.slice(i, i + CHUNK);
-          for (const r of await q<{ id: number }>(
-            `SELECT id FROM nodes WHERE type <> 'idea' AND parentId IN (${marks(part.length)})`,
-            part,
-          )) {
-            if (!all.has(r.id)) {
-              all.add(r.id);
-              next.push(r.id);
-            }
-          }
-        }
-        frontier = next;
-      }
-      const ids = [...all];
+      const ids = await subtreeIds(q, [id], 'live');
       descendants = ids.length - 1;
+      await markTrashed(q, ids, at, actorId ?? null);
+    });
+    const changes = {
+      descendants: { from: descendants, to: 0 },
+      parentId: { from: doomed.parentId ?? null, to: null },
+    };
+    this.announce('deleted', doomed, doomedProjectId, { actorId: actorId ?? null, changes });
+  }
+
+  /** A trashed node (any user's), or null when it is missing or not in the trash. */
+  async findTrashed(id: number): Promise<Node | null> {
+    const node = await this.nodeRepository.findOne({ where: { id }, withDeleted: true });
+    return node?.deletedAt ? node : null;
+  }
+
+  /**
+   * Take a node out of the trash together with what was trashed with it. Its parent must be live
+   * again (restore the parent first), or null when it was top level.
+   */
+  async restore(id: number, actorId?: number): Promise<Node> {
+    const node = await this.findTrashed(id);
+    if (!node) throw new NotFoundException();
+    if (node.parentId != null && !(await this.nodeRepository.exists({ where: { id: node.parentId } }))) {
+      throw new ConflictException('Restore the parent first');
+    }
+    await this.nodeRepository.manager.transaction(async (m) => {
+      const q = sqlRunner(m);
+      await unmarkTrashed(q, await subtreeIds(q, [id], node.deletedAt!));
+    });
+    const restored = await this.findById(id);
+    if (!restored) throw new NotFoundException();
+    this.announce('restored', restored, undefined, { actorId: actorId ?? null });
+    return restored;
+  }
+
+  /** Delete a trashed node and what was trashed with it for good. */
+  async purge(id: number): Promise<void> {
+    const node = await this.findTrashed(id);
+    if (!node) throw new NotFoundException();
+    const ids = await subtreeIds(sqlRunner(this.nodeRepository.manager), [id], node.deletedAt!);
+    await this.hardDelete(ids);
+  }
+
+  /** Delete everything that has been in the trash for longer than `days`; returns how many nodes. */
+  async purgeExpired(days: number, now = new Date()): Promise<number> {
+    const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+    const q = sqlRunner(this.nodeRepository.manager);
+    let total = 0;
+    for (;;) {
+      const ids = await trashedBefore(q, cutoff, 1000);
+      if (!ids.length) return total;
+      await this.hardDelete(ids);
+      total += ids.length;
+    }
+  }
+
+  /**
+   * Irreversibly delete the given nodes and everything hanging off them, in one transaction.
+   * Rows without a foreign key to nodes are removed explicitly; attachment files are unlinked only
+   * after the commit.
+   */
+  private async hardDelete(ids: number[]): Promise<void> {
+    const files: string[] = [];
+    await this.nodeRepository.manager.transaction(async (m) => {
+      const q = sqlRunner(m);
       for (let i = 0; i < ids.length; i += CHUNK) {
         const part = ids.slice(i, i + CHUNK);
         const inList = marks(part.length);
@@ -415,16 +441,10 @@ export class NodeService {
         for (const table of ['favorites', 'subscriptions', 'reactions']) {
           await q(`DELETE FROM ${table} WHERE entityType IN ('project','task') AND entityId IN (${inList})`, part);
         }
-        await q(`DELETE FROM nodes WHERE id IN (${inList})`, part);
+        await q(`DELETE FROM node_revisions WHERE nodeId IN (${inList})`, part);
+        await deleteNodes(q, part);
       }
     });
-    if (doomed) {
-      const changes = {
-        descendants: { from: descendants, to: 0 },
-        parentId: { from: doomed.parentId ?? null, to: null },
-      };
-      this.announce('deleted', doomed, doomedProjectId, { actorId: actorId ?? null, changes });
-    }
     for (const f of files) {
       const abs = resolve(f);
       if (abs.startsWith(UPLOADS_DIR + '/') && existsSync(abs)) unlink(abs, () => undefined);

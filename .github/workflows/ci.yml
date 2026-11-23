@@ -107,6 +107,54 @@ jobs:
       - if: failure()
         run: cat app/backend/api.log
 
+  # Trash: delete only hides a node, restore is limited to those who could delete it, purge removes it for good.
+  # Own API process: it registers users, and registration is limited to 10 per hour per address.
+  trash:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.8
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root-password
+          MARIADB_DATABASE: noagenda_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: ci-root-password
+      DB_DATABASE: noagenda_ci
+      JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      CORS_ORIGIN: http://localhost:5173
+      PORT: 3000
+      LOGIN_RATE_LIMIT: 100
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: app/backend/package-lock.json
+      - run: npm ci && npm run build
+        working-directory: app/backend
+      - name: Start API
+        working-directory: app/backend
+        run: |
+          nohup node dist/main.js > api.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf localhost:3000/health && exit 0; sleep 2; done
+          cat api.log; exit 1
+      - name: Trash smoke test
+        working-directory: app/backend
+        run: |
+          SQL_CMD="mysql --protocol=TCP -h127.0.0.1 -uroot -pci-root-password noagenda_ci -N" \
+          BASE_URL=http://127.0.0.1:3000 python3 scripts/trash-smoke.py
+      - if: failure()
+        run: cat app/backend/api.log
+
   # Default-deny routes, API-token scopes, search-only user lookup, upload checks and quota, webhook
   # SSRF guard, per-address login lockout and join-table uniqueness. Needs its own API process: it
   # registers users (10 per hour per process) and wants TRUST_PROXY=1 + a 1 MB upload quota.

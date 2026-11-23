@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { t, fmt } from '$lib/i18n';
-	import type { Attachment, Comment, Reminder } from '$lib/types';
+	import type { Attachment, Comment, Reminder, Task } from '$lib/types';
 	import { Button, Card, Input } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
 	import ActivityLog from '$lib/components/ActivityLog.svelte';
+	import TaskVersionHistory from '$lib/components/task/TaskVersionHistory.svelte';
 
 	let {
 		taskId,
@@ -17,7 +18,8 @@
 		onDownload,
 		onUpload,
 		onPostComment,
-		onDeleteComment
+		onDeleteComment,
+		onRestored
 	}: {
 		taskId: number;
 		reminders: Reminder[];
@@ -32,6 +34,7 @@
 		onUpload: (e: Event) => void;
 		onPostComment: (content: string) => Promise<boolean>;
 		onDeleteComment: (id: number) => void;
+		onRestored: (task: Task) => void;
 	} = $props();
 
 	let newComment = $state('');
@@ -179,6 +182,12 @@
 		/>
 		<Button type="submit" size="sm" disabled={addingComment}>{$t('tasks.comments.post')}</Button>
 	</form>
+</Card>
+
+<!-- Version history -->
+<Card class="mb-4">
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.history.title')}</h2>
+	<TaskVersionHistory {taskId} version={activityVersion} {onRestored} />
 </Card>
 
 <!-- Activity log -->

@@ -30,6 +30,14 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.toast.saved': 'Úkol uložen',
 	'tasks.toast.created': 'Úkol vytvořen!',
 
+	'tasks.history.title': 'Historie verzí',
+	'tasks.history.empty': 'Zatím nejsou uloženy žádné dřívější verze.',
+	'tasks.history.loadFailed': 'Historii verzí se nepodařilo načíst.',
+	'tasks.history.current': 'Aktuální',
+	'tasks.history.restore': 'Obnovit',
+	'tasks.history.restored': 'Verze obnovena',
+	'tasks.history.restoreFailed': 'Tuto verzi se nepodařilo obnovit',
+
 	'tasks.details.startDate': 'Datum zahájení',
 	'tasks.details.dueDate': 'Termín',
 	'tasks.details.deferLabel': 'Posunout termín:',

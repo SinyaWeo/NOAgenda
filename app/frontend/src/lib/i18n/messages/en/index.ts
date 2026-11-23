@@ -13,6 +13,7 @@ import { messages as projects } from './projects';
 import { messages as settings } from './settings';
 import { messages as tasks } from './tasks';
 import { messages as teams } from './teams';
+import { messages as trash } from './trash';
 import { messages as views } from './views';
 
 /** English is the source of truth: every key must exist here and in Czech (checked by svelte-check). */
@@ -32,5 +33,6 @@ export const en = {
 	...settings,
 	...tasks,
 	...teams,
+	...trash,
 	...views
 } as const;

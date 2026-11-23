@@ -384,6 +384,7 @@
 			onUpload={uploadAttachment}
 			onPostComment={postComment}
 			onDeleteComment={deleteComment}
+			onRestored={(restored) => (task = restored)}
 		/>
 	{/if}
 {:else}

@@ -95,7 +95,7 @@ describe('AccountService', () => {
     const handler: Handler = (sql) => {
       if (sql.startsWith('SELECT id, avatarUrl FROM users')) return [{ id: 9, avatarUrl: '/uploads/avatars/me.png' }];
       if (sql.includes("type = 'project'")) return [{ id: 100 }];
-      if (sql.startsWith("SELECT id FROM nodes WHERE type <> 'idea' AND parentId")) return [{ id: 101 }];
+      if (sql.includes("type <> 'idea'") && sql.includes('parentId IN')) return [{ id: 101 }];
       if (sql.startsWith('SELECT path FROM attachments WHERE nodeId'))
         return [{ path: `${UPLOADS}/a.txt` }, { path: '/etc/passwd' }];
       if (sql.startsWith('SELECT path FROM attachments WHERE uploaderId')) return [{ path: `${UPLOADS}/b.txt` }];

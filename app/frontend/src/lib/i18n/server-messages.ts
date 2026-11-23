@@ -30,6 +30,7 @@ const EXACT: Record<string, MessageKey> = {
 	'You already have a team with that name': 'errors.server.teamNameTaken',
 	'Account is locked': 'errors.server.accountLocked',
 	'Already subscribed': 'errors.server.alreadySubscribed',
+	'Restore the parent first': 'errors.server.restoreParentFirst',
 	'A node cannot be its own parent': 'errors.server.ownParent',
 	'A node cannot be moved under its own descendant': 'errors.server.ownDescendant',
 	'Invalid or too deeply nested parent': 'errors.server.badParent',

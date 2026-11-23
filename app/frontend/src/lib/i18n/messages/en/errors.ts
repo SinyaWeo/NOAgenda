@@ -31,6 +31,7 @@ export const messages = {
 	'errors.server.ownDelete': 'You cannot delete your own account',
 	'errors.server.accountLocked': 'This account is locked. Contact an administrator.',
 	'errors.server.alreadySubscribed': 'You are already subscribed',
+	'errors.server.restoreParentFirst': 'Restore the project or task it was in first.',
 	'errors.server.ownParent': 'An item cannot be placed inside itself',
 	'errors.server.ownDescendant': 'An item cannot be moved under one of its own sub-items',
 	'errors.server.badParent': 'That location is not valid or is nested too deeply',

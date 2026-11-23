@@ -14,6 +14,7 @@
 		LightbulbOutline,
 		UsersGroupOutline,
 		TagOutline,
+		TrashBinOutline,
 		FilterOutline,
 		InfoCircleOutline,
 		ChevronRightOutline,
@@ -55,7 +56,8 @@
 		{ href: '/teams', label: 'layout.nav.teams', icon: UsersGroupOutline },
 		{ href: '/labels', label: 'layout.nav.labels', icon: TagOutline },
 		{ href: '/filters', label: 'layout.nav.filters', icon: FilterOutline },
-		{ href: '/activity', label: 'layout.nav.activity' }
+		{ href: '/activity', label: 'layout.nav.activity' },
+		{ href: '/trash', label: 'layout.nav.trash', icon: TrashBinOutline }
 	];
 	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.adminOverview', icon: CogOutline, exact: true };
 	const AUDIT: NavItem = { href: '/admin/activity', label: 'layout.nav.auditLog' };

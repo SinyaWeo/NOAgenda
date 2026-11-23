@@ -16,39 +16,54 @@ interface Idea {
 }
 
 function build(ideas: Idea[], memberTeams: Record<number, number[]> = {}, level: Access = Access.READ) {
-  const queries: { sql: string; args: unknown[] }[] = [];
   const query = jest.fn(async (sql: string, args: unknown[] = []) => {
-    queries.push({ sql, args });
-    if (sql.includes('FROM nodes n')) {
-      const uid = args[0] as number;
-      const id = sql.includes('n.id = ?') ? (args[2] as number) : undefined;
-      return ideas
-        .filter((i) => (id === undefined || i.id === id) && (i.createdBy === uid || i.sharedWith.includes(uid)))
-        .map((i) => ({
-          id: i.id,
-          text: 'x',
-          createdAt: new Date(),
-          createdBy: i.createdBy,
-          parentId: i.parentId,
-          username: `u${i.createdBy}`,
-          name: null,
-        }));
-    }
     if (sql.includes('FROM team_members')) return (memberTeams[args[0] as number] ?? []).map((teamId) => ({ teamId }));
     return [];
   });
+  /** Stands in for the query builder: it keeps the bound parameters, which carry the visibility rule. */
+  const listBuilder = () => {
+    const params: Record<string, unknown> = {};
+    const qb = {
+      leftJoin: () => qb,
+      select: () => qb,
+      addSelect: () => qb,
+      where: (_sql: string, p: Record<string, unknown>) => Object.assign(params, p) && qb,
+      andWhere: (_sql: string, p: Record<string, unknown>) => Object.assign(params, p) && qb,
+      orderBy: () => qb,
+      addOrderBy: () => qb,
+      limit: () => qb,
+      getRawMany: async () =>
+        ideas
+          .filter(
+            (i) =>
+              (params.id === undefined || i.id === params.id) &&
+              (i.createdBy === params.userId || i.sharedWith.includes(params.userId as number)),
+          )
+          .map((i) => ({
+            id: i.id,
+            text: 'x',
+            createdAt: new Date(),
+            createdBy: i.createdBy,
+            parentId: i.parentId,
+            username: `u${i.createdBy}`,
+            name: null,
+          })),
+    };
+    return qb;
+  };
   const repo = {
     findOne: jest.fn(async ({ where }: { where: { id: number; type?: NodeType } }) => {
       const i = ideas.find((x) => x.id === where.id);
       return i && where.type === NodeType.IDEA ? { id: i.id, createdBy: i.createdBy } : null;
     }),
+    createQueryBuilder: jest.fn(listBuilder),
     update: jest.fn(),
     delete: jest.fn(),
     manager: { query, transaction: jest.fn(async (fn: (m: unknown) => Promise<void>) => fn({ query })) },
   };
   const access = { level: jest.fn(async () => level), assertProject: jest.fn() };
   const svc = new IdeaService(asMock(repo), asMock<NodeAccessService>(access));
-  return { svc, repo, access, queries };
+  return { svc, repo, access };
 }
 
 describe('IdeaService', () => {

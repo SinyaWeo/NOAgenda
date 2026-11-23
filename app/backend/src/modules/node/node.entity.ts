@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn, Index, ForeignKey } from 'typeorm';
+import { Entity, Column, DeleteDateColumn, ManyToOne, OneToMany, JoinColumn, Index, ForeignKey } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
 import { User } from '../user/user.entity';
 import { KanbanBucket } from '../kanban-bucket/kanban-bucket.entity';
@@ -30,6 +30,15 @@ export enum RepeatMode {
 
 @Entity('nodes')
 export class Node extends BaseEntity {
+  /** Set while the node is in the trash (it is then hidden from every normal query); see NodeService.remove. */
+  @Index('IDX_nodes_deletedAt')
+  @DeleteDateColumn({ type: 'datetime', precision: 6 })
+  deletedAt?: Date | null;
+
+  /** Who moved it to the trash. */
+  @Column({ nullable: true, type: 'int' })
+  deletedBy?: number | null;
+
   @Column({ type: 'enum', enum: NodeType })
   type!: NodeType;
 

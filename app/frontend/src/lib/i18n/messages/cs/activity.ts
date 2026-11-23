@@ -16,6 +16,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'activity.action.task.updated': '{actor}: upraven úkol „{title}“',
 	'activity.action.task.archived': '{actor}: archivován úkol „{title}“',
 	'activity.action.task.restored': '{actor}: obnoven úkol „{title}“',
+	'activity.action.task.undeleted': '{actor} obnovil(a) úkol „{title}“ z koše',
+	'activity.action.project.undeleted': '{actor} obnovil(a) projekt „{title}“ z koše',
 	'activity.action.task.moved': '{actor}: přesunut úkol „{title}“',
 	'activity.action.task.deleted': '{actor}: smazán úkol „{title}“',
 	'activity.action.task.deletedWith': {

@@ -111,9 +111,36 @@ export interface ActivityEntry {
 	changes: Record<string, unknown> | null;
 }
 
+/** A deleted task or project that can still be restored (the top of what was deleted together). */
+export interface TrashEntry {
+	id: number;
+	type: 'task' | 'project';
+	title: string | null;
+	parentId: number | null;
+	deletedAt: string;
+	deletedBy: { id: number | null; username: string | null };
+	/** When it will be deleted for good. */
+	purgeAt: string;
+}
+
 export interface ActivityPage {
 	items: ActivityEntry[];
 	/** Pass as `before` to fetch the next, older page; null at the end. */
+	next: number | null;
+}
+
+/** A saved title and description of a task or project (newest first in the API). */
+export interface NodeRevision {
+	id: number;
+	createdAt: string;
+	nodeId: number;
+	title: string | null;
+	description: string | null;
+	actor: { id: number | null; username: string | null };
+}
+
+export interface NodeRevisionPage {
+	items: NodeRevision[];
 	next: number | null;
 }
 

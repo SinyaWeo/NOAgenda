@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThan, Repository, SelectQueryBuilder } from 'typeorm';
 import { DomainEvent, DomainEvents } from '../../common/domain-events';
+import { Node } from '../node/node.entity';
 import { NodeService } from '../node/node.service';
 import { Activity } from './activity.entity';
 
@@ -171,10 +172,14 @@ export class ActivityService implements OnModuleInit, OnModuleDestroy {
 
   /** What the user did, plus what happened to their personal tasks and to their projects that no longer exist. */
   mine(userId: number, before?: number, limit?: number): Promise<ActivityPage> {
-    const qb = this.repo.createQueryBuilder('a').where(
-      `(a.actorId = :userId OR (a.ownerId = :userId AND (a.projectId IS NULL
-           OR NOT EXISTS (SELECT 1 FROM nodes n WHERE n.id = a.projectId))))`,
-      { userId },
+    const qb = this.repo.createQueryBuilder('a');
+    // A project that is gone (deleted or in the trash) no longer has its own history to read.
+    const projectExists = qb.subQuery().select('1').from(Node, 'n').where('n.id = a.projectId').getQuery();
+    qb.where(
+      `(a.actorId = :userId OR (a.ownerId = :userId AND (a.projectId IS NULL OR NOT EXISTS ${projectExists})))`,
+      {
+        userId,
+      },
     );
     return this.page(qb, before, limit);
   }

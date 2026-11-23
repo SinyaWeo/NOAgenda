@@ -35,6 +35,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'errors.server.ownDelete': 'Vlastní účet nelze smazat',
 	'errors.server.accountLocked': 'Tento účet je zamknutý. Kontaktujte správce.',
 	'errors.server.alreadySubscribed': 'Odběr už máte zapnutý',
+	'errors.server.restoreParentFirst': 'Nejdřív obnovte projekt nebo úkol, ve kterém to bylo.',
 	'errors.server.ownParent': 'Položku nelze vložit do sebe sama',
 	'errors.server.ownDescendant': 'Položku nelze přesunout pod některou z jejích podpoložek',
 	'errors.server.badParent': 'Toto umístění není platné nebo je zanořené příliš hluboko',

@@ -13,6 +13,8 @@ export const messages = {
 	'activity.action.task.updated': '{actor} updated task “{title}”',
 	'activity.action.task.archived': '{actor} archived task “{title}”',
 	'activity.action.task.restored': '{actor} restored task “{title}”',
+	'activity.action.task.undeleted': '{actor} restored task “{title}” from the trash',
+	'activity.action.project.undeleted': '{actor} restored project “{title}” from the trash',
 	'activity.action.task.moved': '{actor} moved task “{title}”',
 	'activity.action.task.deleted': '{actor} deleted task “{title}”',
 	'activity.action.task.deletedWith': {

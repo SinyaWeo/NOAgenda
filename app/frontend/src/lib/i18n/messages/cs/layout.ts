@@ -45,6 +45,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'layout.nav.labels': 'Štítky',
 	'layout.nav.filters': 'Uložené filtry',
 	'layout.nav.activity': 'Aktivita',
+	'layout.nav.trash': 'Koš',
 	'layout.nav.auditLog': 'Auditní záznam',
 	'layout.nav.admin': 'Správa',
 	'layout.nav.adminOverview': 'Přehled',

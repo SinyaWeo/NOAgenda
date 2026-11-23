@@ -40,6 +40,8 @@ export function describeActivity(e: ActivityEntry, t: Translate): string {
 			if (keys.length === 1 && keys[0] === 'parentId') return say(`${type}.moved`);
 			return say(`${type}.updated`);
 		}
+		case `${type}.restored`:
+			return say(`${type}.undeleted`);
 		case `${type}.deleted`: {
 			const n = Number(change(e, 'descendants')?.from ?? 0);
 			return n > 0 ? say(`${type}.deletedWith`, { count: n }) : say(`${type}.deleted`);

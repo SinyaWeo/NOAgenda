@@ -29,7 +29,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.edit.title': 'Upravit projekt',
 	'projects.edit.saveChanges': 'Uložit změny',
 	'projects.edit.saved': 'Projekt byl uložen',
-	'projects.edit.confirmDelete': 'Smazat tento projekt i všechny jeho úkoly? Tuto akci nelze vrátit zpět.',
+	'projects.edit.confirmDelete':
+		'Přesunout tento projekt i všechny jeho úkoly do koše? Lze je obnovit z Koše, dokud se nevyprázdní.',
 	'projects.edit.dangerZone': 'Nebezpečná zóna',
 	'projects.edit.archiveRestore': 'Archivovat / obnovit',
 	'projects.edit.archiveRestoreDesc': 'Přepnout stav archivace tohoto projektu',
@@ -38,7 +39,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.edit.duplicateDesc': 'Vytvořit kopii tohoto projektu',
 	'projects.edit.duplicate': 'Duplikovat',
 	'projects.edit.deleteTitle': 'Smazat projekt',
-	'projects.edit.deleteDesc': 'Trvale smaže projekt i všechny úkoly',
+	'projects.edit.deleteDesc': 'Přesune projekt i všechny úkoly do koše',
 
 	'projects.archive.title': 'Archivace projektu',
 	'projects.archive.intro': 'Určete, zda se tento projekt zobrazuje v seznamu aktivních projektů.',
@@ -64,11 +65,11 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.duplicate.submitting': 'Duplikuji…',
 
 	'projects.delete.title': 'Smazání projektu',
-	'projects.delete.confirm': 'Trvale smazat tento projekt i všechny jeho úkoly?',
-	'projects.delete.warning': 'Tuto akci nelze vrátit zpět',
-	'projects.delete.descBefore': 'Trvale smaže projekt a',
+	'projects.delete.confirm': 'Přesunout tento projekt i všechny jeho úkoly do koše?',
+	'projects.delete.warning': 'Projekt se přesune do koše',
+	'projects.delete.descBefore': 'Přesune projekt a',
 	'projects.delete.descStrong': 'všechny jeho úkoly',
-	'projects.delete.descAfter': '. Po smazání už tato data nelze obnovit.',
+	'projects.delete.descAfter': ' do koše. Lze je obnovit z Koše, dokud se automaticky nevyprázdní.',
 	'projects.delete.submit': 'Smazat projekt',
 	'projects.delete.submitting': 'Mažu…',
 

@@ -4,8 +4,8 @@ import type { messages as en } from '../en/ideas';
 // Messages for the "ideas" area. Keys are prefixed "ideas." (see ../README.md).
 export const messages: Record<keyof typeof en, Message> = {
 	'ideas.title': 'Nápady',
-	'ideas.subtitle': 'Soukromé poznámky. Vidíte je jen vy, dokud některou nasdílíte týmu.',
-	'ideas.newPlaceholder': 'Zapište nápad…',
+	'ideas.subtitle': 'Soukromé poznámky. Vidíte je jen vy, dokud některou nenasdílíte týmu.',
+	'ideas.newPlaceholder': 'Zapište si nápad…',
 	'ideas.project': 'Projekt',
 	'ideas.noProject': 'Bez projektu',
 	'ideas.add': '+ Přidat nápad',

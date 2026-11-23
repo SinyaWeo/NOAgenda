@@ -33,6 +33,7 @@ import { SavedFilterModule } from './modules/saved-filter/saved-filter.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { ReactionModule } from './modules/reaction/reaction.module';
 import { ActivityModule } from './modules/activity/activity.module';
+import { NodeRevisionModule } from './modules/node-revision/node-revision.module';
 import { ApiTokenModule } from './modules/api-token/api-token.module';
 import { SessionModule } from './modules/session/session.module';
 import { KanbanBucketModule } from './modules/kanban-bucket/kanban-bucket.module';
@@ -99,6 +100,7 @@ import { MailModule } from './modules/mail/mail.module';
     SubscriptionModule,
     ReactionModule,
     ActivityModule,
+    NodeRevisionModule,
     ApiTokenModule,
     SessionModule,
     KanbanBucketModule,

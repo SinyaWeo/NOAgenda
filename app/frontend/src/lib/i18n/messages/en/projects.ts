@@ -21,7 +21,8 @@ export const messages = {
 	'projects.edit.title': 'Edit Project',
 	'projects.edit.saveChanges': 'Save Changes',
 	'projects.edit.saved': 'Project saved',
-	'projects.edit.confirmDelete': 'Delete this project and all its tasks? This cannot be undone.',
+	'projects.edit.confirmDelete':
+		'Move this project and all its tasks to the trash? You can restore them from the Trash until it is emptied.',
 	'projects.edit.dangerZone': 'Danger Zone',
 	'projects.edit.archiveRestore': 'Archive / Restore',
 	'projects.edit.archiveRestoreDesc': 'Toggle archive status of this project',
@@ -30,7 +31,7 @@ export const messages = {
 	'projects.edit.duplicateDesc': 'Create a copy of this project',
 	'projects.edit.duplicate': 'Duplicate',
 	'projects.edit.deleteTitle': 'Delete Project',
-	'projects.edit.deleteDesc': 'Permanently deletes project and all tasks',
+	'projects.edit.deleteDesc': 'Moves the project and all its tasks to the trash',
 
 	'projects.archive.title': 'Archive Project',
 	'projects.archive.intro': 'Manage whether this project appears in your active project list.',
@@ -58,11 +59,12 @@ export const messages = {
 	'projects.duplicate.submitting': 'Duplicating…',
 
 	'projects.delete.title': 'Delete Project',
-	'projects.delete.confirm': 'Permanently delete this project and all its tasks?',
-	'projects.delete.warning': 'This action cannot be undone',
-	'projects.delete.descBefore': 'Permanently deletes the project and',
+	'projects.delete.confirm': 'Move this project and all its tasks to the trash?',
+	'projects.delete.warning': 'The project is moved to the trash',
+	'projects.delete.descBefore': 'Moves the project and',
 	'projects.delete.descStrong': 'all its tasks',
-	'projects.delete.descAfter': '. Once deleted, there is no way to recover this data.',
+	'projects.delete.descAfter':
+		' to the trash. You can restore them from the Trash until it is emptied automatically.',
 	'projects.delete.submit': 'Delete Project',
 	'projects.delete.submitting': 'Deleting…',
 

@@ -20,7 +20,17 @@ const PERMISSION_LEVEL: Record<string, Access> = {
 const MAX_DEPTH = 32;
 
 /** Fields a client may never set directly on a node (identity / ownership / bookkeeping). */
-const PROTECTED_NODE_FIELDS = ['id', 'ownerId', 'createdBy', 'parent', 'children', 'createdAt', 'updatedAt'] as const;
+const PROTECTED_NODE_FIELDS = [
+  'id',
+  'ownerId',
+  'createdBy',
+  'parent',
+  'children',
+  'createdAt',
+  'updatedAt',
+  'deletedAt',
+  'deletedBy',
+] as const;
 
 /**
  * Single source of truth for "who may do what to a node (project or task)".
@@ -44,8 +54,8 @@ export class NodeAccessService {
   ) {}
 
   /** Highest access `userId` has on the node, or NONE (also when the node does not exist). */
-  async level(userId: number, nodeId: number): Promise<Access> {
-    const start = await this.nodeRepository.findOne({ where: { id: nodeId } });
+  async level(userId: number, nodeId: number, withDeleted = false): Promise<Access> {
+    const start = await this.nodeRepository.findOne({ where: { id: nodeId }, withDeleted });
     if (!start) return Access.NONE;
     // Ideas are private to their creator (and teams they are shared with) and are checked only in IdeaService:
     // here they never grant access, not even through the project they hang under.
@@ -62,7 +72,7 @@ export class NodeAccessService {
         // A personal task's assignee may work on it (and its subtasks): WRITE, never ADMIN.
         return cur.type === NodeType.TASK && (await this.isAssignee(userId, cur.id)) ? Access.WRITE : Access.NONE;
       }
-      cur = await this.nodeRepository.findOne({ where: { id: cur.parentId } });
+      cur = await this.nodeRepository.findOne({ where: { id: cur.parentId }, withDeleted });
     }
     return Access.NONE; // broken or over-deep chain: fail closed
   }
@@ -89,6 +99,14 @@ export class NodeAccessService {
     let best = Access.NONE;
     for (const r of rows) best = Math.max(best, PERMISSION_LEVEL[r.permission] ?? Access.NONE) as Access;
     return best;
+  }
+
+  /** Access to a node in the trash: what the user had before it was deleted (it is still hidden from `assert`). */
+  async assertTrashed(userId: number, node: Node): Promise<void> {
+    const needed = node.type === NodeType.PROJECT ? Access.ADMIN : Access.WRITE;
+    const level = await this.level(userId, node.id, true);
+    if (level === Access.NONE) throw new NotFoundException();
+    if (level < needed) throw new ForbiddenException();
   }
 
   async assert(userId: number, nodeId: number, needed: Access): Promise<void> {

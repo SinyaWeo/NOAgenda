@@ -1,4 +1,13 @@
 import { SqlRunner, sqlRunner } from '../../common/sql';
+import {
+  anonymizeCreator,
+  createdBy,
+  deleteIdeasOf,
+  deleteNodes,
+  ownedRootIds,
+  rowsByIds,
+  subtreeIds,
+} from '../node/node-sql';
 import { ConflictException, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { existsSync, unlink } from 'fs';
@@ -116,28 +125,6 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
 
   // ---------------------------------------------------------------- purge
 
-  /** All nodes at or below `roots` (projects/tasks and their descendants). */
-  private async descendants(q: SqlRunner, roots: number[]): Promise<number[]> {
-    const all = new Set(roots);
-    let frontier = roots;
-    while (frontier.length) {
-      const next: number[] = [];
-      for (const part of chunks(frontier)) {
-        const rows = await q<{ id: number }>(
-          `SELECT id FROM nodes WHERE type <> 'idea' AND parentId IN (${marks(part.length)})`,
-          part,
-        );
-        for (const r of rows)
-          if (!all.has(r.id)) {
-            all.add(r.id);
-            next.push(r.id);
-          }
-      }
-      frontier = next;
-    }
-    return [...all];
-  }
-
   /** Irreversibly delete a user and their data (see class comment). One transaction. */
   async purgeUser(userId: number): Promise<void> {
     const files: string[] = [];
@@ -154,14 +141,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       this.assertNoOrphanedTeams(await this.teamsNeedingManager(q, userId));
 
       // Owned projects and personal (top-level) tasks, with everything below them.
-      const roots: number[] = (
-        await q<{ id: number }>(
-          `SELECT id FROM nodes
-            WHERE (type = 'project' AND ownerId = ?) OR (type = 'task' AND createdBy = ? AND parentId IS NULL)`,
-          [userId, userId],
-        )
-      ).map((r) => r.id);
-      const ids = await this.descendants(q, roots);
+      const ids = await subtreeIds(q, await ownedRootIds(q, userId), 'all');
 
       for (const part of chunks(ids)) {
         const inList = marks(part.length);
@@ -173,7 +153,8 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
         for (const table of ['favorites', 'subscriptions', 'reactions']) {
           await q(`DELETE FROM ${table} WHERE entityType IN ('project','task') AND entityId IN (${inList})`, part);
         }
-        await q(`DELETE FROM nodes WHERE id IN (${inList})`, part);
+        await q(`DELETE FROM node_revisions WHERE nodeId IN (${inList})`, part);
+        await deleteNodes(q, part);
       }
 
       // The user's own comments/uploads on other people's items.
@@ -183,10 +164,10 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       await q('DELETE FROM comments WHERE authorId = ?', [userId]);
 
       // Their private ideas go with them (an idea without a creator would be unreachable).
-      await q("DELETE FROM nodes WHERE type = 'idea' AND createdBy = ?", [userId]);
+      await deleteIdeasOf(q, userId);
 
       // Shared work they created in other people's projects stays, anonymized.
-      await q('UPDATE nodes SET createdBy = NULL WHERE createdBy = ?', [userId]);
+      await anonymizeCreator(q, userId);
 
       // Teams stay (assertNoOrphanedTeams); only the user's own memberships go.
       await q('DELETE FROM team_members WHERE userId = ?', [userId]);
@@ -231,27 +212,10 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       [userId],
     );
 
-    const roots: number[] = (
-      await q<{ id: number }>(
-        `SELECT id FROM nodes
-          WHERE (type = 'project' AND ownerId = ?) OR (type = 'task' AND createdBy = ? AND parentId IS NULL)`,
-        [userId, userId],
-      )
-    ).map((r) => r.id);
-    const ownedIds = await this.descendants(q, roots);
-    const owned: Record<string, unknown>[] = [];
-    for (const part of chunks(ownedIds)) {
-      owned.push(
-        ...(await q<Record<string, unknown>>(
-          `SELECT * FROM nodes WHERE id IN (${marks(part.length)}) ORDER BY id`,
-          part,
-        )),
-      );
-    }
+    const ownedIds = await subtreeIds(q, await ownedRootIds(q, userId), 'all');
+    const owned = await rowsByIds(q, ownedIds);
     const ownedSet = new Set(ownedIds);
-    const elsewhere = (await q<{ id: number }>('SELECT * FROM nodes WHERE createdBy = ? ORDER BY id', [userId])).filter(
-      (n) => !ownedSet.has(n.id),
-    );
+    const elsewhere = (await createdBy(q, userId)).filter((n) => !ownedSet.has(n.id));
 
     const teamsOwned = await q('SELECT id, name, description, createdAt FROM teams WHERE ownerId = ?', [userId]);
     const memberships = await q(

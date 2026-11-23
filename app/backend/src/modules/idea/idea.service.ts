@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Node, NodeType } from '../node/node.entity';
+import { User } from '../user/user.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { MAX_PAGE_SIZE } from '../node/dto/node.dto';
 import { IdeaCreateDto, IdeaUpdateDto } from './dto/idea.dto';
@@ -43,28 +44,29 @@ export class IdeaService {
 
   /** Own ideas plus ideas shared with one of the viewer's teams, newest first. */
   async list(userId: number, opts: { id?: number; projectId?: number } = {}): Promise<IdeaView[]> {
-    const where: string[] = [
-      `n.type = 'idea'`,
-      `(n.createdBy = ? OR EXISTS (SELECT 1 FROM idea_teams it JOIN team_members tm ON tm.teamId = it.teamId
-                                    WHERE it.ideaId = n.id AND tm.userId = ?))`,
-    ];
-    const args: unknown[] = [userId, userId];
-    if (opts.id !== undefined) {
-      where.push('n.id = ?');
-      args.push(opts.id);
-    }
-    if (opts.projectId !== undefined) {
-      where.push('n.parentId = ?');
-      args.push(opts.projectId);
-    }
-    const rows: IdeaRow[] = await this.nodes.manager.query(
-      `SELECT n.id, n.description AS text, n.createdAt, n.createdBy, n.parentId, u.username, u.name
-         FROM nodes n LEFT JOIN users u ON u.id = n.createdBy
-        WHERE ${where.join(' AND ')}
-        ORDER BY n.createdAt DESC, n.id DESC
-        LIMIT ${MAX_PAGE_SIZE}`,
-      args,
-    );
+    const qb = this.nodes
+      .createQueryBuilder('n')
+      .leftJoin(User, 'u', 'u.id = n.createdBy')
+      .select('n.id', 'id')
+      .addSelect('n.description', 'text')
+      .addSelect('n.createdAt', 'createdAt')
+      .addSelect('n.createdBy', 'createdBy')
+      .addSelect('n.parentId', 'parentId')
+      .addSelect('u.username', 'username')
+      .addSelect('u.name', 'name')
+      .where('n.type = :type', { type: NodeType.IDEA })
+      .andWhere(
+        `(n.createdBy = :userId OR EXISTS (SELECT 1 FROM idea_teams it JOIN team_members tm ON tm.teamId = it.teamId
+                                            WHERE it.ideaId = n.id AND tm.userId = :userId))`,
+        { userId },
+      );
+    if (opts.id !== undefined) qb.andWhere('n.id = :id', { id: opts.id });
+    if (opts.projectId !== undefined) qb.andWhere('n.parentId = :projectId', { projectId: opts.projectId });
+    const rows: IdeaRow[] = await qb
+      .orderBy('n.createdAt', 'DESC')
+      .addOrderBy('n.id', 'DESC')
+      .limit(MAX_PAGE_SIZE)
+      .getRawMany();
     if (!rows.length) return [];
 
     const mineIds = rows.filter((r) => r.createdBy === userId).map((r) => r.id);
