@@ -89,6 +89,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.source': 'Zdrojový kód',
 	'auth.about.license': 'Licence',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.ideas.title': 'Nápady',
+	'auth.about.timeline.ideas.body':
+		'Nová soukromá sekce Nápady pro rychlé poznámky, volitelně navázané na projekt a sdílitelné s vašimi týmy.',
+	'auth.about.timeline.calendar.title': 'Kalendářový pohled',
+	'auth.about.timeline.calendar.body':
+		'Úkoly v kalendáři v projektech, na stránce Nadcházející a na nástěnce.',
+	'auth.about.timeline.activity.title': 'Protokol aktivity',
+	'auth.about.timeline.activity.body':
+		'Auditní stopa toho, kdo co na úkolech a projektech změnil, včetně změn po jednotlivých polích, viditelná každému, kdo položku může číst, a správcům aplikace.',
 	'auth.about.timeline.teams.title': 'Role v týmech a nástroje správce',
 	'auth.about.timeline.teams.body':
 		'Manažeři a členové týmů, samostatný správce aplikace s vlastní stránkou pro správu týmů a sekcí v postranním menu, bezpečnější mazání účtu posledního manažera týmu.',

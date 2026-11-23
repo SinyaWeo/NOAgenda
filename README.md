@@ -6,8 +6,10 @@ A self-hosted task and project management app: projects, tasks, kanban boards, t
 
 - **Projects and tasks** in a single hierarchy (projects, tasks and subtasks share one `node` model), with statuses,
   priorities, due dates, percent done, recurring tasks and task relations
-- **Views**: project views with kanban buckets, an upcoming-tasks page and a mind map
+- **Views**: project views with kanban buckets, a calendar, Gantt timeline and mind map, plus an upcoming-tasks page
+- **Ideas**: private quick notes, optionally linked to a project and shareable with teams
 - **Collaboration**: teams with managers and members, project sharing with permissions, comments, reactions, assignees, notifications
+- **Activity log**: an audit trail of changes to tasks and projects
 - **Organization**: labels, saved filters, favorites, search across tasks and projects
 - **Reminders** and **webhooks** for integrations, plus **API tokens** (read-only or read & write)
 - **Attachments** with per-user storage quotas, and a data export for every account

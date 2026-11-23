@@ -87,6 +87,15 @@ export const messages = {
 	'auth.about.source': 'Source code',
 	'auth.about.license': 'License',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.ideas.title': 'Ideas',
+	'auth.about.timeline.ideas.body':
+		'A new private Ideas section for quick notes, optionally linked to a project and shareable with your teams.',
+	'auth.about.timeline.calendar.title': 'Calendar view',
+	'auth.about.timeline.calendar.body':
+		'Tasks on a calendar in projects, on the Upcoming page and on the Dashboard.',
+	'auth.about.timeline.activity.title': 'Activity log',
+	'auth.about.timeline.activity.body':
+		'An audit trail of who changed what on tasks and projects, with field-by-field changes, visible to anyone who can read the item and to app admins.',
 	'auth.about.timeline.teams.title': 'Team roles and admin tools',
 	'auth.about.timeline.teams.body':
 		'Team managers and members, a separate app admin with its own team management page and sidebar section, safer account deletion for the last manager of a team.',
