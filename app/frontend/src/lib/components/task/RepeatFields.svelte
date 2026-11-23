@@ -22,9 +22,9 @@
 </script>
 
 <fieldset class="border border-gray-200 dark:border-gray-700 rounded-lg p-3">
-	<legend class="text-sm font-medium text-gray-700 dark:text-gray-300 px-1"
-		>{$t('tasks.repeat.legend')}</legend
-	>
+	<legend class="text-sm font-medium text-gray-700 dark:text-gray-300 px-1">
+		{$t('tasks.repeat.legend')}
+	</legend>
 	<div class="flex items-center gap-2 flex-wrap">
 		{#if repeats}<span class="text-sm text-gray-500">{$t('tasks.repeat.every')}</span>
 			<Input
@@ -54,8 +54,9 @@
 						)
 							? 'bg-primary-600 border-primary-600 text-white'
 							: 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}"
-						>{weekdayName(day)}</button
 					>
+						{weekdayName(day)}
+					</button>
 				{/each}
 			</div>
 			<p class="text-xs text-gray-400 mt-1 mb-0">{$t('tasks.repeat.weekdaysHint')}</p>

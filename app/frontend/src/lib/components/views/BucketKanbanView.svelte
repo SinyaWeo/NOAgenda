@@ -107,9 +107,9 @@
 		ondragstart={(e) => onDragStart(e, task)}
 		ondragend={onDragEnd}
 	>
-		<a href="/tasks/{task.id}" class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline"
-			>{task.title}</a
-		>
+		<a href="/tasks/{task.id}" class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline">
+			{task.title}
+		</a>
 		{#if task.dueDate}<div class="text-xs text-gray-400">{$fmt.date(task.dueDate)}</div>{/if}
 		<Select
 			placeholder=""
@@ -174,9 +174,9 @@
 							/>
 							<div class="flex gap-2">
 								<Button type="submit" size="xs" disabled={busy}>{$t('common.save')}</Button>
-								<Button type="button" size="xs" color="light" onclick={() => (editingId = null)}
-									>{$t('common.cancel')}</Button
-								>
+								<Button type="button" size="xs" color="light" onclick={() => (editingId = null)}>
+									{$t('common.cancel')}
+								</Button>
 							</div>
 						</form>
 					{:else}
@@ -185,8 +185,9 @@
 							<span
 								class="font-normal text-xs {overLimit ? 'text-red-600 dark:text-red-400' : 'text-gray-400'}"
 								title={overLimit ? tr('views.kanban.overLimit') : undefined}
-								>({bucketTasks.length}{bucket.limit != null ? ` / ${bucket.limit}` : ''})</span
 							>
+								({bucketTasks.length}{bucket.limit != null ? ` / ${bucket.limit}` : ''})
+							</span>
 						</h3>
 						{#if manage}
 							<div class="flex items-center gap-1 text-xs shrink-0">
@@ -196,30 +197,38 @@
 										class="px-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
 										disabled={busy || i === 0}
 										aria-label={$t('views.kanban.moveLeft')}
-										onclick={() => run(() => onReorder(bucket.id, -1))}>←</button
+										onclick={() => run(() => onReorder(bucket.id, -1))}
 									>
+										←
+									</button>
 									<button
 										type="button"
 										class="px-1 text-gray-400 hover:text-gray-700 disabled:opacity-30"
 										disabled={busy || i === buckets.length - 1}
 										aria-label={$t('views.kanban.moveRight')}
-										onclick={() => run(() => onReorder(bucket.id, 1))}>→</button
+										onclick={() => run(() => onReorder(bucket.id, 1))}
 									>
+										→
+									</button>
 								{/if}
 								{#if onUpdate}
 									<button
 										type="button"
 										class="px-1 text-primary-600 hover:underline"
-										onclick={() => startEdit(bucket)}>{$t('common.edit')}</button
+										onclick={() => startEdit(bucket)}
 									>
+										{$t('common.edit')}
+									</button>
 								{/if}
 								{#if onDelete}
 									<button
 										type="button"
 										class="px-1 text-red-600 hover:underline"
 										disabled={busy}
-										onclick={() => remove(bucket)}>{$t('common.delete')}</button
+										onclick={() => remove(bucket)}
 									>
+										{$t('common.delete')}
+									</button>
 								{/if}
 							</div>
 						{/if}

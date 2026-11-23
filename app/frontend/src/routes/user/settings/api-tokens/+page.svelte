@@ -66,9 +66,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
-	>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('settings.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('settings.tokens.title')}
 	</h1>
@@ -100,10 +101,10 @@
 			/>
 		</div>
 		<div>
-			<Label for="token-expiry" class="mb-1"
-				>{$t('settings.tokens.expiry')}
-				<span class="text-xs text-gray-400">({$t('common.optional')})</span></Label
-			>
+			<Label for="token-expiry" class="mb-1">
+				{$t('settings.tokens.expiry')}
+				<span class="text-xs text-gray-400">({$t('common.optional')})</span>
+			</Label>
 			<Input id="token-expiry" type="date" bind:value={newTokenExpiry} />
 		</div>
 		<div>
@@ -143,10 +144,9 @@
 								? 'tone-yellow'
 								: 'tone-gray'}"
 							data-testid="token-scope"
-							>{token.scope === 'write'
-								? $t('settings.tokens.badge.write')
-								: $t('settings.tokens.badge.read')}</span
 						>
+							{token.scope === 'write' ? $t('settings.tokens.badge.write') : $t('settings.tokens.badge.read')}
+						</span>
 					</p>
 					<p class="text-xs text-gray-400 m-0">
 						{token.lastUsedAt

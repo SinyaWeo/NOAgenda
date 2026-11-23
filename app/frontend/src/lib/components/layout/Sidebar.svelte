@@ -139,8 +139,9 @@
 			<a
 				href="/dashboard"
 				class="flex items-center gap-2 brand-text font-bold text-base no-underline whitespace-nowrap overflow-hidden flex-1"
-				><Logo size={28} /><span class="truncate">{$appName}</span></a
 			>
+				<Logo size={28} /><span class="truncate">{$appName}</span>
+			</a>
 		{/if}
 		<button
 			onclick={toggleSidebar}

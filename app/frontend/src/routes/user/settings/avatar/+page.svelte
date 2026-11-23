@@ -48,9 +48,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
-	>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('settings.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">{$t('settings.avatar.title')}</h1>
 </div>
 

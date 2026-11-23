@@ -77,17 +77,20 @@
 						? 'border-b border-gray-100 dark:border-gray-700'
 						: ''}"
 				>
-					<span class="flex-1 text-sm text-gray-700 dark:text-gray-300"
-						>{$fmt.dateTime(rem.reminderDate)}</span
-					>
-					{#if rem.sentAt}<span class="text-xs font-medium tone-green">{$t('tasks.reminders.sent')}</span
-						>{/if}
+					<span class="flex-1 text-sm text-gray-700 dark:text-gray-300">
+						{$fmt.dateTime(rem.reminderDate)}
+					</span>
+					{#if rem.sentAt}<span class="text-xs font-medium tone-green">
+							{$t('tasks.reminders.sent')}
+						</span>{/if}
 					<Button
 						size="xs"
 						color="light"
 						onclick={() => onDeleteReminder(rem.id)}
-						aria-label={$t('tasks.reminders.remove')}>✕</Button
+						aria-label={$t('tasks.reminders.remove')}
 					>
+						✕
+					</Button>
 				</div>
 			{/each}
 		</div>
@@ -117,8 +120,9 @@
 						type="button"
 						onclick={() => onDownload(att.id, att.filename)}
 						class="text-sm text-primary-600 dark:text-primary-400 hover:underline text-left"
-						>{att.filename}</button
 					>
+						{att.filename}
+					</button>
 				</div>
 			{/each}
 		</div>
@@ -145,15 +149,15 @@
 						: ''}"
 				>
 					<div class="flex items-center justify-between">
-						<span class="text-sm font-bold text-primary-600 dark:text-primary-400"
-							>{comment.author?.username ?? $t('common.unknown')}</span
-						>
+						<span class="text-sm font-bold text-primary-600 dark:text-primary-400">
+							{comment.author?.username ?? $t('common.unknown')}
+						</span>
 						<div class="flex items-center gap-2">
 							<span class="text-xs text-gray-400">{$fmt.dateTime(comment.createdAt)}</span>
 							{#if canDeleteComment(comment)}
-								<Button size="xs" color="light" onclick={() => onDeleteComment(comment.id)}
-									>{$t('common.delete')}</Button
-								>
+								<Button size="xs" color="light" onclick={() => onDeleteComment(comment.id)}>
+									{$t('common.delete')}
+								</Button>
 							{/if}
 						</div>
 					</div>

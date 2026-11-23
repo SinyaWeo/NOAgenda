@@ -61,14 +61,16 @@
 		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">
 			{$t('admin.settings.title')}
 		</h1>
-		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400"
-			><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('admin.back')}</a
-		>
+		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
+			<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+			{$t('admin.back')}
+		</a>
 	</div>
 
 	<Alert color="yellow" class="mb-4">
-		{#each noticeParts as part}{#if part === ENABLED}<code>REGISTRATION_ENABLED</code
-				>{:else if part === INVITE}<code>REGISTRATION_INVITE_CODE</code>{:else}{part}{/if}{/each}
+		{#each noticeParts as part}{#if part === ENABLED}<code>
+					REGISTRATION_ENABLED
+				</code>{:else if part === INVITE}<code>REGISTRATION_INVITE_CODE</code>{:else}{part}{/if}{/each}
 	</Alert>
 	{#if $error}
 		<Alert color="red" class="mb-4">{$error}</Alert>

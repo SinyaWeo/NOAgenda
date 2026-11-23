@@ -91,7 +91,8 @@
 		<Checkbox
 			checked={!!criteria.hideDone}
 			onchange={(e) => patch({ hideDone: (e.target as HTMLInputElement).checked || undefined })}
-			>{$t('filters.editor.hideDone')}</Checkbox
 		>
+			{$t('filters.editor.hideDone')}
+		</Checkbox>
 	</div>
 </div>

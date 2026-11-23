@@ -25,9 +25,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
-	>
+	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('common.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('projects.delete.title')}
 	</h1>
@@ -49,9 +50,9 @@
 		</div>
 	</div>
 	<div class="flex gap-2">
-		<Button color="red" disabled={$loading} onclick={handleDelete}
-			>{$loading ? $t('projects.delete.submitting') : $t('projects.delete.submit')}</Button
-		>
+		<Button color="red" disabled={$loading} onclick={handleDelete}>
+			{$loading ? $t('projects.delete.submitting') : $t('projects.delete.submit')}
+		</Button>
 		<Button href="/projects/{page.params.id}/edit" color="light">{$t('common.cancel')}</Button>
 	</div>
 </div>

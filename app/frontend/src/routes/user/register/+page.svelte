@@ -83,9 +83,9 @@
 				<p class="text-sm mt-1">{$t('auth.register.closedBody')}</p>
 			</Alert>
 			<p class="text-sm text-center mt-4">
-				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline"
-					>{$t('auth.goToSignIn')}</a
-				>
+				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">
+					{$t('auth.goToSignIn')}
+				</a>
 			</p>
 		{:else if checkEmail}
 			<Alert color="green" class="mb-4">
@@ -95,9 +95,9 @@
 				</p>
 			</Alert>
 			<p class="text-sm text-center mt-4">
-				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline"
-					>{$t('auth.goToSignIn')}</a
-				>
+				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">
+					{$t('auth.goToSignIn')}
+				</a>
 			</p>
 		{:else}
 			<form onsubmit={handleRegister} class="flex flex-col gap-4">
@@ -147,28 +147,30 @@
 							target="_blank"
 							rel="noopener"
 							class="text-primary-600 dark:text-primary-400 hover:underline"
-							>{$t('auth.register.termsLink')}</a
 						>
+							{$t('auth.register.termsLink')}
+						</a>
 						{$t('auth.register.agreeAnd')}
 						<a
 							href="/privacy"
 							target="_blank"
 							rel="noopener"
 							class="text-primary-600 dark:text-primary-400 hover:underline"
-							>{$t('auth.register.privacyLink')}</a
-						>.
+						>
+							{$t('auth.register.privacyLink')}
+						</a>.
 					</Label>
 				</div>
-				<Button type="submit" disabled={$loading || !acceptTerms} class="w-full mt-1"
-					>{$loading ? $t('auth.register.submitting') : $t('auth.register.submit')}</Button
-				>
+				<Button type="submit" disabled={$loading || !acceptTerms} class="w-full mt-1">
+					{$loading ? $t('auth.register.submitting') : $t('auth.register.submit')}
+				</Button>
 			</form>
 
 			<p class="text-sm text-center text-gray-500 mt-4">
 				{$t('auth.register.haveAccount')}
-				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline"
-					>{$t('auth.signIn')}</a
-				>
+				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">
+					{$t('auth.signIn')}
+				</a>
 			</p>
 		{/if}
 		<LanguageSwitcher />

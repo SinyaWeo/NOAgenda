@@ -41,9 +41,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
-	>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('settings.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('settings.password.title')}
 	</h1>
@@ -72,17 +73,16 @@
 					type="button"
 					onclick={() => (showPasswords = !showPasswords)}
 					class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-gray-600"
-					>{#if showPasswords}<EyeSlashOutline class="w-4 h-4" />{:else}<EyeOutline
-							class="w-4 h-4"
-						/>{/if}</button
 				>
+					{#if showPasswords}<EyeSlashOutline class="w-4 h-4" />{:else}<EyeOutline class="w-4 h-4" />{/if}
+				</button>
 			</div>
 		</div>
 		<div>
-			<Label for="new-pw" class="mb-1"
-				>{$t('settings.password.new')}
-				<span class="text-xs text-gray-400">{$t('settings.password.min')}</span></Label
-			>
+			<Label for="new-pw" class="mb-1">
+				{$t('settings.password.new')}
+				<span class="text-xs text-gray-400">{$t('settings.password.min')}</span>
+			</Label>
 			<Input
 				id="new-pw"
 				type={showPasswords ? 'text' : 'password'}
@@ -96,9 +96,9 @@
 			<Input id="confirm-pw" type={showPasswords ? 'text' : 'password'} bind:value={confirm} required />
 		</div>
 		<div class="pt-2 border-t border-gray-100 dark:border-gray-700">
-			<Button type="submit" disabled={$saving}
-				>{$saving ? $t('settings.password.updating') : $t('settings.password.submit')}</Button
-			>
+			<Button type="submit" disabled={$saving}>
+				{$saving ? $t('settings.password.updating') : $t('settings.password.submit')}
+			</Button>
 		</div>
 	</form>
 </Card>

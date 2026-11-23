@@ -108,9 +108,10 @@
 <div class="max-w-6xl mx-auto">
 	<div class="flex items-center justify-between mb-6">
 		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$t('admin.users.title')}</h1>
-		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400"
-			><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('admin.back')}</a
-		>
+		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
+			<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+			{$t('admin.back')}
+		</a>
 	</div>
 
 	{#if $error}
@@ -134,12 +135,12 @@
 					</TableBodyCell>
 					<TableBodyCell>{u.email}</TableBodyCell>
 					<TableBodyCell>
-						<span class="text-xs font-medium {u.role === 'admin' ? 'tone-red' : 'tone-blue'}"
-							>{$t(`admin.users.badge.${u.role}` as MessageKey)}</span
-						>
-						{#if u.isLocked}<span class="ml-1 text-xs font-medium tone-yellow"
-								>{$t('admin.users.badge.locked')}</span
-							>{/if}
+						<span class="text-xs font-medium {u.role === 'admin' ? 'tone-red' : 'tone-blue'}">
+							{$t(`admin.users.badge.${u.role}` as MessageKey)}
+						</span>
+						{#if u.isLocked}<span class="ml-1 text-xs font-medium tone-yellow">
+								{$t('admin.users.badge.locked')}
+							</span>{/if}
 					</TableBodyCell>
 					<TableBodyCell>
 						{$fmt.date(u.createdAt)}

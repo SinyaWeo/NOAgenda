@@ -63,9 +63,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
-	>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('settings.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('settings.deletion.title')}
 	</h1>
@@ -75,9 +76,9 @@
 {#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
 {#if scheduledAt}
 	<Alert color="yellow" class="mb-4">
-		{#each $t('settings.deletion.banner', { date: '\u0001' }).split('\u0001') as part, pi}{#if pi > 0}<strong
-					>{$fmt.dateTime(scheduledAt)}</strong
-				>{/if}{part}{/each}
+		{#each $t('settings.deletion.banner', { date: '\u0001' }).split('\u0001') as part, pi}{#if pi > 0}<strong>
+					{$fmt.dateTime(scheduledAt)}
+				</strong>{/if}{part}{/each}
 	</Alert>
 {/if}
 
@@ -91,8 +92,10 @@
 			<p class="text-sm text-gray-500 mt-1 m-0">
 				{#each $t( 'settings.deletion.details', { count: graceDays, link: '\u0001' } ).split('\u0001') as part, pi}{#if pi > 0}<a
 							href="/user/settings/data-export"
-							class="underline">{$t('settings.section.dataExport')}</a
-						>{/if}{part}{/each}
+							class="underline"
+						>
+							{$t('settings.section.dataExport')}
+						</a>{/if}{part}{/each}
 			</p>
 		</div>
 	</div>
@@ -102,13 +105,13 @@
 	</div>
 	<div class="flex gap-3 flex-wrap">
 		{#if scheduledAt}
-			<Button color="light" onclick={cancelDeletion} disabled={$loading}
-				>{$t('settings.deletion.cancelRequest')}</Button
-			>
+			<Button color="light" onclick={cancelDeletion} disabled={$loading}>
+				{$t('settings.deletion.cancelRequest')}
+			</Button>
 		{:else}
-			<Button color="red" onclick={requestDeletion} disabled={$loading}
-				>{$loading ? $t('settings.deletion.processing') : $t('settings.deletion.request')}</Button
-			>
+			<Button color="red" onclick={requestDeletion} disabled={$loading}>
+				{$loading ? $t('settings.deletion.processing') : $t('settings.deletion.request')}
+			</Button>
 		{/if}
 	</div>
 </div>

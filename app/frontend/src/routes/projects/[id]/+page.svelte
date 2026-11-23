@@ -90,9 +90,9 @@
 					{$project.description}
 				</p>{/if}
 		</div>
-		<Button href="/projects/{$project.id}/edit" color="light" size="sm"
-			><CogOutline class="w-4 h-4 mr-1" />{$t('views.project.settings')}</Button
-		>
+		<Button href="/projects/{$project.id}/edit" color="light" size="sm">
+			<CogOutline class="w-4 h-4 mr-1" />{$t('views.project.settings')}
+		</Button>
 	</div>
 
 	{#if $views.length}
@@ -101,8 +101,9 @@
 				<a
 					href="/projects/{$project.id}/{v.id}"
 					class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800 dark:bg-primary-900 dark:text-primary-200 no-underline hover:bg-primary-200"
-					>{v.title}</a
 				>
+					{v.title}
+				</a>
 			{/each}
 		</nav>
 	{/if}
@@ -114,9 +115,9 @@
 			placeholder={$t('views.project.addPlaceholder')}
 			class="flex-1"
 		/>
-		<Button type="submit" disabled={addingTask || !newTaskTitle.trim()}
-			>{addingTask ? $t('views.project.adding') : $t('views.project.addTask')}</Button
-		>
+		<Button type="submit" disabled={addingTask || !newTaskTitle.trim()}>
+			{addingTask ? $t('views.project.adding') : $t('views.project.addTask')}
+		</Button>
 	</form>
 
 	<div class="flex items-center gap-3 mb-4 flex-wrap">
@@ -139,12 +140,14 @@
 				onclick={() => {
 					filterStatus.set('');
 					filterPriority.set('');
-				}}>{$t('common.clear')}</Button
+				}}
 			>
+				{$t('common.clear')}
+			</Button>
 		{/if}
-		<span class="text-xs text-gray-400 ml-auto"
-			>{$t('views.project.count', { shown: $filteredTasks.length, total: $tasks.length })}</span
-		>
+		<span class="text-xs text-gray-400 ml-auto">
+			{$t('views.project.count', { shown: $filteredTasks.length, total: $tasks.length })}
+		</span>
 	</div>
 
 	{#if $tasks.length === 0}
@@ -152,9 +155,9 @@
 			<CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />
 			<p>
 				{$t('views.project.emptyLead')}
-				<a href="/tasks/create?projectId={$project.id}" class="text-primary-600 hover:underline"
-					>{$t('views.project.emptyLink')}</a
-				>.
+				<a href="/tasks/create?projectId={$project.id}" class="text-primary-600 hover:underline">
+					{$t('views.project.emptyLink')}
+				</a>.
 			</p>
 		</div>
 	{:else if $filteredTasks.length === 0}
@@ -172,11 +175,13 @@
 						class="flex-1 truncate font-medium text-gray-800 dark:text-gray-200 hover:underline {task.status ===
 						'done'
 							? 'line-through text-gray-400'
-							: ''}">{task.title}</a
+							: ''}"
 					>
-					{#if task.priority}<span class="text-xs shrink-0" data-priority={task.priority}
-							>{$t(`common.priority.${task.priority}` as MessageKey)}</span
-						>{/if}
+						{task.title}
+					</a>
+					{#if task.priority}<span class="text-xs shrink-0" data-priority={task.priority}>
+							{$t(`common.priority.${task.priority}` as MessageKey)}
+						</span>{/if}
 					{#if task.dueDate}
 						{@const overdue = new Date(task.dueDate) < new Date() && task.status !== 'done'}
 						<span

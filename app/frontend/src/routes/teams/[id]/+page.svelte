@@ -36,9 +36,10 @@
 {:else if $team}
 	<div class="flex items-center justify-between mb-4">
 		<div class="flex items-center gap-3">
-			<a href="/teams" class="text-gray-400 hover:text-gray-600"
-				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
-			>
+			<a href="/teams" class="text-gray-400 hover:text-gray-600">
+				<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+				{$t('common.back')}
+			</a>
 			<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 				{$team.name}
 			</h1>
@@ -67,15 +68,17 @@
 					>
 						{(member.user?.name ?? member.user?.username ?? 'U')[0].toUpperCase()}
 					</div>
-					<span class="text-sm text-gray-800 dark:text-gray-200"
-						>{member.user?.name ||
+					<span class="text-sm text-gray-800 dark:text-gray-200">
+						{member.user?.name ||
 							member.user?.username ||
-							$t('teams.userFallback', { id: member.user?.id ?? member.id })}</span
-					>
+							$t('teams.userFallback', { id: member.user?.id ?? member.id })}
+					</span>
 					<span
 						class="ml-auto text-xs font-medium {member.role === 'manager' ? 'tone-blue' : 'tone-gray'}"
-						data-team-role={member.role}>{$t(`teams.role.${member.role}` as MessageKey)}</span
+						data-team-role={member.role}
 					>
+						{$t(`teams.role.${member.role}` as MessageKey)}
+					</span>
 				</div>
 			{/each}
 		{:else}

@@ -157,9 +157,9 @@
 	{:else if nodes.length === 0}
 		<div class="flex flex-1 items-center justify-center flex-col gap-3 text-gray-400">
 			<p class="text-lg">{$t('views.mindmap.noProjects')}</p>
-			<a href="/projects" class="text-primary-600 hover:underline text-sm"
-				>{$t('views.mindmap.createProject')}</a
-			>
+			<a href="/projects" class="text-primary-600 hover:underline text-sm">
+				{$t('views.mindmap.createProject')}
+			</a>
 		</div>
 	{:else}
 		<div class="flex-1" style="height:calc(100vh - 80px)">

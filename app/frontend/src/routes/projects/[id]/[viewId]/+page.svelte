@@ -113,9 +113,10 @@
 {:else if $view}
 	<div class="flex items-center justify-between gap-4 mb-4 flex-wrap">
 		<div class="flex items-center gap-2 flex-wrap">
-			<a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600 text-sm shrink-0"
-				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
-			>
+			<a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600 text-sm shrink-0">
+				<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+				{$t('common.back')}
+			</a>
 			{#if $views.length > 0}
 				<nav class="flex gap-1 flex-wrap">
 					{#each $views as v (v.id)}
@@ -125,26 +126,27 @@
 							Number(page.params.viewId)
 								? 'bg-primary-600 text-white'
 								: 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'}"
-							>{v.title}</a
 						>
+							{v.title}
+						</a>
 					{/each}
 				</nav>
 			{:else}
 				<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
 					{$view?.title}
 				</h1>
-				<span class="text-xs font-medium tone-blue"
-					>{$view ? $t(`projects.viewType.${$view.viewType}` as MessageKey) : ''}</span
-				>
+				<span class="text-xs font-medium tone-blue">
+					{$view ? $t(`projects.viewType.${$view.viewType}` as MessageKey) : ''}
+				</span>
 			{/if}
 		</div>
 		<div class="flex gap-2">
-			<Button href="/projects/{page.params.id}/settings/activity" color="light" size="sm"
-				>{$t('activity.project.link')}</Button
-			>
-			<Button href="/projects/{page.params.id}/settings/views" color="light" size="sm"
-				>{$t('views.view.manage')}</Button
-			>
+			<Button href="/projects/{page.params.id}/settings/activity" color="light" size="sm">
+				{$t('activity.project.link')}
+			</Button>
+			<Button href="/projects/{page.params.id}/settings/views" color="light" size="sm">
+				{$t('views.view.manage')}
+			</Button>
 		</div>
 	</div>
 

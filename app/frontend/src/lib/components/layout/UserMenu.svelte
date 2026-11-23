@@ -111,8 +111,9 @@
 </button>
 <Dropdown triggeredBy="#user-menu-btn" placement="bottom-end" class="w-52">
 	<DropdownHeader>
-		<span class="block text-sm font-semibold text-gray-900 dark:text-white">{user.name ?? user.username}</span
-		>
+		<span class="block text-sm font-semibold text-gray-900 dark:text-white">
+			{user.name ?? user.username}
+		</span>
 		<span class="block text-xs text-gray-500">@{user.username}</span>
 		{#if isAdmin(user)}
 			<span class="inline-block mt-1 text-xs font-medium tone-red">{$t('layout.user.admin')}</span>
@@ -152,7 +153,7 @@
 		</DropdownItem>
 	{/each}
 	<DropdownDivider />
-	<DropdownItem onclick={onlogout} class="flex items-center text-red-600 dark:text-red-400"
-		><ArrowRightToBracketOutline class="w-4 h-4 mr-2" />{$t('layout.user.logout')}
+	<DropdownItem onclick={onlogout} class="flex items-center text-red-600 dark:text-red-400">
+		<ArrowRightToBracketOutline class="w-4 h-4 mr-2" />{$t('layout.user.logout')}
 	</DropdownItem>
 </Dropdown>

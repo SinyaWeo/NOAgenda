@@ -155,9 +155,9 @@
 						<CriteriaEditor bind:criteria={editCriteria} projects={projectOptions} idPrefix="edit-crit" />
 						<div class="flex gap-2">
 							<Button type="submit" size="sm">{$t('common.save')}</Button>
-							<Button type="button" color="light" size="sm" onclick={() => (editingId = null)}
-								>{$t('common.cancel')}</Button
-							>
+							<Button type="button" color="light" size="sm" onclick={() => (editingId = null)}>
+								{$t('common.cancel')}
+							</Button>
 						</div>
 					</form>
 				{:else}
@@ -175,9 +175,9 @@
 					<div class="flex gap-2 shrink-0">
 						<Button size="sm" href="/tasks?filter={filter.id}">{$t('common.apply')}</Button>
 						<Button size="sm" color="light" onclick={() => startEdit(filter)}>{$t('common.edit')}</Button>
-						<Button size="sm" color="red" onclick={() => deleteFilter(filter.id)}
-							>{$t('common.delete')}</Button
-						>
+						<Button size="sm" color="red" onclick={() => deleteFilter(filter.id)}>
+							{$t('common.delete')}
+						</Button>
 					</div>
 				{/if}
 			</div>

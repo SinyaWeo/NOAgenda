@@ -46,8 +46,10 @@
 						href={SOURCE_URL}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="text-primary-700 hover:underline dark:text-primary-500">GitHub</a
+						class="text-primary-700 hover:underline dark:text-primary-500"
 					>
+						GitHub
+					</a>
 				</dd>
 				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.license')}</dt>
 				<dd class="text-gray-900 dark:text-white font-medium m-0">
@@ -55,8 +57,10 @@
 						href={LICENSE_URL}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="text-primary-700 hover:underline dark:text-primary-500">AGPL-3.0-or-later</a
+						class="text-primary-700 hover:underline dark:text-primary-500"
 					>
+						AGPL-3.0-or-later
+					</a>
 				</dd>
 			</dl>
 		</Card>

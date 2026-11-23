@@ -156,15 +156,15 @@
 							>
 								<td class="py-1 pr-2 font-mono">{u.username}</td>
 								<td class="py-1 pr-2 font-mono">{u.password}</td>
-								<td class="py-1 text-right text-gray-500"
-									>{u.role === 'admin'
+								<td class="py-1 text-right text-gray-500">
+									{u.role === 'admin'
 										? $t('auth.demo.role.admin')
 										: u.teamRole === 'manager'
 											? $t('auth.demo.role.manager')
 											: u.teamRole === 'member'
 												? $t('auth.demo.role.member')
-												: $t('auth.demo.role.user')}</td
-								>
+												: $t('auth.demo.role.user')}
+								</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -197,23 +197,23 @@
 					</Button>
 				</div>
 			</div>
-			<Button type="submit" disabled={$loading} class="w-full mt-1"
-				>{$loading ? $t('auth.signingIn') : $t('auth.signIn')}</Button
-			>
+			<Button type="submit" disabled={$loading} class="w-full mt-1">
+				{$loading ? $t('auth.signingIn') : $t('auth.signIn')}
+			</Button>
 		</form>
 
 		{#if registrationEnabled}
 			<p class="text-sm text-center text-gray-500 mt-4">
 				{$t('auth.noAccount')}
-				<a href="/user/register" class="text-primary-600 dark:text-primary-400 hover:underline"
-					>{$t('auth.register')}</a
-				>
+				<a href="/user/register" class="text-primary-600 dark:text-primary-400 hover:underline">
+					{$t('auth.register')}
+				</a>
 			</p>
 		{/if}
 		<p class="text-sm text-center mt-1">
-			<a href="/user/get-password-reset" class="text-gray-400 hover:underline text-xs"
-				>{$t('auth.forgotPassword')}</a
-			>
+			<a href="/user/get-password-reset" class="text-gray-400 hover:underline text-xs">
+				{$t('auth.forgotPassword')}
+			</a>
 		</p>
 		<p class="text-xs text-center text-gray-400 mt-4">
 			<a href="/terms" class="hover:underline">{$t('auth.terms')}</a> ·

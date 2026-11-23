@@ -54,9 +54,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
-	>
+	<a href="/projects/{page.params.id}" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('common.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('projects.views.title')}
 	</h1>
@@ -106,11 +107,13 @@
 				<div class="flex-1">
 					<a
 						href="/projects/{page.params.id}/{view.id}"
-						class="font-medium text-gray-900 dark:text-white hover:underline">{view.title}</a
+						class="font-medium text-gray-900 dark:text-white hover:underline"
 					>
-					<span class="text-xs text-gray-400 ml-2"
-						>{$t(`projects.viewType.${view.viewType}` as MessageKey)}</span
-					>
+						{view.title}
+					</a>
+					<span class="text-xs text-gray-400 ml-2">
+						{$t(`projects.viewType.${view.viewType}` as MessageKey)}
+					</span>
 				</div>
 				<Button size="sm" color="red" onclick={() => deleteView(view.id)}>{$t('common.delete')}</Button>
 			</div>

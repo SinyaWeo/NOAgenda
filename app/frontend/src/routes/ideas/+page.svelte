@@ -177,11 +177,17 @@
 								onclick={() => {
 									editId = idea.id;
 									editText = idea.text;
-								}}>{$t('common.edit')}</Button
+								}}
 							>
-							<Button size="xs" color="light" onclick={() => (shareId = shareId === idea.id ? null : idea.id)}
-								>{$t('ideas.share')}</Button
+								{$t('common.edit')}
+							</Button>
+							<Button
+								size="xs"
+								color="light"
+								onclick={() => (shareId = shareId === idea.id ? null : idea.id)}
 							>
+								{$t('ideas.share')}
+							</Button>
 							<Button size="xs" color="red" onclick={() => deleteIdea(idea.id)}>{$t('common.delete')}</Button>
 						</div>
 						{#if shareId === idea.id}

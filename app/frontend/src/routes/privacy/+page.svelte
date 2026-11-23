@@ -75,11 +75,11 @@
 	<ul>
 		<li>Account data and content: until you delete your account.</li>
 		<li>
-			When you ask to delete your account it is scheduled for deletion after a <strong
-				>7-day grace period</strong
-			> (you can cancel during that time). After that your account and the projects you own are permanently removed,
-			together with their tasks, comments and attachments. Tasks you created in other people's projects stay in
-			those projects without your name.
+			When you ask to delete your account it is scheduled for deletion after a <strong>
+				7-day grace period
+			</strong> (you can cancel during that time). After that your account and the projects you own are permanently
+			removed, together with their tasks, comments and attachments. Tasks you created in other people's projects
+			stay in those projects without your name.
 		</li>
 		<li>Backups made before deletion are overwritten on a rolling schedule of about [14] days.</li>
 		<li>Security logs: [30] days.</li>

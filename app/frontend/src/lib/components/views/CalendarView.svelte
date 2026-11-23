@@ -187,22 +187,23 @@
 <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
 	<div class="flex items-center gap-2">
 		<ButtonGroup>
-			<Button size="xs" color="light" aria-label={$t('views.calendar.prev')} onclick={() => step(-1)}
-				>‹</Button
-			>
+			<Button size="xs" color="light" aria-label={$t('views.calendar.prev')} onclick={() => step(-1)}>
+				‹
+			</Button>
 			<Button size="xs" color="light" onclick={() => (anchor = null)}>{$t('views.calendar.today')}</Button>
-			<Button size="xs" color="light" aria-label={$t('views.calendar.next')} onclick={() => step(1)}>›</Button
-			>
+			<Button size="xs" color="light" aria-label={$t('views.calendar.next')} onclick={() => step(1)}>
+				›
+			</Button>
 		</ButtonGroup>
 		<h2 class="text-lg font-semibold m-0 capitalize text-gray-800 dark:text-gray-100">{title}</h2>
 	</div>
 	<ButtonGroup>
-		<Button size="xs" color={mode === 'month' ? 'primary' : 'light'} onclick={() => (mode = 'month')}
-			>{$t('views.calendar.month')}</Button
-		>
-		<Button size="xs" color={mode === 'week' ? 'primary' : 'light'} onclick={() => (mode = 'week')}
-			>{$t('views.calendar.week')}</Button
-		>
+		<Button size="xs" color={mode === 'month' ? 'primary' : 'light'} onclick={() => (mode = 'month')}>
+			{$t('views.calendar.month')}
+		</Button>
+		<Button size="xs" color={mode === 'week' ? 'primary' : 'light'} onclick={() => (mode = 'week')}>
+			{$t('views.calendar.week')}
+		</Button>
 	</ButtonGroup>
 </div>
 
@@ -241,22 +242,26 @@
 						draggable="true"
 						title={name(entry.task)}
 						ondragstart={(e) => onDragStart(e, entry.task)}
-						ondragend={onDragEnd}>{name(entry.task)}</a
+						ondragend={onDragEnd}
 					>
+						{name(entry.task)}
+					</a>
 				{:else}
 					<a
 						href="/tasks/{entry.occurrence.taskId}"
 						class="calendar-task-chip calendar-task-future"
 						data-priority={entry.occurrence.priority}
 						title="{entry.occurrence.title ?? ''} — {$t('views.calendar.repeats')}"
-						><span aria-hidden="true">↻</span> {entry.occurrence.title ?? ''}</a
 					>
+						<span aria-hidden="true">↻</span>
+						{entry.occurrence.title ?? ''}
+					</a>
 				{/if}
 			{/each}
 			{#if shown.length < entries.length}
-				<button type="button" class="calendar-more" onclick={() => showWeekOf(key)}
-					>{$t('views.calendar.more', { count: entries.length - shown.length })}</button
-				>
+				<button type="button" class="calendar-more" onclick={() => showWeekOf(key)}>
+					{$t('views.calendar.more', { count: entries.length - shown.length })}
+				</button>
 			{/if}
 		</div>
 	{/each}
