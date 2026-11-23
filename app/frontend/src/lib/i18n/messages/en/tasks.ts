@@ -7,6 +7,10 @@ export const messages = {
 	'tasks.detail.archive': 'Archive',
 	'tasks.detail.restore': 'Restore',
 	'tasks.detail.archivedNotice': 'This task is archived. It is hidden from lists until you restore it.',
+	'tasks.detail.delete': 'Delete',
+	'tasks.detail.confirmDelete':
+		'Move this task and its subtasks to the trash? You can restore it from the trash.',
+	'tasks.toast.deleted': 'Task moved to trash',
 	'tasks.toast.duplicated': 'Task duplicated',
 	'tasks.toast.archived': 'Task archived',
 	'tasks.toast.restored': 'Task restored',

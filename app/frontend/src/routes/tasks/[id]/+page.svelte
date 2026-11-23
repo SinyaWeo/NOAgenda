@@ -160,6 +160,22 @@
 		}
 	}
 
+	/** Soft delete: the task and its subtasks go to the trash and can be restored from there. */
+	async function deleteTask() {
+		if (!task || acting || !confirm(tr('tasks.detail.confirmDelete'))) return;
+		acting = true;
+		try {
+			const parent = task.parent;
+			await apiDeleteAuth(`/tasks/${task.id}`);
+			showToast(tr('tasks.toast.deleted'), 'success');
+			await goto(parent ? `/${parent.type === 'project' ? 'projects' : 'tasks'}/${parent.id}` : '/tasks');
+		} catch (e: unknown) {
+			fail(e);
+		} finally {
+			acting = false;
+		}
+	}
+
 	async function downloadAttachment(id: number, filename: string) {
 		try {
 			await downloadAuthFile(`/attachments/${id}/download`, filename);
@@ -314,6 +330,9 @@
 				{task.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}
 			</Button>
 			<Button href="/tasks/{task.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
+			<Button color="red" outline size="sm" disabled={acting} onclick={deleteTask}>
+				{$t('tasks.detail.delete')}
+			</Button>
 		</div>
 	</div>
 	{#if task.isArchived}
