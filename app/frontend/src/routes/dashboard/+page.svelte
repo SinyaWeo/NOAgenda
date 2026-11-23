@@ -1,15 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { derived, writable } from 'svelte/store';
 	import { apiGetAuth, apiPostAuth, apiGet } from '$lib/api';
 	import { authSession, initializeAuth } from '$lib/auth';
 	import { goto } from '$app/navigation';
-	import { Alert, Button, Card, Input, Select } from 'flowbite-svelte';
+	import { Alert, Button, Card, Input, Select, Textarea } from 'flowbite-svelte';
 	import { ExclamationCircleOutline, CaretRightSolid } from 'flowbite-svelte-icons';
 	import CalendarView from '$lib/components/views/CalendarView.svelte';
 	import { showToast } from '$lib/toast';
 	import { errMessage } from '$lib/errors';
 	import { t, fmt, tr } from '$lib/i18n';
+	import { MAX_TASK_TITLE, needsTextarea, taskTitles } from '$lib/quick-add';
 	import type { Project, Quote, Task } from '$lib/types';
 
 	const user = derived(authSession, ($authSession) => $authSession.user);
@@ -22,9 +23,41 @@
 	const loading = writable(true);
 	const quote = writable<Quote | null>(null);
 
-	let quickTitle = $state('');
+	let quickText = $state('');
 	let quickProjectId = $state('');
-	let addingTask = $state(false);
+	let adding = $state(false);
+	// A single-line input until the text needs more room; then a text area, which stays until the text is cleared.
+	let multiline = $state(false);
+	let quickArea = $state<HTMLTextAreaElement | undefined>();
+
+	$effect(() => {
+		if (!quickText) multiline = false;
+		else if (!multiline && needsTextarea(quickText)) {
+			multiline = true;
+			tick().then(() => {
+				quickArea?.focus();
+				quickArea?.setSelectionRange(quickText.length, quickText.length);
+			});
+		}
+	});
+
+	/** A single-line input drops line breaks, so a paste with some (and Shift+Enter) is inserted by hand. */
+	function insertAtCaret(el: HTMLInputElement, text: string) {
+		const start = el.selectionStart ?? quickText.length;
+		const end = el.selectionEnd ?? start;
+		quickText = quickText.slice(0, start) + text + quickText.slice(end);
+	}
+	function onQuickPaste(e: ClipboardEvent) {
+		const pasted = e.clipboardData?.getData('text') ?? '';
+		if (!/[\r\n]/.test(pasted)) return;
+		e.preventDefault();
+		insertAtCaret(e.currentTarget as HTMLInputElement, pasted.replace(/\r\n?/g, '\n'));
+	}
+	function onQuickKeydown(e: KeyboardEvent) {
+		if (e.key !== 'Enter' || !e.shiftKey) return;
+		e.preventDefault();
+		insertAtCaret(e.currentTarget as HTMLInputElement, '\n');
+	}
 
 	onMount(async () => {
 		const me = $user ?? (await initializeAuth());
@@ -64,8 +97,6 @@
 			projectCount.set(p.length);
 			projects.set(p.slice(0, 5));
 			allProjects.set(p);
-			const def = $user?.defaultProjectId;
-			if (!quickProjectId && def && p.some((x) => x.id === def)) quickProjectId = String(def);
 			error.set('');
 			overdueTasks.set(overdue);
 			upcomingTasks.set(upcoming);
@@ -77,20 +108,50 @@
 		}
 	}
 
-	async function quickAddTask() {
-		if (!quickTitle.trim() || !quickProjectId) return;
-		addingTask = true;
+	/** One task per line, in order. Lines already added are removed from the box if a later one fails. */
+	async function quickAddTasks() {
+		const titles = taskTitles(quickText);
+		if (!titles.length) return;
+		if (titles.some((l) => l.length > MAX_TASK_TITLE)) {
+			showToast(tr('dashboard.quickAdd.lineTooLong', { max: MAX_TASK_TITLE }), 'error');
+			return;
+		}
+		adding = true;
+		let done = 0;
 		try {
-			await apiPostAuth('/tasks', {
-				title: quickTitle,
-				project: { id: Number(quickProjectId) }
-			});
-			quickTitle = '';
-			await refresh();
+			for (const title of titles) {
+				await apiPostAuth('/tasks', {
+					title,
+					...(quickProjectId ? { project: { id: Number(quickProjectId) } } : {})
+				});
+				done++;
+			}
+			quickText = '';
 		} catch (e: unknown) {
+			quickText = titles.slice(done).join('\n');
 			showToast(errMessage(e, tr('dashboard.quickAdd.failed')), 'error');
 		} finally {
-			addingTask = false;
+			adding = false;
+			if (done) await refresh();
+		}
+	}
+
+	/** The whole text, line breaks included, as one private idea (under the chosen project, if any). */
+	async function quickAddIdea() {
+		const text = quickText.trim();
+		if (!text) return;
+		adding = true;
+		try {
+			await apiPostAuth('/ideas', {
+				text,
+				...(quickProjectId ? { projectId: Number(quickProjectId) } : {})
+			});
+			quickText = '';
+			showToast(tr('dashboard.quickAdd.ideaAdded'));
+		} catch (e: unknown) {
+			showToast(errMessage(e, tr('dashboard.quickAdd.ideaFailed')), 'error');
+		} finally {
+			adding = false;
 		}
 	}
 </script>
@@ -162,35 +223,60 @@
 		</blockquote>
 	{/if}
 
-	<!-- Quick-add task -->
-	{#if $allProjects.length > 0}
-		<Card class="mb-4">
-			<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-				{$t('dashboard.quickAdd.title')}
-			</h2>
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					quickAddTask();
-				}}
-				class="flex gap-2 flex-wrap"
-			>
+	<!-- Quick add: a task per line, or one idea -->
+	<Card class="mb-4">
+		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+			{$t('dashboard.quickAdd.title')}
+		</h2>
+		<p class="text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-3">
+			{$t('dashboard.quickAdd.hint')}
+		</p>
+		<form
+			onsubmit={(e) => {
+				e.preventDefault();
+				quickAddTasks();
+			}}
+			class="flex flex-col gap-2"
+		>
+			{#if multiline}
+				<Textarea
+					bind:value={quickText}
+					bind:elementRef={quickArea}
+					rows={4}
+					placeholder={$t('dashboard.quickAdd.placeholder')}
+					aria-label={$t('dashboard.quickAdd.placeholder')}
+					class="w-full"
+				/>
+			{:else}
 				<Input
 					type="text"
-					bind:value={quickTitle}
-					placeholder={$t('dashboard.quickAdd.titlePlaceholder')}
-					class="flex-1 min-w-36"
+					bind:value={quickText}
+					onpaste={onQuickPaste}
+					onkeydown={onQuickKeydown}
+					placeholder={$t('dashboard.quickAdd.placeholder')}
+					aria-label={$t('dashboard.quickAdd.placeholder')}
+					class="w-full"
 				/>
-				<Select placeholder="" bind:value={quickProjectId} class="flex-1 min-w-36">
-					<option value="">{$t('dashboard.quickAdd.selectProject')}</option>
-					{#each $allProjects as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
-				</Select>
-				<Button type="submit" disabled={addingTask || !quickTitle.trim() || !quickProjectId}>
-					{addingTask ? $t('dashboard.quickAdd.adding') : $t('dashboard.quickAdd.add')}
+			{/if}
+			<Select
+				placeholder=""
+				bind:value={quickProjectId}
+				aria-label={$t('common.field.project')}
+				class="w-full"
+			>
+				<option value="">{$t('dashboard.quickAdd.noProject')}</option>
+				{#each $allProjects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
+			</Select>
+			<div class="flex gap-2 flex-wrap">
+				<Button type="button" onclick={quickAddTasks} disabled={adding || !taskTitles(quickText).length}>
+					{adding ? $t('dashboard.quickAdd.adding') : $t('dashboard.quickAdd.addTasks')}
 				</Button>
-			</form>
-		</Card>
-	{/if}
+				<Button type="button" color="light" onclick={quickAddIdea} disabled={adding || !quickText.trim()}>
+					{$t('dashboard.quickAdd.addIdea')}
+				</Button>
+			</div>
+		</form>
+	</Card>
 
 	<div class="grid grid-cols-2 gap-6 items-stretch">
 		<!-- Overdue -->

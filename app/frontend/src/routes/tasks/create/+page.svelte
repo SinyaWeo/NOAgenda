@@ -47,9 +47,6 @@
 		if (pid) projectId.set(Number(pid));
 		try {
 			projects.set(await apiGetAuth<Project[]>('/projects'));
-			// No project given in the link: start in the user's default one (if they can still open it).
-			const def = me.defaultProjectId;
-			if (!pid && def && get(projects).some((p) => p.id === def)) projectId.set(def);
 		} catch {
 			// the project list is optional; the select just stays empty
 		}
@@ -118,17 +115,13 @@
 				</Select>
 			</div>
 		</div>
-		{#if !$projectId}
-			<div>
-				<Label for="task-project" class="mb-1"
-					>{$t('common.field.project')} <span class="text-red-500">*</span></Label
-				>
-				<Select placeholder="" id="task-project" bind:value={$projectId} required>
-					<option value={undefined}>{$t('tasks.form.selectProject')}</option>
-					{#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
-				</Select>
-			</div>
-		{/if}
+		<div>
+			<Label for="task-project" class="mb-1">{$t('common.field.project')}</Label>
+			<Select placeholder="" id="task-project" bind:value={$projectId}>
+				<option value={undefined}>{$t('tasks.form.noProject')}</option>
+				{#each $projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
+			</Select>
+		</div>
 		{#if $assignable.length > 1}
 			<div>
 				<Label for="task-assignee" class="mb-1">{$t('tasks.form.assignee')}</Label>

@@ -9,7 +9,6 @@ export interface User {
 	language?: string;
 	timezone?: string;
 	theme?: string;
-	defaultProjectId?: number | null;
 	avatarUrl?: string;
 	isEmailConfirmed: boolean;
 	isLocked?: boolean;

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Repository } from 'typeorm';
+import { EntityManager, In, Not, Repository } from 'typeorm';
 import { diffFields } from '../../common/diff-fields';
 import { omit } from '../../common/omit';
 import { sqlRunner } from '../../common/sql';
@@ -71,7 +71,7 @@ export class NodeService {
                       p.createdBy = :uid
                       OR EXISTS (SELECT 1 FROM task_assignees ta WHERE ta.nodeId = p.id AND ta.userId = :uid)))
             UNION
-            SELECT c.id FROM nodes c JOIN tree t ON c.parentId = t.id
+            SELECT c.id FROM nodes c JOIN tree t ON c.parentId = t.id WHERE c.type <> 'idea'
           )
           SELECT id FROM tree
         )`,
@@ -141,11 +141,17 @@ export class NodeService {
   }
 
   async findById(id: number): Promise<Node | null> {
-    return this.nodeRepository.findOne({ where: { id }, relations: { parent: true, children: true } });
+    const node = await this.nodeRepository.findOne({ where: { id }, relations: { parent: true, children: true } });
+    if (node?.children) node.children = node.children.filter((c) => c.type !== NodeType.IDEA);
+    return node;
   }
 
+  /** Ideas hanging under a node are private to their creator, so they are never part of a node's children. */
   async findChildren(parentId: number): Promise<Node[]> {
-    return this.nodeRepository.find({ where: { parentId }, order: { position: 'ASC', createdAt: 'DESC' } });
+    return this.nodeRepository.find({
+      where: { parentId, type: Not(NodeType.IDEA) },
+      order: { position: 'ASC', createdAt: 'DESC' },
+    });
   }
 
   /** Recursively load the full tree for a given root node */
@@ -342,6 +348,7 @@ export class NodeService {
       where: { id: In(ids) },
       relations: { parent: true, children: true },
     });
+    for (const n of nodes) if (n.children) n.children = n.children.filter((c) => c.type !== NodeType.IDEA);
     const before = new Map(existing.map((n) => [n.id, n]));
     nodes.forEach((n) => {
       const old = before.get(n.id);
@@ -362,7 +369,8 @@ export class NodeService {
   }
 
   /**
-   * Delete a node together with its whole subtree and everything hanging off it,
+   * Delete a node together with its whole subtree (ideas under it are not part of it: they are only
+   * detached, ON DELETE SET NULL) and everything hanging off it,
    * in one transaction. (parentId is ON DELETE SET NULL, so deleting only the row
    * would leave the children behind as orphaned top-level nodes.)
    * Rows without a foreign key to nodes are removed explicitly; attachment files
@@ -383,7 +391,7 @@ export class NodeService {
         for (let i = 0; i < frontier.length; i += CHUNK) {
           const part = frontier.slice(i, i + CHUNK);
           for (const r of await q<{ id: number }>(
-            `SELECT id FROM nodes WHERE parentId IN (${marks(part.length)})`,
+            `SELECT id FROM nodes WHERE type <> 'idea' AND parentId IN (${marks(part.length)})`,
             part,
           )) {
             if (!all.has(r.id)) {

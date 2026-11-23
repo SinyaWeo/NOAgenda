@@ -11,6 +11,7 @@
 		CheckCircleOutline,
 		CheckCircleSolid,
 		CalendarMonthOutline,
+		LightbulbOutline,
 		UsersGroupOutline,
 		TagOutline,
 		FilterOutline,
@@ -46,6 +47,7 @@
 		{ href: '/dashboard', label: 'layout.nav.dashboard', icon: HomeOutline, activeIcon: HomeSolid },
 		{ href: '/projects', label: 'layout.nav.projects', icon: FolderOutline, activeIcon: FolderSolid },
 		{ href: '/tasks', label: 'layout.nav.tasks', icon: CheckCircleOutline, activeIcon: CheckCircleSolid },
+		{ href: '/ideas', label: 'layout.nav.ideas', icon: LightbulbOutline },
 		{ href: '/upcoming', label: 'layout.nav.upcoming', icon: CalendarMonthOutline }
 	];
 	const ORGANIZE: NavItem[] = [

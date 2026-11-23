@@ -81,7 +81,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.form.createTitle': 'Vytvořit úkol',
 	'tasks.form.priorityUnset': '— Nenastaveno',
 	'tasks.form.percentDone': 'Hotovo (%)',
-	'tasks.form.selectProject': 'Vyberte projekt…',
+	'tasks.form.noProject': 'Bez projektu',
 	'tasks.form.saveChanges': 'Uložit změny',
 	'tasks.form.assignee': 'Řešitel',
 	'tasks.form.createButton': 'Vytvořit úkol',

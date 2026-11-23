@@ -39,6 +39,7 @@ import { KanbanBucketModule } from './modules/kanban-bucket/kanban-bucket.module
 import { AppI18nModule } from './i18n/i18n.module';
 import { SearchModule } from './modules/search/search.module';
 import { NodeModule } from './modules/node/node.module';
+import { IdeaModule } from './modules/idea/idea.module';
 import { QuoteModule } from './modules/quotes/quote.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { EventsModule } from './common/domain-events';
@@ -103,6 +104,7 @@ import { MailModule } from './modules/mail/mail.module';
     KanbanBucketModule,
     SearchModule,
     NodeModule,
+    IdeaModule,
     QuoteModule,
     AdminModule,
     EventsModule,

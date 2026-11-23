@@ -7,6 +7,7 @@ import { messages as common } from './common';
 import { messages as dashboard } from './dashboard';
 import { messages as errors } from './errors';
 import { messages as filters } from './filters';
+import { messages as ideas } from './ideas';
 import { messages as labels } from './labels';
 import { messages as layout } from './layout';
 import { messages as legal } from './legal';
@@ -24,6 +25,7 @@ export const cs: Record<MessageKey, Message> = {
 	...dashboard,
 	...errors,
 	...filters,
+	...ideas,
 	...labels,
 	...layout,
 	...legal,

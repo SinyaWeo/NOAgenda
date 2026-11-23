@@ -83,7 +83,7 @@ export const messages = {
 	'tasks.form.createTitle': 'Create Task',
 	'tasks.form.priorityUnset': '— Unset',
 	'tasks.form.percentDone': 'Percent Done',
-	'tasks.form.selectProject': 'Select a project…',
+	'tasks.form.noProject': 'No project',
 	'tasks.form.saveChanges': 'Save Changes',
 	'tasks.form.assignee': 'Assignee',
 	'tasks.form.createButton': 'Create Task',

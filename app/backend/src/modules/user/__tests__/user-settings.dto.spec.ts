@@ -28,18 +28,10 @@ describe('user settings DTOs', () => {
     expect(out).toMatchObject({ name: 'Ann', theme: 'dark' });
   });
 
-  it('accepts a default project, null to clear it, and rejects nonsense', async () => {
-    await expect(pipe.transform({ defaultProjectId: 4 }, meta(UpdateGeneralSettingsDto))).resolves.toMatchObject({
-      defaultProjectId: 4,
-    });
-    await expect(pipe.transform({ defaultProjectId: null }, meta(UpdateGeneralSettingsDto))).resolves.toMatchObject({
-      defaultProjectId: null,
-    });
-    for (const bad of [0, -1, 1.5, 'x']) {
-      await expect(pipe.transform({ defaultProjectId: bad }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
-    }
+  it('no longer accepts the removed default project setting', async () => {
+    await expect(pipe.transform({ defaultProjectId: 4 }, meta(UpdateGeneralSettingsDto))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('no longer accepts the removed weekStart setting', async () => {
