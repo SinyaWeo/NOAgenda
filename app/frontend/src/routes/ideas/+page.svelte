@@ -7,6 +7,7 @@
 	import type { Idea, Team } from '$lib/types-misc';
 	import type { Project } from '$lib/types';
 	import { Alert, Button, Card, Checkbox, Select, Textarea } from 'flowbite-svelte';
+	import TaskVersionHistory from '$lib/components/task/TaskVersionHistory.svelte';
 	import { LightbulbOutline } from 'flowbite-svelte-icons';
 	import { t, tr, fmt } from '$lib/i18n';
 
@@ -23,6 +24,9 @@
 	let editId = $state<number | null>(null);
 	let editText = $state('');
 	let shareId = $state<number | null>(null);
+	let historyId = $state<number | null>(null);
+	/** Bumped on every save, so an open history reloads. */
+	let historyVersion = $state(0);
 
 	function replace(updated: Idea) {
 		ideas = ideas.map((i) => (i.id === updated.id ? updated : i));
@@ -49,6 +53,7 @@
 		if (!editText.trim()) return;
 		try {
 			replace(await apiPutAuth<Idea>(`/ideas/${id}`, { text: editText.trim() }));
+			historyVersion++;
 			editId = null;
 		} catch (e: unknown) {
 			error = errMessage(e);
@@ -188,8 +193,30 @@
 							>
 								{$t('ideas.share')}
 							</Button>
+							<Button
+								size="xs"
+								color="light"
+								onclick={() => (historyId = historyId === idea.id ? null : idea.id)}
+							>
+								{$t('tasks.history.title')}
+							</Button>
 							<Button size="xs" color="red" onclick={() => deleteIdea(idea.id)}>{$t('common.delete')}</Button>
 						</div>
+						{#if historyId === idea.id}
+							<div class="border-t border-gray-100 dark:border-gray-700 pt-2">
+								<TaskVersionHistory
+									taskId={idea.id}
+									version={historyVersion}
+									listPath="/ideas/{idea.id}/history"
+									restorePath={(rev) => `/ideas/${idea.id}/history/${rev}/restore`}
+									showTitle={false}
+									onRestored={(updated: Idea) => {
+										replace(updated);
+										historyVersion++;
+									}}
+								/>
+							</div>
+						{/if}
 						{#if shareId === idea.id}
 							<div class="border-t border-gray-100 dark:border-gray-700 pt-2">
 								<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

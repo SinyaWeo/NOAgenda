@@ -9,5 +9,6 @@ import { NodeRevisionController } from './node-revision.controller';
   imports: [NodeModule, TypeOrmModule.forFeature([NodeRevision])],
   providers: [NodeRevisionService],
   controllers: [NodeRevisionController],
+  exports: [NodeRevisionService],
 })
 export class NodeRevisionModule {}

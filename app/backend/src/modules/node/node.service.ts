@@ -177,13 +177,16 @@ export class NodeService {
     audit: { actorId?: number | null; changes?: Record<string, unknown> } = {},
   ) {
     const isProject = node.type === NodeType.PROJECT;
+    const isIdea = node.type === NodeType.IDEA;
     // Children and parent are relations, not the node's own fields.
     const data = omit(node, 'parent', 'children');
     this.events.emit({
       name: `${node.type}.${action}`,
       data,
       nodeId: node.id,
-      ...(isProject ? { projectId: node.id } : projectId !== undefined ? { projectId } : {}),
+      // An idea is private: it never belongs to a project's history and never reaches webhooks.
+      ...(isIdea ? { projectId: null, auditOnly: true } : {}),
+      ...(isProject ? { projectId: node.id } : !isIdea && projectId !== undefined ? { projectId } : {}),
       owner: isProject ? (node.ownerId ?? null) : (node.createdBy ?? null),
       ...(audit.actorId !== undefined ? { actorId: audit.actorId } : {}),
       ...(audit.changes ? { changes: audit.changes } : {}),

@@ -1,4 +1,4 @@
-import { ArrayMaxSize, IsArray, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class IdeaCreateDto {
@@ -43,4 +43,20 @@ export class IdeaListQueryDto {
   @IsInt()
   @Min(1)
   projectId?: number;
+}
+
+export class IdeaHistoryQueryDto {
+  /** Return revisions older than this id (the previous page's `next`). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  before?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(50)
+  limit?: number;
 }

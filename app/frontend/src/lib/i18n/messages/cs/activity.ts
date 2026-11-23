@@ -38,6 +38,10 @@ export const messages: Record<keyof typeof en, Message> = {
 		many: '{actor}: smazán projekt „{title}“ a {count} položky v něm',
 		other: '{actor}: smazán projekt „{title}“ a {count} položek v něm'
 	},
+	'activity.action.idea.created': '{actor}: vytvořen nápad „{title}“',
+	'activity.action.idea.updated': '{actor}: upraven nápad „{title}“',
+	'activity.action.idea.deleted': '{actor}: smazán nápad „{title}“',
+	'activity.action.idea.undeleted': '{actor}: nápad „{title}“ obnoven z koše',
 	'activity.action.comment.created': '{actor}: komentář u „{title}“',
 	'activity.action.comment.updated': '{actor}: upraven komentář u „{title}“',
 	'activity.action.comment.deleted': '{actor}: smazán komentář u „{title}“',

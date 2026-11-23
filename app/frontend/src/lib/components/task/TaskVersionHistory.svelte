@@ -1,17 +1,31 @@
-<script lang="ts">
+<script lang="ts" generics="R">
 	import { t, fmt, tr } from '$lib/i18n';
 	import { apiGetAuth, apiPostAuth } from '$lib/api';
 	import { errMessage } from '$lib/errors';
 	import { showToast } from '$lib/toast';
-	import type { Task, NodeRevision, NodeRevisionPage } from '$lib/types';
+	import type { NodeRevision, NodeRevisionPage } from '$lib/types';
 	import { Button } from 'flowbite-svelte';
 
-	/** `version` changes whenever the task may have been saved (reload from the top). */
+	/**
+	 * `version` changes whenever the node may have been saved (reload from the top). By default it
+	 * shows the history of a task or project; ideas pass their own endpoints (and have no title).
+	 */
 	let {
 		taskId,
 		version,
-		onRestored
-	}: { taskId: number; version?: string | number; onRestored: (task: Task) => void } = $props();
+		onRestored,
+		listPath = `/node-revisions?nodeId=${taskId}`,
+		restorePath = (rev) => `/node-revisions/${rev}/restore`,
+		showTitle = true
+	}: {
+		taskId: number;
+		version?: string | number;
+		onRestored: (result: R) => void;
+		/** API path of the first page (a `before` parameter is appended for the next ones). */
+		listPath?: string;
+		restorePath?: (revisionId: number) => string;
+		showTitle?: boolean;
+	} = $props();
 
 	const PREVIEW = 240;
 	let items = $state<NodeRevision[]>([]);
@@ -21,13 +35,12 @@
 	let busy = $state<number | null>(null);
 
 	const url = (before?: number | null) =>
-		`/node-revisions?nodeId=${taskId}${before ? `&before=${before}` : ''}`;
+		before ? `${listPath}${listPath.includes('?') ? '&' : '?'}before=${before}` : listPath;
 
 	$effect(() => {
 		void version;
-		const id = taskId;
 		let current = true;
-		apiGetAuth<NodeRevisionPage>(`/node-revisions?nodeId=${id}`)
+		apiGetAuth<NodeRevisionPage>(url())
 			.then((p) => {
 				if (!current) return;
 				items = p.items;
@@ -57,7 +70,7 @@
 	async function restore(r: NodeRevision) {
 		busy = r.id;
 		try {
-			onRestored(await apiPostAuth<Task>(`/node-revisions/${r.id}/restore`, {}));
+			onRestored(await apiPostAuth<R>(restorePath(r.id), {}));
 			showToast(tr('tasks.history.restored'), 'success');
 		} catch (e) {
 			showToast(errMessage(e, tr('tasks.history.restoreFailed')), 'error');
@@ -79,11 +92,17 @@
 			<li class="py-2 {i < items.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}">
 				<div class="flex items-start justify-between gap-3">
 					<div class="min-w-0">
-						<p class="text-sm font-medium text-gray-800 dark:text-gray-200 m-0">
-							{r.title ?? $t('activity.untitled')}
-						</p>
+						{#if showTitle}
+							<p class="text-sm font-medium text-gray-800 dark:text-gray-200 m-0">
+								{r.title ?? $t('activity.untitled')}
+							</p>
+						{/if}
 						{#if r.description}
-							<p class="text-xs text-gray-500 m-0 whitespace-pre-wrap break-words">
+							<p
+								class="{showTitle
+									? 'text-xs text-gray-500'
+									: 'text-sm text-gray-800 dark:text-gray-200'} m-0 whitespace-pre-wrap break-words"
+							>
 								{preview(r.description)}
 							</p>
 						{/if}

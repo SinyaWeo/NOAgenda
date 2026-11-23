@@ -104,7 +104,7 @@ export interface ActivityEntry {
 	createdAt: string;
 	action: string;
 	nodeId: number;
-	nodeType: 'task' | 'project';
+	nodeType: 'task' | 'project' | 'idea';
 	nodeTitle: string | null;
 	projectId: number | null;
 	actor: { id: number | null; username: string | null };
@@ -114,7 +114,7 @@ export interface ActivityEntry {
 /** A deleted task or project that can still be restored (the top of what was deleted together). */
 export interface TrashEntry {
 	id: number;
-	type: 'task' | 'project';
+	type: 'task' | 'project' | 'idea';
 	title: string | null;
 	parentId: number | null;
 	deletedAt: string;

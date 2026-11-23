@@ -11,7 +11,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'ideas.add': '+ Přidat nápad',
 	'ideas.adding': 'Přidávám…',
 	'ideas.empty': 'Zatím žádné nápady. Zapište první výše.',
-	'ideas.confirmDelete': 'Smazat tento nápad?',
+	'ideas.confirmDelete': 'Přesunout tento nápad do koše?',
 	'ideas.sharedBy': 'Sdílí {name}',
 	'ideas.share': 'Sdílet',
 	'ideas.shareWith': 'Sdílet s týmy',

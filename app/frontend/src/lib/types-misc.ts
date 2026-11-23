@@ -15,6 +15,15 @@ export interface Idea {
 	sharedTeamIds: number[];
 }
 
+/** GET /ideas/trash items. */
+export interface IdeaTrashEntry {
+	id: number;
+	text: string;
+	deletedAt: string;
+	/** When it will be deleted for good. */
+	purgeAt: string;
+}
+
 /** GET /teams items; `members` is only present when the backend joined them. */
 /** A team with its members, as the app admin sees every team. */
 export interface AdminTeam extends Team {

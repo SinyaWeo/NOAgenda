@@ -6,6 +6,7 @@
 	import { t, tr, fmt } from '$lib/i18n';
 	import type { MessageKey } from '$lib/i18n/messages';
 	import type { TrashEntry } from '$lib/types';
+	import type { IdeaTrashEntry } from '$lib/types-misc';
 	import { Alert, Button, Card } from 'flowbite-svelte';
 
 	let items = $state<TrashEntry[]>([]);
@@ -15,7 +16,22 @@
 
 	async function load() {
 		try {
-			items = await apiGetAuth<TrashEntry[]>('/trash');
+			const [nodes, ideas] = await Promise.all([
+				apiGetAuth<TrashEntry[]>('/trash'),
+				apiGetAuth<IdeaTrashEntry[]>('/ideas/trash')
+			]);
+			items = [
+				...nodes,
+				...ideas.map((i): TrashEntry => ({
+					id: i.id,
+					type: 'idea',
+					title: i.text.length > 80 ? i.text.slice(0, 80) + '…' : i.text,
+					parentId: null,
+					deletedAt: i.deletedAt,
+					deletedBy: { id: null, username: null },
+					purgeAt: i.purgeAt
+				}))
+			].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
 			error = '';
 		} catch (e) {
 			error = errMessage(e, tr('trash.loadFailed'));
@@ -39,11 +55,21 @@
 	}
 
 	const restore = (e: TrashEntry) =>
-		act(e, () => apiPostAuth(`/trash/${e.id}/restore`, {}), 'trash.restored', 'trash.restoreFailed');
+		act(
+			e,
+			() => apiPostAuth(e.type === 'idea' ? `/ideas/${e.id}/restore` : `/trash/${e.id}/restore`, {}),
+			'trash.restored',
+			'trash.restoreFailed'
+		);
 
 	function purge(e: TrashEntry) {
 		if (!confirm(tr('trash.confirmPurge', { title: e.title ?? tr('trash.untitled') }))) return;
-		return act(e, () => apiDeleteAuth(`/trash/${e.id}`), 'trash.purged', 'trash.purgeFailed');
+		return act(
+			e,
+			() => apiDeleteAuth(e.type === 'idea' ? `/ideas/${e.id}/trash` : `/trash/${e.id}`),
+			'trash.purged',
+			'trash.purgeFailed'
+		);
 	}
 </script>
 
@@ -73,10 +99,14 @@
 								<span class="text-xs font-normal text-gray-400"> · {$t(`trash.type.${e.type}`)}</span>
 							</p>
 							<p class="text-xs text-gray-500 m-0">
-								{$t('trash.deleted', {
-									when: $fmt.dateTime(e.deletedAt),
-									who: e.deletedBy.username ?? $t('common.unknown')
-								})}
+								{#if e.deletedBy.username}
+									{$t('trash.deleted', {
+										when: $fmt.dateTime(e.deletedAt),
+										who: e.deletedBy.username
+									})}
+								{:else}
+									{$t('trash.deletedAt', { when: $fmt.dateTime(e.deletedAt) })}
+								{/if}
 							</p>
 							<p class="text-xs text-gray-400 m-0">
 								{$t('trash.purgeAt', { when: $fmt.dateTime(e.purgeAt) })}

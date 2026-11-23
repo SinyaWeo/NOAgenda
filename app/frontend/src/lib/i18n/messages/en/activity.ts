@@ -31,6 +31,10 @@ export const messages = {
 		one: '{actor} deleted project “{title}” and {count} item in it',
 		other: '{actor} deleted project “{title}” and {count} items in it'
 	},
+	'activity.action.idea.created': '{actor} created idea “{title}”',
+	'activity.action.idea.updated': '{actor} edited idea “{title}”',
+	'activity.action.idea.deleted': '{actor} deleted idea “{title}”',
+	'activity.action.idea.undeleted': '{actor} restored idea “{title}” from the trash',
 	'activity.action.comment.created': '{actor} commented on “{title}”',
 	'activity.action.comment.updated': '{actor} edited a comment on “{title}”',
 	'activity.action.comment.deleted': '{actor} deleted a comment on “{title}”',

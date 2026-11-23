@@ -2,11 +2,13 @@
 export const messages = {
 	'trash.title': 'Trash',
 	'trash.hint':
-		'Deleted tasks and projects stay here until they are removed automatically. Restoring brings back everything that was deleted with them.',
+		'Deleted tasks, projects and ideas stay here until they are removed automatically. Restoring brings back everything that was deleted with them.',
 	'trash.empty': 'The trash is empty.',
 	'trash.loadFailed': 'Could not load the trash.',
 	'trash.type.task': 'Task',
 	'trash.type.project': 'Project',
+	'trash.type.idea': 'Idea',
+	'trash.deletedAt': 'Deleted {when}',
 	'trash.untitled': 'untitled',
 	'trash.deleted': 'Deleted {when} by {who}',
 	'trash.purgeAt': 'Removed for good {when}',

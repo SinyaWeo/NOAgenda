@@ -4,8 +4,19 @@ import { Repository } from 'typeorm';
 import { Node, NodeType } from '../node/node.entity';
 import { User } from '../user/user.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
+import { NodeService } from '../node/node.service';
+import { NodeRevisionService, RevisionPage } from '../node-revision/node-revision.service';
+import { trashRetentionDays } from '../node/node-trash.service';
 import { MAX_PAGE_SIZE } from '../node/dto/node.dto';
 import { IdeaCreateDto, IdeaUpdateDto } from './dto/idea.dto';
+
+export interface IdeaTrashEntry {
+  id: number;
+  text: string;
+  deletedAt: Date;
+  /** When it will be deleted for good. */
+  purgeAt: Date;
+}
 
 export interface IdeaView {
   id: number;
@@ -40,6 +51,8 @@ export class IdeaService {
     @InjectRepository(Node)
     private readonly nodes: Repository<Node>,
     private readonly access: NodeAccessService,
+    private readonly nodeService: NodeService,
+    private readonly revisions: NodeRevisionService,
   ) {}
 
   /** Own ideas plus ideas shared with one of the viewer's teams, newest first. */
@@ -102,13 +115,9 @@ export class IdeaService {
 
   async create(userId: number, dto: IdeaCreateDto): Promise<IdeaView> {
     if (dto.projectId != null) await this.access.assertProject(userId, dto.projectId, Access.READ);
-    const saved = await this.nodes.save(
-      this.nodes.create({
-        type: NodeType.IDEA,
-        description: dto.text,
-        createdBy: userId,
-        parentId: dto.projectId ?? null,
-      }),
+    const saved = await this.nodeService.create(
+      { type: NodeType.IDEA, description: dto.text, createdBy: userId, parentId: dto.projectId ?? null },
+      userId,
     );
     return this.one(userId, saved.id);
   }
@@ -121,13 +130,66 @@ export class IdeaService {
       if (dto.projectId !== null) await this.access.assertProject(userId, dto.projectId, Access.READ);
       change.parentId = dto.projectId;
     }
-    if (Object.keys(change).length) await this.nodes.update(id, change);
+    if (Object.keys(change).length) await this.nodeService.update(id, change, userId);
     return this.one(userId, id);
   }
 
+  /** Move the idea to the trash (it is deleted for good after the trash retention period). */
   async remove(userId: number, id: number): Promise<void> {
     await this.assertOwn(userId, id);
-    await this.nodes.delete(id); // idea_teams rows cascade
+    await this.nodeService.remove(id, userId);
+  }
+
+  /** The creator's deleted ideas, newest first. */
+  async listTrashed(userId: number): Promise<IdeaTrashEntry[]> {
+    const rows = await this.nodes
+      .createQueryBuilder('n')
+      .withDeleted()
+      .where('n.type = :type', { type: NodeType.IDEA })
+      .andWhere('n.createdBy = :userId', { userId })
+      .andWhere('n.deletedAt IS NOT NULL')
+      .orderBy('n.deletedAt', 'DESC')
+      .addOrderBy('n.id', 'DESC')
+      .limit(MAX_PAGE_SIZE)
+      .getMany();
+    const retention = trashRetentionDays() * 24 * 60 * 60 * 1000;
+    return rows.map((n) => ({
+      id: n.id,
+      text: n.description ?? '',
+      deletedAt: n.deletedAt!,
+      purgeAt: new Date(n.deletedAt!.getTime() + retention),
+    }));
+  }
+
+  /** Bring a deleted idea back. If its project is gone meanwhile it comes back without one. */
+  async restore(userId: number, id: number): Promise<IdeaView> {
+    const idea = await this.ownTrashed(userId, id);
+    if (idea.parentId != null && !(await this.nodes.exists({ where: { id: idea.parentId } }))) {
+      await this.nodes.update(id, { parentId: null });
+    }
+    await this.nodeService.restore(id, userId);
+    return this.one(userId, id);
+  }
+
+  /** Delete a trashed idea for good. */
+  async purge(userId: number, id: number): Promise<void> {
+    await this.ownTrashed(userId, id);
+    await this.nodeService.purge(id);
+  }
+
+  /** Saved texts of one of your ideas, newest first. */
+  async history(userId: number, id: number, before?: number, limit?: number): Promise<RevisionPage> {
+    await this.assertOwn(userId, id);
+    return this.revisions.list(id, before, limit);
+  }
+
+  /** Put an earlier text back (recorded as a new revision). */
+  async restoreRevision(userId: number, id: number, revisionId: number): Promise<IdeaView> {
+    await this.assertOwn(userId, id);
+    const revision = await this.revisions.findById(revisionId);
+    if (!revision || revision.nodeId !== id) throw new NotFoundException();
+    await this.nodeService.update(id, { description: revision.description ?? '' }, userId);
+    return this.one(userId, id);
   }
 
   /** Replace the set of teams the idea is shared with. The creator can only pick teams they are a member of. */
@@ -152,6 +214,12 @@ export class IdeaService {
   private async one(userId: number, id: number): Promise<IdeaView> {
     const [idea] = await this.list(userId, { id });
     if (!idea) throw new NotFoundException();
+    return idea;
+  }
+
+  private async ownTrashed(userId: number, id: number): Promise<Node> {
+    const idea = await this.nodeService.findTrashed(Number(id));
+    if (!idea || idea.type !== NodeType.IDEA || idea.createdBy !== userId) throw new NotFoundException();
     return idea;
   }
 

@@ -26,7 +26,7 @@ export interface RevisionPage {
 }
 
 /**
- * Keeps the full title and description of a task or project each time one of them is created or
+ * Keeps the full title and description of a task, project or idea each time one of them is created or
  * changed (the audit log only shows shortened text). Listens to domain events, so the node layer
  * does not depend on it.
  */
@@ -51,7 +51,7 @@ export class NodeRevisionService implements OnModuleInit {
 
   async handle(e: DomainEvent): Promise<void> {
     const [kind, action] = e.name.split('.');
-    if (kind !== 'task' && kind !== 'project') return;
+    if (kind !== 'task' && kind !== 'project' && kind !== 'idea') return;
     const touched =
       action === 'created' ||
       (action === 'updated' && !!e.changes && ('title' in e.changes || 'description' in e.changes));

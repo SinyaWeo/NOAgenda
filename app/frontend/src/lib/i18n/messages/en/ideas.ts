@@ -8,7 +8,7 @@ export const messages = {
 	'ideas.add': '+ Add idea',
 	'ideas.adding': 'Adding…',
 	'ideas.empty': 'No ideas yet. Write the first one above.',
-	'ideas.confirmDelete': 'Delete this idea?',
+	'ideas.confirmDelete': 'Move this idea to the trash?',
 	'ideas.sharedBy': 'Shared by {name}',
 	'ideas.share': 'Share',
 	'ideas.shareWith': 'Share with teams',

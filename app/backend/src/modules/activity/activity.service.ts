@@ -91,7 +91,7 @@ export class ActivityService implements OnModuleInit, OnModuleDestroy {
   /** Turn a domain event into a row. Does nothing for updates that changed nothing worth showing. */
   async record(e: DomainEvent): Promise<Activity | null> {
     if (e.name.endsWith('.updated') && e.changes && Object.keys(e.changes).length === 0) return null;
-    const nodeType = e.name.startsWith('project.') ? 'project' : 'task';
+    const nodeType = e.name.startsWith('project.') ? 'project' : e.name.startsWith('idea.') ? 'idea' : 'task';
     const data = e.data ?? {};
     const projectId = e.projectId !== undefined ? e.projectId : await this.projectOf(e);
     const title = (data.title ?? data.name ?? e.title ?? null) as string | null;
