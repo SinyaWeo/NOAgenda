@@ -222,7 +222,7 @@
 				<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
 					{$t('dashboard.quickAdd.title')}
 				</h2>
-				<p class="text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-3">
+				<p class="text-sm whitespace-pre-line text-gray-500 dark:text-gray-400 -mt-2 mb-3">
 					{$t('dashboard.quickAdd.hint')}
 				</p>
 				<form
