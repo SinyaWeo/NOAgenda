@@ -116,9 +116,10 @@
 			{$t('admin.quotes.title')}
 		</h1>
 		<div class="flex items-center gap-3">
-			<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400"
-				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('admin.back')}</a
-			>
+			<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
+				<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+				{$t('admin.back')}
+			</a>
 			<Button size="sm" onclick={openNew}>
 				<PlusOutline class="w-4 h-4 mr-1" />{$t('admin.quotes.new')}
 			</Button>
@@ -134,9 +135,13 @@
 			<QuoteOutline class="w-12 h-12 mx-auto mb-3" />
 			<p>
 				{$t('admin.quotes.empty')}
-				<button type="button" onclick={openNew} class="text-primary-600 dark:text-primary-400 hover:underline"
-					>{$t('admin.quotes.createOne')}</button
+				<button
+					type="button"
+					onclick={openNew}
+					class="text-primary-600 dark:text-primary-400 hover:underline"
 				>
+					{$t('admin.quotes.createOne')}
+				</button>
 			</p>
 		</div>
 	{:else}
@@ -155,9 +160,9 @@
 						</TableBodyCell>
 						<TableBodyCell>{q.author ?? '—'}</TableBodyCell>
 						<TableBodyCell>
-							<span class="text-xs font-medium {q.isActive ? 'tone-green' : 'tone-gray'}"
-								>{q.isActive ? $t('admin.quotes.active') : $t('admin.quotes.inactive')}</span
-							>
+							<span class="text-xs font-medium {q.isActive ? 'tone-green' : 'tone-gray'}">
+								{q.isActive ? $t('admin.quotes.active') : $t('admin.quotes.inactive')}
+							</span>
 						</TableBodyCell>
 						<TableBodyCell>
 							<div class="flex items-center gap-2">

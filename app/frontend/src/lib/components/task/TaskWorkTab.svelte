@@ -66,13 +66,16 @@
 				>
 					<a
 						href="/tasks/{sub.id}"
-						class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline">{sub.title}</a
+						class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline"
 					>
+						{sub.title}
+					</a>
 					<span
 						class="inline-flex items-center text-xs font-semibold shrink-0"
 						data-status={sub.status ?? 'open'}
-						>{$t(`common.status.${sub.status ?? 'open'}` as MessageKey)}</span
 					>
+						{$t(`common.status.${sub.status ?? 'open'}` as MessageKey)}
+					</span>
 				</div>
 			{/each}
 		</div>
@@ -105,22 +108,24 @@
 				>
 					<span
 						class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 shrink-0"
-						>{$t(relationLabel(row.rel.kind, row.incoming))}</span
 					>
+						{$t(relationLabel(row.rel.kind, row.incoming))}
+					</span>
 					<a
 						href="/tasks/{row.other.id}"
 						class="flex-1 text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline"
-						>{row.other.title ??
-							row.other.name ??
-							$t('tasks.relations.taskFallback', { id: row.other.id })}</a
 					>
+						{row.other.title ?? row.other.name ?? $t('tasks.relations.taskFallback', { id: row.other.id })}
+					</a>
 					{#if !row.incoming}
 						<Button
 							size="xs"
 							color="light"
 							onclick={() => onDeleteRelation(row.rel.kind, row.other.id)}
-							aria-label={$t('tasks.relations.remove')}>✕</Button
+							aria-label={$t('tasks.relations.remove')}
 						>
+							✕
+						</Button>
 					{/if}
 				</div>
 			{/each}

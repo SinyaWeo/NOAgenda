@@ -74,8 +74,10 @@
 					>
 						<a
 							href="/tasks/{task.id}"
-							class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline">{task.title}</a
+							class="font-medium text-sm text-gray-800 dark:text-gray-200 hover:underline"
 						>
+							{task.title}
+						</a>
 						{#if task.parentId != null && projectNames[task.parentId]}<div
 								class="text-xs text-gray-400 mt-0.5"
 							>

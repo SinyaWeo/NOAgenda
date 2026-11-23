@@ -311,9 +311,9 @@
 
 <ButtonGroup class="mb-4 *:ring-primary-700!">
 	{#each VIEWS as v (v.id)}
-		<Button size="sm" color={viewMode === v.id ? 'primary' : 'light'} onclick={() => setView(v.id)}
-			>{$t(v.label)}</Button
-		>
+		<Button size="sm" color={viewMode === v.id ? 'primary' : 'light'} onclick={() => setView(v.id)}>
+			{$t(v.label)}
+		</Button>
 	{/each}
 </ButtonGroup>
 
@@ -329,9 +329,9 @@
 		<option value="">{$t('common.none')}</option>
 		{#each savedFilters as f (f.id)}<option value={String(f.id)}>{f.name}</option>{/each}
 	</Select>
-	<Button size="sm" color="light" onclick={openRefine}
-		>{showRefine ? $t('views.filter.hideEditor') : $t('views.filter.edit')}</Button
-	>
+	<Button size="sm" color="light" onclick={openRefine}>
+		{showRefine ? $t('views.filter.hideEditor') : $t('views.filter.edit')}
+	</Button>
 	<a href="/filters" class="text-xs text-primary-600 hover:underline">{$t('views.filter.manage')}</a>
 </div>
 
@@ -350,9 +350,9 @@
 		{#each chips as chip (chip)}<Badge color="indigo">{chip}</Badge>{/each}
 		<Button size="xs" color="light" onclick={clearFilter}>{$t('common.clear')}</Button>
 		{#if !showSave}
-			<Button size="xs" color="light" onclick={() => (showSave = true)}
-				>{$t('views.filter.saveCurrent')}</Button
-			>
+			<Button size="xs" color="light" onclick={() => (showSave = true)}>
+				{$t('views.filter.saveCurrent')}
+			</Button>
 		{:else}
 			<form onsubmit={saveCurrentFilters} class="flex items-center gap-2">
 				<Input
@@ -365,9 +365,9 @@
 					aria-label={$t('views.filter.name')}
 				/>
 				<Button type="submit" size="xs" disabled={saving || !saveName.trim()}>{$t('common.save')}</Button>
-				<Button type="button" size="xs" color="light" onclick={() => (showSave = false)}
-					>{$t('common.cancel')}</Button
-				>
+				<Button type="button" size="xs" color="light" onclick={() => (showSave = false)}>
+					{$t('common.cancel')}
+				</Button>
 			</form>
 		{/if}
 	</div>
@@ -388,13 +388,13 @@
 
 {#snippet pager(extraClass: string)}
 	<div class="flex items-center gap-3 justify-center {extraClass}">
-		<Button size="sm" color="light" disabled={$currentPage === 1} onclick={prevPage}
-			><ChevronLeftOutline class="w-4 h-4 mr-1" />{$t('views.pager.prev')}</Button
-		>
+		<Button size="sm" color="light" disabled={$currentPage === 1} onclick={prevPage}>
+			<ChevronLeftOutline class="w-4 h-4 mr-1" />{$t('views.pager.prev')}
+		</Button>
 		<span class="text-sm text-gray-400">{$t('common.pageOf', { page: $currentPage })}</span>
-		<Button size="sm" color="light" disabled={!$hasMore} onclick={nextPage}
-			>{$t('common.next')}<ChevronRightOutline class="w-4 h-4 ml-1" /></Button
-		>
+		<Button size="sm" color="light" disabled={!$hasMore} onclick={nextPage}>
+			{$t('common.next')}<ChevronRightOutline class="w-4 h-4 ml-1" />
+		</Button>
 	</div>
 {/snippet}
 
@@ -415,9 +415,9 @@
 				{$t('views.bulk.selectAll')}
 			</label>
 			{#if selected.length}
-				<span class="text-sm text-gray-700 dark:text-gray-300"
-					>{$t('views.bulk.selected', { count: selected.length })}</span
-				>
+				<span class="text-sm text-gray-700 dark:text-gray-300">
+					{$t('views.bulk.selected', { count: selected.length })}
+				</span>
 				<Select
 					placeholder=""
 					size="sm"
@@ -450,8 +450,9 @@
 					}}
 				>
 					<option value="">{$t('views.bulk.setPriority')}</option>
-					{#each [1, 2, 3, 4, 5] as p (p)}<option value={p}>{$t(`common.priority.${p}` as MessageKey)}</option
-						>{/each}
+					{#each [1, 2, 3, 4, 5] as p (p)}<option value={p}>
+							{$t(`common.priority.${p}` as MessageKey)}
+						</option>{/each}
 				</Select>
 				<Button size="xs" color="light" onclick={() => (selected = [])}>{$t('common.clear')}</Button>
 			{/if}

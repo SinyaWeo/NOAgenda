@@ -39,11 +39,13 @@
 						href="/tasks/{task.id}"
 						class="font-medium text-gray-900 dark:text-white hover:underline {task.status === 'done'
 							? 'line-through text-gray-400'
-							: ''}">{task.title}</a
+							: ''}"
 					>
-					{#if task.parentId != null && projectNames[task.parentId]}<span class="text-xs text-gray-400 ml-2"
-							>{projectNames[task.parentId]}</span
-						>{/if}
+						{task.title}
+					</a>
+					{#if task.parentId != null && projectNames[task.parentId]}<span class="text-xs text-gray-400 ml-2">
+							{projectNames[task.parentId]}
+						</span>{/if}
 				</div>
 				<div class="shrink-0 text-right flex flex-col gap-1">
 					<div>

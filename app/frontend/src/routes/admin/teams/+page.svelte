@@ -52,9 +52,10 @@
 <div class="max-w-4xl mx-auto">
 	<div class="flex items-center justify-between mb-2">
 		<h1 class="text-2xl font-bold text-gray-900 dark:text-white">{$t('admin.teams.title')}</h1>
-		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400"
-			><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('admin.back')}</a
-		>
+		<a href="/admin" class="text-sm text-primary-600 dark:text-primary-400">
+			<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+			{$t('admin.back')}
+		</a>
 	</div>
 	<p class="text-sm text-gray-500 mt-0 mb-6">{$t('admin.teams.hint')}</p>
 
@@ -71,20 +72,20 @@
 			{#each $teams as team (team.id)}
 				<Card class="max-w-none">
 					<div class="flex items-center justify-between gap-2 mb-2">
-						<a href="/teams/{team.id}" class="font-bold text-gray-900 dark:text-white hover:underline"
-							>{team.name}</a
-						>
-						<a href="/teams/{team.id}/edit" class="text-xs text-primary-600 dark:text-primary-400"
-							>{$t('common.edit')}</a
-						>
+						<a href="/teams/{team.id}" class="font-bold text-gray-900 dark:text-white hover:underline">
+							{team.name}
+						</a>
+						<a href="/teams/{team.id}/edit" class="text-xs text-primary-600 dark:text-primary-400">
+							{$t('common.edit')}
+						</a>
 					</div>
 					{#if team.description}<p class="text-sm text-gray-500 mt-0 mb-2">{team.description}</p>{/if}
 					{#each team.members as member (member.id)}
 						<div class="flex items-center gap-3 py-2 border-t border-gray-100 dark:border-gray-700">
-							<span class="flex-1 text-sm text-gray-800 dark:text-gray-200"
-								>{member.user.name || member.user.username}
-								<span class="text-gray-400">({member.user.username})</span></span
-							>
+							<span class="flex-1 text-sm text-gray-800 dark:text-gray-200">
+								{member.user.name || member.user.username}
+								<span class="text-gray-400">({member.user.username})</span>
+							</span>
 							<Select
 								placeholder=""
 								size="sm"

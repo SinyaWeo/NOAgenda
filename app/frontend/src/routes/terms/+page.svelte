@@ -79,8 +79,8 @@
 
 	<h2>9. Governing law and contact</h2>
 	<p>
-		These terms are governed by the laws of [country/region]. Questions: <a href="mailto:{contact}"
-			>{contact}</a
-		>.
+		These terms are governed by the laws of [country/region]. Questions: <a href="mailto:{contact}">
+			{contact}
+		</a>.
 	</p>
 </LegalPage>

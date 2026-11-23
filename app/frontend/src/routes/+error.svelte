@@ -41,9 +41,9 @@
 	<h1 class="text-xl font-semibold m-0 mt-2">{title}</h1>
 	<p class="text-gray-500 dark:text-gray-400 m-0 max-w-md">{detail}</p>
 	<div class="flex gap-3 mt-4">
-		<Button href={signedIn ? '/dashboard' : '/user/login'}
-			>{signedIn ? $t('layout.error.backToDashboard') : $t('layout.error.signIn')}</Button
-		>
+		<Button href={signedIn ? '/dashboard' : '/user/login'}>
+			{signedIn ? $t('layout.error.backToDashboard') : $t('layout.error.signIn')}
+		</Button>
 		<Button color="light" onclick={() => history.back()}>{$t('layout.error.goBack')}</Button>
 	</div>
 </div>

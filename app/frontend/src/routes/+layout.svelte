@@ -149,8 +149,9 @@
 		<a
 			href="#main-content"
 			class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-500 focus:bg-white focus:text-primary-700 focus:px-3 focus:py-2 focus:rounded focus:shadow"
-			>{$t('layout.skipToContent')}</a
 		>
+			{$t('layout.skipToContent')}
+		</a>
 		<div class="sidebar-shell">
 			<Sidebar {currentPath} showAdmin={isAdmin($user)} {isMobile} bind:mobileOpen={mobileNavOpen} />
 

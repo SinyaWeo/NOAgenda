@@ -47,9 +47,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-4">
-	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
-	>
+	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('common.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('projects.archive.title')}
 	</h1>
@@ -70,26 +71,24 @@
 		</p>
 		<p class="mb-4">
 			{$t('projects.archive.status')}
-			<strong class={$project.isArchived ? 'text-red-600' : 'text-green-600'}
-				>{$project.isArchived
-					? $t('projects.archive.statusArchived')
-					: $t('projects.archive.statusActive')}</strong
-			>
+			<strong class={$project.isArchived ? 'text-red-600' : 'text-green-600'}>
+				{$project.isArchived ? $t('projects.archive.statusArchived') : $t('projects.archive.statusActive')}
+			</strong>
 		</p>
 		{#if $project.isArchived}
 			<p class="text-gray-500 text-sm mb-4">
 				{$t('projects.archive.archivedNote')}
 			</p>
-			<Button onclick={toggleArchive} disabled={$saving}
-				>{$saving ? $t('projects.archive.restoring') : $t('projects.archive.restore')}</Button
-			>
+			<Button onclick={toggleArchive} disabled={$saving}>
+				{$saving ? $t('projects.archive.restoring') : $t('projects.archive.restore')}
+			</Button>
 		{:else}
 			<p class="text-gray-500 text-sm mb-4">
 				{$t('projects.archive.activeNote')}
 			</p>
-			<Button color="light" onclick={toggleArchive} disabled={$saving}
-				>{$saving ? $t('projects.archive.archiving') : $t('projects.archive.archive')}</Button
-			>
+			<Button color="light" onclick={toggleArchive} disabled={$saving}>
+				{$saving ? $t('projects.archive.archiving') : $t('projects.archive.archive')}
+			</Button>
 		{/if}
 	</Card>
 {/if}

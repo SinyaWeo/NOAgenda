@@ -49,9 +49,9 @@
 				</p>
 			</Alert>
 			<p class="text-sm text-center mt-4">
-				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline"
-					>{$t('auth.backToSignIn')}</a
-				>
+				<a href="/user/login" class="text-primary-600 dark:text-primary-400 hover:underline">
+					{$t('auth.backToSignIn')}
+				</a>
 			</p>
 		{:else}
 			<form onsubmit={handleRequest} class="flex flex-col gap-4">
@@ -59,14 +59,15 @@
 					<Label for="reset-email" class="mb-1">{$t('auth.reset.emailLabel')}</Label>
 					<Input id="reset-email" type="email" bind:value={$email} required />
 				</div>
-				<Button type="submit" disabled={$loading} class="w-full"
-					>{$loading ? $t('auth.reset.sending') : $t('auth.reset.send')}</Button
-				>
+				<Button type="submit" disabled={$loading} class="w-full">
+					{$loading ? $t('auth.reset.sending') : $t('auth.reset.send')}
+				</Button>
 			</form>
 			<p class="text-sm text-center mt-4">
-				<a href="/user/login" class="text-gray-400 hover:underline"
-					><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('auth.backToSignIn')}</a
-				>
+				<a href="/user/login" class="text-gray-400 hover:underline">
+					<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+					{$t('auth.backToSignIn')}
+				</a>
 			</p>
 		{/if}
 	</Card>

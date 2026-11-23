@@ -47,9 +47,9 @@
 				<div class="flex flex-col gap-3 h-full">
 					<div class="flex items-start justify-between gap-2">
 						<div class="min-w-0">
-							<a href="/teams/{team.id}" class="font-bold text-gray-900 dark:text-white hover:underline"
-								>{team.name}</a
-							>
+							<a href="/teams/{team.id}" class="font-bold text-gray-900 dark:text-white hover:underline">
+								{team.name}
+							</a>
 							{#if team.description}<p class="text-sm text-gray-500 mt-1 mb-0">
 									{team.description}
 								</p>{/if}
@@ -61,9 +61,9 @@
 						{/if}
 					</div>
 					{#if team.members?.length != null}
-						<span class="text-xs text-gray-400"
-							>{$t('teams.memberCount', { count: team.members.length })}</span
-						>
+						<span class="text-xs text-gray-400">
+							{$t('teams.memberCount', { count: team.members.length })}
+						</span>
 					{/if}
 					<div class="flex gap-2 mt-auto pt-3 border-t border-gray-100 dark:border-gray-700">
 						<Button href="/teams/{team.id}" color="light" size="sm">{$t('teams.view')}</Button>

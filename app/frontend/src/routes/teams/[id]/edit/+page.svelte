@@ -109,9 +109,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/teams/{page.params.id}" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
-	>
+	<a href="/teams/{page.params.id}" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('common.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('teams.edit.title')}
 	</h1>
@@ -126,9 +127,9 @@
 	<Card class="max-w-xl mb-4">
 		<form onsubmit={handleSave} class="flex flex-col gap-4">
 			<div>
-				<Label for="team-name" class="mb-1"
-					>{$t('common.field.name')} <span class="text-red-500">*</span></Label
-				>
+				<Label for="team-name" class="mb-1">
+					{$t('common.field.name')} <span class="text-red-500">*</span>
+				</Label>
 				<Input id="team-name" type="text" bind:value={$name} required />
 			</div>
 			<div>
@@ -136,9 +137,9 @@
 				<Textarea id="team-desc" bind:value={$description} rows={3} />
 			</div>
 			<div class="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-				<Button type="submit" disabled={$saving}
-					>{$saving ? $t('common.saving') : $t('teams.edit.saveChanges')}</Button
-				>
+				<Button type="submit" disabled={$saving}>
+					{$saving ? $t('common.saving') : $t('teams.edit.saveChanges')}
+				</Button>
 				<Button href="/teams/{page.params.id}" color="light">{$t('common.cancel')}</Button>
 			</div>
 		</form>
@@ -157,8 +158,9 @@
 				excludeIds={memberIds}
 				bind:this={picker}
 			/>
-			<Button type="submit" size="sm" disabled={!newMember} class="self-start mt-6">{$t('common.add')}</Button
-			>
+			<Button type="submit" size="sm" disabled={!newMember} class="self-start mt-6">
+				{$t('common.add')}
+			</Button>
 		</form>
 		{#if $members.length}
 			{#each $members as member, i (member.id)}
@@ -167,11 +169,11 @@
 						? 'border-b border-gray-100 dark:border-gray-700'
 						: ''}"
 				>
-					<span class="flex-1 text-sm text-gray-800 dark:text-gray-200"
-						>{member.user
+					<span class="flex-1 text-sm text-gray-800 dark:text-gray-200">
+						{member.user
 							? member.user.name || member.user.username || $t('teams.userFallback', { id: member.user.id })
-							: $t('teams.memberFallback', { id: member.id })}</span
-					>
+							: $t('teams.memberFallback', { id: member.id })}
+					</span>
 					{#if $admin}
 						<Select
 							placeholder=""
@@ -187,13 +189,15 @@
 					{:else}
 						<span
 							class="text-xs font-medium {member.role === 'manager' ? 'tone-blue' : 'tone-gray'}"
-							data-team-role={member.role}>{$t(`teams.role.${member.role}` as MessageKey)}</span
+							data-team-role={member.role}
 						>
+							{$t(`teams.role.${member.role}` as MessageKey)}
+						</span>
 					{/if}
 					{#if member.role !== 'manager' || $admin}
-						<Button size="xs" color="red" onclick={() => removeMember(member.id)}
-							>{$t('common.remove')}</Button
-						>
+						<Button size="xs" color="red" onclick={() => removeMember(member.id)}>
+							{$t('common.remove')}
+						</Button>
 					{/if}
 				</div>
 			{/each}

@@ -95,9 +95,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('common.back')}</a
-	>
+	<a href="/projects/{page.params.id}/edit" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('common.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('projects.share.title')}
 	</h1>
@@ -125,12 +126,13 @@
 				class="w-auto self-start mt-6"
 				aria-label={$t('projects.share.permission')}
 			>
-				<option value="read">{$t('common.permission.read')}</option><option value="write"
-					>{$t('common.permission.write')}</option
-				><option value="admin">{$t('common.permission.admin')}</option>
+				<option value="read">{$t('common.permission.read')}</option><option value="write">
+					{$t('common.permission.write')}
+				</option><option value="admin">{$t('common.permission.admin')}</option>
 			</Select>
-			<Button type="submit" disabled={!newUser} class="self-start mt-6">{$t('projects.share.addUser')}</Button
-			>
+			<Button type="submit" disabled={!newUser} class="self-start mt-6">
+				{$t('projects.share.addUser')}
+			</Button>
 		</form>
 		{#if $users.length}
 			{#each $users as u, i (u.id)}
@@ -139,15 +141,15 @@
 						? 'border-b border-gray-100 dark:border-gray-700'
 						: ''}"
 				>
-					<span class="flex-1 font-medium text-gray-900 dark:text-white"
-						>{u.user
+					<span class="flex-1 font-medium text-gray-900 dark:text-white">
+						{u.user
 							? u.user.name || u.user.username || $t('projects.share.userFallback', { id: u.user.id })
-							: $t('projects.share.userFallback', { id: u.id })}</span
-					>
+							: $t('projects.share.userFallback', { id: u.id })}
+					</span>
 					<span class="text-xs text-gray-400">{permName(u.permission)}</span>
-					<Button size="sm" color="red" onclick={() => removeUser(u.user?.id ?? u.id)}
-						>{$t('common.remove')}</Button
-					>
+					<Button size="sm" color="red" onclick={() => removeUser(u.user?.id ?? u.id)}>
+						{$t('common.remove')}
+					</Button>
 				</div>
 			{/each}
 		{:else}<p class="text-sm text-gray-400 m-0">{$t('projects.share.noUsers')}</p>{/if}
@@ -174,9 +176,9 @@
 				/>
 			{/if}
 			<Select placeholder="" bind:value={newPermission} class="w-auto">
-				<option value="read">{$t('common.permission.read')}</option><option value="write"
-					>{$t('common.permission.write')}</option
-				><option value="admin">{$t('common.permission.admin')}</option>
+				<option value="read">{$t('common.permission.read')}</option><option value="write">
+					{$t('common.permission.write')}
+				</option><option value="admin">{$t('common.permission.admin')}</option>
 			</Select>
 			<Button type="submit">{$t('projects.share.addTeam')}</Button>
 		</form>
@@ -187,15 +189,15 @@
 						? 'border-b border-gray-100 dark:border-gray-700'
 						: ''}"
 				>
-					<span class="flex-1 font-medium text-gray-900 dark:text-white"
-						>{tm.team
+					<span class="flex-1 font-medium text-gray-900 dark:text-white">
+						{tm.team
 							? (tm.team.name ?? $t('projects.share.teamFallback', { id: tm.team.id }))
-							: $t('projects.share.teamFallback', { id: tm.id })}</span
-					>
+							: $t('projects.share.teamFallback', { id: tm.id })}
+					</span>
 					<span class="text-xs text-gray-400">{permName(tm.permission)}</span>
-					<Button size="sm" color="red" onclick={() => removeTeam(tm.team?.id ?? tm.id)}
-						>{$t('common.remove')}</Button
-					>
+					<Button size="sm" color="red" onclick={() => removeTeam(tm.team?.id ?? tm.id)}>
+						{$t('common.remove')}
+					</Button>
 				</div>
 			{/each}
 		{:else}<p class="text-sm text-gray-400 m-0">{$t('projects.share.noTeams')}</p>{/if}

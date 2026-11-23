@@ -102,8 +102,9 @@
 		<Badge
 			color="red"
 			class="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 text-[10px] px-1 flex items-center justify-center"
-			>{unreadCount}</Badge
 		>
+			{unreadCount}
+		</Badge>
 	{/if}
 </button>
 <Dropdown triggeredBy="#notif-btn" placement="bottom-end" class="w-80 max-h-[420px] overflow-y-auto">
@@ -112,8 +113,9 @@
 		<button
 			onclick={markAllRead}
 			class="text-xs text-primary-600 dark:text-primary-400 bg-transparent border-0 cursor-pointer"
-			>{$t('layout.notifications.markAllRead')}</button
 		>
+			{$t('layout.notifications.markAllRead')}
+		</button>
 	</div>
 	{#if notifications.length === 0}
 		<p class="px-4 py-3 text-sm text-gray-500">{$t('layout.notifications.empty')}</p>
@@ -130,8 +132,9 @@
 							href={hrefOf(n)}
 							onclick={() => open(n)}
 							class="block text-sm text-gray-800 dark:text-gray-200 m-0 no-underline hover:underline"
-							>{textOf(n)}</a
 						>
+							{textOf(n)}
+						</a>
 					{:else}
 						<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{textOf(n)}</p>
 					{/if}
@@ -142,8 +145,10 @@
 					class="bg-transparent border-0 cursor-pointer text-gray-400 hover:text-red-600 p-0.5 leading-none"
 					aria-label={$t('layout.notifications.dismiss')}
 					title={$t('layout.notifications.dismiss')}
-					onclick={() => dismiss(n)}>✕</button
+					onclick={() => dismiss(n)}
 				>
+					✕
+				</button>
 			</div>
 		{/each}
 	{/if}

@@ -93,8 +93,10 @@
 				class="px-3 py-1 text-sm rounded border border-gray-200 dark:border-gray-700 {zoom === z
 					? 'font-semibold text-primary-600 dark:text-primary-400'
 					: 'text-gray-500 dark:text-gray-400 hover:underline'}"
-				onclick={() => (zoom = z as Zoom)}>{$t(`views.gantt.zoom.${z}` as 'views.gantt.zoom.day')}</button
+				onclick={() => (zoom = z as Zoom)}
 			>
+				{$t(`views.gantt.zoom.${z}` as 'views.gantt.zoom.day')}
+			</button>
 		{/each}
 	</div>
 	<div
@@ -118,8 +120,10 @@
 						task.status === 'done'
 							? 'line-through text-gray-400'
 							: ''}"
-						title={task.title}>{task.title}</a
+						title={task.title}
 					>
+						{task.title}
+					</a>
 				</div>
 			{/each}
 		</div>

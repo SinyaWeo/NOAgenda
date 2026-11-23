@@ -64,9 +64,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/tasks/{page.params.id}" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('tasks.form.backToTask')}</a
-	>
+	<a href="/tasks/{page.params.id}" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('tasks.form.backToTask')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('tasks.form.editTitle')}
 	</h1>
@@ -79,9 +80,9 @@
 	<Card class="max-w-xl">
 		<form onsubmit={handleEdit} class="flex flex-col gap-4">
 			<div>
-				<Label for="edit-title" class="mb-1"
-					>{$t('common.field.title')} <span class="text-red-500">*</span></Label
-				>
+				<Label for="edit-title" class="mb-1">
+					{$t('common.field.title')} <span class="text-red-500">*</span>
+				</Label>
 				<Input id="edit-title" type="text" bind:value={$title} required />
 			</div>
 			<div>
@@ -101,26 +102,27 @@
 					<Label for="edit-priority" class="mb-1">{$t('common.field.priority')}</Label>
 					<Select placeholder="" id="edit-priority" bind:value={$priority}>
 						<option value={0}>{$t('tasks.form.priorityUnset')}</option>
-						<option value={1}>{$t('common.priority.1')}</option><option value={2}
-							>{$t('common.priority.2')}</option
-						><option value={3}>{$t('common.priority.3')}</option><option value={4}
-							>{$t('common.priority.4')}</option
-						><option value={5}>{$t('common.priority.5')}</option>
+						<option value={1}>{$t('common.priority.1')}</option><option value={2}>
+							{$t('common.priority.2')}
+						</option><option value={3}>{$t('common.priority.3')}</option><option value={4}>
+							{$t('common.priority.4')}
+						</option><option value={5}>{$t('common.priority.5')}</option>
 					</Select>
 				</div>
 				<div>
 					<Label for="edit-percent" class="mb-1">{$t('tasks.form.percentDone')}</Label>
 					<Select placeholder="" id="edit-percent" bind:value={$percentDone}>
-						{#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p (p)}<option value={p}>{p}%</option
-							>{/each}
+						{#each [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100] as p (p)}<option value={p}>
+								{p}%
+							</option>{/each}
 					</Select>
 				</div>
 			</div>
 			<RepeatFields bind:form={repeat} />
 			<div class="flex gap-2">
-				<Button type="submit" disabled={$saving}
-					>{$saving ? $t('common.saving') : $t('tasks.form.saveChanges')}</Button
-				>
+				<Button type="submit" disabled={$saving}>
+					{$saving ? $t('common.saving') : $t('tasks.form.saveChanges')}
+				</Button>
 				<Button href="/tasks/{page.params.id}" color="light">{$t('common.cancel')}</Button>
 			</div>
 		</form>

@@ -76,9 +76,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-2">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
-	>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('settings.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">{$t('settings.webhooks.title')}</h1>
 </div>
 <p class="text-gray-500 mb-4">
@@ -94,9 +95,9 @@
 	</h2>
 	<form onsubmit={create} class="flex flex-col gap-4">
 		<div>
-			<Label for="wh-url" class="mb-1"
-				>{$t('settings.webhooks.url')} <span class="text-red-500">*</span></Label
-			>
+			<Label for="wh-url" class="mb-1">
+				{$t('settings.webhooks.url')} <span class="text-red-500">*</span>
+			</Label>
 			<Input id="wh-url" type="url" bind:value={newUrl} placeholder="https://example.com/hook" required />
 		</div>
 		<div class="grid grid-cols-2 gap-4">
@@ -108,10 +109,10 @@
 				</Select>
 			</div>
 			<div>
-				<Label for="wh-secret" class="mb-1"
-					>{$t('settings.webhooks.secret')}
-					<span class="text-xs text-gray-400">({$t('common.optional')})</span></Label
-				>
+				<Label for="wh-secret" class="mb-1">
+					{$t('settings.webhooks.secret')}
+					<span class="text-xs text-gray-400">({$t('common.optional')})</span>
+				</Label>
 				<Input
 					id="wh-secret"
 					type="text"
@@ -121,9 +122,9 @@
 			</div>
 		</div>
 		<div>
-			<Button type="submit" disabled={$saving || !newUrl.trim()}
-				>{$saving ? $t('settings.webhooks.creating') : $t('settings.webhooks.create')}</Button
-			>
+			<Button type="submit" disabled={$saving || !newUrl.trim()}>
+				{$saving ? $t('settings.webhooks.creating') : $t('settings.webhooks.create')}
+			</Button>
 		</div>
 	</form>
 </Card>
@@ -143,9 +144,9 @@
 						{wh.url}
 					</p>
 					<p class="text-xs text-gray-400 m-0">
-						{#each $t( 'settings.webhooks.eventLine', { event: '\u0001', state: wh.active ? $t('settings.webhooks.active') : $t('settings.webhooks.inactive') } ).split('\u0001') as part, pi}{#if pi > 0}<strong
-									>{wh.event}</strong
-								>{/if}{part}{/each}
+						{#each $t( 'settings.webhooks.eventLine', { event: '\u0001', state: wh.active ? $t('settings.webhooks.active') : $t('settings.webhooks.inactive') } ).split('\u0001') as part, pi}{#if pi > 0}<strong>
+									{wh.event}
+								</strong>{/if}{part}{/each}
 					</p>
 					<WebhookStatus webhook={wh} onChanged={load} />
 				</div>

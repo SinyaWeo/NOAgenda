@@ -84,9 +84,9 @@
 					<Label for="confirm-password" class="mb-1">{$t('auth.newPassword.confirm')}</Label>
 					<Input id="confirm-password" type="password" bind:value={$confirmPassword} required minlength={8} />
 				</div>
-				<Button type="submit" disabled={$loading} class="w-full"
-					>{$loading ? $t('auth.newPassword.submitting') : $t('auth.newPassword.submit')}</Button
-				>
+				<Button type="submit" disabled={$loading} class="w-full">
+					{$loading ? $t('auth.newPassword.submitting') : $t('auth.newPassword.submit')}
+				</Button>
 			</form>
 		{/if}
 	</Card>

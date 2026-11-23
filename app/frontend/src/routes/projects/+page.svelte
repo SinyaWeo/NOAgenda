@@ -73,8 +73,9 @@
 						<a
 							href="/projects/{project.id}"
 							class="font-bold text-gray-900 dark:text-white hover:underline block truncate"
-							>{project.name ?? project.title}</a
 						>
+							{project.name ?? project.title}
+						</a>
 						{#if project.description}<p class="text-sm text-gray-500 dark:text-gray-400 m-0 truncate">
 								{project.description}
 							</p>{/if}
@@ -89,15 +90,16 @@
 							/>{/if}
 					</button>
 				</div>
-				{#if project.isArchived}<span class="text-xs font-medium tone-gray">{$t('projects.archived')}</span
-					>{/if}
+				{#if project.isArchived}<span class="text-xs font-medium tone-gray">
+						{$t('projects.archived')}
+					</span>{/if}
 				{@const stats = $taskStats[project.id]}
 				{#if stats && stats.total > 0}
 					<div class="mt-1">
 						<div class="flex justify-between items-center mb-1">
-							<span class="text-xs text-gray-400"
-								>{$t('projects.taskStats', { done: stats.done, count: stats.total })}</span
-							>
+							<span class="text-xs text-gray-400">
+								{$t('projects.taskStats', { done: stats.done, count: stats.total })}
+							</span>
 							<span class="text-xs text-gray-400">{Math.round((stats.done / stats.total) * 100)}%</span>
 						</div>
 						<Progressbar
@@ -111,11 +113,12 @@
 					<a
 						href="/projects/{project.id}"
 						class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
-						>{$t('projects.open')}</a
 					>
-					<a href="/projects/{project.id}/edit" class="text-sm text-gray-400 no-underline hover:underline"
-						>{$t('projects.settings')}</a
-					>
+						{$t('projects.open')}
+					</a>
+					<a href="/projects/{project.id}/edit" class="text-sm text-gray-400 no-underline hover:underline">
+						{$t('projects.settings')}
+					</a>
 				</div>
 			</Card>
 		{/each}

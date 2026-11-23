@@ -42,21 +42,21 @@
 			</p>
 			<span class="text-xs text-gray-500">{$t('tasks.repeat.history.total', { count: history.total })}</span>
 			{#if history.streak > 1}
-				<span class="text-xs text-green-600"
-					>{$t('tasks.repeat.history.streak', { count: history.streak })}</span
-				>
+				<span class="text-xs text-green-600">
+					{$t('tasks.repeat.history.streak', { count: history.streak })}
+				</span>
 			{/if}
 		</div>
 		<ul class="list-none p-0 m-0 flex flex-col gap-1 max-h-48 overflow-auto">
 			{#each history.items as c (c.id)}
 				<li class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
 					<span>{$fmt.dateTime(c.completedAt)}</span>
-					{#if c.dueDate}<span class="text-xs text-gray-400"
-							>({$t('tasks.repeat.history.dueFor', { date: $fmt.date(c.dueDate) })})</span
-						>{/if}
-					<span class="text-xs {onTime(c) ? 'text-green-600' : 'text-red-500'}"
-						>{onTime(c) ? $t('tasks.repeat.history.onTime') : $t('tasks.repeat.history.late')}</span
-					>
+					{#if c.dueDate}<span class="text-xs text-gray-400">
+							({$t('tasks.repeat.history.dueFor', { date: $fmt.date(c.dueDate) })})
+						</span>{/if}
+					<span class="text-xs {onTime(c) ? 'text-green-600' : 'text-red-500'}">
+						{onTime(c) ? $t('tasks.repeat.history.onTime') : $t('tasks.repeat.history.late')}
+					</span>
 				</li>
 			{/each}
 		</ul>

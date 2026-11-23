@@ -41,9 +41,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
-	>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('settings.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('settings.sessions.title')}
 	</h1>
@@ -64,9 +65,11 @@
 				<div class="flex-1 min-w-0">
 					<p class="font-medium text-sm text-gray-900 dark:text-white m-0 truncate">
 						{session.userAgent ?? $t('settings.sessions.unknownClient')}
-						{#if session.current}<span class="ml-2 text-xs font-normal text-primary-600 dark:text-primary-400"
-								>{$t('settings.sessions.thisDevice')}</span
-							>{/if}
+						{#if session.current}<span
+								class="ml-2 text-xs font-normal text-primary-600 dark:text-primary-400"
+							>
+								{$t('settings.sessions.thisDevice')}
+							</span>{/if}
 					</p>
 					<p class="text-xs text-gray-400 m-0">
 						{session.ipAddress
@@ -77,9 +80,9 @@
 							: $t('settings.sessions.meta', { expires: expiresText(session.expiresAt) })}
 					</p>
 				</div>
-				<Button size="xs" color="red" onclick={() => deleteSession(session.id)}
-					>{$t('settings.sessions.revoke')}</Button
-				>
+				<Button size="xs" color="red" onclick={() => deleteSession(session.id)}>
+					{$t('settings.sessions.revoke')}
+				</Button>
 			</div>
 		{/each}
 	</Card>

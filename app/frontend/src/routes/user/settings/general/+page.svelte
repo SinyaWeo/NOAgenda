@@ -71,9 +71,10 @@
 </script>
 
 <div class="flex items-center gap-3 mb-6">
-	<a href="/user/settings" class="text-gray-400 hover:text-gray-600"
-		><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('settings.back')}</a
-	>
+	<a href="/user/settings" class="text-gray-400 hover:text-gray-600">
+		<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+		{$t('settings.back')}
+	</a>
 	<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 		{$t('settings.general.title')}
 	</h1>
@@ -106,9 +107,9 @@
 			<div>
 				<Label for="gen-theme" class="mb-1">{$t('common.field.theme')}</Label>
 				<Select placeholder="" id="gen-theme" bind:value={$theme}>
-					<option value="light">{$t('common.theme.light')}</option><option value="dark"
-						>{$t('common.theme.dark')}</option
-					><option value="system">{$t('common.theme.system')}</option>
+					<option value="light">{$t('common.theme.light')}</option><option value="dark">
+						{$t('common.theme.dark')}
+					</option><option value="system">{$t('common.theme.system')}</option>
 				</Select>
 			</div>
 			<div>
@@ -120,9 +121,9 @@
 				<p class="text-xs text-gray-400 mt-1 mb-0">{$t('settings.general.defaultProjectHint')}</p>
 			</div>
 			<div class="pt-2 border-t border-gray-100 dark:border-gray-700">
-				<Button type="submit" disabled={$saving}
-					>{$saving ? $t('common.saving') : $t('settings.general.saveSettings')}</Button
-				>
+				<Button type="submit" disabled={$saving}>
+					{$saving ? $t('common.saving') : $t('settings.general.saveSettings')}
+				</Button>
 			</div>
 		</form>
 	</Card>

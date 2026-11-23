@@ -204,8 +204,10 @@
 				{:else}
 					<span
 						class="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-xs font-bold text-primary-700 dark:text-primary-300 shrink-0"
-						aria-hidden="true">{initials(u)}</span
+						aria-hidden="true"
 					>
+						{initials(u)}
+					</span>
 				{/if}
 				<span class="font-medium text-gray-900 dark:text-white">{u.username}</span>
 				{#if u.name}<span class="text-gray-500 dark:text-gray-400">{u.name}</span>{/if}

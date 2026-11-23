@@ -62,9 +62,9 @@
 				onchange={(e) => onStatus((e.target as HTMLSelectElement).value)}
 				class="w-full"
 			>
-				<option value="open">{$t('common.status.open')}</option><option value="in_progress"
-					>{$t('common.status.in_progress')}</option
-				><option value="done">{$t('common.status.done')}</option>
+				<option value="open">{$t('common.status.open')}</option><option value="in_progress">
+					{$t('common.status.in_progress')}
+				</option><option value="done">{$t('common.status.done')}</option>
 			</Select>
 		</div>
 		<div>
@@ -166,8 +166,10 @@
 								type="button"
 								class="bg-transparent border-0 cursor-pointer text-gray-400 hover:text-red-600 p-0 leading-none"
 								aria-label={$t('tasks.details.removeLabel', { title: tl.label.title })}
-								onclick={() => onRemoveLabel(tl.label!.id)}>✕</button
+								onclick={() => onRemoveLabel(tl.label!.id)}
 							>
+								✕
+							</button>
 						{/if}
 					</span>
 				{/each}

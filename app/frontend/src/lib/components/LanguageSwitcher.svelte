@@ -14,7 +14,9 @@
 			lang={l.code}
 			class="hover:underline {$locale === l.code ? 'font-semibold text-gray-700 dark:text-gray-200' : ''}"
 			aria-pressed={$locale === l.code}
-			onclick={() => setLocale(l.code)}>{l.label}</button
+			onclick={() => setLocale(l.code)}
 		>
+			{l.label}
+		</button>
 	{/each}
 </div>

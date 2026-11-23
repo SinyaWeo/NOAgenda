@@ -208,8 +208,10 @@
 					>
 						<a
 							href="/tasks/{task.id}"
-							class="text-sm truncate text-gray-800 dark:text-gray-200 hover:underline">{task.title}</a
+							class="text-sm truncate text-gray-800 dark:text-gray-200 hover:underline"
 						>
+							{task.title}
+						</a>
 						<span class="text-xs text-red-500 shrink-0 ml-2">{$fmt.date(task.dueDate)}</span>
 					</div>
 				{/each}
@@ -225,8 +227,10 @@
 				<a
 					href="/upcoming"
 					class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
-					>{$t('dashboard.viewAll')} <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
 				>
+					{$t('dashboard.viewAll')}
+					<CaretRightSolid class="w-3 h-3 inline ml-0.5" />
+				</a>
 			</div>
 			<CalendarView initialMode="week" />
 		</Card>
@@ -240,15 +244,17 @@
 				<a
 					href="/projects"
 					class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
-					>{$t('dashboard.viewAll')} <CaretRightSolid class="w-3 h-3 inline ml-0.5" /></a
 				>
+					{$t('dashboard.viewAll')}
+					<CaretRightSolid class="w-3 h-3 inline ml-0.5" />
+				</a>
 			</div>
 			{#if $projects.length === 0}
 				{@const parts = $t('dashboard.recentProjects.empty', { link: '\u0000' }).split('\u0000')}
 				<p class="text-gray-400 text-sm m-0">
-					{parts[0]}<a href="/projects/new" class="text-primary-600 hover:underline"
-						>{$t('dashboard.recentProjects.create')}</a
-					>{parts[1]}
+					{parts[0]}<a href="/projects/new" class="text-primary-600 hover:underline">
+						{$t('dashboard.recentProjects.create')}
+					</a>{parts[1]}
 				</p>
 			{:else}
 				<div class="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3">
@@ -256,8 +262,9 @@
 						<a
 							href="/projects/{project.id}"
 							class="block p-3 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-800 dark:text-gray-200 font-medium no-underline hover:border-primary-500 transition-colors"
-							>{project.name}</a
 						>
+							{project.name}
+						</a>
 					{/each}
 				</div>
 			{/if}

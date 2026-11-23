@@ -298,19 +298,21 @@
 					? `/${task.parent.type === 'project' ? 'projects' : 'tasks'}/${task.parent.id}`
 					: '/tasks'}
 				class="text-gray-400 hover:text-gray-600"
-				><CaretLeftSolid class="w-4 h-4 inline mr-1" /> {$t('tasks.detail.back')}</a
 			>
+				<CaretLeftSolid class="w-4 h-4 inline mr-1" />
+				{$t('tasks.detail.back')}
+			</a>
 			<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
 				{task.title}
 			</h1>
 		</div>
 		<div class="flex items-center gap-2 flex-wrap justify-end">
-			<Button color="light" size="sm" disabled={acting} onclick={duplicateTask}
-				>{$t('tasks.detail.duplicate')}</Button
-			>
-			<Button color="light" size="sm" disabled={acting} onclick={toggleArchive}
-				>{task.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}</Button
-			>
+			<Button color="light" size="sm" disabled={acting} onclick={duplicateTask}>
+				{$t('tasks.detail.duplicate')}
+			</Button>
+			<Button color="light" size="sm" disabled={acting} onclick={toggleArchive}>
+				{task.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}
+			</Button>
 			<Button href="/tasks/{task.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
 		</div>
 	</div>
