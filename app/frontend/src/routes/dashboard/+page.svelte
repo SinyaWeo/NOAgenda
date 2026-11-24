@@ -160,14 +160,9 @@
 	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else}
 	{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
-	<!-- Header row: welcome text left, stat cards right -->
+	<!-- Header row: date left, stat cards right -->
 	<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
 		<div class="min-w-0">
-			<h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-				{$user?.name || $user?.username
-					? $t('dashboard.welcomeName', { name: $user?.name || $user?.username })
-					: $t('dashboard.welcome')}
-			</h1>
 			<p class="text-gray-500 dark:text-gray-400 mt-0 mb-0">
 				{$fmt.dateLong(new Date())}
 			</p>

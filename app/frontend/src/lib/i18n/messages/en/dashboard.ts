@@ -1,8 +1,6 @@
 // Messages for the "dashboard" area (dashboard page and the Upcoming page). Keys are prefixed "dashboard." (see ../README.md).
 export const messages = {
 	'dashboard.loadFailed': 'Could not load your dashboard.',
-	'dashboard.welcome': 'Welcome!',
-	'dashboard.welcomeName': 'Welcome, {name}!',
 	'dashboard.stat.projects': 'Projects',
 	'dashboard.stat.upcoming': 'Upcoming',
 	'dashboard.stat.overdue': 'Overdue',
