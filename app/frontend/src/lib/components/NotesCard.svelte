@@ -18,7 +18,6 @@
 	let notes = $state<Note[]>([]);
 	let loaded = $state(false);
 	let text = $state('');
-	let adding = $state(false);
 	let editingId = $state<number | null>(null);
 	let editText = $state('');
 	let showDone = $state(false);
@@ -58,16 +57,15 @@
 
 	async function add() {
 		const value = text.trim();
-		if (!value || adding) return;
-		adding = true;
+		if (!value) return;
+		// Clear at once and keep the input enabled (a disabled input loses focus), so notes can be typed in a row.
+		text = '';
 		try {
 			const note = await apiPostAuth<Note>('/notes', { text: value });
 			notes = [...notes.filter((n) => !n.done), note, ...notes.filter((n) => n.done)];
-			text = '';
 		} catch (e) {
+			if (!text) text = value;
 			showToast(errMessage(e, $t('dashboard.notes.addFailed')), 'error');
-		} finally {
-			adding = false;
 		}
 	}
 
@@ -224,7 +222,6 @@
 			type="text"
 			bind:value={text}
 			maxlength={MAX_LEN}
-			disabled={adding}
 			placeholder={$t('dashboard.notes.placeholder')}
 			aria-label={$t('dashboard.notes.placeholder')}
 			class="w-full"
