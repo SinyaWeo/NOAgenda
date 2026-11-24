@@ -212,10 +212,10 @@
 	{/if}
 
 	<!-- Row 1: notes + quick add. Row 2: calendar + overdue (the calendar takes the full width when nothing is overdue). -->
-	<div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] gap-6 items-stretch">
-		<div class="min-w-0"><NotesCard onconverted={refresh} /></div>
+	<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+		<div class="min-w-0 lg:col-span-2"><NotesCard onconverted={refresh} /></div>
 		<!-- Quick add: a task per line, or one idea -->
-		<Card class="max-w-none h-full">
+		<Card class="max-w-none h-full lg:col-span-2">
 			<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
 				{$t('dashboard.quickAdd.title')}
 			</h2>
@@ -269,7 +269,7 @@
 			</form>
 		</Card>
 
-		<div class="min-w-0 {$overdueTasks.length > 0 ? '' : 'lg:col-span-2'}">
+		<div class="min-w-0 {$overdueTasks.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}">
 			<!-- Upcoming tasks -->
 			<Card class="max-w-none h-full">
 				<div class="flex justify-between items-center mb-3">
