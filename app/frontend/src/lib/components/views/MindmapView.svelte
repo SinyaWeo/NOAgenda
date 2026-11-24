@@ -3,7 +3,7 @@
 	import { apiGetAuth, apiPatchAuth } from '$lib/api';
 	import { errMessage } from '$lib/errors';
 	import { t, tr } from '$lib/i18n';
-	import { findDropTarget, layoutForest, NODE_W } from '$lib/mindmap';
+	import { canMove, findDropTarget, layoutForest, NODE_W } from '$lib/mindmap';
 	import { showToast } from '$lib/toast';
 	import type { Node as AppNode } from '$lib/types';
 	import {
@@ -28,6 +28,8 @@
 	const expandedMmIds = new Set<number>();
 
 	let rootNode: AppNode | null = null;
+	/** Every node here is in this one project, so its permission decides what may be moved. */
+	const permission = () => rootNode?.access ?? null;
 	const childMap = new Map<number, AppNode[]>();
 
 	/** Re-run the tidy-tree layout over all loaded nodes so no subtrees overlap. */
@@ -50,6 +52,8 @@
 			id: String(n.id),
 			position: { x, y },
 			width: NODE_W,
+			// In a read-only project nothing can be picked up (moving needs write; the project itself, admin).
+			draggable: canMove(n, permission()),
 			data: { label: n.name ?? n.title ?? tr('views.mindmap.nodeFallback', { id: n.id }) },
 			style:
 				n.type === 'project'
@@ -133,6 +137,7 @@
 			showToast(tr('views.toast.moved'), 'success');
 		} catch (e: unknown) {
 			showToast(errMessage(e, tr('views.toast.moveFailed')), 'error');
+			relayout(); // put the node back under its old parent
 		}
 	}
 

@@ -74,6 +74,8 @@ export interface Node {
 	createdBy?: number | null;
 	parentId?: number | null;
 	bucketId?: number | null;
+	/** Projects from GET /nodes and GET /nodes/:id: the current user's own permission on them. */
+	access?: Permission;
 	/** Present on GET /tasks/:id and GET /nodes/:id. */
 	parent?: Node | null;
 	children?: Node[];

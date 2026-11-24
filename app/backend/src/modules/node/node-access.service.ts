@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Node, NodeType } from './node.entity';
+import { Permission } from '../project-user/project-user.entity';
 
 /** Access levels, ordered. */
 export enum Access {
@@ -16,6 +17,16 @@ const PERMISSION_LEVEL: Record<string, Access> = {
   write: Access.WRITE,
   admin: Access.ADMIN,
 };
+
+/** The permission name for an access level; undefined for NONE. */
+export function permissionName(level: Access): Permission | undefined {
+  if (level === Access.ADMIN) return Permission.ADMIN;
+  if (level === Access.WRITE) return Permission.WRITE;
+  return level === Access.READ ? Permission.READ : undefined;
+}
+
+/** The fields of a project that its access check needs. */
+type ProjectRef = { id: number; ownerId?: number | null };
 
 const MAX_DEPTH = 32;
 
@@ -85,7 +96,22 @@ export class NodeAccessService {
     return rows.length > 0;
   }
 
-  private async projectLevel(userId: number, project: Node): Promise<Access> {
+  /**
+   * The caller's access to each of the given projects, as a permission name (`read | write | admin`),
+   * so clients can tell which projects they may change before trying. Same rules as `level()`.
+   */
+  async projectPermissions(userId: number, projects: ProjectRef[]): Promise<Map<number, Permission>> {
+    const out = new Map<number, Permission>();
+    await Promise.all(
+      projects.map(async (p) => {
+        const name = permissionName(await this.projectLevel(userId, p));
+        if (name) out.set(p.id, name);
+      }),
+    );
+    return out;
+  }
+
+  private async projectLevel(userId: number, project: ProjectRef): Promise<Access> {
     if (project.ownerId != null && project.ownerId === userId) return Access.ADMIN;
 
     const rows: { permission: string }[] = await this.nodeRepository.manager.query(

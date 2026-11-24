@@ -31,6 +31,13 @@ const task = (id: number, parentId: number | null, createdBy: number | null): N 
 });
 
 describe('NodeAccessService', () => {
+  it("projectPermissions names the caller's level per project and leaves out projects without access", async () => {
+    const projects = [project(10, ME), project(20, OTHER), project(30, OTHER), project(40, OTHER)];
+    const svc = build(projects, { [20 * 1000 + ME]: ['read'], [30 * 1000 + ME]: ['read', 'write'] });
+    const perms = await svc.projectPermissions(ME, projects);
+    expect(Object.fromEntries(perms)).toEqual({ 10: 'admin', 20: 'read', 30: 'write' });
+  });
+
   it('an idea never grants access through level(), not even to its creator or a project member', async () => {
     const idea: N = { id: 13, type: NodeType.IDEA, parentId: 10, createdBy: ME };
     const svc = build([project(10, OTHER), idea], { [10 * 1000 + ME]: ['admin'] });

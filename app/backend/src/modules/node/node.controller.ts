@@ -15,9 +15,13 @@ import {
 } from '@nestjs/common';
 import { NodeService, NodeFilter } from './node.service';
 import { NodeAccessService } from './node-access.service';
+import { Permission } from '../project-user/project-user.entity';
 import { normalizeParentRefs } from './node-payload';
 import { NodeCreateDto, NodeUpdateDto, NodeMoveDto, NodeListQueryDto } from './dto/node.dto';
 import { Node, NodeType } from './node.entity';
+
+/** A node as returned to the client; projects also carry the caller's permission on them. */
+type NodeWithAccess = Node & { access?: Permission };
 
 @Controller('nodes')
 export class NodeController {
@@ -27,7 +31,8 @@ export class NodeController {
   ) {}
 
   @Get()
-  async findAll(@Request() req: AuthRequest, @Query() q: NodeListQueryDto): Promise<Node[]> {
+  /** Projects in the result carry `access`: the caller's own permission on them. */
+  async findAll(@Request() req: AuthRequest, @Query() q: NodeListQueryDto): Promise<NodeWithAccess[]> {
     const filter: NodeFilter = { userId: req.user.userId };
     if (q.type) filter.type = q.type;
     if (q.parentId !== undefined) filter.parentId = q.parentId === 'null' ? null : Number(q.parentId);
@@ -38,7 +43,13 @@ export class NodeController {
     if (q.page) filter.page = q.page;
     if (q.limit) filter.limit = q.limit;
     if (q.includeArchived === 'true') filter.includeArchived = true;
-    return this.nodeService.findAll(filter);
+    const nodes: NodeWithAccess[] = await this.nodeService.findAll(filter);
+    const projects = nodes.filter((n) => n.type === NodeType.PROJECT);
+    if (projects.length) {
+      const perms = await this.access.projectPermissions(req.user.userId, projects);
+      for (const p of projects) p.access = perms.get(p.id);
+    }
+    return nodes;
   }
 
   @Get(':id/children')
@@ -56,10 +67,13 @@ export class NodeController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<NodeWithAccess> {
     await this.access.assertRead(req.user.userId, Number(id));
-    const node = await this.nodeService.findById(Number(id));
+    const node: NodeWithAccess | null = await this.nodeService.findById(Number(id));
     if (!node) throw new NotFoundException();
+    if (node.type === NodeType.PROJECT) {
+      node.access = (await this.access.projectPermissions(req.user.userId, [node])).get(node.id);
+    }
     return node;
   }
 

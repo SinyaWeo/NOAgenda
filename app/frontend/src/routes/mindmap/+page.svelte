@@ -13,7 +13,16 @@
 	import '@xyflow/svelte/dist/style.css';
 	import { authSession } from '$lib/auth';
 	import { apiGetAuth, apiPatchAuth } from '$lib/api';
-	import { findDropTarget, layoutForest, NODE_W, V_GAP } from '$lib/mindmap';
+	import {
+		canDropOn,
+		canMove,
+		findDropTarget,
+		layoutForest,
+		NODE_W,
+		permissionOf,
+		projectOf,
+		V_GAP
+	} from '$lib/mindmap';
 	import { showToast } from '$lib/toast';
 	import { errMessage } from '$lib/errors';
 	import { t, tr } from '$lib/i18n';
@@ -24,6 +33,12 @@
 
 	let nodes = $state<FlowNode[]>([]);
 	let edges = $state<Edge[]>([]);
+	/** Every loaded project and task by id, to work out which project (and permission) a node is in. */
+	let byId = new Map<number, AppNode>();
+	/** Laid-out positions, to put a node back when a drop is refused. */
+	let home = new Map<string, { x: number; y: number }>();
+
+	const permission = (id: number) => permissionOf(id, byId, $authSession.user?.id);
 
 	function toFlowNode(n: AppNode, x: number, y: number): FlowNode {
 		const common = `width:${NODE_W}px;box-sizing:border-box;text-align:center;overflow:hidden;text-overflow:ellipsis;`;
@@ -31,6 +46,8 @@
 			id: String(n.id),
 			position: { x, y },
 			width: NODE_W,
+			// Nodes the user may not move (read-only projects) cannot be picked up at all.
+			draggable: canMove(n, permission(n.id)),
 			data: { label: n.name ?? n.title ?? tr('views.mindmap.nodeFallback', { id: n.id }) },
 			style:
 				n.type === 'project'
@@ -48,6 +65,7 @@
 				apiGetAuth<AppNode[]>('/tasks').catch((): AppNode[] => [])
 			]);
 
+			byId = new Map([...projects, ...tasks].map((n) => [n.id, n]));
 			const byParent = new Map<number, AppNode[]>();
 			for (const t of tasks) {
 				if (t.parentId === undefined || t.parentId === null) continue;
@@ -79,6 +97,7 @@
 			};
 			projects.forEach(walk);
 
+			home = new Map(graphNodes.map((n) => [n.id, n.position]));
 			nodes = graphNodes;
 			edges = graphEdges;
 		} catch (e: unknown) {
@@ -86,6 +105,11 @@
 		} finally {
 			loading = false;
 		}
+	}
+
+	function putBack(id: string) {
+		const pos = home.get(id);
+		if (pos) nodes = nodes.map((n) => (n.id === id ? { ...n, position: pos } : n));
 	}
 
 	async function handleNodeDragStop({
@@ -103,6 +127,12 @@
 		if (edges.some((e) => e.source === parent.id && e.target === movedNode.id)) return; // already its parent
 		const nodeId = Number(movedNode.id);
 		const newParentId = Number(parent.id);
+		if (!canDropOn(permission(newParentId))) {
+			const project = projectOf(newParentId, byId);
+			showToast(tr('views.mindmap.readOnlyTarget', { project: project?.name ?? parent.id }), 'error');
+			putBack(movedNode.id);
+			return;
+		}
 		try {
 			await apiPatchAuth(`/nodes/${nodeId}/move`, {
 				parentId: newParentId
