@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { singleUserMode } from '$lib/appConfig';
 	import { confirmDialog } from '$lib/confirm';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
@@ -90,7 +91,8 @@
 			[ideas, projects, teams] = await Promise.all([
 				apiGetAuth<Idea[]>('/ideas'),
 				apiGetAuth<Project[]>('/projects'),
-				apiGetAuth<Team[]>('/teams')
+				// No teams to share with in single-user mode (the call is refused there).
+				$singleUserMode ? Promise.resolve([]) : apiGetAuth<Team[]>('/teams').catch((): Team[] => [])
 			]);
 		} catch (e: unknown) {
 			error = errMessage(e);
@@ -187,13 +189,15 @@
 							>
 								{$t('common.edit')}
 							</Button>
-							<Button
-								size="xs"
-								color="light"
-								onclick={() => (shareId = shareId === idea.id ? null : idea.id)}
-							>
-								{$t('ideas.share')}
-							</Button>
+							{#if !$singleUserMode}
+								<Button
+									size="xs"
+									color="light"
+									onclick={() => (shareId = shareId === idea.id ? null : idea.id)}
+								>
+									{$t('ideas.share')}
+								</Button>
+							{/if}
 							<Button
 								size="xs"
 								color="light"

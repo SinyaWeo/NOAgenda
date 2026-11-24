@@ -18,6 +18,17 @@ import { basename, join, resolve } from 'path';
 
 const GRACE_DAYS = Number(process.env.ACCOUNT_DELETION_GRACE_DAYS || 7);
 const UPLOADS_DIR = resolve(process.cwd(), 'uploads');
+
+/** The file behind a user's `avatarUrl`. */
+export const avatarFile = (avatarUrl: string): string => join(UPLOADS_DIR, 'avatars', basename(avatarUrl));
+
+/** Delete files, but only ones inside uploads/ (call after the database change is committed). */
+export function unlinkUploads(files: string[]): void {
+  for (const f of files) {
+    const abs = resolve(f);
+    if (abs.startsWith(UPLOADS_DIR + '/') && existsSync(abs)) unlink(abs, () => undefined);
+  }
+}
 const CHUNK = 500;
 /** How often due accounts are purged. Default hourly; lowered only for automated tests. */
 const PURGE_INTERVAL_S = Number(process.env.ACCOUNT_PURGE_INTERVAL_SECONDS || 3600);
@@ -218,14 +229,11 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       // project_users / task_assignees / reset + verification tokens cascade from the user row.
       await q('DELETE FROM users WHERE id = ?', [userId]);
 
-      if (user.avatarUrl) files.push(join(UPLOADS_DIR, 'avatars', basename(user.avatarUrl)));
+      if (user.avatarUrl) files.push(avatarFile(user.avatarUrl));
     });
 
     // Files go only after the database commit succeeded, and only from inside uploads/.
-    for (const f of files) {
-      const abs = resolve(f);
-      if (abs.startsWith(UPLOADS_DIR + '/') && existsSync(abs)) unlink(abs, () => undefined);
-    }
+    unlinkUploads(files);
     return transferred;
   }
 

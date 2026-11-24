@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Put, Delete, Body, Param, NotFoundException, Request } from '@nestjs/common';
 import { TeamService, UserSummary } from './team.service';
@@ -6,6 +7,7 @@ import { Team } from './team.entity';
 import { orConflict } from '../../common/db-errors';
 import { CreateTeamDto, UpdateTeamDto } from './dto/team.dto';
 
+@MultiUserOnly()
 @Controller('teams')
 export class TeamController {
   constructor(

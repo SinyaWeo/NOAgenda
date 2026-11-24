@@ -95,11 +95,13 @@ export class AuthController {
   /** Public, non-sensitive settings the UI needs before login. */
   @Get('config')
   async config() {
+    const singleUserMode = await this.appSettings.singleUserMode();
     const policy = registrationPolicy(
       process.env,
-      adminAllowsRegistration(await this.appSettings.get('allowRegistration')),
+      adminAllowsRegistration(await this.appSettings.get('allowRegistration')) && !singleUserMode,
     );
     return {
+      singleUserMode,
       emailVerificationRequired: this.emailVerification.required,
       termsAcceptanceRequired: process.env.REQUIRE_TERMS_ACCEPTANCE === 'true',
       registrationEnabled: policy.enabled,

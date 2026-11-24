@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import { omit } from '../../common/omit';
 import type { AuthRequest } from '../../common/auth-user';
 import {
@@ -41,6 +42,7 @@ export class UserController {
    * fields (never the email), and is rate-limited, so the directory cannot be harvested.
    */
   @Get()
+  @MultiUserOnly()
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   async search(
     @Query('q') q: unknown,
@@ -67,7 +69,8 @@ export class UserController {
     assertMayRegister(
       body.inviteCode,
       process.env,
-      adminAllowsRegistration(await this.appSettings.get('allowRegistration')),
+      adminAllowsRegistration(await this.appSettings.get('allowRegistration')) &&
+        !(await this.appSettings.singleUserMode()),
     );
     const { acceptTerms, inviteCode: _inviteCode, ...data } = body;
     if (process.env.REQUIRE_TERMS_ACCEPTANCE === 'true' && acceptTerms !== true) {

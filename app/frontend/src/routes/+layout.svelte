@@ -2,6 +2,7 @@
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
 	import StepUpDialog from '$lib/components/StepUpDialog.svelte';
 	import { appName, loadAppName } from '$lib/appName';
+	import { isMultiUserPage, loadAppConfig, singleUserMode } from '$lib/appConfig';
 	import '../assets/app.css';
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
@@ -78,6 +79,7 @@
 
 	onMount(() => {
 		void loadAppName();
+		void loadAppConfig();
 		const mq = window.matchMedia('(max-width: 767px)');
 		const sync = () => {
 			isMobile = mq.matches;
@@ -113,6 +115,11 @@
 		if ($authSession.status !== 'unauthenticated' || isPublicRoute || signingOut) return;
 		const back = page.url.pathname + page.url.search;
 		goto(`/user/login?redirect=${encodeURIComponent(back)}`, { replaceState: true });
+	});
+
+	// Single-user mode: no teams and no sharing pages.
+	$effect(() => {
+		if ($singleUserMode && isMultiUserPage(currentPath)) goto('/dashboard', { replaceState: true });
 	});
 
 	// Apply the signed-in user's theme.

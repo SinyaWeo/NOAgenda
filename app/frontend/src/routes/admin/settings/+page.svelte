@@ -1,5 +1,6 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/PageHeader.svelte';
+	import SingleUserModeSection from '$lib/components/SingleUserModeSection.svelte';
 	import { appName as appNameStore, DEFAULT_APP_NAME } from '$lib/appName';
 	import { onMount } from 'svelte';
 	import { t, tr } from '$lib/i18n';
@@ -90,4 +91,6 @@
 			{$saving ? $t('common.saving') : $t('admin.settings.save')}
 		</Button>
 	</form>
+
+	<SingleUserModeSection />
 </div>

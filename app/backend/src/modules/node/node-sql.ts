@@ -227,6 +227,30 @@ export async function setProjectOwner(q: SqlRunner, id: number, toUserId: number
   await q("UPDATE nodes SET ownerId = ? WHERE id = ? AND type = 'project'", [toUserId, id]);
 }
 
+// ---- single-user mode switch: these see trashed rows on purpose (a restored node must already be the sole user's)
+
+/** How many projects, tasks and ideas are not yet owned (projects) or created (the rest) by `userId`. */
+export async function nodeCountsNotOwnedBy(q: SqlRunner, userId: number): Promise<Record<string, number>> {
+  const rows = await q<{ type: string; n: number | string }>(
+    `SELECT type, COUNT(*) AS n FROM nodes
+      WHERE (type = 'project' AND (ownerId IS NULL OR ownerId <> ?))
+         OR (type <> 'project' AND (createdBy IS NULL OR createdBy <> ?))
+      GROUP BY type`,
+    [userId, userId],
+  );
+  return Object.fromEntries(rows.map((r) => [r.type, Number(r.n)]));
+}
+
+/** Make `userId` the owner of every project and the creator of every node, trashed ones included. */
+export async function adoptAllNodes(q: SqlRunner, userId: number): Promise<void> {
+  await q('UPDATE nodes SET createdBy = ? WHERE createdBy IS NULL OR createdBy <> ?', [userId, userId]);
+  await q(
+    `UPDATE nodes SET ownerId = ?
+      WHERE (type = 'project' OR ownerId IS NOT NULL) AND (ownerId IS NULL OR ownerId <> ?)`,
+    [userId, userId],
+  );
+}
+
 export async function rowsByIds(q: SqlRunner, ids: number[]): Promise<Record<string, unknown>[]> {
   const out: Record<string, unknown>[] = [];
   for (const part of chunks(ids)) {

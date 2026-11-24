@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { singleUserMode } from '$lib/appConfig';
 	import { appName } from '$lib/appName';
 	import Logo from '$lib/components/Logo.svelte';
 	import { onMount } from 'svelte';
@@ -59,6 +60,8 @@
 		{ href: '/activity', label: 'layout.nav.activity' },
 		{ href: '/trash', label: 'layout.nav.trash', icon: TrashBinOutline }
 	];
+	// No teams in single-user mode.
+	const organize = $derived(ORGANIZE.filter((i) => !($singleUserMode && i.href === '/teams')));
 	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.adminOverview', icon: CogOutline, exact: true };
 	const AUDIT: NavItem = { href: '/admin/activity', label: 'layout.nav.auditLog' };
 	const ABOUT: NavItem = { href: '/about', label: 'layout.nav.about', icon: InfoCircleOutline };
@@ -165,7 +168,7 @@
 		{@render sectionTitle($t('layout.nav.work'))}
 		{#each WORK as item (item.href)}{@render navItem(item)}{/each}
 		{@render sectionTitle($t('layout.nav.organize'))}
-		{#each ORGANIZE as item (item.href)}{@render navItem(item)}{/each}
+		{#each organize as item (item.href)}{@render navItem(item)}{/each}
 		{#if showAdmin}
 			{@render sectionTitle($t('layout.nav.admin'))}
 			{@render navItem(ADMIN)}

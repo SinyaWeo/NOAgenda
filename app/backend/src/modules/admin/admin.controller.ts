@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import { omit } from '../../common/omit';
 import type { AuthRequest } from '../../common/auth-user';
 import {
@@ -138,6 +139,7 @@ export class AdminController {
    * Hand one project to another active user (to yourself: take it over), with a reason for the audit
    * trail. The previous owner keeps Manager access and both are notified.
    */
+  @MultiUserOnly()
   @Post('projects/:id/transfer')
   @HttpCode(200)
   async transferProject(
@@ -154,12 +156,14 @@ export class AdminController {
   }
 
   /** Every team with its members and their roles. */
+  @MultiUserOnly()
   @Get('teams')
   async findAllTeams(): Promise<AdminTeam[]> {
     return this.teams.findAllWithMembers();
   }
 
   /** Only the app admin decides who manages a team. A team keeps at least one manager. */
+  @MultiUserOnly()
   @Patch('teams/:teamId/members/:memberId/role')
   async setTeamMemberRole(
     @Param('teamId') teamId: number,

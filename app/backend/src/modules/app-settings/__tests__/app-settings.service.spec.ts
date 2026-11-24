@@ -13,6 +13,21 @@ function build(rows: { key: string; value: string }[] = []) {
 }
 
 describe('AppSettingsService', () => {
+  it('singleUserMode() reads the flag once per cache window and again after clearModeCache()', async () => {
+    const rows = [{ key: 'singleUserMode', value: 'true' }];
+    const { svc, repo } = build(rows);
+    expect(await svc.singleUserMode()).toBe(true);
+    rows[0].value = 'false';
+    expect(await svc.singleUserMode()).toBe(true); // cached
+    expect(repo.findOne).toHaveBeenCalledTimes(1);
+    svc.clearModeCache();
+    expect(await svc.singleUserMode()).toBe(false);
+  });
+
+  it('singleUserMode() is off when unset', async () => {
+    expect(await build().svc.singleUserMode()).toBe(false);
+  });
+
   it('getAll() maps rows to a key/value object', async () => {
     const { svc } = build([
       { key: 'a', value: '1' },

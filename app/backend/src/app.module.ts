@@ -5,6 +5,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { StepUpGuard } from './common/guards/step-up.guard';
+import { SingleUserModeGuard } from './common/guards/single-user-mode.guard';
 import { join } from 'path';
 import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
@@ -47,6 +48,7 @@ import { QuoteModule } from './modules/quotes/quote.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { EventsModule } from './common/domain-events';
 import { AppSettingsModule } from './modules/app-settings/app-settings.module';
+import { SingleUserModule } from './modules/single-user/single-user.module';
 import { MailModule } from './modules/mail/mail.module';
 
 @Module({
@@ -114,6 +116,7 @@ import { MailModule } from './modules/mail/mail.module';
     AdminModule,
     EventsModule,
     AppSettingsModule,
+    SingleUserModule,
   ],
   controllers: [AppController],
   providers: [
@@ -122,6 +125,8 @@ import { MailModule } from './modules/mail/mail.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     // Admin changes need a recent password re-entry (runs after JwtAuthGuard, so the user is known).
     { provide: APP_GUARD, useClass: StepUpGuard },
+    // Teams, sharing and user pickers are off in single-user mode (@MultiUserOnly).
+    { provide: APP_GUARD, useClass: SingleUserModeGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

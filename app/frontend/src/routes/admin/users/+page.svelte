@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { singleUserMode } from '$lib/appConfig';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import DeleteUserDialog from '$lib/components/DeleteUserDialog.svelte';
 	import UserProjectsDialog from '$lib/components/UserProjectsDialog.svelte';
@@ -149,16 +150,16 @@
 									onchange={(e) => changeRole(u, e.target as HTMLSelectElement)}
 								/>
 							{/if}
-							<Button
-								size="xs"
-								color="alternative"
-								class="p-2"
-								title={$t('admin.users.projectsTip')}
-								aria-label={$t('admin.users.projectsTip')}
-								onclick={() => (showingProjects = u)}
-							>
-								<FolderOpenSolid class="w-4 h-4" />
-							</Button>
+							{#if !$singleUserMode}<Button
+									size="xs"
+									color="alternative"
+									class="p-2"
+									title={$t('admin.users.projectsTip')}
+									aria-label={$t('admin.users.projectsTip')}
+									onclick={() => (showingProjects = u)}
+								>
+									<FolderOpenSolid class="w-4 h-4" />
+								</Button>{/if}
 							<Button
 								size="xs"
 								color="alternative"

@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Put, Delete, Param, Body, Request, ForbiddenException } from '@nestjs/common';
 import { AddProjectTeamDto, SetPermissionDto } from '../project-user/dto/project-sharing.dto';
@@ -6,6 +7,7 @@ import { ProjectTeamService } from './project-team.service';
 import { ProjectService } from '../project/project.service';
 import { ProjectTeam } from './project-team.entity';
 
+@MultiUserOnly()
 @Controller('projects/:projectId/teams')
 export class ProjectTeamController {
   constructor(

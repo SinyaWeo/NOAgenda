@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
@@ -20,6 +21,7 @@ import { UserService } from '../user/user.service';
 import { TeamService } from '../team/team.service';
 import { DomainEvents } from '../../common/domain-events';
 
+@MultiUserOnly()
 @Controller('tasks/:taskId/assignees')
 export class TaskAssigneeController {
   constructor(

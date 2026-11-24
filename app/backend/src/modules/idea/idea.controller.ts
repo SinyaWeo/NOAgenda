@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import type { AuthRequest } from '../../common/auth-user';
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Query, Request } from '@nestjs/common';
 import { RevisionPage } from '../node-revision/node-revision.service';
@@ -28,6 +29,7 @@ export class IdeaController {
     return this.ideas.update(req.user.userId, Number(id), body);
   }
 
+  @MultiUserOnly()
   @Put(':id/teams')
   setTeams(@Param('id') id: number, @Body() body: IdeaShareDto, @Request() req: AuthRequest): Promise<IdeaView> {
     return this.ideas.setTeams(req.user.userId, Number(id), body.teamIds);

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { singleUserMode } from '$lib/appConfig';
 	import type { Snippet } from 'svelte';
 	import { authSession, refreshCurrentUser } from '$lib/auth';
 	import { t, locale, setLocale, LOCALES, type Locale } from '$lib/i18n';
@@ -42,6 +43,7 @@
 	$effect(() => {
 		void user.id;
 		userTeams = [];
+		if ($singleUserMode) return;
 		(async () => {
 			try {
 				userTeams = (await apiGetAuth<Team[]>('/teams')) ?? [];
@@ -122,7 +124,7 @@
 	<DropdownItem href="/user/profile" class="flex items-center">
 		<UserCircleOutline class="w-4 h-4 mr-2" />{$t('layout.user.profile')}
 	</DropdownItem>
-	{#if userTeams.length > 0}
+	{#if userTeams.length > 0 && !$singleUserMode}
 		<DropdownItem href="/teams" class="flex items-center">
 			<UsersGroupOutline class="w-4 h-4 mr-2" />{$t('layout.user.teams')}
 		</DropdownItem>

@@ -66,7 +66,8 @@
 		const [t, c, a, l, att, rem, rel, sub, mine, members] = await Promise.all([
 			apiGetAuth<Task>(`/tasks/${id}`),
 			apiGetAuth<Comment[]>(`/comments?taskId=${id}`),
-			apiGetAuth<TaskAssignee[]>(`/tasks/${id}/assignees`),
+			// Refused in single-user mode (no assignees there): the task still loads.
+			apiGetAuth<TaskAssignee[]>(`/tasks/${id}/assignees`).catch((): TaskAssignee[] => []),
 			apiGetAuth<TaskLabel[]>(`/tasks/${id}/labels`),
 			apiGetAuth<Attachment[]>(`/attachments?taskId=${id}`),
 			apiGetAuth<Reminder[]>(`/tasks/${id}/reminders`).catch(() => []),

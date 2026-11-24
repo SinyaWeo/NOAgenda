@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import type { AuthRequest } from '../../common/auth-user';
 import {
   Controller,
@@ -19,6 +20,7 @@ import { AddTeamMemberDto } from './dto/team-member.dto';
 import { UserRole } from '../user/user-role.enum';
 import { orConflict } from '../../common/db-errors';
 
+@MultiUserOnly()
 @Controller('team-members')
 export class TeamMemberController {
   constructor(

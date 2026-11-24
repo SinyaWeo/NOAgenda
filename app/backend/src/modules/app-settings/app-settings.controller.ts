@@ -1,5 +1,5 @@
 import { Controller, Get, Patch, Body, UseGuards, BadRequestException } from '@nestjs/common';
-import { AppSettingsService } from './app-settings.service';
+import { AppSettingsService, SINGLE_USER_KEYS } from './app-settings.service';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../user/user-role.enum';
@@ -23,6 +23,8 @@ export class AppSettingsController {
     for (const [key, value] of entries) {
       if (!/^[A-Za-z0-9_.-]{1,64}$/.test(key))
         throw new BadRequestException(`Invalid setting name "${key.slice(0, 20)}"`);
+      if ((SINGLE_USER_KEYS as readonly string[]).includes(key))
+        throw new BadRequestException(`Setting "${key}" is changed by the single-user mode switch only`);
       if (typeof value !== 'string' || value.length > 2000)
         throw new BadRequestException(`Setting "${key}" must be a string of at most 2000 characters`);
     }

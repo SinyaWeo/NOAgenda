@@ -117,6 +117,40 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.settings.loadFailed': 'Nastavení se nepodařilo načíst.',
 	'admin.settings.saved': 'Nastavení bylo uloženo.',
 	'admin.settings.saveFailed': 'Nastavení se nepodařilo uložit.',
+	'admin.singleUser.title': 'Režim jednoho uživatele',
+	'admin.singleUser.intro':
+		'Aplikaci používá jen jeden člověk: žádné týmy, sdílení, řešitelé, výběr uživatelů ani registrace.',
+	'admin.singleUser.loadFailed': 'Nastavení režimu jednoho uživatele se nepodařilo načíst.',
+	'admin.singleUser.soleUser': 'Jediný uživatel',
+	'admin.singleUser.soleUserHint':
+		'Vybrat lze jen aktivní administrátory, aby šlo režim později přepnout zpět.',
+	'admin.singleUser.me': '{username} (já)',
+	'admin.singleUser.enable': 'Přepnout na režim jednoho uživatele…',
+	'admin.singleUser.isOn': 'Režim jednoho uživatele je zapnutý pro {username} (od {date}).',
+	'admin.singleUser.disable': 'Přepnout na režim více uživatelů',
+	'admin.singleUser.confirmDisable':
+		'Přepnout zpět na režim více uživatelů? Týmy, sdílení a registrace budou opět k dispozici. Nic z přesunutého ani smazaného se nevrátí.',
+	'admin.singleUser.enabled': 'Režim jednoho uživatele je zapnutý',
+	'admin.singleUser.disabled': 'Režim více uživatelů je opět zapnutý',
+	'admin.singleUser.dialogTitle': 'Přepnout na režim jednoho uživatele',
+	'admin.singleUser.irreversible':
+		'Tuto akci nelze vrátit. Všechny ostatní účty budou smazány spolu se všemi týmy a sdílením.',
+	'admin.singleUser.preview.users': 'Smazané účty: {count}',
+	'admin.singleUser.preview.nodes':
+		'Přesunuto na {username} (včetně koše): projekty {projects}, úkoly {tasks}, nápady {ideas}',
+	'admin.singleUser.preview.content':
+		'Přesunuto na {username}: komentáře {comments}, soubory {attachments} ({size} MB), rychlé poznámky {notes}',
+	'admin.singleUser.preview.labels': 'Převzaté štítky: {moved}, sloučené se stejnojmennými: {merged}',
+	'admin.singleUser.preview.assignments': 'Úkoly přeřazené na {username}: {count}',
+	'admin.singleUser.preview.sharing': 'Smazáno: týmy {teams}, sdílení projektů a nápadů {shares}',
+	'admin.singleUser.preview.webhooks': 'Tyto webhooky ostatních uživatelů budou smazány:',
+	'admin.singleUser.selfDeleted':
+		'Vybrali jste jiného administrátora: váš vlastní účet bude také smazán a budete odhlášeni.',
+	'admin.singleUser.backupConfirmed': 'Záloha databáze byla provedena a ověřena',
+	'admin.singleUser.privateDataConfirmed':
+		'Soukromé nápady a rychlé poznámky ostatních uživatelů přejdou na {username}',
+	'admin.singleUser.typeUsername': 'Pro potvrzení napište {username}',
+	'admin.singleUser.confirm': 'Nevratně přepnout',
 	'admin.settings.appName': 'Název aplikace',
 	'admin.settings.allowRegistration': 'Povolit registraci nových uživatelů',
 	'admin.settings.save': 'Uložit nastavení'

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { singleUserMode } from '$lib/appConfig';
 	import { appName } from '$lib/appName';
 	import { Card } from 'flowbite-svelte';
 	import { t } from '$lib/i18n';
@@ -33,19 +34,19 @@
 				</div>
 			</Card>
 		</a>
-		<a href="/admin/teams" class="no-underline">
-			<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
-				<div class="flex items-center gap-3">
-					<UsersGroupSolid class="w-8 h-8 text-primary-600" />
-					<div>
-						<p class="font-semibold text-gray-900 dark:text-white">
-							{$t('admin.dashboard.teams')}
-						</p>
-						<p class="text-sm text-gray-500 dark:text-gray-400">{$t('admin.dashboard.teamsHint')}</p>
+		{#if !$singleUserMode}<a href="/admin/teams" class="no-underline">
+				<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
+					<div class="flex items-center gap-3">
+						<UsersGroupSolid class="w-8 h-8 text-primary-600" />
+						<div>
+							<p class="font-semibold text-gray-900 dark:text-white">
+								{$t('admin.dashboard.teams')}
+							</p>
+							<p class="text-sm text-gray-500 dark:text-gray-400">{$t('admin.dashboard.teamsHint')}</p>
+						</div>
 					</div>
-				</div>
-			</Card>
-		</a>
+				</Card>
+			</a>{/if}
 		<a href="/admin/quotes" class="no-underline">
 			<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
 				<div class="flex items-center gap-3">

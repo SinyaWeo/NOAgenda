@@ -105,6 +105,39 @@ export const messages = {
 	'admin.settings.loadFailed': 'Failed to load settings.',
 	'admin.settings.saved': 'Settings saved.',
 	'admin.settings.saveFailed': 'Failed to save settings.',
+	'admin.singleUser.title': 'Single-user mode',
+	'admin.singleUser.intro':
+		'Use the app for one person only: no teams, sharing, assignees, user pickers or registration.',
+	'admin.singleUser.loadFailed': 'Could not load the single-user mode settings.',
+	'admin.singleUser.soleUser': 'Sole user',
+	'admin.singleUser.soleUserHint':
+		'Only active admins can be chosen, so the mode can be switched back later.',
+	'admin.singleUser.me': '{username} (me)',
+	'admin.singleUser.enable': 'Switch to single-user mode…',
+	'admin.singleUser.isOn': 'Single-user mode is on for {username} (since {date}).',
+	'admin.singleUser.disable': 'Switch to multi-user mode',
+	'admin.singleUser.confirmDisable':
+		'Switch back to multi-user mode? Teams, sharing and registration become available again. Nothing that was moved or deleted comes back.',
+	'admin.singleUser.enabled': 'Single-user mode is on',
+	'admin.singleUser.disabled': 'Multi-user mode is on again',
+	'admin.singleUser.dialogTitle': 'Switch to single-user mode',
+	'admin.singleUser.irreversible':
+		'This cannot be undone. Every other account is deleted, together with all teams and sharing.',
+	'admin.singleUser.preview.users': 'Accounts deleted: {count}',
+	'admin.singleUser.preview.nodes':
+		'Moved to {username} (trash included): {projects} projects, {tasks} tasks, {ideas} ideas',
+	'admin.singleUser.preview.content':
+		'Moved to {username}: {comments} comments, {attachments} uploads ({size} MB), {notes} quick notes',
+	'admin.singleUser.preview.labels': 'Labels taken over: {moved}, merged into same-named ones: {merged}',
+	'admin.singleUser.preview.assignments': 'Tasks reassigned to {username}: {count}',
+	'admin.singleUser.preview.sharing': 'Deleted: {teams} teams, {shares} project and idea shares',
+	'admin.singleUser.preview.webhooks': 'These webhooks of other users are deleted:',
+	'admin.singleUser.selfDeleted':
+		'You chose another admin: your own account is deleted too and you will be signed out.',
+	'admin.singleUser.backupConfirmed': 'A database backup was done and verified',
+	'admin.singleUser.privateDataConfirmed': "Other users' private ideas and quick notes move to {username}",
+	'admin.singleUser.typeUsername': 'Type {username} to confirm',
+	'admin.singleUser.confirm': 'Switch irreversibly',
 	'admin.settings.appName': 'App Name',
 	'admin.settings.allowRegistration': 'Allow new user registration',
 	'admin.settings.save': 'Save Settings'

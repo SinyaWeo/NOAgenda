@@ -37,6 +37,8 @@ describe('AppSettingsController', () => {
     ['non-string value', { a: invalid<string>(5) }],
     ['value too long', { a: 'x'.repeat(2001) }],
     ['app name too long', { appName: 'x'.repeat(61) }],
+    ['the single-user flag', { singleUserMode: 'true' }],
+    ['the sole user', { singleUserId: '1' }],
     ['too many settings', Object.fromEntries(Array.from({ length: 101 }, (_, i) => ['k' + i, 'v']))],
   ])('rejects %s without writing', async (_n, body) => {
     const { ctrl, service } = build();

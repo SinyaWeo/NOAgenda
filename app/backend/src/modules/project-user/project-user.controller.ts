@@ -1,3 +1,4 @@
+import { MultiUserOnly } from '../../common/decorators/multi-user-only.decorator';
 import type { AuthRequest } from '../../common/auth-user';
 import { Controller, Get, Post, Put, Delete, Param, Body, Request } from '@nestjs/common';
 import { AddProjectUserDto, SetPermissionDto } from './dto/project-sharing.dto';
@@ -8,6 +9,7 @@ import { ProjectUser } from './project-user.entity';
 import { NotificationService } from '../notification/notification.service';
 import { UserService } from '../user/user.service';
 
+@MultiUserOnly()
 @Controller('projects/:projectId/users')
 export class ProjectUserController {
   constructor(
