@@ -6,6 +6,10 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE: readonly TimelineEntry[] = [
+	{ id: 'singleUser', date: '2026-11-24' },
+	{ id: 'adminTools', date: '2026-11-24' },
+	{ id: 'quickNotes', date: '2026-11-24' },
+	{ id: 'trash', date: '2026-11-23' },
 	{ id: 'ideas', date: '2026-11-23' },
 	{ id: 'calendar', date: '2026-11-22' },
 	{ id: 'activity', date: '2026-11-22' },

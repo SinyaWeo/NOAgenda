@@ -93,6 +93,18 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.source': 'Zdrojový kód',
 	'auth.about.license': 'Licence',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.singleUser.title': 'Režim jednoho uživatele',
+	'auth.about.timeline.singleUser.body':
+		'Administrátor může instanci přepnout pro jediného člověka: týmy, sdílení, řešitelé a registrace ustoupí stranou a vše přejde na tohoto administrátora.',
+	'auth.about.timeline.adminTools.title': 'Předávání projektů a potvrzení heslem',
+	'auth.about.timeline.adminTools.body':
+		'Administrátor může projekt předat jinému uživateli nebo ho převzít, i při mazání účtu, a změny v administraci potvrzuje heslem.',
+	'auth.about.timeline.quickNotes.title': 'Rychlé poznámky a nová nástěnka',
+	'auth.about.timeline.quickNotes.body':
+		'Přepracovaná nástěnka s rychlými jednořádkovými poznámkami, které můžete odškrtnout nebo převést na úkol, projekt či nápad.',
+	'auth.about.timeline.trash.title': 'Koš a historie verzí',
+	'auth.about.timeline.trash.body':
+		'Smazané projekty, úkoly a nápady počkají 30 dní v koši a vrátí se se vším, co pod nimi bylo; dřívější názvy a popisy lze obnovit.',
 	'auth.about.timeline.ideas.title': 'Nápady',
 	'auth.about.timeline.ideas.body':
 		'Nová soukromá sekce Nápady pro rychlé poznámky, volitelně navázané na projekt a sdílitelné s vašimi týmy.',

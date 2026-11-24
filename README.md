@@ -7,14 +7,24 @@ A self-hosted task and project management app: projects, tasks, kanban boards, t
 - **Projects and tasks** in a single hierarchy (projects, tasks and subtasks share one `node` model), with statuses,
   priorities, due dates, percent done, recurring tasks and task relations
 - **Views**: project views with kanban buckets, a calendar, Gantt timeline and mind map, plus an upcoming-tasks page
-- **Ideas**: private quick notes, optionally linked to a project and shareable with teams
+- **Ideas**: private notes, optionally linked to a project and shareable with teams
+- **Quick notes** on the dashboard: one-line notes you can tick off or turn into a task, project or idea
+- **Trash and version history**: deleted projects, tasks and ideas stay in the trash for 30 days
+  (`TRASH_RETENTION_DAYS`) and are restored together with everything below them; earlier titles and descriptions can be
+  viewed and restored
 - **Collaboration**: teams with managers and members, project sharing with permissions, comments, reactions, assignees, notifications
+- **Single-user mode**: an admin can switch an instance to one person only (no teams, sharing, assignees or registration).
+  The switch gives everything to that admin and deletes the other accounts, so it cannot be undone; switching back only
+  re-enables the team features
+- **Admin tools**: user management, team managers, the full audit trail, and handing a project to another user (or
+  taking it over) with a logged reason, also when deleting an account so shared projects are not lost
 - **Activity log**: an audit trail of changes to tasks and projects
 - **Organization**: labels, saved filters, favorites, search across tasks and projects
 - **Reminders** and **webhooks** for integrations, plus **API tokens** (read-only or read & write)
 - **Attachments** with per-user storage quotas, and a data export for every account
 - **Security by default**: JWT access tokens with rotating refresh cookies, default-deny routes, rate limiting and
-  account lockout, email verification, account deletion with a grace period
+  account lockout, email verification, account deletion with a grace period, and a password re-entry (step-up) before
+  any admin change
 - **Internationalization**: English and Czech (backend emails and notifications use each user's saved language)
 - **Production-ready containers**: Caddy with automatic HTTPS, hardened containers, backup and restore scripts
 

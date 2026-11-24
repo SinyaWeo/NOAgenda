@@ -91,6 +91,18 @@ export const messages = {
 	'auth.about.source': 'Source code',
 	'auth.about.license': 'License',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.singleUser.title': 'Single-user mode',
+	'auth.about.timeline.singleUser.body':
+		'Admins can switch an instance to one person only: teams, sharing, assignees and registration step aside, and everything becomes that admin’s.',
+	'auth.about.timeline.adminTools.title': 'Project handover and admin step-up',
+	'auth.about.timeline.adminTools.body':
+		'Admins can hand a project to another user or take it over, also when deleting an account, and confirm admin changes with their password.',
+	'auth.about.timeline.quickNotes.title': 'Quick notes and a new dashboard',
+	'auth.about.timeline.quickNotes.body':
+		'A reworked dashboard with quick one-line notes that you can tick off or turn into a task, project or idea.',
+	'auth.about.timeline.trash.title': 'Trash and version history',
+	'auth.about.timeline.trash.body':
+		'Deleted projects, tasks and ideas wait in the trash for 30 days and come back with everything below them; earlier titles and descriptions can be restored.',
 	'auth.about.timeline.ideas.title': 'Ideas',
 	'auth.about.timeline.ideas.body':
 		'A new private Ideas section for quick notes, optionally linked to a project and shareable with your teams.',
