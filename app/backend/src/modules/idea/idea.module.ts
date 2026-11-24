@@ -10,6 +10,7 @@ import { IdeaController } from './idea.controller';
 @Module({
   imports: [TypeOrmModule.forFeature([Node, IdeaTeam]), NodeModule, NodeRevisionModule],
   providers: [IdeaService],
+  exports: [IdeaService],
   controllers: [IdeaController],
 })
 export class IdeaModule {}

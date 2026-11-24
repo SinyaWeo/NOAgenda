@@ -78,3 +78,15 @@ export interface GeneralSettings {
 export interface AvatarSettings {
 	avatarUrl?: string | null;
 }
+
+/** A one-line dashboard note (GET /notes). */
+export interface Note {
+	id: number;
+	text: string;
+	done: boolean;
+	doneAt: string | null;
+	position: number;
+	createdAt: string;
+}
+
+export type NoteTarget = 'project' | 'task' | 'idea';

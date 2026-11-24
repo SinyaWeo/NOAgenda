@@ -30,6 +30,7 @@ import { TaskReminderModule } from './modules/task-reminder/task-reminder.module
 import { TaskCompletionModule } from './modules/task-completion/task-completion.module';
 import { FavoriteModule } from './modules/favorite/favorite.module';
 import { SavedFilterModule } from './modules/saved-filter/saved-filter.module';
+import { NoteModule } from './modules/note/note.module';
 import { SubscriptionModule } from './modules/subscription/subscription.module';
 import { ReactionModule } from './modules/reaction/reaction.module';
 import { ActivityModule } from './modules/activity/activity.module';
@@ -97,6 +98,7 @@ import { MailModule } from './modules/mail/mail.module';
     TaskCompletionModule,
     FavoriteModule,
     SavedFilterModule,
+    NoteModule,
     SubscriptionModule,
     ReactionModule,
     ActivityModule,
