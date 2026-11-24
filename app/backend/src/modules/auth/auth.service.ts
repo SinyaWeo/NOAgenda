@@ -1,4 +1,11 @@
-import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,6 +25,8 @@ export const MAX_FAILED_LOGINS = Number(process.env.MAX_FAILED_LOGINS || 5);
 export const ACCOUNT_LOCK_THRESHOLD = Number(process.env.ACCOUNT_LOCK_THRESHOLD || 20);
 export const LOCKOUT_MINUTES = Number(process.env.LOCKOUT_MINUTES || 15);
 const RESET_TTL_MS = 60 * 60 * 1000;
+/** How long a step-up (password re-entered) allows admin changes from that session. */
+export const STEP_UP_MINUTES = Number(process.env.ADMIN_STEP_UP_MINUTES || 15);
 
 /** Same text for unknown user, wrong password and locked account, so none can be told apart. */
 const INVALID_CREDENTIALS = 'Invalid credentials, or the account is temporarily locked';
@@ -97,6 +106,31 @@ export class AuthService {
 
     const { session, refreshToken } = await this.sessions.create(user.id, meta);
     return { ...this.signAccessToken(user, session.id), refreshToken };
+  }
+
+  /**
+   * Step-up login: the signed-in user re-enters their password, and their current session may then make
+   * admin changes for STEP_UP_MINUTES. Wrong passwords count toward the same per-address lockout as
+   * sign-in, so this cannot be used to guess a password faster.
+   */
+  async stepUp(
+    who: { userId: number; username: string; sessionId?: number },
+    password: string,
+    ip?: string,
+  ): Promise<{ elevatedUntil: Date }> {
+    if (!who.sessionId) throw new ForbiddenException('Step-up needs a signed-in session');
+    if (this.throttle.isLocked(who.username, ip)) {
+      throw new HttpException('Too many failed attempts, try again later', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    const user = await this.userService.findById(who.userId);
+    if (!user || !(await verifyPassword(password, user.password))) {
+      this.throttle.recordFailure(who.username, ip);
+      throw new BadRequestException('Incorrect password');
+    }
+    this.throttle.clear(who.username, ip);
+    const elevatedUntil = new Date(Date.now() + STEP_UP_MINUTES * 60 * 1000);
+    await this.sessions.elevate(who.sessionId, who.userId, elevatedUntil);
+    return { elevatedUntil };
   }
 
   /** Trade a valid refresh token for a new access token (and a rotated refresh token). */

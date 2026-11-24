@@ -153,6 +153,17 @@ export class SessionService implements OnModuleInit, OnModuleDestroy {
     return rows[0] ?? null;
   }
 
+  /** Allow admin changes from this session until `until` (after the password was re-entered). */
+  async elevate(sessionId: number, userId: number, until: Date): Promise<void> {
+    await this.repo.update({ id: sessionId, userId }, { elevatedUntil: until });
+  }
+
+  /** Until when this session may make admin changes; null when it never stepped up (or does not exist). */
+  async elevatedUntil(sessionId: number, userId: number): Promise<Date | null> {
+    const s = await this.repo.findOne({ where: { id: sessionId, userId }, select: { id: true, elevatedUntil: true } });
+    return s?.elevatedUntil ?? null;
+  }
+
   /** True when the user has a live session that was opened from this IP (their own, known address). */
   async hasActiveSessionFromIp(userId: number, ip: string | undefined): Promise<boolean> {
     if (!ip) return false;

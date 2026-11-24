@@ -6,6 +6,10 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.signInTitle': 'Přihlaste se ke svému účtu',
 	'auth.sessionExpired': 'Platnost přihlášení vypršela. Přihlaste se prosím znovu.',
 	'auth.loginFailed': 'Přihlášení se nezdařilo',
+	'auth.stepUp.title': 'Potvrďte heslo',
+	'auth.stepUp.text':
+		'Změny v administraci vyžadují znovu zadat heslo. Na tomto zařízení se na něj chvíli nebudeme ptát.',
+	'auth.stepUp.confirm': 'Potvrdit',
 	'auth.loadAccountFailed': 'Účet se nepodařilo načíst',
 	'auth.unknownError': 'Neznámá chyba',
 	'auth.resend.label': 'Poslat potvrzovací odkaz znovu',

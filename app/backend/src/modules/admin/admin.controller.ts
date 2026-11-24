@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Delete,
   HttpCode,
   BadRequestException,
@@ -30,6 +31,7 @@ import { ActivityPage, ActivityService } from '../activity/activity.service';
 import { AdminActivityQueryDto } from '../activity/dto/activity.dto';
 import type { OwnedProject } from '../node/node-sql';
 import { RemoveUserQueryDto } from './dto/remove-user.dto';
+import { TransferProjectDto } from './dto/transfer-project.dto';
 import { ProjectTransferService } from './project-transfer.service';
 
 @Controller('admin')
@@ -130,6 +132,25 @@ export class AdminController {
         actorName: req.user.username,
       });
     }
+  }
+
+  /**
+   * Hand one project to another active user (to yourself: take it over), with a reason for the audit
+   * trail. The previous owner keeps Manager access and both are notified.
+   */
+  @Post('projects/:id/transfer')
+  @HttpCode(200)
+  async transferProject(
+    @Param('id') id: number,
+    @Body() body: TransferProjectDto,
+    @Request() req: AuthRequest,
+  ): Promise<{ id: number; name: string | null; ownerId: number }> {
+    return this.transfers.transfer(
+      Number(id),
+      body.toUserId,
+      { id: req.user.userId, username: req.user.username },
+      body.reason,
+    );
   }
 
   /** Every team with its members and their roles. */

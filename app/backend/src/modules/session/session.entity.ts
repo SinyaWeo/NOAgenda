@@ -32,4 +32,8 @@ export class UserSession extends BaseEntity {
 
   @Column({ nullable: true, type: 'datetime' })
   expiresAt?: Date;
+
+  /** Step-up login: admin changes are allowed from this session until then (password re-entered). */
+  @Column({ nullable: true, type: 'datetime' })
+  elevatedUntil?: Date | null;
 }

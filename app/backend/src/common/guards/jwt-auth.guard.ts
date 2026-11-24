@@ -7,7 +7,8 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { ROLES_KEY } from '../decorators/roles.decorator';
 import { UserRole } from '../../modules/user/user-role.enum';
 
-const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+/** Methods that only read. */
+export const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 /**
  * Global guard: every route needs a valid session JWT or API token unless it is marked

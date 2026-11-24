@@ -237,6 +237,12 @@ if SQL:
     did, D = user('dave')
     subprocess.run(SQL, shell=True, input="UPDATE users SET role='admin' WHERE username='dave';", text=True, check=True, capture_output=True)
     bm = team_role(A, tm, 'bob')['id']; am = team_role(A, tm, 'alice')['id']
+    # Admin changes need a step-up (password re-entered in this session); reading does not.
+    s, _ = call('GET', '/admin/users', None, D); check('an admin reads without a step-up', s, 200)
+    s, r = call('PATCH', f'/admin/teams/{tm}/members/{bm}/role', {'role': 'manager'}, D)
+    check('an admin change without a step-up is refused', (s, r.get('code')), (403, 'STEP_UP_REQUIRED'))
+    s, _ = call('POST', '/user/step-up', {'password': 'wrong-password'}, D); check('step-up refuses a wrong password', s, 400)
+    s, _ = call('POST', '/user/step-up', {'password': 'password123'}, D); check('an admin steps up', s, 200)
     s, all_teams = call('GET', '/admin/teams', None, D)
     check('app admin lists every team with members', (s, {tm, other['id']} <= {t['id'] for t in all_teams}), (200, True))
     s, _ = call('GET', f'/teams/{tm}', None, D); check('app admin can view any team', s, 200)
@@ -260,6 +266,25 @@ if SQL:
     s, r = call('GET', '/admin/activity?limit=5', None, D)
     check('app admin pages the whole audit log', (s, len(r['items']), r['next'] is not None), (200, 5, True))
     s, _ = call('GET', '/admin/activity?actorId=abc', None, D); check('admin filters are validated', s, 400)
+
+    # The admin can hand one project to someone else (or take it over), with a reason for the audit trail.
+    s, ep = call('POST', '/projects', {'name': 'Erin project'}, E)
+    s, _ = call('POST', f'/admin/projects/{ep["id"]}/transfer', {'toUserId': did, 'reason': 'Erin is away'}, E)
+    check('a normal user cannot transfer projects', s, 403)
+    s, _ = call('POST', f'/admin/projects/{ep["id"]}/transfer', {'toUserId': did}, D); check('a transfer needs a reason', s, 400)
+    s, _ = call('POST', f'/admin/projects/{ep["id"]}/transfer', {'toUserId': eid, 'reason': 'noop'}, D)
+    check('no transfer to the current owner', s, 400)
+    s, _ = call('POST', f'/admin/projects/{tid}/transfer', {'toUserId': did, 'reason': 'a task'}, D); check('only projects can be transferred', s, 404)
+    s, r = call('POST', f'/admin/projects/{ep["id"]}/transfer', {'toUserId': did, 'reason': 'Erin is away'}, D)
+    check('the admin takes a project over', (s, r.get('ownerId')), (200, did))
+    s, r = call('GET', f'/nodes/{ep["id"]}', None, E); check('the previous owner stays its Manager', (s, r.get('access')), (200, 'admin'))
+    s, r = call('GET', f'/nodes/{ep["id"]}', None, D); check('the new owner manages it', (s, r.get('access')), (200, 'admin'))
+    time.sleep(1)
+    s, r = call('GET', f'/admin/activity?projectId={ep["id"]}&action=project.owner_changed', None, D)
+    check('the takeover and its reason are in the audit trail',
+          (s, [e['changes'] for e in r['items']]), (200, [{'owner': {'from': 'erin', 'to': 'dave'}, 'reason': 'Erin is away'}]))
+    s, r = call('GET', '/notifications', None, E)
+    check('the previous owner is told', (s, any(n.get('type') == 'project_transferred_away' for n in r)), (200, True))
 
     # Deleting a user can hand their projects to someone else instead of deleting them.
     fid, F = user('frank')

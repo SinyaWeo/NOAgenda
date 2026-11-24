@@ -221,7 +221,12 @@ export interface KanbanBucket {
 }
 
 export type NotificationType =
-	'task_assigned' | 'task_comment' | 'project_added' | 'project_transferred' | 'task_reminder';
+	| 'task_assigned'
+	| 'task_comment'
+	| 'project_added'
+	| 'project_transferred'
+	| 'project_transferred_away'
+	| 'task_reminder';
 
 export interface AppNotification {
 	id: number;

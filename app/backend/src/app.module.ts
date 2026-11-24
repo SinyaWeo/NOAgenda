@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { StepUpGuard } from './common/guards/step-up.guard';
 import { join } from 'path';
 import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/all-exceptions.filter';
@@ -119,6 +120,8 @@ import { MailModule } from './modules/mail/mail.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Default-deny: every route needs a session or API token unless it is marked @Public().
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Admin changes need a recent password re-entry (runs after JwtAuthGuard, so the user is known).
+    { provide: APP_GUARD, useClass: StepUpGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })

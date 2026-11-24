@@ -3,5 +3,6 @@
   "task_comment": "{actor} commented on \"{title}\"",
   "project_added": "{actor} added you to the project \"{title}\"",
   "project_transferred": "{actor} made you the owner of the project \"{title}\"",
+  "project_transferred_away": "{actor} transferred your project \"{title}\" to another user; you stay its Manager",
   "task_reminder": "Reminder: \"{title}\""
 }

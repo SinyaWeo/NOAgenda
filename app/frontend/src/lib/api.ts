@@ -2,6 +2,10 @@
 // Set your backend base URL here or use an environment variable
 import { tr } from './i18n/translate';
 import { localizeServerMessage } from './i18n/server-messages';
+import { needsStepUp, requestStepUp } from './stepUp';
+
+/** Where the admin re-enters their password (see `StepUpDialog.svelte`). */
+export const STEP_UP_PATH = '/user/step-up';
 
 /** Largest `limit` the list endpoints accept (MAX_PAGE_SIZE in the backend's node.dto.ts); a larger one is rejected with 400. */
 export const MAX_PAGE_SIZE = 500;
@@ -235,6 +239,8 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
 	if (!getToken() && !isAuthEndpoint) await refreshAccessToken();
 	let res = await send();
 	if (res.status === 401 && !isAuthEndpoint && (await refreshAccessToken())) res = await send();
+	// An admin change needs the password again (step-up): ask for it, then send the request once more.
+	if (path !== STEP_UP_PATH && (await needsStepUp(res)) && (await requestStepUp())) res = await send();
 	return res;
 }
 

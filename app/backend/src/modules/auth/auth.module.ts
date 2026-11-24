@@ -9,6 +9,7 @@ import { EmailVerificationModule } from '../email-verification/email-verificatio
 import { AppSettingsModule } from '../app-settings/app-settings.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { StepUpController } from './step-up.controller';
 import { JwtStrategy } from './jwt.strategy';
 import { PasswordResetToken } from './password-reset-token.entity';
 
@@ -33,7 +34,7 @@ import { PasswordResetToken } from './password-reset-token.entity';
     }),
   ],
   providers: [AuthService, JwtStrategy],
-  controllers: [AuthController],
+  controllers: [AuthController, StepUpController],
   exports: [AuthService],
 })
 export class AuthModule {}

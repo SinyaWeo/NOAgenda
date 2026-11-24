@@ -74,6 +74,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'layout.notifications.task_comment': '{actor} okomentoval(a) úkol „{title}“',
 	'layout.notifications.project_added': '{actor} vás přidal(a) do projektu „{title}“',
 	'layout.notifications.project_transferred': '{actor} vás nastavil(a) jako vlastníka projektu „{title}“',
+	'layout.notifications.project_transferred_away':
+		'{actor} převedl(a) váš projekt „{title}“ na jiného uživatele; zůstáváte jeho správcem',
 	'layout.notifications.task_reminder': 'Připomínka: „{title}“',
 
 	'layout.user.toggleThemeTitle': 'Přepnout motiv',

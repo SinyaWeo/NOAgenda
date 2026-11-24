@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import DeleteUserDialog from '$lib/components/DeleteUserDialog.svelte';
+	import UserProjectsDialog from '$lib/components/UserProjectsDialog.svelte';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
@@ -19,7 +20,7 @@
 		TableHead,
 		TableHeadCell
 	} from 'flowbite-svelte';
-	import { LockSolid, LockOpenSolid, TrashBinSolid } from 'flowbite-svelte-icons';
+	import { FolderOpenSolid, LockSolid, LockOpenSolid, TrashBinSolid } from 'flowbite-svelte-icons';
 	import type { User } from '$lib/types';
 
 	const currentUser = derived(authSession, ($s) => $s.user);
@@ -28,6 +29,8 @@
 	const saving = writable<number | null>(null);
 	/** The user the delete dialog is open for. */
 	let deleting = $state<User | null>(null);
+	/** The user whose projects dialog is open. */
+	let showingProjects = $state<User | null>(null);
 
 	onMount(async () => {
 		await loadUsers();
@@ -150,6 +153,16 @@
 								size="xs"
 								color="alternative"
 								class="p-2"
+								title={$t('admin.users.projectsTip')}
+								aria-label={$t('admin.users.projectsTip')}
+								onclick={() => (showingProjects = u)}
+							>
+								<FolderOpenSolid class="w-4 h-4" />
+							</Button>
+							<Button
+								size="xs"
+								color="alternative"
+								class="p-2"
 								title={$t(u.isLocked ? 'admin.users.unlockTip' : 'admin.users.lockTip')}
 								aria-label={$t(u.isLocked ? 'admin.users.unlockTip' : 'admin.users.lockTip')}
 								disabled={isSelf || $saving === u.id}
@@ -175,6 +188,13 @@
 		</TableBody>
 	</Table>
 </div>
+
+<UserProjectsDialog
+	user={showingProjects}
+	users={$users}
+	currentUserId={$currentUser?.id}
+	onclose={() => (showingProjects = null)}
+/>
 
 <DeleteUserDialog
 	user={deleting}

@@ -209,6 +209,24 @@ export async function transferOwnedProjects(
   return rows.map((r) => ({ id: Number(r.id), name: r.name }));
 }
 
+/** One project, trashed or not, locked for the rest of the transaction (an ownership transfer). */
+export async function projectForTransfer(
+  q: SqlRunner,
+  id: number,
+): Promise<{ id: number; name: string | null; ownerId: number | null } | null> {
+  const [row] = await q<{ id: number; name: string | null; ownerId: number | null }>(
+    "SELECT id, name, ownerId FROM nodes WHERE id = ? AND type = 'project' FOR UPDATE",
+    [id],
+  );
+  if (!row) return null;
+  return { id: Number(row.id), name: row.name, ownerId: row.ownerId == null ? null : Number(row.ownerId) };
+}
+
+/** Make `toUserId` the owner of one project (trashed or not). */
+export async function setProjectOwner(q: SqlRunner, id: number, toUserId: number): Promise<void> {
+  await q("UPDATE nodes SET ownerId = ? WHERE id = ? AND type = 'project'", [toUserId, id]);
+}
+
 export async function rowsByIds(q: SqlRunner, ids: number[]): Promise<Record<string, unknown>[]> {
   const out: Record<string, unknown>[] = [];
   for (const part of chunks(ids)) {

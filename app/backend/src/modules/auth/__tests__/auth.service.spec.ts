@@ -1,6 +1,6 @@
 import { realTranslator } from '../../../i18n/__tests__/fake-i18n';
-import { BadRequestException, ForbiddenException, UnauthorizedException } from '@nestjs/common';
-import { AuthService, MAX_FAILED_LOGINS, ACCOUNT_LOCK_THRESHOLD } from '../auth.service';
+import { BadRequestException, ForbiddenException, HttpStatus, UnauthorizedException } from '@nestjs/common';
+import { AuthService, MAX_FAILED_LOGINS, ACCOUNT_LOCK_THRESHOLD, STEP_UP_MINUTES } from '../auth.service';
 import * as password from '../../../common/password';
 import { sha256 } from '../../../common/tokens';
 import type { JwtService } from '@nestjs/jwt';
@@ -56,6 +56,7 @@ function build(over: { user?: TestUser | null; verificationRequired?: boolean } 
     revokeById: jest.fn(),
     revokeByRefreshToken: jest.fn(),
     hasActiveSessionFromIp: jest.fn(async (_id: number, _ip: string) => false),
+    elevate: jest.fn(async () => undefined),
   };
   const verification = { required: over.verificationRequired ?? false };
   const mail = {
@@ -191,6 +192,44 @@ describe('AuthService.login', () => {
     pw.needsRehash.mockReturnValue(true);
     await svc.login('ann', 'right');
     expect(users.setPasswordHash).toHaveBeenCalledWith(7, '$2a$12$new');
+  });
+});
+
+describe('AuthService.stepUp', () => {
+  const WHO = { userId: 7, username: 'ann', sessionId: 55 };
+
+  it('elevates this session for STEP_UP_MINUTES after the right password', async () => {
+    const { svc, sessions } = build();
+    const before = Date.now();
+    const { elevatedUntil } = await svc.stepUp(WHO, 'pw', '1.2.3.4');
+    const minutes = (elevatedUntil.getTime() - before) / 60_000;
+    expect(minutes).toBeGreaterThan(STEP_UP_MINUTES - 0.01);
+    expect(minutes).toBeLessThan(STEP_UP_MINUTES + 0.01);
+    expect(sessions.elevate).toHaveBeenCalledWith(55, 7, elevatedUntil);
+    expect(pw.verifyPassword).toHaveBeenCalledWith('pw', USER.password);
+  });
+
+  it('refuses a wrong password without elevating', async () => {
+    const { svc, sessions } = build();
+    pw.verifyPassword.mockResolvedValue(false);
+    await expect(svc.stepUp(WHO, 'nope', '1.2.3.4')).rejects.toThrow(BadRequestException);
+    expect(sessions.elevate).not.toHaveBeenCalled();
+  });
+
+  it('wrong passwords lock the address out, even before a correct one', async () => {
+    const { svc } = build();
+    pw.verifyPassword.mockResolvedValue(false);
+    for (let i = 0; i < MAX_FAILED_LOGINS; i++) await expect(svc.stepUp(WHO, 'nope', '1.2.3.4')).rejects.toThrow();
+    pw.verifyPassword.mockResolvedValue(true);
+    await expect(svc.stepUp(WHO, 'pw', '1.2.3.4')).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
+    // shared with sign-in: the same address cannot log in to that account either
+    await expect(svc.login('ann', 'pw', { ip: '1.2.3.4' })).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('needs a session (an API token cannot step up)', async () => {
+    const { svc, sessions } = build();
+    await expect(svc.stepUp({ userId: 7, username: 'ann' }, 'pw')).rejects.toThrow(ForbiddenException);
+    expect(sessions.elevate).not.toHaveBeenCalled();
   });
 });
 

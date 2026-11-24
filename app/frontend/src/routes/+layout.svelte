@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
+	import StepUpDialog from '$lib/components/StepUpDialog.svelte';
 	import { appName, loadAppName } from '$lib/appName';
 	import '../assets/app.css';
 	import { onMount } from 'svelte';
@@ -206,4 +207,5 @@
 	{/if}
 	<ToastContainer />
 	<ConfirmDialog />
+	<StepUpDialog />
 </ThemeProvider>

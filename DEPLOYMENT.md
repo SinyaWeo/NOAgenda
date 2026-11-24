@@ -288,6 +288,10 @@ advice, so have them reviewed before you accept real users.
   locks themselves. 20 wrong passwords from **all addresses together** (`ACCOUNT_LOCK_THRESHOLD`) lock the account for
   everyone except addresses the owner is currently signed in from. A password reset clears both. Login errors are identical for
   unknown user / wrong password / locked. The per-address counter is in memory (reset when the API restarts).
+- **Step-up for admin changes**: every admin-only request that changes something (users, teams, settings, quotes, plugins)
+  needs the admin to have re-entered their password in that session within the last 15 minutes (`ADMIN_STEP_UP_MINUTES`);
+  the UI asks for it and repeats the request. Reading the admin pages does not need it. Wrong passwords there count toward
+  the same per-address lockout as sign-in.
 - Passwords: native bcrypt, cost 12 (older hashes, including ones made by the previous JavaScript implementation, keep working and
   are upgraded at next login). bcrypt only reads the first 72 bytes, so longer passwords are rejected instead of silently cut. Reset
   and verification links are single-use, stored hashed, valid 1 h / 24 h.
@@ -330,6 +334,7 @@ advice, so have them reviewed before you accept real users.
 | `ACCESS_TOKEN_TTL`, `REFRESH_TOKEN_TTL_DAYS` | backend | Defaults `15m` / `30` |
 | `MAX_FAILED_LOGINS`, `LOCKOUT_MINUTES` | backend | Failures per address+account before that address is locked, and the lock length. Defaults `5` / `15` |
 | `ACCOUNT_LOCK_THRESHOLD` | backend | Failures across all addresses before the account itself is locked (default `20`) |
+| `ADMIN_STEP_UP_MINUTES` | backend | How long a password re-entry allows admin changes from that session (default `15`) |
 | `ACCOUNT_DELETION_GRACE_DAYS` | backend | Days between a deletion request and the account being purged (default `7`) |
 | `COMPOSE_PROJECT` | environment of `deploy.sh`, `backup.sh` | Compose project name when several instances share a host (see above) |
 | `DEMO_MODE` | demo instance only | `true` lists the example users on the login page and disables password, email and account-deletion changes. Never on an instance with real data |

@@ -3,6 +3,10 @@ export const messages = {
 	'auth.signInTitle': 'Sign in to your account',
 	'auth.sessionExpired': 'Your session has expired. Please sign in again.',
 	'auth.loginFailed': 'Login failed',
+	'auth.stepUp.title': 'Confirm your password',
+	'auth.stepUp.text':
+		'Admin changes need your password again. You will not be asked again for a while on this device.',
+	'auth.stepUp.confirm': 'Confirm',
 	'auth.loadAccountFailed': 'Unable to load your account',
 	'auth.unknownError': 'Unknown error',
 	'auth.resend.label': 'Send the confirmation link again',

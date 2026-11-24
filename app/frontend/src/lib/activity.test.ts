@@ -45,6 +45,10 @@ describe('describeActivity', () => {
 		});
 		expect(describeActivity(e, en)).toBe('alice transferred project “Home” from bob to carol');
 		expect(describeActivity(e, cs)).toBe('alice: projekt „Home“ předán z bob na carol');
+		expect(changeLines(e, en, date)).toEqual([]);
+		const withReason = { ...e, changes: { ...e.changes, reason: 'Bob left' } };
+		expect(changeLines(withReason, en, date)).toEqual(['Reason: Bob left']);
+		expect(changeLines(withReason, cs, date)).toEqual(['Důvod: Bob left']);
 	});
 
 	it('reads archive, restore and move as such', () => {

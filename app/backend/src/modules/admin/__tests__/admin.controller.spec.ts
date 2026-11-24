@@ -26,7 +26,10 @@ function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin',
     purgeUser: jest.fn(async (): Promise<TransferredProject[]> => []),
     ownedProjects: jest.fn(async () => [{ id: 5, name: 'Home', trashed: false, shares: 2 }]),
   };
-  const transfers = { announce: jest.fn(async () => undefined) };
+  const transfers = {
+    announce: jest.fn(async () => undefined),
+    transfer: jest.fn(async () => ({ id: 5, name: 'Home', ownerId: 3 })),
+  };
   const sessions = { revokeAllForUser: jest.fn(async () => undefined) };
   const teams = { findAllWithMembers: jest.fn(async () => [{ id: 7, members: [] }]) };
   const teamMembers = { setRole: jest.fn(async (_t: number, id: number, role: TeamRole) => ({ id, role })) };
@@ -153,6 +156,16 @@ describe('AdminController', () => {
       await expect(ctrl.removeUser(2, { transferProjectsTo: 99 }, req)).rejects.toBeInstanceOf(BadRequestException);
       await expect(ctrl.removeUser(2, { transferProjectsTo: 7 }, req)).rejects.toBeInstanceOf(BadRequestException);
       expect(accounts.purgeUser).not.toHaveBeenCalled();
+    });
+
+    it('transfers one project with the acting admin and the reason', async () => {
+      const { ctrl, transfers } = build();
+      expect(await ctrl.transferProject(5, { toUserId: 3, reason: 'Bob left' }, req)).toEqual({
+        id: 5,
+        name: 'Home',
+        ownerId: 3,
+      });
+      expect(transfers.transfer).toHaveBeenCalledWith(5, 3, { id: 1, username: req.user.username }, 'Bob left');
     });
 
     it("lists a user's owned projects, 404 for an unknown user", async () => {

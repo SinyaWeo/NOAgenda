@@ -124,6 +124,10 @@ function valueText(field: string, v: unknown, t: Translate, dateTime: (v: string
 
 /** The field-by-field details of an edit ("Priority: Low → High"). Empty for entries that say it all in the sentence. */
 export function changeLines(e: ActivityEntry, t: Translate, dateTime: (v: string) => string): string[] {
+	if (e.action === 'project.owner_changed') {
+		const reason = text(e.changes?.reason);
+		return reason ? [t('activity.reason', { reason })] : [];
+	}
 	if (!e.action.endsWith('.updated') || !e.changes) return [];
 	const keys = Object.keys(e.changes);
 	if (keys.length === 1 && (keys[0] === 'isArchived' || keys[0] === 'parentId')) return [];
