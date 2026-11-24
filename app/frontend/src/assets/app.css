@@ -585,6 +585,13 @@ html.dark .svelte-flow .svelte-flow__controls-button svg {
 	}
 }
 
+/* Reading-width pages (dashboard, lists): capped and centered on wide screens. Gantt, Kanban, tables stay full width. */
+.page-narrow {
+	width: 100%;
+	max-width: 80rem;
+	margin-inline: auto;
+}
+
 /* Progress slider: explicit track/thumb (Flowbite's range styles rely on undefined theme vars). */
 .progress-slider {
 	appearance: none;

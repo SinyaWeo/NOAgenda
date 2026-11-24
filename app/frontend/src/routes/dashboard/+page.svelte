@@ -160,156 +160,158 @@
 {#if $loading}
 	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else}
-	{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
-	<!-- Header row: date left, stat cards right -->
-	<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
-		<div class="min-w-0">
-			<p class="text-gray-500 dark:text-gray-400 mt-0 mb-0">
-				{$fmt.dateLong(new Date())}
-			</p>
+	<div class="page-narrow">
+		{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
+		<!-- Header row: date left, stat cards right -->
+		<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+			<div class="min-w-0">
+				<p class="text-gray-500 dark:text-gray-400 mt-0 mb-0">
+					{$fmt.dateLong(new Date())}
+				</p>
+			</div>
+
+			<!-- Stat cards -->
+			<div class="flex gap-3 shrink-0">
+				<Card class="p-4 text-center">
+					<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
+						{$t('dashboard.stat.projects')}
+					</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+						{$projectCount}
+					</p>
+				</Card>
+				<Card class="p-4 text-center">
+					<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
+						{$t('dashboard.stat.upcoming')}
+					</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+						{$upcomingTasks.length}
+					</p>
+				</Card>
+				{#if $overdueTasks.length > 0}
+					<Card class="p-4 text-center border-red-300 dark:bg-gray-800 dark:border-red-700">
+						<p class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0">
+							{$t('dashboard.stat.overdue')}
+						</p>
+						<p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0">
+							{$overdueTasks.length}
+						</p>
+					</Card>
+				{/if}
+			</div>
 		</div>
 
-		<!-- Stat cards -->
-		<div class="flex gap-3 shrink-0">
-			<Card class="p-4 text-center">
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
-					{$t('dashboard.stat.projects')}
+		{#if $quote}
+			<blockquote
+				class="relative bg-white dark:bg-gray-800 border-l-4 border-primary-500 rounded-lg px-5 py-4 mb-6 shadow-sm"
+			>
+				<p class="text-gray-700 dark:text-gray-200 italic m-0">“{$quote.text}”</p>
+				{#if $quote.author}
+					<footer class="mt-2 text-sm text-gray-500 dark:text-gray-400">— {$quote.author}</footer>
+				{/if}
+			</blockquote>
+		{/if}
+
+		<!-- Row 1: notes + quick add. Row 2: calendar + overdue (the calendar takes the full width when nothing is overdue). -->
+		<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
+			<div class="min-w-0 lg:col-span-2"><NotesCard onconverted={refresh} /></div>
+			<!-- Quick add: a task per line, or one idea -->
+			<Card class="max-w-none h-full lg:col-span-2">
+				<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+					{$t('dashboard.quickAdd.title')}
+				</h2>
+				<p class="text-sm whitespace-pre-line text-gray-500 dark:text-gray-400 -mt-2 mb-3">
+					{$t('dashboard.quickAdd.hint')}
 				</p>
-				<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
-					{$projectCount}
-				</p>
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						quickAddTasks();
+					}}
+					class="flex flex-col gap-2"
+				>
+					{#if multiline}
+						<Textarea
+							bind:value={quickText}
+							bind:elementRef={quickArea}
+							rows={4}
+							placeholder={$t('dashboard.quickAdd.placeholder')}
+							aria-label={$t('dashboard.quickAdd.placeholder')}
+							class="w-full"
+						/>
+					{:else}
+						<Input
+							type="text"
+							bind:value={quickText}
+							onpaste={onQuickPaste}
+							onkeydown={onQuickKeydown}
+							placeholder={$t('dashboard.quickAdd.placeholder')}
+							aria-label={$t('dashboard.quickAdd.placeholder')}
+							class="w-full"
+						/>
+					{/if}
+					<Select
+						placeholder=""
+						bind:value={quickProjectId}
+						aria-label={$t('common.field.project')}
+						class="w-full"
+					>
+						<option value="">{$t('dashboard.quickAdd.noProject')}</option>
+						{#each $allProjects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
+					</Select>
+					<div class="flex gap-2 flex-wrap">
+						<Button type="button" onclick={quickAddTasks} disabled={adding || !taskTitles(quickText).length}>
+							{adding ? $t('dashboard.quickAdd.adding') : $t('dashboard.quickAdd.addTasks')}
+						</Button>
+						<Button type="button" color="light" onclick={quickAddIdea} disabled={adding || !quickText.trim()}>
+							{$t('dashboard.quickAdd.addIdea')}
+						</Button>
+					</div>
+				</form>
 			</Card>
-			<Card class="p-4 text-center">
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
-					{$t('dashboard.stat.upcoming')}
-				</p>
-				<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
-					{$upcomingTasks.length}
-				</p>
-			</Card>
+
+			<div class="min-w-0 {$overdueTasks.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}">
+				<!-- Upcoming tasks -->
+				<Card class="max-w-none h-full">
+					<div class="flex justify-between items-center mb-3">
+						<h2 class="text-base font-semibold text-gray-900 dark:text-white m-0">
+							{$t('dashboard.upcomingTasks.title')}
+						</h2>
+						<a
+							href="/upcoming"
+							class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
+						>
+							{$t('dashboard.viewAll')}
+							<CaretRightSolid class="w-3 h-3 inline ml-0.5" />
+						</a>
+					</div>
+					<CalendarView initialMode="week" />
+				</Card>
+			</div>
+			<!-- Overdue -->
 			{#if $overdueTasks.length > 0}
-				<Card class="p-4 text-center border-red-300 dark:bg-gray-800 dark:border-red-700">
-					<p class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0">
-						{$t('dashboard.stat.overdue')}
-					</p>
-					<p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0">
-						{$overdueTasks.length}
-					</p>
+				<Card class="max-w-none h-full border-red-300 dark:bg-gray-800 dark:border-red-700">
+					<div class="flex items-center gap-2 mb-3">
+						<ExclamationCircleOutline class="w-4 h-4 text-red-500" />
+						<h2 class="text-base font-semibold text-red-600 dark:text-red-400 m-0">
+							{$t('dashboard.overdue.title')}
+						</h2>
+					</div>
+					{#each $overdueTasks as task (task.id)}
+						<div
+							class="flex justify-between items-center py-1.5 border-b border-red-100 dark:border-red-800 last:border-0"
+						>
+							<a
+								href="/tasks/{task.id}"
+								class="text-sm truncate text-gray-800 dark:text-gray-200 hover:underline"
+							>
+								{task.title}
+								<span class="text-xs text-red-500 shrink-0 ml-2">{$fmt.date(task.dueDate)}</span>
+							</a>
+						</div>
+					{/each}
 				</Card>
 			{/if}
 		</div>
-	</div>
-
-	{#if $quote}
-		<blockquote
-			class="relative bg-white dark:bg-gray-800 border-l-4 border-primary-500 rounded-lg px-5 py-4 mb-6 shadow-sm"
-		>
-			<p class="text-gray-700 dark:text-gray-200 italic m-0">“{$quote.text}”</p>
-			{#if $quote.author}
-				<footer class="mt-2 text-sm text-gray-500 dark:text-gray-400">— {$quote.author}</footer>
-			{/if}
-		</blockquote>
-	{/if}
-
-	<!-- Row 1: notes + quick add. Row 2: calendar + overdue (the calendar takes the full width when nothing is overdue). -->
-	<div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-stretch">
-		<div class="min-w-0 lg:col-span-2"><NotesCard onconverted={refresh} /></div>
-		<!-- Quick add: a task per line, or one idea -->
-		<Card class="max-w-none h-full lg:col-span-2">
-			<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-				{$t('dashboard.quickAdd.title')}
-			</h2>
-			<p class="text-sm whitespace-pre-line text-gray-500 dark:text-gray-400 -mt-2 mb-3">
-				{$t('dashboard.quickAdd.hint')}
-			</p>
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					quickAddTasks();
-				}}
-				class="flex flex-col gap-2"
-			>
-				{#if multiline}
-					<Textarea
-						bind:value={quickText}
-						bind:elementRef={quickArea}
-						rows={4}
-						placeholder={$t('dashboard.quickAdd.placeholder')}
-						aria-label={$t('dashboard.quickAdd.placeholder')}
-						class="w-full"
-					/>
-				{:else}
-					<Input
-						type="text"
-						bind:value={quickText}
-						onpaste={onQuickPaste}
-						onkeydown={onQuickKeydown}
-						placeholder={$t('dashboard.quickAdd.placeholder')}
-						aria-label={$t('dashboard.quickAdd.placeholder')}
-						class="w-full"
-					/>
-				{/if}
-				<Select
-					placeholder=""
-					bind:value={quickProjectId}
-					aria-label={$t('common.field.project')}
-					class="w-full"
-				>
-					<option value="">{$t('dashboard.quickAdd.noProject')}</option>
-					{#each $allProjects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
-				</Select>
-				<div class="flex gap-2 flex-wrap">
-					<Button type="button" onclick={quickAddTasks} disabled={adding || !taskTitles(quickText).length}>
-						{adding ? $t('dashboard.quickAdd.adding') : $t('dashboard.quickAdd.addTasks')}
-					</Button>
-					<Button type="button" color="light" onclick={quickAddIdea} disabled={adding || !quickText.trim()}>
-						{$t('dashboard.quickAdd.addIdea')}
-					</Button>
-				</div>
-			</form>
-		</Card>
-
-		<div class="min-w-0 {$overdueTasks.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}">
-			<!-- Upcoming tasks -->
-			<Card class="max-w-none h-full">
-				<div class="flex justify-between items-center mb-3">
-					<h2 class="text-base font-semibold text-gray-900 dark:text-white m-0">
-						{$t('dashboard.upcomingTasks.title')}
-					</h2>
-					<a
-						href="/upcoming"
-						class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
-					>
-						{$t('dashboard.viewAll')}
-						<CaretRightSolid class="w-3 h-3 inline ml-0.5" />
-					</a>
-				</div>
-				<CalendarView initialMode="week" />
-			</Card>
-		</div>
-		<!-- Overdue -->
-		{#if $overdueTasks.length > 0}
-			<Card class="max-w-none h-full border-red-300 dark:bg-gray-800 dark:border-red-700">
-				<div class="flex items-center gap-2 mb-3">
-					<ExclamationCircleOutline class="w-4 h-4 text-red-500" />
-					<h2 class="text-base font-semibold text-red-600 dark:text-red-400 m-0">
-						{$t('dashboard.overdue.title')}
-					</h2>
-				</div>
-				{#each $overdueTasks as task (task.id)}
-					<div
-						class="flex justify-between items-center py-1.5 border-b border-red-100 dark:border-red-800 last:border-0"
-					>
-						<a
-							href="/tasks/{task.id}"
-							class="text-sm truncate text-gray-800 dark:text-gray-200 hover:underline"
-						>
-							{task.title}
-							<span class="text-xs text-red-500 shrink-0 ml-2">{$fmt.date(task.dueDate)}</span>
-						</a>
-					</div>
-				{/each}
-			</Card>
-		{/if}
 	</div>
 {/if}
