@@ -174,7 +174,7 @@
 				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
 					{$t('dashboard.stat.projects')}
 				</p>
-				<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+				<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
 					{$projectCount}
 				</p>
 			</Card>
@@ -182,7 +182,7 @@
 				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
 					{$t('dashboard.stat.upcoming')}
 				</p>
-				<p class="text-3xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
+				<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
 					{$upcomingTasks.length}
 				</p>
 			</Card>
@@ -191,7 +191,7 @@
 					<p class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0">
 						{$t('dashboard.stat.overdue')}
 					</p>
-					<p class="text-3xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0">
+					<p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0">
 						{$overdueTasks.length}
 					</p>
 				</Card>
