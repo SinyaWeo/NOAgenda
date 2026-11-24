@@ -13,8 +13,10 @@ The app-admin part needs an admin. With SQL_CMD set (a command that reads SQL fr
 stdin, e.g. SQL_CMD='mysql -h127.0.0.1 -uroot -pSECRET noagenda_ci -N') a fourth user
 is promoted through the database; without it those checks are skipped.
 
-!! Run ONLY against a disposable database. It creates users and data, and the
-   registration rate limit (10/hour/IP) means a second run needs a restart.
+!! Run ONLY against a disposable database. It creates users and data, and its last
+   part switches to single-user mode (deleting every other account) and back.
+   Start the API with REGISTRATION_RATE_LIMIT=100: the default (10/hour/IP) is shared
+   with the scripts that run after it.
 
 Usage:  BASE_URL=http://127.0.0.1:3000 [SQL_CMD=...] python3 scripts/authz-smoke.py
         (self-signed HTTPS, e.g. a local Caddy: add AUTHZ_INSECURE=1)

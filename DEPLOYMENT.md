@@ -362,7 +362,8 @@ Copy `app/backend/.env.example` and `app/frontend/.env.example` first.
 - Backend: `npm test` (unit tests), `npm run lint`, `npm run format:check`. Frontend: `npm test` (Vitest: i18n catalogs, dates,
   filters), `npm run check` (types), `npm run lint`, `npm run format:check`.
 - `app/backend/scripts/authz-smoke.py` — end-to-end authorization regression test (users cannot reach each
-  other's data). Needs a server with **email verification off** (no SMTP).
+  other's data), including the single-user mode switch. Needs a server with **email verification off** (no SMTP) and
+  `REGISTRATION_RATE_LIMIT=100` (default 10 registrations per hour per IP, shared with the scripts run after it).
 - `app/backend/scripts/auth-lifecycle-smoke.py` — email verification, sessions, refresh rotation and theft
   detection, lockout, password reset/change, API tokens. Needs a mail sink with a Mailpit-compatible API
   (`axllent/mailpit`) and `LOGIN_RATE_LIMIT=100` on the API (see the file header).

@@ -24,6 +24,8 @@ import { assertMayRegister, adminAllowsRegistration } from './registration';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { Public } from '../../common/decorators/public.decorator';
 
+/** Registrations per hour per IP. Raised only for automated tests (the smoke scripts register many users). */
+const registrationLimit = Number(process.env.REGISTRATION_RATE_LIMIT || 10);
 @Controller('users')
 export class UserController {
   constructor(
@@ -64,7 +66,7 @@ export class UserController {
 
   @Public() // registration
   @Post()
-  @Throttle({ default: { ttl: 3600000, limit: 10 } }) // 10 registrations / hour / IP
+  @Throttle({ default: { ttl: 3600000, limit: registrationLimit } })
   async create(@Body() body: CreateUserDto): Promise<Omit<User, 'password'>> {
     assertMayRegister(
       body.inviteCode,
