@@ -2,5 +2,6 @@
   "task_assigned": "{actor} vás přiřadil(a) k úkolu „{title}“",
   "task_comment": "{actor} okomentoval(a) úkol „{title}“",
   "project_added": "{actor} vás přidal(a) do projektu „{title}“",
+  "project_transferred": "{actor} vás nastavil(a) jako vlastníka projektu „{title}“",
   "task_reminder": "Připomínka: „{title}“"
 }

@@ -76,6 +76,7 @@ describe('AccountService', () => {
       jest.spyOn((svc as unknown as { logger: Logger }).logger, 'log').mockImplementation();
       const spy = jest.spyOn(svc, 'purgeUser').mockImplementation(async (id) => {
         if (id === 2) throw new Error('fail');
+        return [];
       });
       expect(await svc.purgeDue()).toBe(2);
       expect(spy).toHaveBeenCalledTimes(3);
@@ -155,6 +156,41 @@ describe('AccountService', () => {
       expect(fs.unlink).not.toHaveBeenCalled();
     });
 
+    it('with transferProjectsTo, hands the owned projects over in the same transaction before deleting', async () => {
+      const { svc, ds, calls } = build((sql, params) => {
+        if (sql.includes('FOR UPDATE') && sql.includes("type = 'project'")) return [{ id: 100, name: 'Shared' }];
+        if (sql.includes("type = 'project'")) return []; // after the transfer the user owns no project
+        return handler(sql, params);
+      });
+      const transferred = await svc.purgeUser(9, { transferProjectsTo: 4 });
+      expect(transferred).toEqual([{ id: 100, name: 'Shared' }]);
+      expect(ds.transaction).toHaveBeenCalledTimes(1);
+      const idx = (pred: (c: { sql: string; params: unknown[] }) => boolean) => calls.findIndex(pred);
+      const update = idx((c) => c.sql.startsWith('UPDATE nodes SET ownerId = ? WHERE id IN'));
+      expect(calls[update].params).toEqual([4, 100]);
+      const share = idx((c) => c.sql.startsWith('DELETE FROM project_users WHERE userId = ? AND projectId IN'));
+      expect(calls[share].params).toEqual([4, 100]);
+      expect(update).toBeLessThan(idx((c) => c.sql === 'DELETE FROM users WHERE id = ?'));
+      expect(calls.some((c) => c.sql.startsWith('DELETE FROM nodes WHERE id IN (') && c.params.includes(100))).toBe(
+        false,
+      );
+    });
+
+    it('transfers nothing when the purge is refused (last manager of a team)', async () => {
+      const { svc, calls } = build((sql, params) => {
+        if (sql.startsWith('SELECT t.name FROM teams')) return [{ name: 'Ops' }];
+        return handler(sql, params);
+      });
+      await expect(svc.purgeUser(9, { transferProjectsTo: 4 })).rejects.toBeInstanceOf(ConflictException);
+      expect(calls.some((c) => c.sql.startsWith('UPDATE nodes SET ownerId'))).toBe(false);
+    });
+
+    it('without transferProjectsTo returns no transferred projects', async () => {
+      const { svc, calls } = build(handler);
+      expect(await svc.purgeUser(9)).toEqual([]);
+      expect(calls.some((c) => c.sql.startsWith('UPDATE nodes SET ownerId'))).toBe(false);
+    });
+
     it('chunks large descendant lists (500 per statement)', async () => {
       const roots = Array.from({ length: 1200 }, (_, i) => ({ id: i + 1 }));
       const { svc, calls } = build((sql) => {
@@ -165,6 +201,16 @@ describe('AccountService', () => {
       await svc.purgeUser(9);
       const dels = calls.filter((c) => c.sql.startsWith('DELETE FROM nodes WHERE id IN'));
       expect(dels.map((c) => c.params.length)).toEqual([500, 500, 200]);
+    });
+  });
+
+  describe('ownedProjects', () => {
+    it('lists the owned projects with trash state and share counts as numbers', async () => {
+      const { svc, calls } = build((sql) =>
+        sql.includes('AS shares') ? [{ id: 5, name: 'Home', trashed: '1', shares: '3' }] : undefined,
+      );
+      expect(await svc.ownedProjects(9)).toEqual([{ id: 5, name: 'Home', trashed: true, shares: 3 }]);
+      expect(calls[0].params).toEqual([9]);
     });
   });
 

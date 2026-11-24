@@ -35,9 +35,27 @@ export const messages = {
 	'admin.users.unlocked': '{username} was unlocked',
 	'admin.users.deleted': '{username} was deleted',
 	'admin.users.lockFailed': 'Could not change the lock for {username}: {reason}',
-	'admin.users.deleteFailed': 'Could not delete {username}: {reason}',
-	'admin.users.confirmDelete':
-		'Permanently delete {username} and all their projects, tasks and data? This cannot be undone.',
+	'admin.users.delete.title': 'Delete {username}',
+	'admin.users.delete.intro':
+		'This permanently deletes the account with their personal tasks, ideas, quick notes, and their comments and uploads everywhere. It cannot be undone.',
+	'admin.users.delete.projectsFailed': 'Could not load their projects.',
+	'admin.users.delete.noProjects': 'They own no projects.',
+	'admin.users.delete.projects': { one: 'They own {count} project:', other: 'They own {count} projects:' },
+	'admin.users.delete.shared': {
+		one: 'shared with {count} user or team',
+		other: 'shared with {count} users or teams'
+	},
+	'admin.users.delete.inTrash': 'in the trash',
+	'admin.users.delete.transferLabel': 'Their projects',
+	'admin.users.delete.transferTo': 'Transfer to {username}',
+	'admin.users.delete.transferToMe': 'Transfer to me ({username})',
+	'admin.users.delete.deleteProjects': 'Delete them too',
+	'admin.users.delete.transferNote':
+		'The projects keep all their tasks and sharing; the new owner becomes their Manager and is notified.',
+	'admin.users.delete.sharedWarning': {
+		one: '{count} of them is shared: it disappears for everyone it is shared with.',
+		other: '{count} of them are shared: they disappear for everyone they are shared with.'
+	},
 
 	'admin.teams.pageTitle': 'Admin — Teams',
 	'admin.teams.title': 'Teams',

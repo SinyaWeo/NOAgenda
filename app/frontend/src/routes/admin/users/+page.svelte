@@ -1,10 +1,10 @@
 <script lang="ts">
 	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { confirmDialog } from '$lib/confirm';
+	import DeleteUserDialog from '$lib/components/DeleteUserDialog.svelte';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
 	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
-	import { apiGetAuth, apiPatchAuth, apiDeleteAuth } from '$lib/api';
+	import { apiGetAuth, apiPatchAuth } from '$lib/api';
 	import { showToast } from '$lib/toast';
 	import { authSession } from '$lib/auth';
 	import { derived, writable } from 'svelte/store';
@@ -26,6 +26,8 @@
 	const users = writable<User[]>([]);
 	const error = writable('');
 	const saving = writable<number | null>(null);
+	/** The user the delete dialog is open for. */
+	let deleting = $state<User | null>(null);
 
 	onMount(async () => {
 		await loadUsers();
@@ -78,23 +80,10 @@
 		}
 	}
 
-	async function removeUser(user: User) {
-		if (!(await confirmDialog(tr('admin.users.confirmDelete', { username: user.username })))) return;
-		saving.set(user.id);
-		try {
-			await apiDeleteAuth(`/admin/users/${user.id}`);
-			users.update((list) => list.filter((u) => u.id !== user.id));
-			showToast(tr('admin.users.deleted', { username: user.username }));
-		} catch (e: unknown) {
-			error.set(
-				tr('admin.users.deleteFailed', {
-					username: user.username,
-					reason: errMessage(e, tr('admin.users.unknownError'))
-				})
-			);
-		} finally {
-			saving.set(null);
-		}
+	function userDeleted(user: User) {
+		deleting = null;
+		users.update((list) => list.filter((u) => u.id !== user.id));
+		showToast(tr('admin.users.deleted', { username: user.username }));
 	}
 
 	const roleOptions = $derived([
@@ -175,7 +164,7 @@
 								title={$t('admin.users.deleteTip')}
 								aria-label={$t('admin.users.deleteTip')}
 								disabled={isSelf || $saving === u.id}
-								onclick={() => removeUser(u)}
+								onclick={() => (deleting = u)}
 							>
 								<TrashBinSolid class="w-4 h-4" />
 							</Button>
@@ -186,3 +175,11 @@
 		</TableBody>
 	</Table>
 </div>
+
+<DeleteUserDialog
+	user={deleting}
+	users={$users}
+	currentUserId={$currentUser?.id}
+	onclose={() => (deleting = null)}
+	ondeleted={userDeleted}
+/>

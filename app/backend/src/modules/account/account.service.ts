@@ -4,9 +4,12 @@ import {
   createdBy,
   deleteIdeasOf,
   deleteNodes,
+  OwnedProject,
+  ownedProjects,
   ownedRootIds,
   rowsByIds,
   subtreeIds,
+  transferOwnedProjects,
 } from '../node/node-sql';
 import { ConflictException, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { DataSource } from 'typeorm';
@@ -25,6 +28,12 @@ function chunks<T>(items: T[], size = CHUNK): T[][] {
   return out;
 }
 const marks = (n: number) => Array(n).fill('?').join(',');
+
+/** A project handed to a new owner while its owner's account was deleted. */
+export interface TransferredProject {
+  id: number;
+  name: string | null;
+}
 
 function parseJson(value: unknown): unknown {
   if (typeof value !== 'string') return value;
@@ -125,9 +134,20 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
 
   // ---------------------------------------------------------------- purge
 
-  /** Irreversibly delete a user and their data (see class comment). One transaction. */
-  async purgeUser(userId: number): Promise<void> {
+  /** Projects the user owns (trashed ones included), for the admin's delete dialog. */
+  async ownedProjects(userId: number): Promise<OwnedProject[]> {
+    return ownedProjects(sqlRunner(this.ds), userId);
+  }
+
+  /**
+   * Irreversibly delete a user and their data (see class comment). One transaction.
+   * With `transferProjectsTo`, the projects they own (trashed ones included) are first handed to that
+   * user in the same transaction, so they survive with all their tasks; the user's personal tasks, ideas,
+   * comments and uploads are still deleted. Returns the transferred projects.
+   */
+  async purgeUser(userId: number, opts: { transferProjectsTo?: number } = {}): Promise<TransferredProject[]> {
     const files: string[] = [];
+    let transferred: TransferredProject[] = [];
 
     await this.ds.transaction(async (m) => {
       const q = sqlRunner(m);
@@ -139,6 +159,15 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       if (!user) return;
 
       this.assertNoOrphanedTeams(await this.teamsNeedingManager(q, userId));
+
+      const to = opts.transferProjectsTo;
+      if (to !== undefined && to !== userId) {
+        transferred = await transferOwnedProjects(q, userId, to);
+        // Owning a project already makes the new owner its Manager: their old share on it is redundant.
+        for (const part of chunks(transferred.map((p) => p.id))) {
+          await q(`DELETE FROM project_users WHERE userId = ? AND projectId IN (${marks(part.length)})`, [to, ...part]);
+        }
+      }
 
       // Owned projects and personal (top-level) tasks, with everything below them.
       const ids = await subtreeIds(q, await ownedRootIds(q, userId), 'all');
@@ -197,6 +226,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       const abs = resolve(f);
       if (abs.startsWith(UPLOADS_DIR + '/') && existsSync(abs)) unlink(abs, () => undefined);
     }
+    return transferred;
   }
 
   // ---------------------------------------------------------------- export

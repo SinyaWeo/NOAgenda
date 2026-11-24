@@ -48,6 +48,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'activity.action.assignee.set': '{actor}: „{title}“ přiřazen(o) uživateli {to}',
 	'activity.action.assignee.changed': '{actor}: řešitel „{title}“ změněn z {from} na {to}',
 	'activity.action.assignee.cleared': '{actor}: odebrán řešitel {from} z „{title}“',
+	'activity.action.owner.changed': '{actor}: projekt „{title}“ předán z {from} na {to}',
 	'activity.action.label.added': '{actor}: přidán štítek {label} k „{title}“',
 	'activity.action.label.removed': '{actor}: odebrán štítek {label} z „{title}“',
 	'activity.action.relation.added': '{actor}: přidán vztah u „{title}“: {kind} „{other}“',

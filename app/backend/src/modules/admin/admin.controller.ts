@@ -28,6 +28,9 @@ import { SetTeamMemberRoleDto } from '../team-member/dto/team-member.dto';
 import { TeamMember } from '../team-member/team-member.entity';
 import { ActivityPage, ActivityService } from '../activity/activity.service';
 import { AdminActivityQueryDto } from '../activity/dto/activity.dto';
+import type { OwnedProject } from '../node/node-sql';
+import { RemoveUserQueryDto } from './dto/remove-user.dto';
+import { ProjectTransferService } from './project-transfer.service';
 
 @Controller('admin')
 @UseGuards(RolesGuard)
@@ -40,6 +43,7 @@ export class AdminController {
     private readonly teams: TeamService,
     private readonly teamMembers: TeamMemberService,
     private readonly activity: ActivityService,
+    private readonly transfers: ProjectTransferService,
   ) {}
 
   /** The whole audit trail, across all projects (including deleted ones). */
@@ -87,13 +91,45 @@ export class AdminController {
     return omit(user, 'password');
   }
 
+  /** The projects a user owns (trashed ones included): what deleting them would delete or hand over. */
+  @Get('users/:id/projects')
+  async ownedProjects(@Param('id') id: number): Promise<OwnedProject[]> {
+    if (!(await this.userService.findById(Number(id)))) throw new NotFoundException();
+    return this.accounts.ownedProjects(Number(id));
+  }
+
+  /**
+   * Delete a user and their data. With `transferProjectsTo`, the projects they own are handed to that
+   * (active) user first, in the same transaction, instead of being deleted with them.
+   */
   @Delete('users/:id')
   @HttpCode(204)
-  async removeUser(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
+  async removeUser(
+    @Param('id') id: number,
+    @Query() q: RemoveUserQueryDto,
+    @Request() req: AuthRequest,
+  ): Promise<void> {
     const userId = Number(id);
     if (req.user.userId === userId) throw new ForbiddenException('Cannot delete your own account');
-    if (!(await this.userService.findById(userId))) throw new NotFoundException();
-    await this.accounts.purgeUser(userId);
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException();
+    let to: User | null = null;
+    if (q.transferProjectsTo !== undefined) {
+      if (q.transferProjectsTo === userId) {
+        throw new BadRequestException('Projects cannot be transferred to the user being deleted');
+      }
+      to = await this.userService.findById(q.transferProjectsTo);
+      if (!to || to.isLocked) throw new BadRequestException('The new project owner must be an active user');
+    }
+    const transferred = await this.accounts.purgeUser(userId, to ? { transferProjectsTo: to.id } : {});
+    if (to && transferred.length) {
+      await this.transfers.announce(transferred, {
+        fromName: user.username,
+        to: { id: to.id, username: to.username },
+        actorId: req.user.userId,
+        actorName: req.user.username,
+      });
+    }
   }
 
   /** Every team with its members and their roles. */

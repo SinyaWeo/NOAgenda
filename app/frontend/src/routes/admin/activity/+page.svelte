@@ -11,6 +11,7 @@
 		'project.created',
 		'project.updated',
 		'project.deleted',
+		'project.owner_changed',
 		'idea.created',
 		'idea.updated',
 		'idea.deleted',

@@ -260,6 +260,26 @@ if SQL:
     s, r = call('GET', '/admin/activity?limit=5', None, D)
     check('app admin pages the whole audit log', (s, len(r['items']), r['next'] is not None), (200, 5, True))
     s, _ = call('GET', '/admin/activity?actorId=abc', None, D); check('admin filters are validated', s, 400)
+
+    # Deleting a user can hand their projects to someone else instead of deleting them.
+    fid, F = user('frank')
+    s, fp = call('POST', '/projects', {'name': 'Frank shared'}, F)
+    s, ft = call('POST', '/tasks', {'title': 'frank task', 'projectId': fp['id']}, F)
+    call('POST', f'/projects/{fp["id"]}/users', {'userId': eid, 'permission': 'write'}, F)
+    s, owned = call('GET', f'/admin/users/{fid}/projects', None, D)
+    check('admin lists what a user owns', (s, [(p['id'], p['shares']) for p in owned]), (200, [(fp['id'], 1)]))
+    s, _ = call('GET', f'/admin/users/{fid}/projects', None, E); check('a normal user cannot list owned projects', s, 403)
+    s, _ = call('DELETE', f'/admin/users/{fid}?transferProjectsTo={fid}', None, D); check('no transfer to the deleted user', s, 400)
+    s, _ = call('DELETE', f'/admin/users/{fid}?transferProjectsTo=999999', None, D); check('no transfer to an unknown user', s, 400)
+    s, _ = call('GET', f'/projects/{fp["id"]}', None, F); check('a refused delete changes nothing', s, 200)
+    s, _ = call('DELETE', f'/admin/users/{fid}?transferProjectsTo={did}', None, D); check('admin deletes frank, keeping his projects', s, 204)
+    s, r = call('GET', f'/nodes/{fp["id"]}', None, D)
+    check('the admin now owns the project and manages it', (s, r.get('ownerId'), r.get('access')), (200, did, 'admin'))
+    s, _ = call('GET', f'/tasks/{ft["id"]}', None, D); check('its tasks survive', s, 200)
+    s, _ = call('PUT', f'/tasks/{ft["id"]}', {'title': 'still shared'}, E); check('its sharing survives', s, 200)
+    time.sleep(1)
+    s, r = call('GET', f'/admin/activity?projectId={fp["id"]}&action=project.owner_changed', None, D)
+    check('the transfer is in the audit trail', (s, [e['changes']['owner'] for e in r['items']]), (200, [{'from': 'frank', 'to': 'dave'}]))
 else:
     print('SKIP app-admin team checks (set SQL_CMD to run them)')
 

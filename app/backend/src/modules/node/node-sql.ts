@@ -164,6 +164,51 @@ export async function ownedRootIds(q: SqlRunner, userId: number): Promise<number
   return rows.map((r) => r.id);
 }
 
+/** A project as the admin sees it before deleting its owner. */
+export interface OwnedProject {
+  id: number;
+  name: string | null;
+  /** In the trash (still restorable). */
+  trashed: boolean;
+  /** How many users and teams it is shared with. */
+  shares: number;
+}
+
+/** Projects the user owns, trashed ones included, with how widely each is shared. */
+export async function ownedProjects(q: SqlRunner, userId: number): Promise<OwnedProject[]> {
+  const rows = await q<{ id: number; name: string | null; trashed: number | string; shares: number | string }>(
+    `SELECT n.id, n.name, n.deletedAt IS NOT NULL AS trashed,
+            (SELECT COUNT(*) FROM project_users pu WHERE pu.projectId = n.id)
+          + (SELECT COUNT(*) FROM project_teams pt WHERE pt.projectId = n.id) AS shares
+       FROM nodes n
+      WHERE n.type = 'project' AND n.ownerId = ?
+      ORDER BY n.name, n.id`,
+    [userId],
+  );
+  return rows.map((r) => ({
+    id: Number(r.id),
+    name: r.name,
+    trashed: Number(r.trashed) === 1,
+    shares: Number(r.shares),
+  }));
+}
+
+/** Give every project `fromUserId` owns, trashed ones included, to `toUserId`. Returns the projects moved. */
+export async function transferOwnedProjects(
+  q: SqlRunner,
+  fromUserId: number,
+  toUserId: number,
+): Promise<{ id: number; name: string | null }[]> {
+  const rows = await q<{ id: number; name: string | null }>(
+    "SELECT id, name FROM nodes WHERE type = 'project' AND ownerId = ? ORDER BY id FOR UPDATE",
+    [fromUserId],
+  );
+  for (const part of chunks(rows.map((r) => r.id))) {
+    await q(`UPDATE nodes SET ownerId = ? WHERE id IN (${marks(part.length)})`, [toUserId, ...part]);
+  }
+  return rows.map((r) => ({ id: Number(r.id), name: r.name }));
+}
+
 export async function rowsByIds(q: SqlRunner, ids: number[]): Promise<Record<string, unknown>[]> {
   const out: Record<string, unknown>[] = [];
   for (const part of chunks(ids)) {

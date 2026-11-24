@@ -83,6 +83,15 @@ export interface Node {
 	updatedAt: string;
 }
 export type Task = Node;
+
+/** A project a user owns, as the admin sees it before deleting that user (GET /admin/users/:id/projects). */
+export interface OwnedProject {
+	id: number;
+	name: string | null;
+	trashed: boolean;
+	/** How many users and teams it is shared with. */
+	shares: number;
+}
 export type Project = Node;
 
 /** The few public fields of another user (never email or hash). */
@@ -211,7 +220,8 @@ export interface KanbanBucket {
 	limit?: number | null;
 }
 
-export type NotificationType = 'task_assigned' | 'task_comment' | 'project_added' | 'task_reminder';
+export type NotificationType =
+	'task_assigned' | 'task_comment' | 'project_added' | 'project_transferred' | 'task_reminder';
 
 export interface AppNotification {
 	id: number;

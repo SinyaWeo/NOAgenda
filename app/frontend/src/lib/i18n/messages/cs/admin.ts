@@ -38,9 +38,36 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.users.unlocked': 'Uživatel {username} byl odemknut',
 	'admin.users.deleted': 'Uživatel {username} byl smazán',
 	'admin.users.lockFailed': 'Zámek uživatele {username} se nepodařilo změnit: {reason}',
-	'admin.users.deleteFailed': 'Uživatele {username} se nepodařilo smazat: {reason}',
-	'admin.users.confirmDelete':
-		'Trvale smazat uživatele {username} včetně všech jeho projektů, úkolů a dat? Tuto akci nelze vrátit.',
+	'admin.users.delete.title': 'Smazat uživatele {username}',
+	'admin.users.delete.intro':
+		'Trvale smaže účet včetně jeho osobních úkolů, nápadů, rychlých poznámek a všech jeho komentářů a nahraných souborů. Tuto akci nelze vrátit.',
+	'admin.users.delete.projectsFailed': 'Jeho projekty se nepodařilo načíst.',
+	'admin.users.delete.noProjects': 'Nevlastní žádné projekty.',
+	'admin.users.delete.projects': {
+		one: 'Vlastní {count} projekt:',
+		few: 'Vlastní {count} projekty:',
+		many: 'Vlastní {count} projektu:',
+		other: 'Vlastní {count} projektů:'
+	},
+	'admin.users.delete.shared': {
+		one: 'sdíleno s {count} uživatelem nebo týmem',
+		few: 'sdíleno se {count} uživateli nebo týmy',
+		many: 'sdíleno s {count} uživatele nebo týmu',
+		other: 'sdíleno s {count} uživateli nebo týmy'
+	},
+	'admin.users.delete.inTrash': 'v koši',
+	'admin.users.delete.transferLabel': 'Jeho projekty',
+	'admin.users.delete.transferTo': 'Převést na {username}',
+	'admin.users.delete.transferToMe': 'Převést na mě ({username})',
+	'admin.users.delete.deleteProjects': 'Smazat je také',
+	'admin.users.delete.transferNote':
+		'Projekty si ponechají všechny úkoly i sdílení; nový vlastník se stane jejich správcem a dostane upozornění.',
+	'admin.users.delete.sharedWarning': {
+		one: '{count} z nich je sdílený: zmizí všem, se kterými je sdílený.',
+		few: '{count} z nich jsou sdílené: zmizí všem, se kterými jsou sdílené.',
+		many: '{count} z nich je sdíleno: zmizí všem, se kterými jsou sdílené.',
+		other: '{count} z nich je sdílených: zmizí všem, se kterými jsou sdílené.'
+	},
 
 	'admin.teams.pageTitle': 'Správa — Týmy',
 	'admin.teams.title': 'Týmy',

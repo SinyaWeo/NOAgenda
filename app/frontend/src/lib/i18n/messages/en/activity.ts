@@ -41,6 +41,7 @@ export const messages = {
 	'activity.action.assignee.set': '{actor} assigned “{title}” to {to}',
 	'activity.action.assignee.changed': '{actor} reassigned “{title}” from {from} to {to}',
 	'activity.action.assignee.cleared': '{actor} unassigned {from} from “{title}”',
+	'activity.action.owner.changed': '{actor} transferred project “{title}” from {from} to {to}',
 	'activity.action.label.added': '{actor} added label {label} to “{title}”',
 	'activity.action.label.removed': '{actor} removed label {label} from “{title}”',
 	'activity.action.relation.added': '{actor} added to “{title}” the relation: {kind} “{other}”',

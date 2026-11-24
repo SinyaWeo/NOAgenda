@@ -4,7 +4,8 @@ import { Node } from '../node/node.entity';
 import { BaseEntity } from '@common/base.entity';
 
 /** What happened. The UI turns a known type into a localized sentence; `message` is the English fallback. */
-export type NotificationType = 'task_assigned' | 'task_comment' | 'project_added' | 'task_reminder';
+export type NotificationType =
+  'task_assigned' | 'task_comment' | 'project_added' | 'project_transferred' | 'task_reminder';
 
 @Entity('notifications')
 export class Notification extends BaseEntity {

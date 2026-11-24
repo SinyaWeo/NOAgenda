@@ -36,6 +36,17 @@ describe('describeActivity', () => {
 		expect(describeActivity(e, en)).toBe('Unknown created project “untitled”');
 	});
 
+	it('reads a project owner change with both usernames, in both languages', () => {
+		const e = entry({
+			action: 'project.owner_changed',
+			nodeType: 'project',
+			nodeTitle: 'Home',
+			changes: { owner: { from: 'bob', to: 'carol' } }
+		});
+		expect(describeActivity(e, en)).toBe('alice transferred project “Home” from bob to carol');
+		expect(describeActivity(e, cs)).toBe('alice: projekt „Home“ předán z bob na carol');
+	});
+
 	it('reads archive, restore and move as such', () => {
 		const archived = entry({ changes: { isArchived: { from: false, to: true } } });
 		const restored = entry({ changes: { isArchived: { from: true, to: false } } });

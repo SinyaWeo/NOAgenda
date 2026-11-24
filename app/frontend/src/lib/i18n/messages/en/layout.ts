@@ -76,6 +76,7 @@ export const messages = {
 	'layout.notifications.task_assigned': '{actor} assigned you to "{title}"',
 	'layout.notifications.task_comment': '{actor} commented on "{title}"',
 	'layout.notifications.project_added': '{actor} added you to the project "{title}"',
+	'layout.notifications.project_transferred': '{actor} made you the owner of the project "{title}"',
 	'layout.notifications.task_reminder': 'Reminder: "{title}"',
 
 	// User menu

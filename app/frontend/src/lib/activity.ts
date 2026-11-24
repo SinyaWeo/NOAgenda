@@ -58,6 +58,13 @@ export function describeActivity(e: ActivityEntry, t: Translate): string {
 			if (!c.to) return say('assignee.cleared', { from });
 			return say('assignee.changed', { from, to });
 		}
+		case 'project.owner_changed': {
+			const c = change(e, 'owner');
+			return say('owner.changed', {
+				from: text(c?.from) || t('common.unknown'),
+				to: text(c?.to) || t('common.unknown')
+			});
+		}
 		case 'task.label_changed': {
 			const c = change(e, 'label');
 			return c?.to
