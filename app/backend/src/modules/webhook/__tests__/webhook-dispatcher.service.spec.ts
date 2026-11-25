@@ -92,6 +92,18 @@ describe('WebhookDispatcher.recipientsOf', () => {
     expect(await svc.recipientsOf({ name: 'comment.created', data: {}, nodeId: 5 })).toHaveLength(1);
   });
 
+  it('finds the project of a node that is already in the trash', async () => {
+    const { svc } = build([hook({ projectId: 10 })], {
+      nodes: [
+        { id: 5, type: 'task', parentId: 10 },
+        { id: 10, type: 'project', parentId: null },
+      ],
+    });
+    const nodes = (svc as unknown as { nodes: Mocks }).nodes;
+    expect(await svc.recipientsOf({ name: 'task.deleted', data: {}, nodeId: 5 })).toHaveLength(1);
+    for (const [arg] of nodes.findOne.mock.calls) expect(arg).toMatchObject({ withDeleted: true });
+  });
+
   it('queries only active webhooks for this event or "*"', async () => {
     const { svc, repo } = build([]);
     await svc.recipientsOf(event);
@@ -232,5 +244,67 @@ describe('WebhookDispatcher.record', () => {
     const { svc, repo } = build([]);
     await svc.record(1, { ok: false, status: null, error: 'Timed out' });
     expect(repo.update).not.toHaveBeenCalledWith(1, { active: false });
+  });
+});
+
+describe('WebhookDispatcher retries', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  const flush = async () => {
+    for (let i = 0; i < 10; i++) await Promise.resolve();
+  };
+
+  it('retries after a delay without holding a worker slot, and records only the final outcome', async () => {
+    const { svc, repo } = build([hook({ projectId: 10 })]);
+    const results = [
+      { ok: false, status: 500, error: 'HTTP 500', retry: true },
+      { ok: false, status: 503, error: 'HTTP 503', retry: true },
+      { ok: true, status: 200, error: null, retry: false },
+    ];
+    const deliverOnce = jest.fn(async () => results.shift()!);
+    svc.deliverOnce = asMock<WebhookDispatcher['deliverOnce']>(deliverOnce);
+    const state = svc as unknown as { active: number };
+
+    await svc.dispatch({ name: 'task.updated', data: {}, nodeId: 5, projectId: 10 });
+    await flush();
+    expect(deliverOnce).toHaveBeenCalledTimes(1);
+    expect(state.active).toBe(0); // the slot is free while waiting for the retry
+    expect(repo.update).not.toHaveBeenCalled();
+
+    await jest.advanceTimersByTimeAsync(2000);
+    await flush();
+    expect(deliverOnce).toHaveBeenCalledTimes(2);
+    expect(state.active).toBe(0);
+
+    await jest.advanceTimersByTimeAsync(10000);
+    await flush();
+    expect(deliverOnce).toHaveBeenCalledTimes(3);
+    expect(repo.update).toHaveBeenCalledTimes(1);
+    expect(repo.update).toHaveBeenCalledWith(1, expect.objectContaining({ lastStatus: 200, failureCount: 0 }));
+  });
+
+  it('gives up after three attempts and records the failure', async () => {
+    const { svc, repo } = build([hook({ projectId: 10 })]);
+    const deliverOnce = jest.fn(async () => ({ ok: false, status: 500, error: 'HTTP 500', retry: true }));
+    svc.deliverOnce = asMock<WebhookDispatcher['deliverOnce']>(deliverOnce);
+
+    await svc.dispatch({ name: 'task.updated', data: {}, nodeId: 5, projectId: 10 });
+    await jest.advanceTimersByTimeAsync(20000);
+    await flush();
+    expect(deliverOnce).toHaveBeenCalledTimes(3);
+    expect(repo.increment).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not retry a non-retryable failure', async () => {
+    const { svc, repo } = build([hook({ projectId: 10 })]);
+    const deliverOnce = jest.fn(async () => ({ ok: false, status: 404, error: 'HTTP 404', retry: false }));
+    svc.deliverOnce = asMock<WebhookDispatcher['deliverOnce']>(deliverOnce);
+
+    await svc.dispatch({ name: 'task.updated', data: {}, nodeId: 5, projectId: 10 });
+    await jest.advanceTimersByTimeAsync(20000);
+    await flush();
+    expect(deliverOnce).toHaveBeenCalledTimes(1);
+    expect(repo.increment).toHaveBeenCalledTimes(1);
   });
 });

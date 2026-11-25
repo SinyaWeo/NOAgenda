@@ -25,8 +25,6 @@ export interface DeliveryResult {
   error: string | null;
 }
 
-const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms).unref());
-
 /**
  * Sends domain events to the webhooks that asked for them.
  *
@@ -58,11 +56,13 @@ export class WebhookDispatcher implements OnModuleInit {
 
   /** The project a node belongs to, for events that did not say. */
   private async projectOf(nodeId: number): Promise<number | null> {
-    let cur = await this.nodes.findOne({ where: { id: nodeId }, select: { id: true, type: true, parentId: true } });
+    // withDeleted: the node (or an ancestor) may already be in the trash, e.g. for a delete event.
+    const select = { id: true, type: true, parentId: true } as const;
+    let cur = await this.nodes.findOne({ where: { id: nodeId }, select, withDeleted: true });
     for (let depth = 0; cur && depth < 64; depth++) {
       if (cur.type === 'project') return cur.id;
       if (cur.parentId == null) return null;
-      cur = await this.nodes.findOne({ where: { id: cur.parentId }, select: { id: true, type: true, parentId: true } });
+      cur = await this.nodes.findOne({ where: { id: cur.parentId }, select, withDeleted: true });
     }
     return null;
   }
@@ -98,17 +98,19 @@ export class WebhookDispatcher implements OnModuleInit {
   async dispatch(e: DomainEvent): Promise<void> {
     if (e.auditOnly) return;
     for (const hook of await this.recipientsOf(e)) {
-      this.enqueue(() => this.deliverWithRetries(hook, e.name, e.data));
+      this.enqueue(() => this.attempt(hook, e.name, e.data, 0));
     }
   }
 
-  private enqueue(job: () => Promise<void>) {
+  /** Queue a job; false when the queue is full and it was dropped. */
+  private enqueue(job: () => Promise<void>): boolean {
     if (this.queue.length >= MAX_QUEUED) {
       this.logger.warn('Webhook queue is full: dropping a delivery');
-      return;
+      return false;
     }
     this.queue.push(job);
     this.pump();
+    return true;
   }
 
   private pump() {
@@ -204,12 +206,18 @@ export class WebhookDispatcher implements OnModuleInit {
     return s.length > 255 ? s.slice(0, 254) + '…' : s;
   }
 
-  private async deliverWithRetries(hook: Webhook, event: string, data: unknown): Promise<void> {
-    let result = await this.deliverOnce(hook, event, data);
-    for (const delay of RETRY_DELAYS_MS) {
-      if (result.ok || !result.retry) break;
-      await sleep(delay);
-      result = await this.deliverOnce(hook, event, data);
+  /**
+   * One delivery attempt from the queue. A retryable failure is put back in the queue after its delay
+   * instead of waiting here, so a slow or broken endpoint does not keep a worker slot while it waits.
+   */
+  private async attempt(hook: Webhook, event: string, data: unknown, n: number): Promise<void> {
+    const result = await this.deliverOnce(hook, event, data);
+    const delay = RETRY_DELAYS_MS[n];
+    if (!result.ok && result.retry && delay !== undefined) {
+      setTimeout(() => {
+        if (!this.enqueue(() => this.attempt(hook, event, data, n + 1))) void this.record(hook.id, result);
+      }, delay).unref();
+      return;
     }
     await this.record(hook.id, result);
   }

@@ -57,6 +57,9 @@ const SNIFFABLE = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp',
 
 @Controller('attachments')
 export class AttachmentController {
+  /** Per-user tail of the upload queue (see {@link serializedFor}). */
+  private readonly uploadChains = new Map<number, Promise<void>>();
+
   constructor(
     private readonly attachmentService: AttachmentService,
     private readonly access: NodeAccessService,
@@ -84,12 +87,19 @@ export class AttachmentController {
     }
   }
 
-  /** Uploader, or anyone with the given access on the attachment's task. */
+  /**
+   * Reading: the uploader (it is their own file), or anyone who can read the task.
+   * Changing: whoever may write the task. Someone who lost access to the project must not delete its files,
+   * even ones they uploaded; the uploader only decides alone once the task is gone (trashed or purged).
+   */
   private async assertCan(att: Attachment, userId: number, write: boolean): Promise<void> {
-    if (att.uploader?.id === userId) return;
+    const isUploader = att.uploader?.id === userId;
     if (att.node?.id) {
-      return write ? this.access.assertWrite(userId, att.node.id) : this.access.assertRead(userId, att.node.id);
+      if (write) return this.access.assertWrite(userId, att.node.id);
+      if (isUploader) return;
+      return this.access.assertRead(userId, att.node.id);
     }
+    if (isUploader) return;
     throw new ForbiddenException();
   }
 
@@ -169,27 +179,52 @@ export class AttachmentController {
     if (!file) throw new BadRequestException('No file uploaded');
     // UploadPrecheckGuard has already validated this id and the caller's write access, before multer ran.
     const taskId = req.uploadTaskId as number;
-    try {
-      if (SNIFFABLE.has(file.mimetype) && (await sniffFile(file.path).catch(() => null)) !== file.mimetype) {
-        throw new BadRequestException(`The file is not a valid ${file.mimetype} (its content does not match its type)`);
+    const userId = req.user.userId;
+    const created = await this.serializedFor(userId, async () => {
+      try {
+        if (SNIFFABLE.has(file.mimetype) && (await sniffFile(file.path).catch(() => null)) !== file.mimetype) {
+          throw new BadRequestException(
+            `The file is not a valid ${file.mimetype} (its content does not match its type)`,
+          );
+        }
+        if ((await this.attachmentService.usedBytes(userId)) + file.size > USER_QUOTA_BYTES) {
+          throw new PayloadTooLargeException('Your storage quota is full: delete some attachments first');
+        }
+        return await this.attachmentService.create({
+          filename: file.originalname,
+          path: resolve(file.path),
+          size: file.size,
+          node: { id: taskId },
+          uploader: { id: userId },
+        });
+      } catch (err) {
+        // multer already wrote the file to disk; do not keep it.
+        unlink(file.path, () => undefined);
+        throw err;
       }
-      if ((await this.attachmentService.usedBytes(req.user.userId)) + file.size > USER_QUOTA_BYTES) {
-        throw new PayloadTooLargeException('Your storage quota is full: delete some attachments first');
-      }
-    } catch (err) {
-      // multer already wrote the file to disk; do not keep it.
-      unlink(file.path, () => undefined);
-      throw err;
-    }
-    const created = await this.attachmentService.create({
-      filename: file.originalname,
-      path: resolve(file.path),
-      size: file.size,
-      node: { id: taskId },
-      uploader: { id: req.user.userId },
     });
-    await this.audit(taskId, req.user.userId, file.originalname, true);
+    await this.audit(taskId, userId, file.originalname, true);
     return created;
+  }
+
+  /**
+   * Runs `fn` after the user's previous upload finished its quota check and insert, so parallel uploads
+   * cannot all pass the check before any of them is counted. One backend process per instance, so in-memory
+   * is enough.
+   */
+  private async serializedFor<T>(userId: number, fn: () => Promise<T>): Promise<T> {
+    const prev = this.uploadChains.get(userId) ?? Promise.resolve();
+    const run = prev.then(fn, fn);
+    const tail = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.uploadChains.set(userId, tail);
+    try {
+      return await run;
+    } finally {
+      if (this.uploadChains.get(userId) === tail) this.uploadChains.delete(userId);
+    }
   }
 
   @Delete(':id')
