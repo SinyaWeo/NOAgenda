@@ -6,7 +6,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'dashboard.loadFailed': 'Přehled se nepodařilo načíst.',
 	'dashboard.stat.projects': 'Projekty',
 	'dashboard.stat.upcoming': 'Nadcházející',
-	'dashboard.stat.overdue': 'Po termínu',
+	'dashboard.stat.overdue': 'Po\u00a0termínu',
 	'dashboard.quickAdd.title': 'Rychlé přidání',
 	'dashboard.quickAdd.hint':
 		'Přidat jako úkol(y) vytvoří jeden úkol z každého řádku, Přidat jako nápad uloží celý text jako jeden nápad.\nShift+Enter vloží nový řádek.',
