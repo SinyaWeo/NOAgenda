@@ -144,11 +144,11 @@ const taskUrl = page.url();
 await page.waitForFunction(() => document.body.innerText.includes('A long task description.'));
 ok('task with a ~4000 character description saved', (await text()).includes('A long task description.'));
 
-await page.click('button:has-text("Activity")');
 await page.fill('input[placeholder="Add a comment…"]', 'first browser comment');
 await page.click('button:has-text("Post")');
 await page.waitForFunction(() => document.body.innerText.includes('first browser comment'));
 ok('comment posted', true);
+await page.click('button[role=tab]:has-text("Activity")'); // the log is on the Activity tab
 await page.waitForFunction(() => document.body.innerText.includes('commented on'));
 ok('the comment shows in the activity log', true);
 

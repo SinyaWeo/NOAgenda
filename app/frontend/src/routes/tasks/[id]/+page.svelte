@@ -32,6 +32,7 @@
 	} from '$lib/types';
 	import TaskDetailsTab from '$lib/components/task/TaskDetailsTab.svelte';
 	import TaskActivityTab from '$lib/components/task/TaskActivityTab.svelte';
+	import TaskComments from '$lib/components/task/TaskComments.svelte';
 	import type { NewReminder } from '$lib/components/task/TaskReminderEditor.svelte';
 	import InlineText from '$lib/components/InlineText.svelte';
 	import { Alert, Button } from 'flowbite-svelte';
@@ -415,11 +416,16 @@
 				onUpload={uploadAttachment}
 				onDeleteAttachment={deleteAttachment}
 			/>
-		{:else}
-			<TaskActivityTab
+			<TaskComments
 				taskId={task.id}
 				{comments}
 				currentUserId={$authSession.user?.id}
+				onPostComment={postComment}
+				onDeleteComment={deleteComment}
+			/>
+		{:else}
+			<TaskActivityTab
+				taskId={task.id}
 				activityVersion={[
 					task.updatedAt,
 					comments.length,
@@ -428,8 +434,6 @@
 					relations.length,
 					assignees.length
 				].join('-')}
-				onPostComment={postComment}
-				onDeleteComment={deleteComment}
 				onRestored={(restored) => (task = restored)}
 			/>
 		{/if}
