@@ -43,6 +43,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.details.noDescription': 'Bez popisu',
 	'tasks.details.overdue': 'Po termínu',
 	'tasks.details.editRepeat': 'Upravit opakování',
+	'tasks.details.change': 'Kliknutím změníte',
 	'tasks.detail.editTitle': 'Upravit název',
 	'tasks.details.startDate': 'Datum zahájení',
 	'tasks.details.dueDate': 'Termín',

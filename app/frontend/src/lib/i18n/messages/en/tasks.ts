@@ -43,6 +43,7 @@ export const messages = {
 	'tasks.details.noDescription': 'No description',
 	'tasks.details.overdue': 'Overdue',
 	'tasks.details.editRepeat': 'Edit repetition',
+	'tasks.details.change': 'Click to change',
 	'tasks.detail.editTitle': 'Edit title',
 	'tasks.details.startDate': 'Start Date',
 	'tasks.details.dueDate': 'Due Date',
