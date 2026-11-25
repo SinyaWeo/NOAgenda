@@ -186,7 +186,7 @@
 {/snippet}
 
 <Card class="mb-4 max-w-none">
-	<div class="flex flex-col-reverse md:flex-row gap-6">
+	<div class="flex flex-col md:flex-row gap-6">
 		<div class="flex-1 min-w-0">
 			<div class="mb-4">
 				<p class={LABEL}>{$t('common.field.description')}</p>
@@ -245,7 +245,7 @@
 		</div>
 
 		<dl
-			class="md:w-60 shrink-0 m-0 flex flex-col gap-4 md:border-l md:pl-6 border-gray-100 dark:border-gray-700"
+			class="md:w-60 shrink-0 m-0 flex flex-col gap-4 border-t pt-6 md:border-t-0 md:pt-0 md:border-l md:pl-6 border-gray-100 dark:border-gray-700"
 		>
 			<div>
 				<dt class={LABEL}>{$t('common.field.status')}</dt>
