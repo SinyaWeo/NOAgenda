@@ -118,3 +118,10 @@ export function addMonthsZoned(z: Zoned, months: number): Zoned {
 export function dayDiff(a: Pick<Zoned, 'year' | 'month' | 'day'>, b: Pick<Zoned, 'year' | 'month' | 'day'>): number {
   return Math.round((Date.UTC(b.year, b.month - 1, b.day) - Date.UTC(a.year, a.month - 1, a.day)) / 86_400_000);
 }
+
+/** `days` calendar days before the day `date` falls on in `timeZone`, at `time` ("HH:MM") there. */
+export function daysBeforeAt(date: Date, days: number, time: string, timeZone: string): Date {
+  const [hour, minute] = time.split(':').map(Number);
+  const day = addDaysZoned(toZoned(date, timeZone), -days);
+  return fromZoned({ ...day, hour, minute, second: 0, ms: 0 }, timeZone);
+}

@@ -8,6 +8,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'views.tasks.loading': 'Načítání úkolů…',
 	'views.tasks.empty': 'Nenalezeny žádné úkoly.',
 	'views.tasks.emptyCreate': 'Vytvořit úkol.',
+	'views.tasks.noProject': 'Osobní',
 	'views.mode.list': 'Seznam',
 	'views.mode.kanban': 'Kanban',
 	'views.mode.table': 'Tabulka',

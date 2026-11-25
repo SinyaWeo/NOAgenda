@@ -31,7 +31,7 @@ function build(nodes: Node[], buckets: KanbanBucket[] = []) {
     findOne: jest.fn(async ({ where }: { where: { id: number } }) => byId.get(where.id) ?? null),
     find: jest.fn(async () => nodes),
     manager: {
-      query: jest.fn(async () => [{ language: 'cs' }]),
+      query: jest.fn(async (_sql?: string, _params?: unknown[]): Promise<unknown[]> => [{ language: 'cs' }]),
       getRepository: jest.fn(() => bucketRepo),
       createQueryBuilder: jest.fn(() => qb),
       transaction: jest.fn(async (fn: (m: object) => unknown) =>
@@ -126,5 +126,34 @@ describe('NodeService kanban buckets', () => {
       { projectId: 99, title: 'Backlog', status: NodeStatus.OPEN, position: 0, limit: undefined },
       { projectId: 99, title: 'Shipped', status: NodeStatus.DONE, position: 1, limit: 3 },
     ]);
+  });
+});
+
+describe('NodeService relative reminders', () => {
+  it('a new due date recalculates reminders set relative to it, in their creator’s time zone', async () => {
+    const { svc, nodeRepo } = build([project, task({ dueDate: new Date('2030-01-01T11:00:00Z') })]);
+    nodeRepo.manager.query.mockImplementation(async (sql?: string) =>
+      String(sql).includes('FROM task_reminders r')
+        ? [
+            {
+              id: 7,
+              daysBefore: 1,
+              atTime: '09:00',
+              dueDate: new Date('2030-02-10T11:00:00Z'),
+              timezone: 'Europe/Prague',
+            },
+          ]
+        : [],
+    );
+    await svc.update(5, { dueDate: new Date('2030-02-10T11:00:00Z') });
+    const call = nodeRepo.manager.query.mock.calls.find(([sql]) => String(sql).includes('UPDATE task_reminders'));
+    expect(call?.[1]?.[0]).toEqual(new Date('2030-02-09T08:00:00Z'));
+    expect(call?.[1]?.[4]).toBe(7);
+  });
+
+  it('leaves reminders alone when the due date does not change', async () => {
+    const { svc, nodeRepo } = build([project, task()]);
+    await svc.update(5, { title: 'x' });
+    expect(nodeRepo.manager.query.mock.calls.some(([sql]) => String(sql).includes('task_reminders'))).toBe(false);
   });
 });

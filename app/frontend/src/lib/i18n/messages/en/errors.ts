@@ -66,6 +66,8 @@ export const messages = {
 	'errors.server.lastBucketOfStatus': 'Each status needs at least one bucket',
 	'errors.server.unknownBucket': 'Unknown Kanban bucket',
 	'errors.server.bucketStatusMismatch': 'The status does not match the Kanban bucket',
+	'errors.server.noDueDate': 'Set a due date first',
+	'errors.server.reminderKind': 'Give either a date or days before the due date',
 
 	'errors.validation.minLength': '{field} must be at least {n} characters',
 	'errors.validation.maxLength': '{field} must be at most {n} characters',

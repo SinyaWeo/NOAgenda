@@ -2,6 +2,7 @@
 	import type { Task } from '$lib/types';
 	import { CalendarMonthOutline } from 'flowbite-svelte-icons';
 	import { isOverdue } from './util';
+	import { taskProjectId } from '$lib/project-groups';
 	import { t, fmt, locale } from '$lib/i18n';
 	import { addDays, diffDays, startOfDay } from '$lib/dates';
 
@@ -9,8 +10,10 @@
 		tasks: Task[];
 		/** The global task page: struck-through done tasks, larger empty state. */
 		large?: boolean;
+		/** id -> name of the user's projects: each task then links to its project. */
+		projectNames?: Record<number, string>;
 	}
-	let { tasks, large = false }: Props = $props();
+	let { tasks, large = false, projectNames = {} }: Props = $props();
 
 	const ZOOMS = { day: 32, week: 12, month: 4 } as const;
 	type Zoom = keyof typeof ZOOMS;
@@ -110,13 +113,14 @@
 				{$t('views.gantt.task')}
 			</div>
 			{#each rows as { task } (task.id)}
+				{@const pid = taskProjectId(task, projectNames)}
 				<div
-					class="px-3 flex items-center border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+					class="px-3 flex flex-col justify-center min-w-0 border-b border-gray-100 dark:border-gray-700 last:border-b-0"
 					style="height:{ROW}px"
 				>
 					<a
 						href="/tasks/{task.id}"
-						class="truncate text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline {large &&
+						class="truncate text-sm leading-tight font-medium text-gray-800 dark:text-gray-200 hover:underline {large &&
 						task.status === 'done'
 							? 'line-through text-gray-500 dark:text-gray-400'
 							: ''}"
@@ -124,6 +128,14 @@
 					>
 						{task.title}
 					</a>
+					{#if pid != null && projectNames[pid]}
+						<a
+							href="/projects/{pid}"
+							class="truncate text-xs leading-tight text-gray-500 dark:text-gray-400 hover:underline"
+						>
+							{projectNames[pid]}
+						</a>
+					{/if}
 				</div>
 			{/each}
 		</div>

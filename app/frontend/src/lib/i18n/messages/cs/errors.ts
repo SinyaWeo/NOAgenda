@@ -70,6 +70,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'errors.server.lastBucketOfStatus': 'Každý stav musí mít alespoň jeden sloupec',
 	'errors.server.unknownBucket': 'Neznámý sloupec Kanbanu',
 	'errors.server.bucketStatusMismatch': 'Stav neodpovídá sloupci Kanbanu',
+	'errors.server.noDueDate': 'Nejdřív nastavte termín',
+	'errors.server.reminderKind': 'Zadejte buď datum, nebo počet dní před termínem',
 
 	'errors.validation.minLength': '{field}: minimální délka je {n} znaků',
 	'errors.validation.maxLength': '{field}: maximální délka je {n} znaků',

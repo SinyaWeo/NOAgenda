@@ -12,6 +12,8 @@ import {
   deleteNodes,
   doneTaskIdsBelow,
   markTrashed,
+  projectIdsOf,
+  relativeReminders,
   reopen,
   subtreeIds,
   trashedBefore,
@@ -19,7 +21,7 @@ import {
   VISIBLE_TO_USER_SQL,
 } from './node-sql';
 import { isRecurring, recurrenceOnCompletion } from './node-recurrence';
-import { safeTimeZone } from '../../common/zoned-time';
+import { daysBeforeAt, safeTimeZone } from '../../common/zoned-time';
 import { KanbanBucket } from '../kanban-bucket/kanban-bucket.entity';
 import { Translator } from '../../i18n/translator.service';
 
@@ -215,6 +217,11 @@ export class NodeService {
     return null;
   }
 
+  /** The project of each node in one query (absent: outside any project). */
+  async projectIdsOf(ids: number[]): Promise<Map<number, number>> {
+    return ids.length ? projectIdsOf(sqlRunner(this.nodeRepository.manager), ids) : new Map();
+  }
+
   async create(data: Partial<Node>, actorId?: number): Promise<Node> {
     const node = this.nodeRepository.create(await this.applyBucketRules(null, data));
     const saved = await this.nodeRepository.save(node);
@@ -318,6 +325,7 @@ export class NodeService {
       await this.rearmReminders(m, [id], shiftMs);
       await this.reopenSubtasks(m, [id]);
     }
+    if (change.dueDate !== undefined) await this.realignRelativeReminders(m, [id]);
     const node = await this.findById(id);
     if (node) {
       const changes = existing ? diffFields(existing, change) : {};
@@ -380,6 +388,25 @@ export class NodeService {
     );
   }
 
+  /**
+   * Reminders set as "N days before the due date at HH:MM" follow the due date: recalculated in their
+   * creator's time zone, and armed again when the new time is still ahead (one already past is marked
+   * sent, so moving a due date never fires a burst of stale reminders). Without a due date they stay.
+   */
+  private async realignRelativeReminders(m: EntityManager, nodeIds: number[]): Promise<void> {
+    if (!nodeIds.length) return;
+    const now = new Date();
+    for (const r of await relativeReminders(sqlRunner(m), nodeIds)) {
+      if (!r.dueDate) continue;
+      const at = daysBeforeAt(new Date(r.dueDate), r.daysBefore, r.atTime, safeTimeZone(r.timezone));
+      await m.query(
+        `UPDATE task_reminders SET reminderDate = ?, sentAt = CASE WHEN ? > ? THEN NULL ELSE COALESCE(sentAt, ?) END
+          WHERE id = ?`,
+        [at, at, now, now, r.id],
+      );
+    }
+  }
+
   /** Apply the same changes to many nodes atomically: all of them or none. */
   async updateMany(ids: number[], input: Partial<Node>, actorId?: number): Promise<Node[]> {
     // Bulk edits never place tasks in a bucket; moving them elsewhere takes them out of theirs.
@@ -407,6 +434,9 @@ export class NodeService {
       }
       if (cycles.size) await this.reopenSubtasks(m, [...cycles.keys()]);
       if (data.status !== undefined) await this.releaseMismatchedBuckets(m, ids);
+      if (data.dueDate !== undefined || cycles.size) {
+        await this.realignRelativeReminders(m, data.dueDate !== undefined ? ids : [...cycles.keys()]);
+      }
       for (const node of repeating) await this.recordCompletion(m, node, data, actorId);
     });
     const nodes = await this.nodeRepository.find({

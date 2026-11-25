@@ -39,6 +39,9 @@ export interface TaskOccurrence {
   projectId: number | null;
 }
 
+/** A task as listed: with the project it belongs to (null: a personal task). */
+export type TaskWithProject = Node & { projectId: number | null };
+
 @Injectable()
 export class TaskService {
   constructor(private readonly nodeService: NodeService) {}
@@ -47,7 +50,11 @@ export class TaskService {
     return normalizeParentRefs(data);
   }
 
-  async findAll(filter?: TaskFilter): Promise<Node[]> {
+  /**
+   * Tasks matching the filter, each with the project it belongs to (`projectId`, also for subtasks;
+   * null for personal tasks), so lists can group them without walking the tree themselves.
+   */
+  async findAll(filter?: TaskFilter): Promise<TaskWithProject[]> {
     const nodeFilter: NodeFilter = { type: NodeType.TASK };
     if (filter?.userId !== undefined) nodeFilter.userId = filter.userId;
     if (filter?.projectId !== undefined) nodeFilter.parentId = filter.projectId;
@@ -63,7 +70,9 @@ export class TaskService {
     if (filter?.dueAfter) nodeFilter.dueAfter = filter.dueAfter;
     if (filter?.includeUndated) nodeFilter.includeUndated = true;
     if (filter?.excludeDone) nodeFilter.excludeDone = true;
-    return this.nodeService.findAll(nodeFilter);
+    const tasks = await this.nodeService.findAll(nodeFilter);
+    const projects = await this.nodeService.projectIdsOf(tasks.map((t) => t.id));
+    return tasks.map((t) => Object.assign(t, { projectId: projects.get(t.id) ?? null }));
   }
 
   /** Future cycles of the user's visible repeating tasks that fall between `from` and `to`. */
@@ -77,6 +86,7 @@ export class TaskService {
       ...(projectId !== undefined ? { parentId: projectId } : {}),
     });
     const timeZone = await this.nodeService.userTimeZone(userId);
+    const projects = await this.nodeService.projectIdsOf(tasks.map((t) => t.id));
     return tasks.flatMap((t) =>
       occurrencesBetween(t, from, to, timeZone).map((o) => ({
         taskId: t.id,
@@ -85,7 +95,7 @@ export class TaskService {
         startDate: o.startDate ?? null,
         status: t.status ?? null,
         priority: t.priority ?? null,
-        projectId: t.parentId ?? null,
+        projectId: projects.get(t.id) ?? null,
       })),
     );
   }

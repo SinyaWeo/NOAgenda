@@ -82,6 +82,55 @@ export async function doneTaskIdsBelow(q: SqlRunner, parentIds: number[]): Promi
   return rows.map((r) => r.id);
 }
 
+/**
+ * The project each node belongs to, found by walking up its parents (live rows only; cycle-safe).
+ * Nodes outside any project (personal tasks and their subtasks) are not in the result.
+ */
+export async function projectIdsOf(q: SqlRunner, ids: number[]): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  for (const part of chunks(ids)) {
+    const rows = await q<{ start: number; projectId: number }>(
+      `WITH RECURSIVE up (start, id, type, parentId, depth) AS (
+         SELECT n.id, n.id, n.type, n.parentId, 0 FROM nodes n WHERE n.deletedAt IS NULL AND n.id IN (${marks(part.length)})
+         UNION ALL
+         SELECT u.start, p.id, p.type, p.parentId, u.depth + 1 FROM up u JOIN nodes p ON p.id = u.parentId
+          WHERE p.deletedAt IS NULL AND u.type <> 'project' AND u.depth < ${MAX_TREE_DEPTH}
+       )
+       SELECT start, id AS projectId FROM up WHERE type = 'project'`,
+      part,
+    );
+    for (const r of rows) out.set(Number(r.start), Number(r.projectId));
+  }
+  return out;
+}
+
+export interface RelativeReminderRow {
+  id: number;
+  daysBefore: number;
+  atTime: string;
+  dueDate: Date | string | null;
+  /** The time zone of whoever set the reminder (null: unknown, counted in UTC). */
+  timezone: string | null;
+}
+
+/** Reminders set relative to the due date of these nodes, with that due date (live nodes only). */
+export async function relativeReminders(q: SqlRunner, nodeIds: number[]): Promise<RelativeReminderRow[]> {
+  const out: RelativeReminderRow[] = [];
+  for (const part of chunks(nodeIds)) {
+    out.push(
+      ...(await q<RelativeReminderRow>(
+        `SELECT r.id, r.daysBefore, r.atTime, n.dueDate, u.timezone
+           FROM task_reminders r
+           JOIN nodes n ON n.id = r.nodeId AND n.deletedAt IS NULL
+           LEFT JOIN users u ON u.id = r.createdBy
+          WHERE r.daysBefore IS NOT NULL AND r.nodeId IN (${marks(part.length)})`,
+        part,
+      )),
+    );
+  }
+  return out;
+}
+
 export async function reopen(q: SqlRunner, ids: number[]): Promise<void> {
   for (const part of chunks(ids)) {
     await q(`UPDATE nodes SET status = 'open', percentDone = 0 WHERE id IN (${marks(part.length)})`, part);

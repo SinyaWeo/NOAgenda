@@ -1,4 +1,13 @@
-import { addDaysZoned, addMonthsZoned, dayDiff, fromZoned, isoWeekday, safeTimeZone, toZoned } from '../zoned-time';
+import {
+  addDaysZoned,
+  addMonthsZoned,
+  dayDiff,
+  daysBeforeAt,
+  fromZoned,
+  isoWeekday,
+  safeTimeZone,
+  toZoned,
+} from '../zoned-time';
 
 describe('zoned time', () => {
   it('reads and writes wall-clock time in a zone', () => {
@@ -47,5 +56,21 @@ describe('zoned time', () => {
     expect(safeTimeZone('Europe/Prague')).toBe('Europe/Prague');
     expect(safeTimeZone('Mars/Olympus')).toBe('UTC');
     expect(safeTimeZone(null)).toBe('UTC');
+  });
+});
+
+describe('daysBeforeAt', () => {
+  it('counts calendar days before the due day in the given zone, at the given local time', () => {
+    // Due 2026-03-10 at noon in Prague (11:00 UTC); 2 days before at 09:30 Prague = 08:30 UTC.
+    const due = new Date('2026-03-10T11:00:00Z');
+    expect(daysBeforeAt(due, 2, '09:30', 'Europe/Prague').toISOString()).toBe('2026-03-08T08:30:00.000Z');
+  });
+
+  it('uses the due day as it falls in that zone, across a DST change', () => {
+    // 2026-03-30 00:30 in Prague is still 03-29 in UTC; 0 days before at 08:00 Prague (CEST, UTC+2).
+    const due = new Date('2026-03-29T22:30:00Z');
+    expect(daysBeforeAt(due, 0, '08:00', 'Europe/Prague').toISOString()).toBe('2026-03-30T06:00:00.000Z');
+    // One day before lands on the DST day itself, still at 08:00 local.
+    expect(daysBeforeAt(due, 1, '08:00', 'Europe/Prague').toISOString()).toBe('2026-03-29T06:00:00.000Z');
   });
 });

@@ -72,6 +72,8 @@ export interface Node {
 	ownerId?: number | null;
 	createdBy?: number | null;
 	parentId?: number | null;
+	/** Tasks from GET /tasks: the project they belong to, also for subtasks (null: a personal task). */
+	projectId?: number | null;
 	bucketId?: number | null;
 	/** Projects from GET /nodes and GET /nodes/:id: the current user's own permission on them. */
 	access?: Permission;
@@ -164,6 +166,9 @@ export interface Attachment {
 export interface Reminder {
 	id: number;
 	reminderDate: string;
+	/** Relative to the due date (both set): this many days before it, at this time ("HH:MM"). */
+	daysBefore?: number | null;
+	atTime?: string | null;
 	/** When the notification went out; null while it is still pending. */
 	sentAt?: string | null;
 }

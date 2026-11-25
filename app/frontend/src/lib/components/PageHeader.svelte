@@ -9,8 +9,10 @@
 		back?: { href: string; label: string };
 		/** Buttons on the right of the title (e.g. a "New …" button). */
 		actions?: Snippet;
+		/** Replaces the title heading (e.g. an inline editor); it must render its own <h1>. */
+		titleContent?: Snippet;
 	}
-	let { title, subtitle, back, actions }: Props = $props();
+	let { title, subtitle, back, actions, titleContent }: Props = $props();
 </script>
 
 <header class="mb-6">
@@ -26,7 +28,11 @@
 					{back.label}
 				</a>
 			{/if}
-			<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0 break-words min-w-0">{title}</h1>
+			{#if titleContent}
+				<div class="min-w-0 flex-1">{@render titleContent()}</div>
+			{:else}
+				<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0 break-words min-w-0">{title}</h1>
+			{/if}
 		</div>
 		{#if actions}<div class="flex items-center justify-end gap-2 flex-wrap">{@render actions()}</div>{/if}
 	</div>

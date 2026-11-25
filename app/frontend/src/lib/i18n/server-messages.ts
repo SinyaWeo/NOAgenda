@@ -66,7 +66,9 @@ const EXACT: Record<string, MessageKey> = {
 	'q is required (at least 3 characters)': 'errors.server.queryTooShort',
 	'A project needs at least one bucket for each status': 'errors.server.lastBucketOfStatus',
 	'Unknown kanban bucket': 'errors.server.unknownBucket',
-	'The status does not match the kanban bucket': 'errors.server.bucketStatusMismatch'
+	'The status does not match the kanban bucket': 'errors.server.bucketStatusMismatch',
+	'Set a due date first': 'errors.server.noDueDate',
+	'Give either a reminder date or days before the due date': 'errors.server.reminderKind'
 };
 
 /** class-validator messages: "<field> must be ...". The field name stays as the API calls it. */

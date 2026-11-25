@@ -54,7 +54,7 @@
 </script>
 
 <!-- Subtasks -->
-<Card class="mb-4">
+<Card class="mb-4 max-w-none">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.subtasks.title')}</h2>
 	{#if subtasks.length}
 		<div class="mb-3">
@@ -94,7 +94,7 @@
 </Card>
 
 <!-- Related Tasks -->
-<Card class="mb-4">
+<Card class="mb-4 max-w-none">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
 		{$t('tasks.relations.title')}
 	</h2>

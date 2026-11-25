@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t, fmt } from '$lib/i18n';
 	import type { Attachment, Comment, Reminder, Task } from '$lib/types';
-	import { Button, Card, Input } from 'flowbite-svelte';
+	import { Button, Card, Input, Select } from 'flowbite-svelte';
 	import { PaperClipOutline } from 'flowbite-svelte-icons';
 	import ActivityLog from '$lib/components/ActivityLog.svelte';
 	import TaskVersionHistory from '$lib/components/task/TaskVersionHistory.svelte';
@@ -13,6 +13,7 @@
 		comments,
 		currentUserId,
 		activityVersion,
+		hasDueDate,
 		onAddReminder,
 		onDeleteReminder,
 		onDownload,
@@ -28,7 +29,9 @@
 		currentUserId: number | undefined;
 		/** Changes whenever something that is recorded in the activity log may have changed. */
 		activityVersion: string;
-		onAddReminder: (localDateTime: string) => Promise<boolean>;
+		/** The task has a due date, so reminders relative to it can be added. */
+		hasDueDate: boolean;
+		onAddReminder: (reminder: NewReminder) => Promise<boolean>;
 		onDeleteReminder: (id: number) => void;
 		onDownload: (id: number, filename: string) => void;
 		onUpload: (e: Event) => void;
@@ -37,9 +40,16 @@
 		onRestored: (task: Task) => void;
 	} = $props();
 
+	export type NewReminder = { reminderDate: string } | { daysBefore: number; atTime: string };
+
+	const LABEL = 'block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1';
+
 	let newComment = $state('');
 	let addingComment = $state(false);
 	let newReminderDate = $state('');
+	let reminderKind = $state<'date' | 'before'>('date');
+	let daysBefore = $state(1);
+	let atTime = $state('09:00');
 
 	// Per-task input must not leak from the task we just left.
 	$effect(() => {
@@ -53,9 +63,15 @@
 		return currentUserId != null && comment.author?.id === currentUserId;
 	}
 
-	async function submitReminder() {
+	async function submitReminder(e: SubmitEvent) {
+		e.preventDefault();
+		if (reminderKind === 'before') {
+			if (!hasDueDate || !atTime || !Number.isInteger(daysBefore) || daysBefore < 0) return;
+			await onAddReminder({ daysBefore, atTime });
+			return;
+		}
 		if (!newReminderDate) return;
-		if (await onAddReminder(newReminderDate)) newReminderDate = '';
+		if (await onAddReminder({ reminderDate: new Date(newReminderDate).toISOString() })) newReminderDate = '';
 	}
 	async function submitComment(e: SubmitEvent) {
 		e.preventDefault();
@@ -70,7 +86,7 @@
 </script>
 
 <!-- Reminders -->
-<Card class="mb-4">
+<Card class="mb-4 max-w-none">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.reminders.title')}</h2>
 	{#if reminders.length}
 		<div class="mb-3">
@@ -81,7 +97,16 @@
 						: ''}"
 				>
 					<span class="flex-1 text-sm text-gray-700 dark:text-gray-300">
-						{$fmt.dateTime(rem.reminderDate)}
+						{#if rem.daysBefore != null && rem.atTime}
+							{rem.daysBefore === 0
+								? $t('tasks.reminders.onDueDay', { time: rem.atTime })
+								: $t('tasks.reminders.relative', { count: rem.daysBefore, time: rem.atTime })}
+							<span class="text-xs text-gray-500 dark:text-gray-400">
+								· {$fmt.dateTime(rem.reminderDate)}
+							</span>
+						{:else}
+							{$fmt.dateTime(rem.reminderDate)}
+						{/if}
 					</span>
 					{#if rem.sentAt}<span class="text-xs font-medium tone-green">
 							{$t('tasks.reminders.sent')}
@@ -101,14 +126,46 @@
 		<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{$t('tasks.reminders.empty')}</p>
 	{/if}
 	<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{$t('tasks.reminders.hint')}</p>
-	<div class="flex gap-2">
-		<Input type="datetime-local" bind:value={newReminderDate} class="flex-1" />
-		<Button size="sm" onclick={submitReminder}>{$t('common.add')}</Button>
-	</div>
+	<form onsubmit={submitReminder} class="flex flex-wrap items-end gap-2">
+		<div>
+			<label for="reminder-kind" class={LABEL}>{$t('tasks.reminders.kind')}</label>
+			<Select id="reminder-kind" placeholder="" size="sm" class="w-auto" bind:value={reminderKind}>
+				<option value="date">{$t('tasks.reminders.kindDate')}</option>
+				<option value="before" disabled={!hasDueDate}>{$t('tasks.reminders.kindBefore')}</option>
+			</Select>
+		</div>
+		{#if reminderKind === 'before'}
+			<div>
+				<label for="reminder-days" class={LABEL}>{$t('tasks.reminders.daysBefore')}</label>
+				<Input
+					id="reminder-days"
+					type="number"
+					size="sm"
+					min="0"
+					max="365"
+					class="w-24"
+					bind:value={daysBefore}
+				/>
+			</div>
+			<div>
+				<label for="reminder-time" class={LABEL}>{$t('tasks.reminders.atTime')}</label>
+				<Input id="reminder-time" type="time" size="sm" class="w-32" bind:value={atTime} required />
+			</div>
+		{:else}
+			<div class="flex-1 min-w-52">
+				<label for="reminder-date" class={LABEL}>{$t('tasks.reminders.date')}</label>
+				<Input id="reminder-date" type="datetime-local" size="sm" bind:value={newReminderDate} />
+			</div>
+		{/if}
+		<Button type="submit" size="sm">{$t('common.add')}</Button>
+	</form>
+	{#if !hasDueDate}
+		<p class="text-xs text-gray-500 dark:text-gray-400 mt-2 mb-0">{$t('tasks.reminders.needsDueDate')}</p>
+	{/if}
 </Card>
 
 <!-- Attachments -->
-<Card class="mb-4">
+<Card class="mb-4 max-w-none">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.attachments.title')}</h2>
 	{#if attachments.length}
 		<div class="mb-3">
@@ -141,7 +198,7 @@
 </Card>
 
 <!-- Comments -->
-<Card>
+<Card class="mb-4 max-w-none">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.comments.title')}</h2>
 	{#if comments.length}
 		<div class="mb-4">
@@ -185,13 +242,13 @@
 </Card>
 
 <!-- Version history -->
-<Card class="mb-4">
+<Card class="mb-4 max-w-none">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.history.title')}</h2>
 	<TaskVersionHistory {taskId} version={activityVersion} {onRestored} />
 </Card>
 
 <!-- Activity log -->
-<Card>
+<Card class="mb-4 max-w-none">
 	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('activity.title')}</h2>
 	<ActivityLog endpoint="/activity?nodeId={taskId}" version={activityVersion} />
 </Card>

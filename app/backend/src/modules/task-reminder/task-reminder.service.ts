@@ -41,8 +41,19 @@ export class TaskReminderService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async create(taskId: number, reminderDate: Date, createdBy?: number): Promise<TaskReminder> {
-    const reminder = this.repo.create({ node: { id: taskId }, reminderDate, createdBy: createdBy ?? null });
+  async create(
+    taskId: number,
+    reminderDate: Date,
+    createdBy?: number,
+    relative?: { daysBefore: number; atTime: string },
+  ): Promise<TaskReminder> {
+    const reminder = this.repo.create({
+      node: { id: taskId },
+      reminderDate,
+      createdBy: createdBy ?? null,
+      daysBefore: relative?.daysBefore ?? null,
+      atTime: relative?.atTime ?? null,
+    });
     return this.repo.save(reminder);
   }
 

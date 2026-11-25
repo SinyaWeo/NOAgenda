@@ -17,6 +17,17 @@ export class TaskReminder extends BaseEntity {
   @Column({ type: 'int', nullable: true })
   createdBy?: number | null;
 
+  /**
+   * A reminder relative to the task's due date: this many days before it, at `atTime` ("HH:MM") in
+   * the creator's time zone. `reminderDate` is recalculated whenever the due date changes. Both null:
+   * a reminder at a fixed date.
+   */
+  @Column({ type: 'int', nullable: true })
+  daysBefore?: number | null;
+
+  @Column({ type: 'varchar', length: 5, nullable: true })
+  atTime?: string | null;
+
   /** When the notification went out; null while it is still pending. */
   @Column({ type: 'datetime', nullable: true })
   sentAt?: Date | null;

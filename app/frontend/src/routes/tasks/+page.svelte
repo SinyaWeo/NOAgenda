@@ -486,7 +486,7 @@
 	<TableView tasks={$tasks} large {projectNames} />
 	{#if $tasks.length}{@render pager('mt-4')}{/if}
 {:else if viewMode === 'gantt'}
-	<GanttView tasks={$tasks} large />
+	<GanttView tasks={$tasks} large {projectNames} />
 {:else if viewMode === 'calendar'}
-	<CalendarView {criteria} />
+	<CalendarView {criteria} {projectNames} />
 {/if}

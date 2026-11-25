@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Task } from '$lib/types';
 	import type { KanbanColumn, StatusChangeHandler } from '$lib/types-views';
+	import { taskProjectId } from '$lib/project-groups';
 	import { t, fmt, type MessageKey } from '$lib/i18n';
 
 	interface Props {
@@ -64,6 +65,7 @@
 			</div>
 			<div class="board-col-body">
 				{#each colTasks as task (task.id)}
+					{@const pid = taskProjectId(task, projectNames)}
 					<div
 						class="board-card mb-2"
 						class:board-card-dragging={draggingId === task.id}
@@ -78,11 +80,12 @@
 						>
 							{task.title}
 						</a>
-						{#if task.parentId != null && projectNames[task.parentId]}<div
-								class="text-xs text-gray-500 dark:text-gray-400 mt-0.5"
+						{#if pid != null && projectNames[pid]}<a
+								href="/projects/{pid}"
+								class="block text-xs text-gray-500 dark:text-gray-400 mt-0.5 hover:underline"
 							>
-								{projectNames[task.parentId]}
-							</div>{/if}
+								{projectNames[pid]}
+							</a>{/if}
 						{#if task.dueDate}
 							{@const overdue = new Date(task.dueDate) < new Date() && task.status !== 'done'}
 							<div class="text-xs {overdue ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'} mt-1">
@@ -90,7 +93,7 @@
 							</div>
 						{/if}
 						{#if task.priority && task.priority > 0}<div class="text-xs mt-0.5" data-priority={task.priority}>
-								{$t(`common.priorityShort.${task.priority}` as MessageKey)}
+								{$t(`common.priority.${task.priority}` as MessageKey)}
 							</div>{/if}
 					</div>
 				{/each}

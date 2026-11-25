@@ -32,7 +32,8 @@
 	} from '$lib/types';
 	import TaskDetailsTab from '$lib/components/task/TaskDetailsTab.svelte';
 	import TaskWorkTab from '$lib/components/task/TaskWorkTab.svelte';
-	import TaskActivityTab from '$lib/components/task/TaskActivityTab.svelte';
+	import TaskActivityTab, { type NewReminder } from '$lib/components/task/TaskActivityTab.svelte';
+	import InlineText from '$lib/components/InlineText.svelte';
 	import { Alert, Button } from 'flowbite-svelte';
 
 	let task = $state<Task | null>(null);
@@ -186,12 +187,10 @@
 		}
 	}
 
-	async function addReminder(localDateTime: string): Promise<boolean> {
+	async function addReminder(reminder: NewReminder): Promise<boolean> {
 		const id = page.params.id;
 		try {
-			await apiPostAuth(`/tasks/${id}/reminders`, {
-				reminderDate: new Date(localDateTime).toISOString()
-			});
+			await apiPostAuth(`/tasks/${id}/reminders`, reminder);
 			reminders = await apiGetAuth<Reminder[]>(`/tasks/${id}/reminders`);
 			return true;
 		} catch (e: unknown) {
@@ -241,13 +240,20 @@
 			return false;
 		}
 	}
-	async function updateTask(patch: Record<string, unknown>) {
+	/** Save some fields of the task; false when it failed (the error is shown as a toast). */
+	async function updateTask(patch: Record<string, unknown>): Promise<boolean> {
 		try {
 			const before = task?.status;
 			task = await apiPutAuth<Task>(`/tasks/${page.params.id}`, patch);
 			announceRecurrence(patch.status, before, task);
+			// Reminders set relative to the due date have moved with it (so has a new cycle's due date).
+			if ('dueDate' in patch || 'status' in patch) {
+				reminders = await apiGetAuth<Reminder[]>(`/tasks/${page.params.id}/reminders`).catch(() => reminders);
+			}
+			return true;
 		} catch (e: unknown) {
 			fail(e);
+			return false;
 		}
 	}
 	const updatePercentDone = (value: number) => updateTask({ percentDone: value });
@@ -310,99 +316,115 @@
 	<Alert color="red">{$error}</Alert>
 {:else if task}
 	{@const current = task}
-	<PageHeader
-		title={task.title ?? ''}
-		back={{
-			href: task.parent
-				? `/${task.parent.type === 'project' ? 'projects' : 'tasks'}/${task.parent.id}`
-				: '/tasks',
-			label: $t('tasks.detail.back')
-		}}
-	>
-		{#snippet actions()}
-			<Button color="light" size="sm" disabled={acting} onclick={duplicateTask}>
-				{$t('tasks.detail.duplicate')}
-			</Button>
-			<Button color="light" size="sm" disabled={acting} onclick={toggleArchive}>
-				{current.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}
-			</Button>
-			<Button href="/tasks/{current.id}/edit" color="light" size="sm">{$t('tasks.detail.editTask')}</Button>
-			<Button color="red" outline size="sm" disabled={acting} onclick={deleteTask}>
-				{$t('tasks.detail.delete')}
-			</Button>
-		{/snippet}
-	</PageHeader>
-	{#if task.isArchived}
-		<Alert color="yellow" class="mb-4">{$t('tasks.detail.archivedNotice')}</Alert>
-	{/if}
+	<div class="page-narrow">
+		<PageHeader
+			title={task.title ?? ''}
+			back={{
+				href: task.parent
+					? `/${task.parent.type === 'project' ? 'projects' : 'tasks'}/${task.parent.id}`
+					: '/tasks',
+				label: $t('tasks.detail.back')
+			}}
+		>
+			{#snippet titleContent()}
+				<InlineText
+					value={current.title ?? ''}
+					required
+					maxlength={255}
+					label={$t('tasks.detail.editTitle')}
+					onSave={(v) => updateTask({ title: v })}
+				>
+					{#snippet display()}
+						<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0 break-words">{current.title}</h1>
+					{/snippet}
+				</InlineText>
+			{/snippet}
+			{#snippet actions()}
+				<Button color="light" size="sm" disabled={acting} onclick={duplicateTask}>
+					{$t('tasks.detail.duplicate')}
+				</Button>
+				<Button color="light" size="sm" disabled={acting} onclick={toggleArchive}>
+					{current.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}
+				</Button>
+				<Button color="red" outline size="sm" disabled={acting} onclick={deleteTask}>
+					{$t('tasks.detail.delete')}
+				</Button>
+			{/snippet}
+		</PageHeader>
+		{#if task.isArchived}
+			<Alert color="yellow" class="mb-4">{$t('tasks.detail.archivedNotice')}</Alert>
+		{/if}
 
-	<!-- Tabs navigation -->
-	<div
-		role="tablist"
-		aria-label={$t('tasks.detail.tabsLabel')}
-		class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700"
-	>
-		{#each [{ id: 'details', label: 'tasks.tab.details' }, { id: 'work', label: 'tasks.tab.work' }, { id: 'activity', label: 'tasks.tab.activity' }] as tab (tab.id)}
-			<button
-				role="tab"
-				aria-selected={activeTab === tab.id}
-				onclick={() => setTab(tab.id as Tab)}
-				class="px-4 py-2 text-sm font-medium border-b-2 transition-colors {activeTab === tab.id
-					? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
-					: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
-			>
-				{$t(tab.label as MessageKey)}
-			</button>
-		{/each}
+		<!-- Tabs navigation -->
+		<div
+			role="tablist"
+			aria-label={$t('tasks.detail.tabsLabel')}
+			class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700"
+		>
+			{#each [{ id: 'details', label: 'tasks.tab.details' }, { id: 'work', label: 'tasks.tab.work' }, { id: 'activity', label: 'tasks.tab.activity' }] as tab (tab.id)}
+				<button
+					role="tab"
+					aria-selected={activeTab === tab.id}
+					onclick={() => setTab(tab.id as Tab)}
+					class="px-4 py-2 text-sm font-medium border-b-2 transition-colors {activeTab === tab.id
+						? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
+						: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
+				>
+					{$t(tab.label as MessageKey)}
+				</button>
+			{/each}
+		</div>
+
+		{#if activeTab === 'details'}
+			<TaskDetailsTab
+				{task}
+				{taskLabels}
+				{allLabels}
+				{assignees}
+				{assignable}
+				onAssign={assignTo}
+				onAddLabel={addLabel}
+				onRemoveLabel={removeLabel}
+				onStatus={updateStatus}
+				onPercentDone={updatePercentDone}
+				onDefer={deferDueDate}
+				onUpdate={updateTask}
+			/>
+		{:else if activeTab === 'work'}
+			<TaskWorkTab
+				taskId={task.id}
+				{subtasks}
+				{relations}
+				onAddSubtask={addSubtask}
+				onAddRelation={addRelation}
+				onDeleteRelation={deleteRelation}
+			/>
+		{:else}
+			<TaskActivityTab
+				taskId={task.id}
+				{reminders}
+				{attachments}
+				{comments}
+				currentUserId={$authSession.user?.id}
+				activityVersion={[
+					task.updatedAt,
+					comments.length,
+					attachments.length,
+					taskLabels.length,
+					relations.length,
+					assignees.length
+				].join('-')}
+				hasDueDate={!!task.dueDate}
+				onAddReminder={addReminder}
+				onDeleteReminder={deleteReminder}
+				onDownload={downloadAttachment}
+				onUpload={uploadAttachment}
+				onPostComment={postComment}
+				onDeleteComment={deleteComment}
+				onRestored={(restored) => (task = restored)}
+			/>
+		{/if}
 	</div>
-
-	{#if activeTab === 'details'}
-		<TaskDetailsTab
-			{task}
-			{taskLabels}
-			{allLabels}
-			{assignees}
-			{assignable}
-			onAssign={assignTo}
-			onAddLabel={addLabel}
-			onRemoveLabel={removeLabel}
-			onStatus={updateStatus}
-			onPercentDone={updatePercentDone}
-			onDefer={deferDueDate}
-		/>
-	{:else if activeTab === 'work'}
-		<TaskWorkTab
-			taskId={task.id}
-			{subtasks}
-			{relations}
-			onAddSubtask={addSubtask}
-			onAddRelation={addRelation}
-			onDeleteRelation={deleteRelation}
-		/>
-	{:else}
-		<TaskActivityTab
-			taskId={task.id}
-			{reminders}
-			{attachments}
-			{comments}
-			currentUserId={$authSession.user?.id}
-			activityVersion={[
-				task.updatedAt,
-				comments.length,
-				attachments.length,
-				taskLabels.length,
-				relations.length,
-				assignees.length
-			].join('-')}
-			onAddReminder={addReminder}
-			onDeleteReminder={deleteReminder}
-			onDownload={downloadAttachment}
-			onUpload={uploadAttachment}
-			onPostComment={postComment}
-			onDeleteComment={deleteComment}
-			onRestored={(restored) => (task = restored)}
-		/>
-	{/if}
 {:else}
 	<p class="text-gray-500 dark:text-gray-400">{$t('tasks.detail.notFound')}</p>
 {/if}

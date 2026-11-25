@@ -268,6 +268,25 @@ a.text-gray-900 {
 .calendar-task-chip:hover {
 	text-decoration: underline;
 }
+/* The project under a chip (task page): small, muted, its own link. */
+.calendar-task-project {
+	display: block;
+	font-size: 0.65rem;
+	line-height: 1.2;
+	color: #6b7280;
+	padding: 0 4px;
+	margin: -1px 0 3px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-decoration: none;
+}
+.dark .calendar-task-project {
+	color: #9ca3af;
+}
+.calendar-task-project:hover {
+	text-decoration: underline;
+}
 /* Overdue shows as colored text (data-status="overdue"), never a colored background. */
 .calendar-task-overdue {
 	font-weight: 600;

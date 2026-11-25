@@ -5,6 +5,7 @@ export const messages = {
 	'views.tasks.loading': 'Loading tasks...',
 	'views.tasks.empty': 'No tasks found.',
 	'views.tasks.emptyCreate': 'Create a task.',
+	'views.tasks.noProject': 'Personal',
 	'views.mode.list': 'List',
 	'views.mode.kanban': 'Kanban',
 	'views.mode.table': 'Table',

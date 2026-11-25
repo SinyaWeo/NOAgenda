@@ -4,7 +4,6 @@ import type { messages as en } from '../en/tasks';
 // Messages for the "tasks" area. Keys are prefixed "tasks." (see ../README.md).
 export const messages: Record<keyof typeof en, Message> = {
 	'tasks.detail.back': 'Zpět',
-	'tasks.detail.editTask': 'Upravit úkol',
 	'tasks.detail.duplicate': 'Duplikovat',
 	'tasks.detail.archive': 'Archivovat',
 	'tasks.detail.restore': 'Obnovit',
@@ -30,7 +29,6 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.toast.uploadFailed': 'Nahrání se nezdařilo',
 	'tasks.toast.uploadDisabled': 'Nahrávání souborů je v demu vypnuto',
 	'tasks.toast.downloadFailed': 'Stažení se nezdařilo',
-	'tasks.toast.saved': 'Úkol uložen',
 	'tasks.toast.created': 'Úkol vytvořen!',
 
 	'tasks.history.title': 'Historie verzí',
@@ -41,6 +39,11 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.history.restored': 'Verze obnovena',
 	'tasks.history.restoreFailed': 'Tuto verzi se nepodařilo obnovit',
 
+	'tasks.details.editDescription': 'Upravit popis',
+	'tasks.details.noDescription': 'Bez popisu',
+	'tasks.details.overdue': 'Po termínu',
+	'tasks.details.editRepeat': 'Upravit opakování',
+	'tasks.detail.editTitle': 'Upravit název',
 	'tasks.details.startDate': 'Datum zahájení',
 	'tasks.details.dueDate': 'Termín',
 	'tasks.details.deferLabel': 'Posunout termín:',
@@ -78,6 +81,20 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.reminders.empty': 'Žádné připomínky.',
 	'tasks.reminders.remove': 'Odebrat připomínku',
 	'tasks.reminders.sent': 'Odesláno',
+	'tasks.reminders.kindDate': 'K datu',
+	'tasks.reminders.kindBefore': 'Před termínem',
+	'tasks.reminders.kind': 'Druh připomínky',
+	'tasks.reminders.date': 'Datum a čas',
+	'tasks.reminders.daysBefore': 'Dní předem',
+	'tasks.reminders.atTime': 'V',
+	'tasks.reminders.relative': {
+		one: '{count} den před termínem v {time}',
+		few: '{count} dny před termínem v {time}',
+		many: '{count} dne před termínem v {time}',
+		other: '{count} dní před termínem v {time}'
+	},
+	'tasks.reminders.onDueDay': 'V den termínu v {time}',
+	'tasks.reminders.needsDueDate': 'Pro připomínky vůči termínu nejdřív nastavte termín.',
 	'tasks.reminders.hint': 'V nastavený čas dostanete oznámení.',
 	'tasks.attachments.title': 'Přílohy',
 	'tasks.attachments.empty': 'Žádné přílohy.',
@@ -87,13 +104,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.comments.placeholder': 'Přidat komentář…',
 	'tasks.comments.post': 'Odeslat',
 
-	'tasks.form.backToTask': 'Zpět na úkol',
-	'tasks.form.editTitle': 'Upravit úkol',
 	'tasks.form.createTitle': 'Vytvořit úkol',
 	'tasks.form.priorityUnset': '— Nenastaveno',
-	'tasks.form.percentDone': 'Hotovo (%)',
 	'tasks.form.noProject': 'Bez projektu',
-	'tasks.form.saveChanges': 'Uložit změny',
 	'tasks.form.assignee': 'Řešitel',
 	'tasks.form.createButton': 'Vytvořit úkol',
 	'tasks.form.creating': 'Vytvářím…',

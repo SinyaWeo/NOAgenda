@@ -2,7 +2,6 @@
 export const messages = {
 	// Task detail page
 	'tasks.detail.back': 'Back',
-	'tasks.detail.editTask': 'Edit Task',
 	'tasks.detail.duplicate': 'Duplicate',
 	'tasks.detail.archive': 'Archive',
 	'tasks.detail.restore': 'Restore',
@@ -29,7 +28,6 @@ export const messages = {
 	'tasks.toast.uploadFailed': 'Upload failed',
 	'tasks.toast.uploadDisabled': 'Uploads are disabled on the demo',
 	'tasks.toast.downloadFailed': 'Download failed',
-	'tasks.toast.saved': 'Task saved',
 	'tasks.toast.created': 'Task created!',
 
 	'tasks.history.title': 'Version history',
@@ -41,6 +39,11 @@ export const messages = {
 	'tasks.history.restoreFailed': 'Could not restore this version',
 
 	// Details tab
+	'tasks.details.editDescription': 'Edit description',
+	'tasks.details.noDescription': 'No description',
+	'tasks.details.overdue': 'Overdue',
+	'tasks.details.editRepeat': 'Edit repetition',
+	'tasks.detail.editTitle': 'Edit title',
 	'tasks.details.startDate': 'Start Date',
 	'tasks.details.dueDate': 'Due Date',
 	'tasks.details.deferLabel': 'Defer due date:',
@@ -80,6 +83,18 @@ export const messages = {
 	'tasks.reminders.empty': 'No reminders.',
 	'tasks.reminders.remove': 'Remove reminder',
 	'tasks.reminders.sent': 'Sent',
+	'tasks.reminders.kindDate': 'On a date',
+	'tasks.reminders.kindBefore': 'Before the due date',
+	'tasks.reminders.kind': 'Reminder type',
+	'tasks.reminders.date': 'Date and time',
+	'tasks.reminders.daysBefore': 'Days before',
+	'tasks.reminders.atTime': 'At',
+	'tasks.reminders.relative': {
+		one: '{count} day before the due date at {time}',
+		other: '{count} days before the due date at {time}'
+	},
+	'tasks.reminders.onDueDay': 'On the due date at {time}',
+	'tasks.reminders.needsDueDate': 'Set a due date to add reminders relative to it.',
 	'tasks.reminders.hint': 'You will get a notification at the chosen time.',
 	'tasks.attachments.title': 'Attachments',
 	'tasks.attachments.empty': 'No attachments.',
@@ -90,13 +105,9 @@ export const messages = {
 	'tasks.comments.post': 'Post',
 
 	// Create / edit forms
-	'tasks.form.backToTask': 'Back to Task',
-	'tasks.form.editTitle': 'Edit Task',
 	'tasks.form.createTitle': 'Create Task',
 	'tasks.form.priorityUnset': '— Unset',
-	'tasks.form.percentDone': 'Percent Done',
 	'tasks.form.noProject': 'No project',
-	'tasks.form.saveChanges': 'Save Changes',
 	'tasks.form.assignee': 'Assignee',
 	'tasks.form.createButton': 'Create Task',
 	'tasks.form.creating': 'Creating…',

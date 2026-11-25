@@ -1,9 +1,13 @@
 <script lang="ts">
-	import { t, fmt, type MessageKey } from '$lib/i18n';
+	import { t, type MessageKey } from '$lib/i18n';
 	import type { Label, Task, TaskAssignee, TaskLabel, UserSummary } from '$lib/types';
-	import { describeRepeat } from '$lib/repeat';
+	import { describeRepeat, formFromTask, repeatPayload, type RepeatForm } from '$lib/repeat';
+	import { dateInputToIso, isoToDateInput } from '$lib/dates';
 	import RepeatHistory from './RepeatHistory.svelte';
-	import { Button, Card, Select } from 'flowbite-svelte';
+	import RepeatFields from './RepeatFields.svelte';
+	import InlineText from '$lib/components/InlineText.svelte';
+	import { Button, Card, Input, Select } from 'flowbite-svelte';
+	import { EditOutline } from 'flowbite-svelte-icons';
 
 	let {
 		task,
@@ -16,7 +20,8 @@
 		onRemoveLabel,
 		onStatus,
 		onPercentDone,
-		onDefer
+		onDefer,
+		onUpdate
 	}: {
 		task: Task;
 		taskLabels: TaskLabel[];
@@ -31,7 +36,36 @@
 		onStatus: (status: string) => void;
 		onPercentDone: (value: number) => void;
 		onDefer: (days: number) => void;
+		/** Save some task fields; resolves to false when the save failed. */
+		onUpdate: (patch: Record<string, unknown>) => Promise<boolean>;
 	} = $props();
+
+	const LABEL = 'block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1';
+
+	let editingRepeat = $state(false);
+	let repeatForm = $state<RepeatForm>(formFromTask({}));
+	let savingRepeat = $state(false);
+
+	function startRepeat() {
+		repeatForm = formFromTask(task);
+		editingRepeat = true;
+	}
+
+	async function saveRepeat(e: Event) {
+		e.preventDefault();
+		savingRepeat = true;
+		try {
+			if (await onUpdate(repeatPayload(repeatForm))) editingRepeat = false;
+		} finally {
+			savingRepeat = false;
+		}
+	}
+
+	/** A date input changed: save it as the day's noon (or clear it). */
+	const saveDate = (field: 'startDate' | 'dueDate', value: string) =>
+		onUpdate({ [field]: dateInputToIso(value) });
+
+	const overdue = $derived(!!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done');
 
 	/** Live value while dragging the slider; null once the change is committed. */
 	let dragValue = $state<number | null>(null);
@@ -46,17 +80,25 @@
 	const available = $derived(allLabels.filter((l) => !taskLabels.some((tl) => tl.label?.id === l.id)));
 </script>
 
-<Card class="mb-4">
-	{#if task.description}<p class="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300 mb-4">
-			{task.description}
-		</p>{/if}
+<Card class="mb-4 max-w-none">
+	<div class="mb-4">
+		<p class={LABEL}>{$t('common.field.description')}</p>
+		<div class="text-sm text-gray-700 dark:text-gray-300">
+			<InlineText
+				value={task.description ?? ''}
+				multiline
+				label={$t('tasks.details.editDescription')}
+				emptyText={$t('tasks.details.noDescription')}
+				onSave={(v) => onUpdate({ description: v })}
+			/>
+		</div>
+	</div>
 
-	<div class="grid grid-cols-[repeat(auto-fit,minmax(8rem,1fr))] gap-4 mb-4">
+	<div class="grid grid-cols-[repeat(auto-fit,minmax(10rem,1fr))] gap-4 mb-4">
 		<div>
-			<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-				{$t('common.field.status')}
-			</p>
+			<label for="task-status" class={LABEL}>{$t('common.field.status')}</label>
 			<Select
+				id="task-status"
 				placeholder=""
 				value={task.status ?? 'open'}
 				onchange={(e) => onStatus((e.target as HTMLSelectElement).value)}
@@ -68,47 +110,79 @@
 			</Select>
 		</div>
 		<div>
-			<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-				{$t('common.field.priority')}
-			</p>
-			<p class="text-sm" data-priority={task.priority}>
-				{$t(`common.priority.${task.priority ?? 0}` as MessageKey)}
-			</p>
+			<label for="task-priority" class={LABEL}>{$t('common.field.priority')}</label>
+			<Select
+				id="task-priority"
+				placeholder=""
+				value={String(task.priority ?? 0)}
+				onchange={(e) => onUpdate({ priority: Number((e.target as HTMLSelectElement).value) })}
+				class="w-full"
+			>
+				<option value="0">{$t('tasks.form.priorityUnset')}</option>
+				{#each [1, 2, 3, 4, 5] as p (p)}<option value={String(p)}>
+						{$t(`common.priority.${p}` as MessageKey)}
+					</option>{/each}
+			</Select>
 		</div>
-		{#if task.startDate}
-			<div>
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-					{$t('tasks.details.startDate')}
-				</p>
-				<p class="text-sm text-gray-900 dark:text-white">
-					{$fmt.date(task.startDate)}
-				</p>
-			</div>
-		{/if}
-		{#if task.dueDate}
-			<div>
-				<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-					{$t('tasks.details.dueDate')}
-				</p>
+		<div>
+			<label for="task-start" class={LABEL}>{$t('tasks.details.startDate')}</label>
+			<Input
+				id="task-start"
+				type="date"
+				value={isoToDateInput(task.startDate)}
+				onchange={(e) => saveDate('startDate', (e.target as HTMLInputElement).value)}
+			/>
+		</div>
+		<div>
+			<label for="task-due" class={LABEL}>{$t('tasks.details.dueDate')}</label>
+			<Input
+				id="task-due"
+				type="date"
+				class={overdue ? 'text-red-600 dark:text-red-400 font-semibold' : ''}
+				value={isoToDateInput(task.dueDate)}
+				onchange={(e) => saveDate('dueDate', (e.target as HTMLInputElement).value)}
+			/>
+			{#if overdue}<p class="text-xs text-red-600 dark:text-red-400 mt-1 mb-0">
+					{$t('tasks.details.overdue')}
+				</p>{/if}
+		</div>
+	</div>
+
+	<div class="mb-4">
+		<p class={LABEL}>{$t('tasks.repeat.summaryLabel')}</p>
+		{#if editingRepeat}
+			<form onsubmit={saveRepeat} class="flex flex-col gap-3">
+				<RepeatFields bind:form={repeatForm} />
+				<div class="flex gap-2">
+					<Button type="submit" size="xs" disabled={savingRepeat}>
+						{savingRepeat ? $t('common.saving') : $t('common.save')}
+					</Button>
+					<Button type="button" size="xs" color="light" onclick={() => (editingRepeat = false)}>
+						{$t('common.cancel')}
+					</Button>
+				</div>
+			</form>
+		{:else}
+			<div class="flex items-start gap-2">
 				<p
-					class="text-sm {new Date(task.dueDate) < new Date() && task.status !== 'done'
-						? 'text-red-600 font-bold'
-						: 'text-gray-900 dark:text-white'}"
+					class="text-sm m-0 {repeatSummary
+						? 'text-gray-900 dark:text-white'
+						: 'text-gray-500 dark:text-gray-400 italic'}"
 				>
-					{$fmt.date(task.dueDate)}
+					{repeatSummary || $t('tasks.repeat.kind.none')}
 				</p>
+				<button
+					type="button"
+					class="shrink-0 p-1 rounded text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+					aria-label={$t('tasks.details.editRepeat')}
+					title={$t('tasks.details.editRepeat')}
+					onclick={startRepeat}
+				>
+					<EditOutline class="w-4 h-4" />
+				</button>
 			</div>
 		{/if}
 	</div>
-
-	{#if repeatSummary}
-		<div class="mb-4">
-			<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-				{$t('tasks.repeat.summaryLabel')}
-			</p>
-			<p class="text-sm text-gray-900 dark:text-white m-0">{repeatSummary}</p>
-		</div>
-	{/if}
 
 	<div class="mb-4">
 		<div class="flex items-center justify-between mb-2">

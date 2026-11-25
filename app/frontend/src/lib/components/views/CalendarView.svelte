@@ -20,6 +20,7 @@
 	import { errMessage } from '$lib/errors';
 	import { cleanCriteria, criteriaToQuery } from '$lib/filters';
 	import { t, tr, fmt, locale } from '$lib/i18n';
+	import { taskProjectId } from '$lib/project-groups';
 	import { showToast } from '$lib/toast';
 	import type { FilterCriteria, Task } from '$lib/types';
 	import type { TaskOccurrence } from '$lib/types-task';
@@ -33,8 +34,10 @@
 		criteria?: FilterCriteria;
 		/** Start in the week view (compact, e.g. on the dashboard) instead of the month. */
 		initialMode?: 'month' | 'week';
+		/** id -> name of the user's projects: each task then shows a link to its project. */
+		projectNames?: Record<number, string>;
 	}
-	let { projectId, criteria, initialMode = 'month' }: Props = $props();
+	let { projectId, criteria, initialMode = 'month', projectNames = {} }: Props = $props();
 
 	type Entry =
 		| { kind: 'task'; id: number; date: string; task: Task }
@@ -231,6 +234,8 @@
 		>
 			<div class="calendar-day-num">{keyParts(key).day}</div>
 			{#each shown as entry (entry.kind + entry.id + entry.date)}
+				{@const entryProject =
+					entry.kind === 'task' ? taskProjectId(entry.task, projectNames) : entry.occurrence.projectId}
 				{#if entry.kind === 'task'}
 					<a
 						href="/tasks/{entry.task.id}"
@@ -256,6 +261,9 @@
 						<span aria-hidden="true">↻</span>
 						{entry.occurrence.title ?? ''}
 					</a>
+				{/if}
+				{#if entryProject != null && projectNames[entryProject]}
+					<a href="/projects/{entryProject}" class="calendar-task-project">{projectNames[entryProject]}</a>
 				{/if}
 			{/each}
 			{#if shown.length < entries.length}

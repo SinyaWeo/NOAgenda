@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { TaskService, TaskFilter, TaskOccurrence } from './task.service';
+import { TaskService, TaskFilter, TaskOccurrence, TaskWithProject } from './task.service';
 import { Node, NodeType } from '../node/node.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { TaskAssignee } from '../task-assignee/task-assignee.entity';
@@ -53,7 +53,7 @@ export class TaskController {
   }
 
   @Get()
-  async findAll(@Request() req: AuthRequest, @Query() q: TaskListQueryDto): Promise<Node[]> {
+  async findAll(@Request() req: AuthRequest, @Query() q: TaskListQueryDto): Promise<TaskWithProject[]> {
     const filter: TaskFilter = { userId: req.user.userId };
     if (q.projectId) filter.projectId = q.projectId;
     if (q.parentTaskId !== undefined) filter.parentTaskId = q.parentTaskId;
