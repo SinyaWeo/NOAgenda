@@ -43,7 +43,6 @@ export interface Quote {
 export type NodeType = 'project' | 'task';
 export type NodeStatus = 'open' | 'in_progress' | 'done';
 export type Permission = 'read' | 'write' | 'admin';
-export type ViewType = 'list' | 'kanban' | 'table' | 'gantt' | 'timeline' | 'mindmap' | 'calendar';
 export type RelationKind = 'subtask' | 'blocks' | 'blocked_by' | 'related' | 'duplicate_of' | 'duplicated_by';
 export type TokenScope = 'read' | 'write';
 
@@ -207,15 +206,11 @@ export interface ProjectMember {
 	user?: UserSummary;
 }
 
-export interface ProjectView {
-	id: number;
-	title: string;
-	viewType: ViewType;
-}
-
+/** A Kanban column of a project; a task placed in it takes its status. */
 export interface KanbanBucket {
 	id: number;
 	title: string;
+	status: NodeStatus;
 	position: number;
 	limit?: number | null;
 }

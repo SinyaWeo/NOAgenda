@@ -38,7 +38,7 @@ describe('isMultiUserPage', () => {
 	it.each(['/teams', '/teams/3', '/teams/new', '/admin/teams', '/projects/5/settings/share'])('%s is', (p) =>
 		expect(isMultiUserPage(p)).toBe(true)
 	);
-	it.each(['/teamsx', '/tasks', '/admin/users', '/projects/5/settings/views', '/projects/share'])(
+	it.each(['/teamsx', '/tasks', '/admin/users', '/projects/5/settings/activity', '/projects/share'])(
 		'%s is not',
 		(p) => expect(isMultiUserPage(p)).toBe(false)
 	);

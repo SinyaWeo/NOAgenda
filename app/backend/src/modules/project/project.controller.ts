@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { ProjectService } from './project.service';
 import { Node } from '../node/node.entity';
+import { Permission } from '../project-user/project-user.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { normalizeParentRefs } from '../node/node-payload';
 import { ProjectCreateDto, ProjectUpdateDto } from '../node/dto/node.dto';
@@ -39,10 +40,12 @@ export class ProjectController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node & { access?: Permission }> {
     await this.access.assertProject(req.user.userId, Number(id), Access.READ);
-    const project = await this.projectService.findById(id);
+    const project: (Node & { access?: Permission }) | null = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
+    // The caller's permission decides what the UI offers (e.g. managing Kanban buckets).
+    project.access = (await this.access.projectPermissions(req.user.userId, [project])).get(project.id);
     return project;
   }
 

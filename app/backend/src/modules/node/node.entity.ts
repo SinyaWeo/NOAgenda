@@ -104,7 +104,7 @@ export class Node extends BaseEntity {
 
   @ForeignKey(() => KanbanBucket, { name: 'FK_nodes_bucketId', onDelete: 'SET NULL' })
   @Column({ nullable: true, type: 'int' })
-  bucketId?: number;
+  bucketId?: number | null;
 
   // Self-referencing parent-child
   @Column({ nullable: true, type: 'int' })

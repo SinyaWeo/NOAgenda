@@ -1,0 +1,7 @@
+{
+  "default": {
+    "open": "To do",
+    "in_progress": "In progress",
+    "done": "Done"
+  }
+}

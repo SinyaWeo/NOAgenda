@@ -63,7 +63,10 @@ const EXACT: Record<string, MessageKey> = {
 	'A value is too long': 'errors.server.valueTooLong',
 	'This item is still in use and cannot be removed': 'errors.server.inUse',
 	'Internal server error': 'errors.server.generic',
-	'q is required (at least 3 characters)': 'errors.server.queryTooShort'
+	'q is required (at least 3 characters)': 'errors.server.queryTooShort',
+	'A project needs at least one bucket for each status': 'errors.server.lastBucketOfStatus',
+	'Unknown kanban bucket': 'errors.server.unknownBucket',
+	'The status does not match the kanban bucket': 'errors.server.bucketStatusMismatch'
 };
 
 /** class-validator messages: "<field> must be ...". The field name stays as the API calls it. */

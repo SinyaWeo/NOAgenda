@@ -17,8 +17,16 @@ const project = (over: Partial<Node> = {}) =>
   ({ id: 10, type: NodeType.PROJECT, name: 'Docs', parentId: null, ownerId: 3, ...over }) as Node;
 
 type RepoMock = Record<'create' | 'save' | 'update' | 'findOne' | 'find', jest.Mock> & {
-  manager: { transaction: jest.Mock; query: jest.Mock };
+  manager: { transaction: jest.Mock; query: jest.Mock; createQueryBuilder: jest.Mock };
 };
+
+/** A query builder that accepts any chain (used to release kanban buckets after a status change). */
+function chain(): Record<string, jest.Mock> {
+  const qb: Record<string, jest.Mock> = {};
+  for (const k of ['update', 'set', 'where', 'andWhere']) qb[k] = jest.fn(() => qb);
+  qb.execute = jest.fn(async () => undefined);
+  return qb;
+}
 
 function build(stored: Node[]) {
   const byId = new Map(stored.map((n) => [n.id, n]));
@@ -30,13 +38,18 @@ function build(stored: Node[]) {
     find: jest.fn(async () => stored),
     manager: {
       query: jest.fn(),
+      createQueryBuilder: jest.fn(chain),
       transaction: jest.fn(async (fn: (m: object) => unknown) =>
-        fn({ query: jest.fn(async () => []), getRepository: () => repo }),
+        fn({ query: jest.fn(async () => []), getRepository: () => repo, createQueryBuilder: chain }),
       ),
     },
   };
   const events = { emit: jest.fn() };
-  return { svc: new NodeService(asMock(repo), asMock(events)), events, repo };
+  return {
+    svc: new NodeService(asMock(repo), asMock(events), asMock({ t: (_l: string, k: string) => k })),
+    events,
+    repo,
+  };
 }
 
 describe('NodeService announces changes', () => {
@@ -208,7 +221,7 @@ describe('NodeService announces changes', () => {
       const { svc, repo } = build([a, b]);
       const query = jest.fn(async () => []);
       repo.manager.transaction = jest.fn(async (fn: (m: object) => unknown) =>
-        fn({ query, getRepository: () => repo }),
+        fn({ query, getRepository: () => repo, createQueryBuilder: chain }),
       );
       await svc.updateMany([5, 6], { status: NodeStatus.DONE });
       expect(repo.update).toHaveBeenCalledWith([6], { status: NodeStatus.DONE });

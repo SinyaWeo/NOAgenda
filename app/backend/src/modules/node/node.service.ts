@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Not, Repository } from 'typeorm';
 import { diffFields } from '../../common/diff-fields';
@@ -20,6 +20,13 @@ import {
 } from './node-sql';
 import { isRecurring, recurrenceOnCompletion } from './node-recurrence';
 import { safeTimeZone } from '../../common/zoned-time';
+import { KanbanBucket } from '../kanban-bucket/kanban-bucket.entity';
+import { Translator } from '../../i18n/translator.service';
+
+/** The statuses every project keeps a Kanban bucket for, in board order. */
+export const BUCKET_STATUSES = [NodeStatus.OPEN, NodeStatus.IN_PROGRESS, NodeStatus.DONE] as const;
+export const UNKNOWN_BUCKET = 'Unknown kanban bucket';
+export const BUCKET_STATUS_MISMATCH = 'The status does not match the kanban bucket';
 
 export interface NodeFilter {
   userId?: number;
@@ -55,6 +62,7 @@ export class NodeService {
     @InjectRepository(Node)
     private readonly nodeRepository: Repository<Node>,
     private readonly events: DomainEvents,
+    private readonly translator: Translator,
   ) {}
 
   async findAll(filter: NodeFilter = {}): Promise<Node[]> {
@@ -208,10 +216,76 @@ export class NodeService {
   }
 
   async create(data: Partial<Node>, actorId?: number): Promise<Node> {
-    const node = this.nodeRepository.create(data);
+    const node = this.nodeRepository.create(await this.applyBucketRules(null, data));
     const saved = await this.nodeRepository.save(node);
+    if (saved.type === NodeType.PROJECT) await this.seedBuckets(saved.id, actorId ?? saved.ownerId);
     this.announce('created', saved, undefined, { actorId: actorId ?? null });
     return saved;
+  }
+
+  /** A new project starts with one Kanban bucket per status, titled in the creator's saved language. */
+  private async seedBuckets(projectId: number, userId?: number | null): Promise<void> {
+    const m = this.nodeRepository.manager;
+    const rows: { language?: string | null }[] = userId
+      ? await m.query('SELECT language FROM users WHERE id = ?', [userId])
+      : [];
+    const lang = rows[0]?.language;
+    await m.getRepository(KanbanBucket).insert(
+      BUCKET_STATUSES.map((status, position) => ({
+        projectId,
+        status,
+        position,
+        title: this.translator.t(lang, `kanban.default.${status}`),
+      })),
+    );
+  }
+
+  /** A duplicated project gets the same columns as its original (instead of the defaults). */
+  private async copyBuckets(fromId: number, toId: number): Promise<void> {
+    const repo = this.nodeRepository.manager.getRepository(KanbanBucket);
+    const source = await repo.find({ where: { projectId: fromId }, order: { position: 'ASC', id: 'ASC' } });
+    if (!source.length) return;
+    await repo.delete({ projectId: toId });
+    await repo.insert(
+      source.map(({ title, status, position, limit }) => ({ projectId: toId, title, status, position, limit })),
+    );
+  }
+
+  /**
+   * Kanban rules for a task write. Placing a task in a bucket gives it the bucket's status; the
+   * bucket must belong to the task's project. A task that changes parent leaves its bucket unless
+   * a new one comes with the change. Projects never have a bucket. A status change without a bucket
+   * is reconciled after saving (`releaseMismatchedBuckets`).
+   */
+  private async applyBucketRules(existing: Node | null, data: Partial<Node>): Promise<Partial<Node>> {
+    const type = existing?.type ?? data.type;
+    if (data.bucketId === undefined) {
+      const parentChanged = existing && data.parentId !== undefined && data.parentId !== existing.parentId;
+      return parentChanged && existing.bucketId != null ? { ...data, bucketId: null } : data;
+    }
+    if (data.bucketId === null) return data;
+    if (type !== NodeType.TASK) throw new BadRequestException(UNKNOWN_BUCKET);
+    const bucket = await this.nodeRepository.manager
+      .getRepository(KanbanBucket)
+      .findOne({ where: { id: data.bucketId } });
+    const parentId = data.parentId !== undefined ? data.parentId : (existing?.parentId ?? null);
+    const projectId = await this.projectIdOf({ id: existing?.id ?? 0, type: NodeType.TASK, parentId });
+    if (!bucket || projectId == null || bucket.projectId !== projectId) throw new BadRequestException(UNKNOWN_BUCKET);
+    if (data.status != null && data.status !== bucket.status) throw new BadRequestException(BUCKET_STATUS_MISMATCH);
+    return { ...data, status: bucket.status };
+  }
+
+  /** Tasks whose status no longer matches their bucket's leave it (they show in the first bucket of their status). */
+  private async releaseMismatchedBuckets(m: EntityManager, ids: number[]): Promise<void> {
+    if (!ids.length) return;
+    await m
+      .createQueryBuilder()
+      .update(Node)
+      .set({ bucketId: null })
+      .where({ id: In(ids) })
+      .andWhere('bucketId IS NOT NULL')
+      .andWhere('(status IS NULL OR status <> (SELECT b.status FROM kanban_buckets b WHERE b.id = bucketId))')
+      .execute();
   }
 
   /**
@@ -220,13 +294,15 @@ export class NodeService {
    * of a repeating task is kept in its history. Everything else is a plain update.
    * `actorId` is who saves it: the next date is worked out in their time zone.
    */
-  async update(id: number, data: Partial<Node>, actorId?: number): Promise<Node | null> {
+  async update(id: number, input: Partial<Node>, actorId?: number): Promise<Node | null> {
     const m = this.nodeRepository.manager;
+    const existing = await this.nodeRepository.findOne({ where: { id } });
+    // Dropping a task into a bucket sets its status first, so a "done" bucket completes a repeating task too.
+    const data = await this.applyBucketRules(existing, input);
     let change = data;
     let shiftMs: number | null = null;
     let completed: Node | null = null;
     let cycled = false;
-    const existing = await this.nodeRepository.findOne({ where: { id } });
     if (existing && this.completesRepeatingTask(existing, data)) {
       completed = existing;
       const recurrence = recurrenceOnCompletion(existing, data, new Date(), await this.timeZoneOf(m, actorId));
@@ -236,6 +312,7 @@ export class NodeService {
       }
     }
     await this.nodeRepository.update(id, change);
+    if (change.status !== undefined) await this.releaseMismatchedBuckets(m, [id]);
     if (completed) await this.recordCompletion(m, completed, data, actorId);
     if (cycled) {
       await this.rearmReminders(m, [id], shiftMs);
@@ -304,7 +381,11 @@ export class NodeService {
   }
 
   /** Apply the same changes to many nodes atomically: all of them or none. */
-  async updateMany(ids: number[], data: Partial<Node>, actorId?: number): Promise<Node[]> {
+  async updateMany(ids: number[], input: Partial<Node>, actorId?: number): Promise<Node[]> {
+    // Bulk edits never place tasks in a bucket; moving them elsewhere takes them out of theirs.
+    const data: Partial<Node> = { ...input };
+    delete data.bucketId;
+    if (data.parentId !== undefined) data.bucketId = null;
     const existing = await this.nodeRepository.find({ where: { id: In(ids) } });
     await this.nodeRepository.manager.transaction(async (m) => {
       const repo = m.getRepository(Node);
@@ -325,6 +406,7 @@ export class NodeService {
         await this.rearmReminders(m, [id], shiftMs);
       }
       if (cycles.size) await this.reopenSubtasks(m, [...cycles.keys()]);
+      if (data.status !== undefined) await this.releaseMismatchedBuckets(m, ids);
       for (const node of repeating) await this.recordCompletion(m, node, data, actorId);
     });
     const nodes = await this.nodeRepository.find({
@@ -342,7 +424,7 @@ export class NodeService {
 
   async move(id: number, parentId: number | null, actorId?: number): Promise<Node | null> {
     const before = await this.nodeRepository.findOne({ where: { id }, select: { id: true, parentId: true } });
-    await this.nodeRepository.update(id, { parentId }); // null = top level
+    await this.nodeRepository.update(id, { parentId, bucketId: null }); // null = top level; a bucket belongs to the old project
     const node = await this.findById(id);
     if (node) {
       const changes = { parentId: { from: before?.parentId ?? null, to: parentId } };
@@ -479,7 +561,7 @@ export class NodeService {
     if (!original) return null;
     const data = omit(original, 'id', 'createdAt', 'updatedAt', 'parent', 'children');
     const suffix = original.type === NodeType.PROJECT ? ' (copy)' : ' (copy)';
-    return this.create(
+    const copy = await this.create(
       {
         ...data,
         name: original.name ? `${original.name}${suffix}` : undefined,
@@ -489,6 +571,8 @@ export class NodeService {
       },
       userId,
     );
+    if (copy.type === NodeType.PROJECT) await this.copyBuckets(original.id, copy.id);
+    return copy;
   }
 
   async getTaskStats(projectIds: number[]): Promise<Record<number, { total: number; done: number }>> {

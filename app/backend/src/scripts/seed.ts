@@ -1,6 +1,6 @@
 /**
  * Fill the database with example data: 10 users (1 admin, 3 team managers, 6 members), 3 teams, personal projects per user and shared
- * projects per team (with views, kanban buckets, tasks, labels and assignees).
+ * projects per team (with kanban buckets, tasks, labels and assignees).
  *
  *   npm run seed                 # no-op if the example users already exist
  *   npm run seed -- --reset      # delete the example users and everything they own, then seed again
@@ -19,7 +19,6 @@ import { TeamMember, TeamRole } from '../modules/team-member/team-member.entity'
 import { Node, NodeStatus, NodeType } from '../modules/node/node.entity';
 import { Permission, ProjectUser } from '../modules/project-user/project-user.entity';
 import { ProjectTeam } from '../modules/project-team/project-team.entity';
-import { ProjectView, ViewType } from '../modules/project-view/project-view.entity';
 import { KanbanBucket } from '../modules/kanban-bucket/kanban-bucket.entity';
 import { Label } from '../modules/label/label.entity';
 import { TaskLabel } from '../modules/task-label/task-label.entity';
@@ -115,7 +114,8 @@ const LABELS = [
 ];
 
 const STATUSES = [NodeStatus.OPEN, NodeStatus.IN_PROGRESS, NodeStatus.DONE];
-const BUCKETS = ['To do', 'In progress', 'Done'];
+const DEFAULT_BUCKETS = ['To do', 'In progress', 'Done'];
+const BUCKETS = ['Backlog', 'Doing', 'Shipped'];
 
 /** Deletes the example users and what hangs off them (nodes use SET NULL on their owner, so go by node). */
 async function removeSeedData(m: EntityManager): Promise<void> {
@@ -173,7 +173,7 @@ async function seed(m: EntityManager): Promise<Record<string, number>> {
     counts.labels += labels.length;
   }
 
-  /** Creates a project with a view, optional kanban buckets and a handful of tasks. */
+  /** Creates a project with its kanban buckets and a handful of tasks. */
   async function createProject(
     owner: string,
     name: string,
@@ -185,20 +185,17 @@ async function seed(m: EntityManager): Promise<Record<string, number>> {
     );
     counts.projects++;
 
-    const view = await m.save(
-      m.create(ProjectView, {
-        title: opts.kanban ? 'Board' : 'List',
-        viewType: opts.kanban ? ViewType.KANBAN : ViewType.LIST,
-        project,
-      }),
+    // Every project has a bucket per status; "kanban" projects get a custom set of titles.
+    const buckets = await m.save(
+      STATUSES.map((status, position) =>
+        m.create(KanbanBucket, {
+          projectId: project.id,
+          title: opts.kanban ? BUCKETS[position] : DEFAULT_BUCKETS[position],
+          status,
+          position,
+        }),
+      ),
     );
-    const buckets = opts.kanban
-      ? await m.save(
-          BUCKETS.map((title, position) =>
-            m.create(KanbanBucket, { projectId: project.id, viewId: view.id, title, position }),
-          ),
-        )
-      : [];
 
     /** Adds `count` child tasks under `parent`; the first one gets two children of its own when `deep`. */
     async function addSubtasks(
@@ -244,7 +241,7 @@ async function seed(m: EntityManager): Promise<Record<string, number>> {
           dueDate: new Date(now.getTime() + (((opts.seedIndex + i) % 21) - 5) * DAY),
           parentId: project.id,
           createdBy: ownerUser.id,
-          bucketId: buckets.length ? buckets[STATUSES.indexOf(status)].id : undefined,
+          bucketId: opts.kanban ? buckets[STATUSES.indexOf(status)].id : undefined,
         }),
       );
       counts.tasks++;

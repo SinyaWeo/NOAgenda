@@ -20,6 +20,8 @@ describe('ProjectController', () => {
             assertCanModify: jest.fn(),
             assertCanUseAsParent: jest.fn(),
             sanitize: jest.fn((x) => x),
+            assertProject: jest.fn(),
+            projectPermissions: jest.fn(async () => new Map([[4, 'admin']])),
           },
         },
         {
@@ -36,5 +38,11 @@ describe('ProjectController', () => {
     expect(controller).toBeDefined();
   });
 
-  // Add more tests for controller methods here
+  it('findById returns the caller’s permission on the project', async () => {
+    jest
+      .spyOn(service, 'findById')
+      .mockResolvedValue({ id: 4, name: 'P' } as Awaited<ReturnType<ProjectService['findById']>>);
+    const res = await controller.findById(4, { user: { userId: 7 } } as Parameters<ProjectController['findById']>[1]);
+    expect(res).toMatchObject({ id: 4, access: 'admin' });
+  });
 });

@@ -6,7 +6,7 @@ A self-hosted task and project management app: projects, tasks, kanban boards, t
 
 - **Projects and tasks** in a single hierarchy (projects, tasks and subtasks share one `node` model), with statuses,
   priorities, due dates, percent done, recurring tasks and task relations
-- **Views**: project views with kanban buckets, a calendar, Gantt timeline and mind map, plus an upcoming-tasks page
+- **Views**: every project shows as a list, Kanban board (its own buckets, each tied to a status), table, Gantt timeline, calendar or mind map, plus an upcoming-tasks page
 - **Ideas**: private notes, optionally linked to a project and shareable with teams
 - **Quick notes** on the dashboard: one-line notes you can tick off or turn into a task, project or idea
 - **Trash and version history**: deleted projects, tasks and ideas stay in the trash for 30 days

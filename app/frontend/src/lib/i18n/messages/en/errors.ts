@@ -63,6 +63,9 @@ export const messages = {
 	'errors.server.inUse': 'This item is still in use and cannot be removed',
 	'errors.server.generic': 'Internal server error',
 	'errors.server.queryTooShort': 'Type at least 3 characters to search',
+	'errors.server.lastBucketOfStatus': 'Each status needs at least one bucket',
+	'errors.server.unknownBucket': 'Unknown Kanban bucket',
+	'errors.server.bucketStatusMismatch': 'The status does not match the Kanban bucket',
 
 	'errors.validation.minLength': '{field} must be at least {n} characters',
 	'errors.validation.maxLength': '{field} must be at most {n} characters',

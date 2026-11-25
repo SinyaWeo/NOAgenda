@@ -27,7 +27,6 @@ import { TaskLabelModule } from './modules/task-label/task-label.module';
 import { TaskRelationModule } from './modules/task-relation/task-relation.module';
 import { ProjectUserModule } from './modules/project-user/project-user.module';
 import { ProjectTeamModule } from './modules/project-team/project-team.module';
-import { ProjectViewModule } from './modules/project-view/project-view.module';
 import { TaskReminderModule } from './modules/task-reminder/task-reminder.module';
 import { TaskCompletionModule } from './modules/task-completion/task-completion.module';
 import { FavoriteModule } from './modules/favorite/favorite.module';
@@ -96,7 +95,6 @@ import { MailModule } from './modules/mail/mail.module';
     TaskRelationModule,
     ProjectUserModule,
     ProjectTeamModule,
-    ProjectViewModule,
     TaskReminderModule,
     TaskCompletionModule,
     FavoriteModule,

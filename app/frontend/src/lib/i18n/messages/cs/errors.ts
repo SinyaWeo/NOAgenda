@@ -67,6 +67,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'errors.server.inUse': 'Položka se stále používá a nelze ji odebrat',
 	'errors.server.generic': 'Interní chyba serveru',
 	'errors.server.queryTooShort': 'K vyhledávání zadejte alespoň 3 znaky',
+	'errors.server.lastBucketOfStatus': 'Každý stav musí mít alespoň jeden sloupec',
+	'errors.server.unknownBucket': 'Neznámý sloupec Kanbanu',
+	'errors.server.bucketStatusMismatch': 'Stav neodpovídá sloupci Kanbanu',
 
 	'errors.validation.minLength': '{field}: minimální délka je {n} znaků',
 	'errors.validation.maxLength': '{field}: maximální délka je {n} znaků',
