@@ -58,6 +58,10 @@ export const messages = {
 	'views.project.emptyLead': 'No tasks yet. Add one above or',
 	'views.project.emptyLink': 'create with more options',
 	'views.project.noMatch': 'No tasks match the current filters.',
+	'views.project.viewAs': 'View as',
+	'views.project.defaultView': 'List',
+	'views.project.filter': 'Filter',
+	'views.project.tasksHeading': 'Project tasks',
 	'views.project.notFound': 'Project not found.',
 
 	'views.view.manage': 'Manage views',

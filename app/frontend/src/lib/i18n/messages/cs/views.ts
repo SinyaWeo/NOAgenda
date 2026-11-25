@@ -61,6 +61,10 @@ export const messages: Record<keyof typeof en, Message> = {
 	'views.project.emptyLead': 'Zatím tu nejsou žádné úkoly. Přidejte první výše nebo',
 	'views.project.emptyLink': 'vytvořte úkol s dalšími možnostmi',
 	'views.project.noMatch': 'Aktuálním filtrům neodpovídají žádné úkoly.',
+	'views.project.viewAs': 'Zobrazit jako',
+	'views.project.defaultView': 'Seznam',
+	'views.project.filter': 'Filtr',
+	'views.project.tasksHeading': 'Úkoly projektu',
 	'views.project.notFound': 'Projekt nebyl nalezen.',
 
 	'views.view.manage': 'Spravovat pohledy',
