@@ -102,7 +102,7 @@ export const messages = {
 	'views.mindmap.noProjects': 'No projects yet.',
 	'views.mindmap.createProject': 'Create a project to get started',
 	'views.mindmap.nodeFallback': 'Node {id}',
-	'views.mindmap.hint': 'Click a node to expand children · Drag onto another node to reparent',
+	'views.mindmap.hint': 'Drag onto another node to reparent',
 	'views.mindmap.noTasks': 'No tasks in this project to show in the MindMap.',
 	'views.mindmap.readOnlyTarget': '{project} is read-only for you, nothing can be moved into it'
 } as const;

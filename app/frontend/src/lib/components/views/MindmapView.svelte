@@ -25,7 +25,6 @@
 	let mmNodes = $state<FlowNode[]>([]);
 	let mmEdges = $state<Edge[]>([]);
 	let loaded = $state(false);
-	const expandedMmIds = new Set<number>();
 
 	let rootNode: AppNode | null = null;
 	/** Every node here is in this one project, so its permission decides what may be moved. */
@@ -64,48 +63,37 @@
 		};
 	}
 
+	/** Load the whole project tree at once, so the initial `fitView` frames all of it. */
 	async function loadMindmapTree(id: string) {
 		try {
-			const projectNode = await apiGetAuth<AppNode>(`/nodes/${id}`);
+			// `/nodes/:id` carries the caller's permission, `/tree` the nested children.
+			const [projectNode, tree] = await Promise.all([
+				apiGetAuth<AppNode>(`/nodes/${id}`),
+				apiGetAuth<AppNode>(`/nodes/${id}/tree`)
+			]);
 			rootNode = projectNode;
 			childMap.clear();
-			mmNodes = [appNodeToFlowNode(projectNode, 0, 0)];
-			mmEdges = [];
-			const children = await apiGetAuth<AppNode[]>(`/nodes/${id}/children`);
-			childMap.set(Number(projectNode.id), children);
-			children.forEach((child) => {
-				mmNodes = [...mmNodes, appNodeToFlowNode(child, 0, 0)];
-				mmEdges = [...mmEdges, { id: `e-${id}-${child.id}`, source: id, target: String(child.id) }];
-				expandedMmIds.add(child.id);
-			});
+			const nodes: FlowNode[] = [appNodeToFlowNode(projectNode, 0, 0)];
+			const edges: Edge[] = [];
+			const seen = new Set<number>([Number(projectNode.id)]);
+			const walk = (parentId: number, children: AppNode[]) => {
+				const kids = children.filter((c) => !seen.has(Number(c.id)));
+				childMap.set(parentId, kids);
+				for (const c of kids) {
+					seen.add(Number(c.id));
+					nodes.push(appNodeToFlowNode(c, 0, 0));
+					edges.push({ id: `e-${parentId}-${c.id}`, source: String(parentId), target: String(c.id) });
+					walk(Number(c.id), c.children ?? []);
+				}
+			};
+			walk(Number(projectNode.id), tree.children ?? []);
+			mmNodes = nodes;
+			mmEdges = edges;
 			relayout();
 		} catch (e: unknown) {
 			showToast(errMessage(e, tr('views.toast.mindmapLoadFailed')), 'error');
 		} finally {
 			loaded = true;
-		}
-	}
-
-	async function onMmNodeClick({ node }: { node: FlowNode }) {
-		const nodeId = Number(node.id);
-		if (expandedMmIds.has(nodeId)) return;
-		expandedMmIds.add(nodeId);
-		try {
-			const children = await apiGetAuth<AppNode[]>(`/nodes/${nodeId}/children`);
-			childMap.set(nodeId, children);
-			mmNodes = [...mmNodes, ...children.map((c) => appNodeToFlowNode(c, 0, 0))];
-			mmEdges = [
-				...mmEdges,
-				...children.map((c) => ({
-					id: `e-${nodeId}-${c.id}`,
-					source: String(nodeId),
-					target: String(c.id)
-				}))
-			];
-			relayout();
-		} catch (e: unknown) {
-			expandedMmIds.delete(nodeId); // let the user retry
-			showToast(errMessage(e, tr('views.toast.childrenLoadFailed')), 'error');
 		}
 	}
 
@@ -146,13 +134,14 @@
 	});
 </script>
 
-{#if mmNodes.length > 0}
+{#if loaded && mmNodes.length > 0}
 	<div style="height: 600px; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
 		<SvelteFlow
 			bind:nodes={mmNodes}
 			bind:edges={mmEdges}
 			fitView
-			onnodeclick={onMmNodeClick}
+			fitViewOptions={{ padding: 0.1 }}
+			minZoom={0.05}
 			onnodedragstop={onMmNodeDragStop}
 		>
 			<Controls />

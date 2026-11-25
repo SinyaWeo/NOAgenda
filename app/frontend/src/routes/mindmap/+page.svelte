@@ -193,7 +193,14 @@
 		</div>
 	{:else}
 		<div class="flex-1" style="height:calc(100vh - 80px)">
-			<SvelteFlow bind:nodes bind:edges fitView onnodedragstop={handleNodeDragStop}>
+			<SvelteFlow
+				bind:nodes
+				bind:edges
+				fitView
+				fitViewOptions={{ padding: 0.1 }}
+				minZoom={0.05}
+				onnodedragstop={handleNodeDragStop}
+			>
 				<Controls />
 				<Background variant={BackgroundVariant.Dots} gap={20} size={1} />
 			</SvelteFlow>

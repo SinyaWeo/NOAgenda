@@ -105,8 +105,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'views.mindmap.noProjects': 'Zatím žádné projekty.',
 	'views.mindmap.createProject': 'Začněte vytvořením projektu',
 	'views.mindmap.nodeFallback': 'Uzel {id}',
-	'views.mindmap.hint':
-		'Kliknutím na uzel rozbalíte podřízené položky · Přetažením na jiný uzel změníte nadřazenou položku',
+	'views.mindmap.hint': 'Přetažením na jiný uzel změníte nadřazenou položku',
 	'views.mindmap.noTasks': 'V tomto projektu nejsou žádné úkoly k zobrazení v myšlenkové mapě.',
 	'views.mindmap.readOnlyTarget': 'Projekt {project} máte jen pro čtení, nelze do něj nic přesunout'
 };
