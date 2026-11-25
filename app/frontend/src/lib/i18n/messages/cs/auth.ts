@@ -93,6 +93,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.source': 'Zdrojový kód',
 	'auth.about.license': 'Licence',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.taskPage.title': 'Úpravy úkolu přímo na místě',
+	'auth.about.timeline.taskPage.body':
+		'Vše na úkolu se upravuje tam, kde je zobrazené: kliknutím na název, popis, stav, prioritu, termíny, štítky nebo řešitele je změníte. Připomínky se mohou řídit termínem dokončení (zadaný počet dní předem v nastavený čas), přílohy lze mazat a podúkoly, související úkoly a komentáře jsou na jedné stránce.',
+	'auth.about.timeline.tasksByProject.title': 'Úkoly rozdělené podle projektů',
+	'auth.about.timeline.tasksByProject.body':
+		'Seznam úkolů je rozdělený do sekcí podle projektů, osobní úkoly jsou nahoře, a pohledy Kanban, Gantt a kalendář u každého úkolu odkazují na jeho projekt.',
+	'auth.about.timeline.projectViews.title': 'Pevné pohledy projektu a Kanban podle stavu',
+	'auth.about.timeline.projectViews.body':
+		'Každý projekt zobrazí úkoly jako seznam, Kanban, tabulku, Ganttův diagram, kalendář nebo myšlenkovou mapu, bez nutnosti pohledy nastavovat. Sloupce Kanbanu patří projektu a každý odpovídá jednomu stavu, takže přesunutím karty se změní stav úkolu.',
 	'auth.about.timeline.singleUser.title': 'Režim jednoho uživatele',
 	'auth.about.timeline.singleUser.body':
 		'Administrátor může instanci přepnout pro jediného člověka: týmy, sdílení, řešitelé a registrace ustoupí stranou a vše přejde na tohoto administrátora.',

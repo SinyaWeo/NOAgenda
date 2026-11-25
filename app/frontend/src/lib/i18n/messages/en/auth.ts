@@ -91,6 +91,15 @@ export const messages = {
 	'auth.about.source': 'Source code',
 	'auth.about.license': 'License',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.taskPage.title': 'Edit tasks in place',
+	'auth.about.timeline.taskPage.body':
+		'Everything on a task is edited right where it is shown: click the title, description, status, priority, dates, labels or assignee to change it. Reminders can follow the due date (a number of days before it, at a set time), attachments can be deleted, and subtasks, related tasks and comments sit on one page.',
+	'auth.about.timeline.tasksByProject.title': 'Tasks grouped by project',
+	'auth.about.timeline.tasksByProject.body':
+		'The task list is split into sections by project, with personal tasks first, and the Kanban, Gantt and calendar views link each task to its project.',
+	'auth.about.timeline.projectViews.title': 'Fixed project views and status-linked Kanban',
+	'auth.about.timeline.projectViews.body':
+		'Every project shows its tasks as a list, Kanban board, table, Gantt chart, calendar or mind map, with no views to set up. Kanban columns belong to the project and each stands for a status, so moving a card changes the task’s status.',
 	'auth.about.timeline.singleUser.title': 'Single-user mode',
 	'auth.about.timeline.singleUser.body':
 		'Admins can switch an instance to one person only: teams, sharing, assignees and registration step aside, and everything becomes that admin’s.',
