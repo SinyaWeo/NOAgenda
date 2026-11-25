@@ -15,6 +15,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'common.loading': 'Načítání…',
 	'common.next': 'Další',
 	'common.apply': 'Použít',
+	'common.close': 'Zavřít',
 	'common.clear': 'Vymazat',
 	'common.no': 'Ne',
 	'common.none': 'Žádné',

@@ -31,8 +31,8 @@
 		UserSummary
 	} from '$lib/types';
 	import TaskDetailsTab from '$lib/components/task/TaskDetailsTab.svelte';
-	import TaskWorkTab from '$lib/components/task/TaskWorkTab.svelte';
-	import TaskActivityTab, { type NewReminder } from '$lib/components/task/TaskActivityTab.svelte';
+	import TaskActivityTab from '$lib/components/task/TaskActivityTab.svelte';
+	import type { NewReminder } from '$lib/components/task/TaskReminderEditor.svelte';
 	import InlineText from '$lib/components/InlineText.svelte';
 	import { Alert, Button } from 'flowbite-svelte';
 
@@ -50,7 +50,8 @@
 	const loading = writable(true);
 	const error = writable('');
 
-	const VALID_TABS = ['details', 'work', 'activity'] as const;
+	// An old `?tab=work` link (subtasks and relations are on Details now) falls back to Details.
+	const VALID_TABS = ['details', 'activity'] as const;
 	type Tab = (typeof VALID_TABS)[number];
 	let activeTab = $state<Tab>(
 		(VALID_TABS.includes(page.url.searchParams.get('tab') as Tab)
@@ -184,6 +185,18 @@
 			await downloadAuthFile(`/attachments/${id}/download`, filename);
 		} catch (e: unknown) {
 			showToast(errMessage(e, tr('tasks.toast.downloadFailed')), 'error');
+		}
+	}
+
+	/** Deleting a file is permanent, so it is confirmed first. */
+	async function deleteAttachment(att: Attachment) {
+		if (!(await confirmDialog(tr('tasks.attachments.confirmRemove', { name: att.filename })))) return;
+		try {
+			await apiDeleteAuth(`/attachments/${att.id}`);
+			attachments = await apiGetAuth<Attachment[]>(`/attachments?taskId=${page.params.id}`);
+			showToast(tr('tasks.toast.fileDeleted'), 'success');
+		} catch (e: unknown) {
+			fail(e);
 		}
 	}
 
@@ -361,7 +374,7 @@
 			aria-label={$t('tasks.detail.tabsLabel')}
 			class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700"
 		>
-			{#each [{ id: 'details', label: 'tasks.tab.details' }, { id: 'work', label: 'tasks.tab.work' }, { id: 'activity', label: 'tasks.tab.activity' }] as tab (tab.id)}
+			{#each [{ id: 'details', label: 'tasks.tab.details' }, { id: 'activity', label: 'tasks.tab.activity' }] as tab (tab.id)}
 				<button
 					role="tab"
 					aria-selected={activeTab === tab.id}
@@ -389,21 +402,22 @@
 				onPercentDone={updatePercentDone}
 				onDefer={deferDueDate}
 				onUpdate={updateTask}
-			/>
-		{:else if activeTab === 'work'}
-			<TaskWorkTab
-				taskId={task.id}
 				{subtasks}
 				{relations}
 				onAddSubtask={addSubtask}
 				onAddRelation={addRelation}
 				onDeleteRelation={deleteRelation}
+				{reminders}
+				onAddReminder={addReminder}
+				onDeleteReminder={deleteReminder}
+				{attachments}
+				onDownload={downloadAttachment}
+				onUpload={uploadAttachment}
+				onDeleteAttachment={deleteAttachment}
 			/>
 		{:else}
 			<TaskActivityTab
 				taskId={task.id}
-				{reminders}
-				{attachments}
 				{comments}
 				currentUserId={$authSession.user?.id}
 				activityVersion={[
@@ -414,11 +428,6 @@
 					relations.length,
 					assignees.length
 				].join('-')}
-				hasDueDate={!!task.dueDate}
-				onAddReminder={addReminder}
-				onDeleteReminder={deleteReminder}
-				onDownload={downloadAttachment}
-				onUpload={uploadAttachment}
 				onPostComment={postComment}
 				onDeleteComment={deleteComment}
 				onRestored={(restored) => (task = restored)}

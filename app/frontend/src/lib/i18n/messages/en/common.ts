@@ -12,6 +12,7 @@ export const messages = {
 	'common.loading': 'Loading…',
 	'common.next': 'Next',
 	'common.apply': 'Apply',
+	'common.close': 'Close',
 	'common.clear': 'Clear',
 	'common.no': 'No',
 	'common.none': 'None',

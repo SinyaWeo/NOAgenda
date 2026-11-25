@@ -20,7 +20,6 @@ export const messages = {
 	'tasks.detail.notFound': 'Task not found.',
 	'tasks.detail.tabsLabel': 'Task sections',
 	'tasks.tab.details': 'Details',
-	'tasks.tab.work': 'Work Items',
 	'tasks.tab.activity': 'Activity',
 	'tasks.toast.subtaskAdded': 'Subtask added',
 	'tasks.toast.commentPosted': 'Comment posted',
@@ -54,6 +53,7 @@ export const messages = {
 	'tasks.details.labels': 'Labels',
 	'tasks.details.assignee': 'Assignee',
 	'tasks.details.labelFallback': 'Label #{id}',
+	'tasks.details.unassigned': 'Unassigned',
 	'tasks.details.userFallback': 'User #{id}',
 
 	// Work tab
@@ -81,7 +81,6 @@ export const messages = {
 
 	// Activity tab
 	'tasks.reminders.title': 'Reminders',
-	'tasks.reminders.empty': 'No reminders.',
 	'tasks.reminders.remove': 'Remove reminder',
 	'tasks.reminders.sent': 'Sent',
 	'tasks.reminders.kindDate': 'On a date',
@@ -98,7 +97,10 @@ export const messages = {
 	'tasks.reminders.needsDueDate': 'Set a due date to add reminders relative to it.',
 	'tasks.reminders.hint': 'You will get a notification at the chosen time.',
 	'tasks.attachments.title': 'Attachments',
-	'tasks.attachments.empty': 'No attachments.',
+	'tasks.attachments.edit': 'Edit attachments',
+	'tasks.attachments.remove': 'Delete {name}',
+	'tasks.attachments.confirmRemove': 'Delete the file “{name}”? This cannot be undone.',
+	'tasks.toast.fileDeleted': 'File deleted',
 	'tasks.attachments.upload': 'Upload file',
 	'tasks.comments.title': 'Comments',
 	'tasks.comments.empty': 'No comments yet.',

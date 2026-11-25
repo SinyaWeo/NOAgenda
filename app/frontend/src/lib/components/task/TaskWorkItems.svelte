@@ -2,7 +2,7 @@
 	import { t, type MessageKey } from '$lib/i18n';
 	import type { Task, TaskRelation } from '$lib/types';
 	import { relationLabel, relationKindKey, RELATION_KINDS } from '$lib/types-task';
-	import { Button, Card, Input, Select } from 'flowbite-svelte';
+	import { Button, Input, Select } from 'flowbite-svelte';
 
 	let {
 		taskId,
@@ -42,6 +42,9 @@
 		})
 	);
 
+	const LABEL = 'block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1';
+	const SECTION = 'mt-4 pt-4 border-t border-gray-100 dark:border-gray-700';
+
 	async function submitSubtask(e: SubmitEvent) {
 		e.preventDefault();
 		if (!newSubtaskTitle.trim()) return;
@@ -53,11 +56,10 @@
 	}
 </script>
 
-<!-- Subtasks -->
-<Card class="mb-4 max-w-none">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.subtasks.title')}</h2>
+<section class={SECTION}>
+	<h2 class={LABEL}>{$t('tasks.subtasks.title')}</h2>
 	{#if subtasks.length}
-		<div class="mb-3">
+		<div class="mb-2">
 			{#each subtasks as sub, i (sub.id)}
 				<div
 					class="flex items-center gap-3 py-2 {i < subtasks.length - 1
@@ -80,26 +82,24 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{$t('tasks.subtasks.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{$t('tasks.subtasks.empty')}</p>
 	{/if}
-	<form onsubmit={submitSubtask} class="flex gap-2">
+	<form onsubmit={submitSubtask} class="flex items-center gap-2">
 		<Input
 			type="text"
+			size="sm"
 			bind:value={newSubtaskTitle}
 			placeholder={$t('tasks.subtasks.placeholder')}
 			class="flex-1"
 		/>
-		<Button type="submit" size="sm">{$t('common.add')}</Button>
+		<Button type="submit" size="xs">{$t('common.add')}</Button>
 	</form>
-</Card>
+</section>
 
-<!-- Related Tasks -->
-<Card class="mb-4 max-w-none">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-		{$t('tasks.relations.title')}
-	</h2>
+<section class={SECTION}>
+	<h2 class={LABEL}>{$t('tasks.relations.title')}</h2>
 	{#if rows.length}
-		<div class="mb-3">
+		<div class="mb-2">
 			{#each rows as row, i (row.rel.id)}
 				<div
 					class="flex items-center gap-3 py-2 {i < rows.length - 1
@@ -131,18 +131,19 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-500 dark:text-gray-400 mb-3">{$t('tasks.relations.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{$t('tasks.relations.empty')}</p>
 	{/if}
-	<div class="flex gap-2 flex-wrap">
+	<div class="flex items-center gap-2 flex-wrap">
 		<Input
 			type="number"
+			size="sm"
 			bind:value={newRelatedTaskId}
 			placeholder={$t('tasks.relations.idPlaceholder')}
 			class="w-28"
 		/>
-		<Select placeholder="" bind:value={newRelationKind} class="w-auto">
+		<Select placeholder="" size="sm" bind:value={newRelationKind} class="w-auto">
 			{#each RELATION_KINDS as k (k)}<option value={k}>{$t(relationKindKey(k))}</option>{/each}
 		</Select>
-		<Button size="sm" onclick={submitRelation}>{$t('common.add')}</Button>
+		<Button size="xs" onclick={submitRelation}>{$t('common.add')}</Button>
 	</div>
-</Card>
+</section>

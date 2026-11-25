@@ -152,18 +152,18 @@ ok('comment posted', true);
 await page.waitForFunction(() => document.body.innerText.includes('commented on'));
 ok('the comment shows in the activity log', true);
 
-await page.click('button:has-text("Work Items")');
+await page.click('button[role=tab]:has-text("Details")');
 await page.fill('input[placeholder="Add subtask…"]', 'My subtask');
 await page.click('button:has-text("Add"):near(input[placeholder="Add subtask…"])');
 await page.waitForFunction(() => document.body.innerText.includes('My subtask'));
 await page.reload();
-await page.click('button:has-text("Work Items")');
+await page.click('button[role=tab]:has-text("Details")');
 await page.waitForFunction(() => document.body.innerText.includes('My subtask'));
 ok('a subtask can be added from the UI and stays visible under its task after reload', true);
 
 const notePath = path.join(tmp, 'note.txt');
 fs.writeFileSync(notePath, 'attachment from the browser');
-await page.click('button:has-text("Activity")');
+await page.click('button[aria-label="Edit attachments"]'); // attachments sit in the Details tab's side column
 await page.setInputFiles('input[type=file]', notePath);
 await page.waitForSelector('button:has-text("note.txt")');
 const [dl] = await Promise.all([page.waitForEvent('download'), page.click('button:has-text("note.txt")')]);
