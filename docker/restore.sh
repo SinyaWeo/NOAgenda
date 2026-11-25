@@ -24,7 +24,9 @@ fi
 gzip -dc "$DB_DUMP" | "${DC[@]}" exec -T mariadb sh -c 'exec mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"'
 if [ -n "$UPLOADS" ]; then
   gzip -t "$UPLOADS"
-  "${DC[@]}" run --rm --no-deps -T --user root --entrypoint sh backend -c 'rm -rf /app/uploads/* && tar -C /app -xzf - && chown -R node:node /app/uploads' < "$UPLOADS"
+  # Runs as the image's own user (node), who owns the volume: the hardened container has no capabilities,
+  # so root could neither chown nor remove node's files. `find -delete` also removes dotfiles.
+  "${DC[@]}" run --rm --no-deps -T --entrypoint sh backend -c 'find /app/uploads -mindepth 1 -delete && tar -C /app --no-same-owner -xzf -' < "$UPLOADS"
 fi
 "${DC[@]}" start backend frontend
 echo "Restore complete."
