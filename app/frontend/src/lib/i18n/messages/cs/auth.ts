@@ -95,6 +95,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.terms': 'Podmínky používání',
 	'auth.about.privacy': 'Zásady ochrany osobních údajů',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.svelte5.title': 'Aktuální kód Svelte 5 všude',
+	'auth.about.timeline.svelte5.body':
+		'Celé rozhraní nyní používá runy Svelte 5 a konvence SvelteKit 3 a kontrola kódu odmítá zastaralá API. Na obrazovce se nic nemění, kód se ale snáze udržuje.',
 	'auth.about.timeline.emailChange.title': 'Změna e‑mailu až po potvrzení',
 	'auth.about.timeline.emailChange.body':
 		'Nová e‑mailová adresa začne platit, až otevřete odkaz, který na ni pošleme; do té doby vše chodí na stávající adresu a čekající změnu lze zrušit. Původní adresa dostane oznámení, jakmile se změna provede.',

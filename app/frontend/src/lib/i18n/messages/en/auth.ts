@@ -93,6 +93,9 @@ export const messages = {
 	'auth.about.terms': 'Terms of Service',
 	'auth.about.privacy': 'Privacy Policy',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.svelte5.title': 'Current Svelte 5 code throughout',
+	'auth.about.timeline.svelte5.body':
+		'The whole interface now uses Svelte 5 runes and SvelteKit 3 conventions, and code checks reject deprecated APIs. Nothing changes on screen; the code is simpler to maintain.',
 	'auth.about.timeline.emailChange.title': 'Email changes confirmed first',
 	'auth.about.timeline.emailChange.body':
 		'A new email address takes effect only after you open the link sent to it; until then everything keeps going to the current one, and a pending change can be cancelled. The old address is told when the change goes through.',
