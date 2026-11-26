@@ -93,6 +93,15 @@ export const messages = {
 	'auth.about.terms': 'Terms of Service',
 	'auth.about.privacy': 'Privacy Policy',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.emailChange.title': 'Email changes confirmed first',
+	'auth.about.timeline.emailChange.body':
+		'A new email address takes effect only after you open the link sent to it; until then everything keeps going to the current one, and a pending change can be cancelled. The old address is told when the change goes through.',
+	'auth.about.timeline.profilePage.title': 'One Profile page',
+	'auth.about.timeline.profilePage.body':
+		'Name, photo, email, password, language, timezone and theme are all on one Profile page in Settings, edited by clicking the value, like on a task. Terms of Service and the Privacy Policy moved to the About page.',
+	'auth.about.timeline.tidyUp.title': 'Tidier pages',
+	'auth.about.timeline.tidyUp.body':
+		'Pages keep a comfortable maximum width on large screens, the user menu is shorter, and favorites were removed to keep things simple.',
 	'auth.about.timeline.taskPage.title': 'Edit tasks in place',
 	'auth.about.timeline.taskPage.body':
 		'Everything on a task is edited right where it is shown: click the title, description, status, priority, dates, labels or assignee to change it. Reminders can follow the due date (a number of days before it, at a set time), attachments can be deleted, and subtasks, related tasks and comments sit on one page.',

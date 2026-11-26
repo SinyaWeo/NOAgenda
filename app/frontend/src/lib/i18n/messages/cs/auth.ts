@@ -95,6 +95,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.terms': 'Podmínky používání',
 	'auth.about.privacy': 'Zásady ochrany osobních údajů',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.emailChange.title': 'Změna e‑mailu až po potvrzení',
+	'auth.about.timeline.emailChange.body':
+		'Nová e‑mailová adresa začne platit, až otevřete odkaz, který na ni pošleme; do té doby vše chodí na stávající adresu a čekající změnu lze zrušit. Původní adresa dostane oznámení, jakmile se změna provede.',
+	'auth.about.timeline.profilePage.title': 'Jedna stránka profilu',
+	'auth.about.timeline.profilePage.body':
+		'Jméno, fotka, e‑mail, heslo, jazyk, časové pásmo i motiv jsou na jedné stránce Profil v Nastavení a mění se kliknutím na hodnotu, stejně jako u úkolu. Podmínky používání a zásady ochrany osobních údajů se přesunuly na stránku O aplikaci.',
+	'auth.about.timeline.tidyUp.title': 'Úhlednější stránky',
+	'auth.about.timeline.tidyUp.body':
+		'Stránky mají na velkých obrazovkách pohodlnou maximální šířku, uživatelská nabídka je kratší a oblíbené položky jsme kvůli jednoduchosti odebrali.',
 	'auth.about.timeline.taskPage.title': 'Úpravy úkolu přímo na místě',
 	'auth.about.timeline.taskPage.body':
 		'Vše na úkolu se upravuje tam, kde je zobrazené: kliknutím na název, popis, stav, prioritu, termíny, štítky nebo řešitele je změníte. Připomínky se mohou řídit termínem dokončení (zadaný počet dní předem v nastavený čas), přílohy lze mazat a podúkoly, související úkoly a komentáře jsou na jedné stránce.',

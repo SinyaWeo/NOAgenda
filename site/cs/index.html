@@ -1,122 +1,283 @@
 <!doctype html>
 <html lang="cs">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NOAgenda: vlastní správa úkolů a projektů</title>
-<meta name="description" content="NOAgenda je svobodná open-source aplikace pro správu úkolů a projektů na vlastním serveru: projekty, úkoly, kanban, týmy, připomínky a další. Vyzkoušejte veřejné demo.">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#0284c7">
-<meta property="og:title" content="NOAgenda: vlastní správa úkolů a projektů">
-<meta property="og:description" content="NOAgenda je svobodná open-source aplikace pro správu úkolů a projektů na vlastním serveru: projekty, úkoly, kanban, týmy, připomínky a další. Vyzkoušejte veřejné demo.">
-<meta property="og:type" content="website">
-<link rel="alternate" hreflang="en" href="/">
-<link rel="alternate" hreflang="cs" href="/cs/">
-<link rel="icon" href="../favicon.ico" sizes="any">
-<link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png">
-<link rel="apple-touch-icon" href="../apple-touch-icon.png">
-<link rel="stylesheet" href="../style.css">
-</head>
-<body>
-<a class="skip" href="#main">Přeskočit na obsah</a>
-<header class="site-header">
-<div class="wrap">
-<a class="brand" href="index.html">
-<picture><source srcset="../logo-dark.png" media="(prefers-color-scheme: dark)"><img src="../logo-light.png" width="32" height="32" alt=""></picture>
-NOAgenda</a>
-<nav class="nav" aria-label="Main">
-<a href="#features">Funkce</a><a href="#self-hosting">Vlastní hosting</a><a href="#open-source">Open source</a>
-<a class="lang" href="../index.html" hreflang="en" lang="en">EN</a>
-<a class="btn btn-sm" href="https://demo.noagenda.app">Vyzkoušet demo</a>
-</nav>
-</div>
-</header>
-<main id="main">
-<section class="hero">
-<div class="wrap">
-<div>
-<span class="eyebrow">Open source · Vlastní hosting</span>
-<h1>Úkoly a projekty na vašem vlastním serveru.</h1>
-<p class="lead">NOAgenda spojuje projekty, úkoly, kanban nástěnky, týmy a připomínky v jedné rychlé aplikaci, kterou si sami provozujete. Vaše data zůstávají vaše.</p>
-<div class="cta">
-<a class="btn" href="https://demo.noagenda.app">Vyzkoušet demo</a>
-<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zobrazit na GitHubu</a>
-</div>
-<p class="fineprint">Demo je veřejné a pravidelně se vrací do původního stavu. Ukázkoví uživatelé a jejich hesla jsou na přihlašovací stránce. Nezadávejte skutečná data.</p>
-</div>
-<div class="mock" aria-hidden="true">
-<div class="mock-bar"><i></i><i></i><i></i><span>Relaunch webu</span></div>
-<div class="mock-board"><div class="col"><h4>K řešení</h4><div class="card">Napsat texty ke spuštění<small><span class="tag green"></span>Po</small></div><div class="card">Sehnat reference<small><span class="tag amber"></span>Pá</small></div></div><div class="col"><h4>Rozpracováno</h4><div class="card">Předělat stránku s cenami<small><span class="tag red"></span>Zítra<span class="bar"><b style="width:60%"></b></span></small></div><div class="card">Nastavit přesměrování<small><span class="tag green"></span>Čt<span class="bar"><b style="width:30%"></b></span></small></div></div><div class="col"><h4>Hotovo</h4><div class="card">Audit mapy webu<small><span class="tag green"></span>Hotovo</small></div><div class="card">Vybrat CMS<small><span class="tag green"></span>Hotovo</small></div></div></div>
-</div>
-</div>
-</section>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>NOAgenda: vlastní správa úkolů a projektů</title>
+		<meta
+			name="description"
+			content="NOAgenda je svobodná open-source aplikace pro správu úkolů a projektů na vlastním serveru: projekty, úkoly, kanban, týmy, připomínky a další. Vyzkoušejte veřejné demo."
+		/>
+		<meta name="color-scheme" content="light dark" />
+		<meta name="theme-color" content="#0284c7" />
+		<meta property="og:title" content="NOAgenda: vlastní správa úkolů a projektů" />
+		<meta
+			property="og:description"
+			content="NOAgenda je svobodná open-source aplikace pro správu úkolů a projektů na vlastním serveru: projekty, úkoly, kanban, týmy, připomínky a další. Vyzkoušejte veřejné demo."
+		/>
+		<meta property="og:type" content="website" />
+		<link rel="alternate" hreflang="en" href="/" />
+		<link rel="alternate" hreflang="cs" href="/cs/" />
+		<link rel="icon" href="../favicon.ico" sizes="any" />
+		<link rel="icon" type="image/png" sizes="192x192" href="../icon-192.png" />
+		<link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+		<link rel="preload" href="../fonts/material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin />
+		<link rel="stylesheet" href="../style.css" />
+	</head>
+	<body>
+		<a class="skip" href="#main">Přeskočit na obsah</a>
+		<header class="site-header">
+			<div class="wrap">
+				<a class="brand" href="index.html">
+					<picture
+						><source srcset="../logo-dark.png" media="(prefers-color-scheme: dark)" />
+						<img src="../logo-light.png" width="32" height="32" alt=""
+					/></picture>
+					NOAgenda</a
+				>
+				<nav class="nav" aria-label="Main">
+					<a href="#features">Funkce</a><a href="#self-hosting">Vlastní hosting</a
+					><a href="#open-source">Open source</a>
+					<a class="lang" href="../index.html" hreflang="en" lang="en">EN</a>
+					<a class="btn btn-sm" href="https://demo.noagenda.app">Vyzkoušet demo</a>
+				</nav>
+			</div>
+		</header>
+		<main id="main">
+			<section class="hero">
+				<div class="wrap">
+					<div>
+						<span class="eyebrow">Open source · Vlastní hosting</span>
+						<h1>Úkoly a projekty na vašem vlastním serveru.</h1>
+						<p class="lead">
+							NOAgenda spojuje projekty, úkoly, kanban nástěnky, týmy a připomínky v jedné rychlé aplikaci,
+							kterou si sami provozujete. Vaše data zůstávají vaše.
+						</p>
+						<div class="cta">
+							<a class="btn" href="https://demo.noagenda.app">Vyzkoušet demo</a>
+							<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zobrazit na GitHubu</a>
+						</div>
+						<p class="fineprint">
+							Demo je veřejné a pravidelně se vrací do původního stavu. Ukázkoví uživatelé a jejich hesla jsou
+							na přihlašovací stránce. Nezadávejte skutečná data.
+						</p>
+					</div>
+					<div class="mock" aria-hidden="true">
+						<div class="mock-bar"><i></i><i></i><i></i><span>Relaunch webu</span></div>
+						<div class="mock-board">
+							<div class="col">
+								<h4>K řešení</h4>
+								<div class="card">
+									Napsat texty ke spuštění<small><span class="tag green"></span>Po</small>
+								</div>
+								<div class="card">
+									Sehnat reference<small><span class="tag amber"></span>Pá</small>
+								</div>
+							</div>
+							<div class="col">
+								<h4>Rozpracováno</h4>
+								<div class="card">
+									Předělat stránku s cenami<small
+										><span class="tag red"></span>Zítra<span class="bar"><b style="width: 60%"></b></span
+									></small>
+								</div>
+								<div class="card">
+									Nastavit přesměrování<small
+										><span class="tag green"></span>Čt<span class="bar"><b style="width: 30%"></b></span
+									></small>
+								</div>
+							</div>
+							<div class="col">
+								<h4>Hotovo</h4>
+								<div class="card">
+									Audit mapy webu<small><span class="tag green"></span>Hotovo</small>
+								</div>
+								<div class="card">
+									Vybrat CMS<small><span class="tag green"></span>Hotovo</small>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
 
-<section id="features">
-<div class="wrap">
-<div class="section-head"><h2>Vše, co potřebujete k práci</h2><p>Jednotný model projektů a úkolů s pohledy a nástroji pro spolupráci, které malý tým opravdu používá.</p></div>
-<div class="grid cols-3"><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M197.69-140q-23.59 0-40.64-17.05T140-197.69v-564.62q0-23.59 17.05-40.64T197.69-820h205q-1.92-32.31 20.85-56.15Q446.31-900 480-900q34.08 0 56.85 23.85 22.76 23.84 20.46 56.15h205q23.59 0 40.64 17.05T820-762.31v564.62q0 23.59-17.05 40.64T762.31-140H197.69Zm0-45.39h564.62q4.61 0 8.46-3.84 3.84-3.85 3.84-8.46v-564.62q0-4.61-3.84-8.46-3.85-3.84-8.46-3.84H197.69q-4.61 0-8.46 3.84-3.84 3.85-3.84 8.46v564.62q0 4.61 3.84 8.46 3.85 3.84 8.46 3.84ZM290-294.62h254.92V-340H290v45.38Zm0-162.69h380v-45.38H290v45.38ZM290-620h380v-45.38H290V-620Zm213.65-181.15q10.2-9.93 10.2-23.73 0-13.81-10.2-23.73-10.2-9.93-23.73-9.93-13.54 0-23.46 9.93-9.92 9.92-9.92 23.73 0 13.8 9.92 23.73 9.92 9.92 23.46 9.92 13.53 0 23.73-9.92ZM185.39-185.39v-589.22 589.22Z"/></svg></div><h3>Projekty, úkoly a podúkoly</h3><p>Jedna hierarchie pro všechno. Stavy, priority, termíny, procento dokončení, opakované úkoly a vazby mezi úkoly.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M289.39-287.77h45.38v-384.46h-45.38v384.46Zm335.84-80h45.38v-304.46h-45.38v304.46Zm-167.92-120h45.38v-184.46h-45.38v184.46ZM197.69-140q-23.53 0-40.61-17.08T140-197.69v-564.62q0-23.53 17.08-40.61T197.69-820h564.62q23.53 0 40.61 17.08T820-762.31v564.62q0 23.53-17.08 40.61T762.31-140H197.69Zm0-45.39h564.62q4.61 0 8.46-3.84 3.84-3.85 3.84-8.46v-564.62q0-4.61-3.84-8.46-3.85-3.84-8.46-3.84H197.69q-4.61 0-8.46 3.84-3.84 3.85-3.84 8.46v564.62q0 4.61 3.84 8.46 3.85 3.84 8.46 3.84Zm-12.3-589.22v589.22-589.22Z"/></svg></div><h3>Kanban, kalendář a myšlenková mapa</h3><p>Stejnou práci uvidíte jako kanban sloupce, kalendář nejbližších termínů, Ganttův diagram nebo myšlenkovou mapu.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M426.92-117.92q-22.15-21-23.69-51.93h153.54q-1.54 30.93-23.69 51.93-22.16 21-53.08 21-30.92 0-53.08-21Zm-98.53-123.54v-45.39h303.22v45.39H328.39Zm2.69-116q-60.62-40.69-95.85-100.39Q200-517.54 200-592.38q0-114.7 82.65-197.35 82.66-82.65 197.35-82.65t197.35 82.65Q760-707.08 760-592.38q0 74.84-34.92 134.53-34.93 59.7-96.16 100.39H331.08Zm16.23-45.39h266q47.23-32 74.27-81.84 27.03-49.85 27.03-107.69 0-97.08-68.76-165.85Q577.08-827 480-827t-165.85 68.77q-68.76 68.77-68.76 165.85 0 57.84 27.03 107.69 27.04 49.84 74.89 81.84Zm132.69 0Z"/></svg></div><h3>Nápady a protokol aktivity</h3><p>Zapisujte si soukromé nápady a sdílejte je s týmem, a v auditní stopě vidíte, kdo co změnil.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M197.69-185.39h376.92v-200h200v-376.92q0-5.38-3.46-8.84t-8.84-3.46H197.69q-5.38 0-8.84 3.46t-3.46 8.84v564.62q0 5.38 3.46 8.84t8.84 3.46Zm0 45.39q-23.59 0-40.64-17.05T140-197.69v-564.62q0-23.59 17.05-40.64T197.69-820h564.62q23.59 0 40.64 17.05T820-762.31v388.08L585.77-140H197.69Zm114.62-285.39v-45.38h160.38v45.38H312.31Zm0-159.23V-630h335.38v45.38H312.31ZM185.39-185.39V-774.61v589.22Z"/></svg></div><h3>Rychlé poznámky</h3><p>Zapisujte si jednořádkové poznámky na nástěnce, odškrtávejte je nebo je převeďte na úkol, projekt či nápad.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M457.31-347.85h45.38v-198.69l85.77 89.62 32.62-32.62L480-631.23 338.92-489.54l32.62 32.62 85.77-89.62v198.69ZM278.31-140q-23.53 0-40.61-17.08t-17.08-40.61v-544.23H180v-45.39h171.08v-28.07h257.84v28.07H780v45.39h-40.62v544.23q0 23.53-17.08 40.61T681.69-140H278.31ZM694-741.92H266v544.23q0 4.61 3.85 8.46 3.84 3.84 8.46 3.84h403.38q4.62 0 8.46-3.84 3.85-3.85 3.85-8.46v-544.23Zm-428 0V-185.39v-556.53Z"/></svg></div><h3>Koš a historie verzí</h3><p>Smazané projekty, úkoly a nápady počkají 30 dní v koši a vrátí se se vším, co pod nimi bylo. Dřívější názvy a popisy lze obnovit.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M70.31-187.69v-75.93q0-31.53 16.27-55.8 16.27-24.27 45.55-37.15 64.95-28.51 118.64-42.51 53.69-14 119.54-14 66.23 0 119.42 14t118.52 42.51q28.9 12.88 45.48 37.15 16.58 24.27 16.58 55.8v75.93h-600Zm665.38 0v-74.77q0-53.39-24.86-89.07-24.87-35.69-64.98-58.39 53.23 7.61 101.15 20.81 47.92 13.19 80.15 29.73 28.39 15.92 45.46 40.9 17.08 24.99 17.08 56.02v74.77h-154ZM275-530.31q-37.38-37.38-37.38-95.5 0-58.11 37.38-95.3 37.39-37.2 95.5-37.2 58.12 0 95.31 37.2Q503-683.92 503-625.81q0 58.12-37.19 95.5-37.19 37.39-95.31 37.39-58.11 0-95.5-37.39Zm374.18 0q-37.28 37.39-95.41 37.39-6.77 0-14.5-.93-7.73-.92-14.5-3.38 21.43-23.37 32.52-56.12 11.09-32.75 11.09-72.31 0-39.57-11.53-70.61-11.54-31.04-32.08-58.11 6.38-1.46 14.5-2.7 8.11-1.23 14.5-1.23 58.13 0 95.41 37.2 37.28 37.19 37.28 95.3 0 58.12-37.28 95.5ZM115.69-233.08h509.23v-30.54q0-16-9.11-30.03-9.12-14.04-26.19-22.35-62.77-29.31-110.62-40.5-47.84-11.19-108.69-11.19-60.46 0-108.62 11.19-48.15 11.19-110.92 40.5-17.08 8.31-26.08 22.35-9 14.03-9 30.03v30.54Zm317-330.15q24.93-24.92 24.93-62.38 0-37.47-24.93-62.39-24.92-24.92-62.38-24.92T307.92-688Q283-663.08 283-625.61q0 37.46 24.92 62.38 24.93 24.92 62.39 24.92t62.38-24.92Zm-62.38 330.15Zm0-392.53Z"/></svg></div><h3>Týmy a sdílení</h3><p>Sdílejte projekty s oprávněními, přiřazujte lidi, komentujte a reagujte. Pracujete sami? Režim jednoho uživatele týmové nástroje schová.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M790.61-137.54 531.08-397.08q-29.85 26.42-69.65 40.71-39.81 14.29-82.28 14.29-101.62 0-172.31-70.57-70.68-70.58-70.68-171 0-100.43 70.57-171 70.58-70.58 171.72-70.58 100.14 0 170.69 70.58 70.55 70.57 70.55 170.86 0 42.17-14.38 81.98-14.39 39.81-41.62 72.12l260.15 258.54-33.23 33.61ZM378.54-387.46q81.7 0 138.74-57.12 57.03-57.11 57.03-139.07 0-81.97-57.03-139.08-57.04-57.12-138.74-57.12-82.39 0-139.69 57.12-57.31 57.11-57.31 139.08 0 81.96 57.31 139.07 57.3 57.12 139.69 57.12Z"/></svg></div><h3>Štítky, filtry a vyhledávání</h3><p>Třiďte pomocí štítků, ukládejte filtry, označujte oblíbené a hledejte napříč úkoly i projekty.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M180-204.62V-250h72.31v-315.92q0-81.24 49.31-144.89 49.3-63.65 128.38-78.92V-810q0-20.83 14.57-35.42Q459.14-860 479.95-860q20.82 0 35.43 14.58Q530-830.83 530-810v20.27q79.08 15.27 128.38 78.92 49.31 63.65 49.31 144.89V-250H780v45.38H180Zm300-294.69Zm-.07 407q-29.85 0-51.04-21.24-21.2-21.24-21.2-51.07h144.62q0 29.93-21.26 51.12-21.26 21.19-51.12 21.19ZM297.69-250h364.62v-315.92q0-75.77-53.27-129.04-53.27-53.27-129.04-53.27-75.77 0-129.04 53.27-53.27 53.27-53.27 129.04V-250Z"/></svg></div><h3>Připomínky, webhooky a API</h3><p>Nechte si připomínat termíny, propojte jiné nástroje přes webhooky a skriptujte přes API tokeny jen pro čtení nebo pro čtení i zápis.</p></div><div class="tile"><div class="icon" aria-hidden="true"><svg viewBox="0 -960 960 960" fill="currentColor"><path d="M480-323.39 314.31-489.08l32.61-32.23 110.39 110V-780h45.38v368.69l110.39-110 32.61 32.23L480-323.39ZM237.69-180q-23.53 0-40.61-17.08T180-237.69V-363h45.39v125.31q0 4.61 3.84 8.46 3.85 3.84 8.46 3.84h484.62q4.61 0 8.46-3.84 3.84-3.85 3.84-8.46V-363H780v125.31q0 23.53-17.08 40.61T722.31-180H237.69Z"/></svg></div><h3>Přílohy a export</h3><p>Přikládejte soubory v rámci kvót na uživatele a kdykoli exportujte všechna svá data.</p></div></div>
-</div>
-</section>
+			<section id="features">
+				<div class="wrap">
+					<div class="section-head">
+						<h2>Vše, co potřebujete k práci</h2>
+						<p>
+							Jednotný model projektů a úkolů s pohledy a nástroji pro spolupráci, které malý tým opravdu
+							používá.
+						</p>
+					</div>
+					<div class="grid cols-3">
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">assignment</span>
+							</div>
+							<h3>Projekty, úkoly a podúkoly</h3>
+							<p>
+								Jedna hierarchie pro všechno. Stavy, priority, termíny, procento dokončení, opakované úkoly a
+								vazby mezi úkoly.
+							</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">view_kanban</span>
+							</div>
+							<h3>Kanban, kalendář a myšlenková mapa</h3>
+							<p>
+								Stejnou práci uvidíte jako kanban sloupce, kalendář nejbližších termínů, Ganttův diagram nebo
+								myšlenkovou mapu.
+							</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">lightbulb</span>
+							</div>
+							<h3>Nápady a protokol aktivity</h3>
+							<p>
+								Zapisujte si soukromé nápady a sdílejte je s týmem, a v auditní stopě vidíte, kdo co změnil.
+							</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">sticky_note_2</span>
+							</div>
+							<h3>Rychlé poznámky</h3>
+							<p>
+								Zapisujte si jednořádkové poznámky na nástěnce, odškrtávejte je nebo je převeďte na úkol,
+								projekt či nápad.
+							</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">restore_from_trash</span>
+							</div>
+							<h3>Koš a historie verzí</h3>
+							<p>
+								Smazané projekty, úkoly a nápady počkají 30 dní v koši a vrátí se se vším, co pod nimi bylo.
+								Dřívější názvy a popisy lze obnovit.
+							</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">group</span>
+							</div>
+							<h3>Týmy a sdílení</h3>
+							<p>
+								Sdílejte projekty s oprávněními, přiřazujte lidi, komentujte a reagujte. Pracujete sami? Režim
+								jednoho uživatele týmové nástroje schová.
+							</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">search</span>
+							</div>
+							<h3>Štítky, filtry a vyhledávání</h3>
+							<p>Třiďte pomocí štítků, ukládejte filtry a hledejte napříč úkoly i projekty.</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">notifications</span>
+							</div>
+							<h3>Připomínky, webhooky a API</h3>
+							<p>
+								Nechte si připomínat termíny, propojte jiné nástroje přes webhooky a skriptujte přes API
+								tokeny jen pro čtení nebo pro čtení i zápis.
+							</p>
+						</div>
+						<div class="tile">
+							<div class="icon" aria-hidden="true">
+								<span class="material-symbols-outlined">download</span>
+							</div>
+							<h3>Přílohy a export</h3>
+							<p>Přikládejte soubory v rámci kvót na uživatele a kdykoli exportujte všechna svá data.</p>
+						</div>
+					</div>
+				</div>
+			</section>
 
-<section class="alt">
-<div class="wrap split">
-<div>
-<h2>Zabezpečení ve výchozím stavu</h2>
-<p class="lead">Zabezpečení je součástí návrhu, ne dodatek.</p>
-</div>
-<div>
-<ul class="checks"><li>Krátkodobé JWT přístupové tokeny a rotující refresh cookies</li><li>Zakázané trasy ve výchozím stavu, omezení počtu požadavků a zamykání účtů</li><li>Změny v administraci vyžadují znovu zadat heslo</li><li>Ověření e-mailu a smazání účtu s ochrannou lhůtou</li><li>Zabezpečené kontejnery za Caddy s automatickým HTTPS</li><li>K dispozici v češtině a angličtině. E-maily a upozornění používají jazyk uložený u každého uživatele.</li></ul>
-</div>
-</div>
-</section>
+			<section class="alt">
+				<div class="wrap split">
+					<div>
+						<h2>Zabezpečení ve výchozím stavu</h2>
+						<p class="lead">Zabezpečení je součástí návrhu, ne dodatek.</p>
+					</div>
+					<div>
+						<ul class="checks">
+							<li>Krátkodobé JWT přístupové tokeny a rotující refresh cookies</li>
+							<li>Zakázané trasy ve výchozím stavu, omezení počtu požadavků a zamykání účtů</li>
+							<li>Změny v administraci vyžadují znovu zadat heslo</li>
+							<li>
+								Ověření e-mailu, změna e-mailu až po potvrzení z nové adresy a smazání účtu s ochrannou lhůtou
+							</li>
+							<li>Zabezpečené kontejnery za Caddy s automatickým HTTPS</li>
+							<li>
+								K dispozici v češtině a angličtině. E-maily a upozornění používají jazyk uložený u každého
+								uživatele.
+							</li>
+						</ul>
+					</div>
+				</div>
+			</section>
 
-<section id="self-hosting">
-<div class="wrap split">
-<div>
-<h2>Vlastní hosting za pár minut</h2>
-<p class="lead">Spusťte ji na malém VPS se 2 až 4 GB RAM. Hotové kontejnerové image, jeden sdílený Caddy pro HTTPS, MariaDB ve vnitřní síti a skripty pro zálohování a obnovu.</p>
-<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda/blob/main/DEPLOYMENT.md">Přečíst návod k nasazení</a>
-</div>
-<pre><code># on your server
+			<section id="self-hosting">
+				<div class="wrap split">
+					<div>
+						<h2>Vlastní hosting za pár minut</h2>
+						<p class="lead">
+							Spusťte ji na malém VPS se 2 až 4 GB RAM. Hotové kontejnerové image, jeden sdílený Caddy pro
+							HTTPS, MariaDB ve vnitřní síti a skripty pro zálohování a obnovu.
+						</p>
+						<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda/blob/main/DEPLOYMENT.md"
+							>Přečíst návod k nasazení</a
+						>
+					</div>
+					<pre><code># on your server
 cp docker/.env.production.example docker/.env.production
 $EDITOR docker/.env.production
 docker/deploy.sh</code></pre>
-</div>
-</section>
+				</div>
+			</section>
 
-<section id="open-source" class="alt">
-<div class="wrap split">
-<div>
-<h2>Svobodný software, AGPL-3.0</h2>
-<p class="lead">NOAgenda je licencována pod GNU Affero General Public License v3.0 nebo novější. Můžete si ji přečíst, spustit i upravit. Pokud upravenou verzi provozujete jako síťovou službu, musíte uživatelům nabídnout její zdrojový kód.</p>
-</div>
-<div>
-<p>Postaveno na NestJS, MariaDB, Svelte 5 a SvelteKit, TailwindCSS a Dockeru.</p>
-<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zdrojový kód a licence</a>
-</div>
-</div>
-</section>
+			<section id="open-source" class="alt">
+				<div class="wrap split">
+					<div>
+						<h2>Svobodný software, AGPL-3.0</h2>
+						<p class="lead">
+							NOAgenda je licencována pod GNU Affero General Public License v3.0 nebo novější. Můžete si ji
+							přečíst, spustit i upravit. Pokud upravenou verzi provozujete jako síťovou službu, musíte
+							uživatelům nabídnout její zdrojový kód.
+						</p>
+					</div>
+					<div>
+						<p>Postaveno na NestJS, MariaDB, Svelte 5 a SvelteKit, TailwindCSS a Dockeru.</p>
+						<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zdrojový kód a licence</a>
+					</div>
+				</div>
+			</section>
 
-<section class="cta-band">
-<div class="wrap">
-<h2>Přesvědčte se sami</h2>
-<p>Přihlaste se do veřejného dema jedním z ukázkových uživatelů. Bez registrace.</p>
-<div class="cta">
-<a class="btn" href="https://demo.noagenda.app">Vyzkoušet demo</a>
-<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zobrazit na GitHubu</a>
-</div>
-</div>
-</section>
-</main>
-<footer class="site-footer">
-<div class="wrap">
-<span>© NOAgenda. Svobodný software pod licencí AGPL-3.0-or-later.</span>
-<nav aria-label="Footer">
-<a href="privacy.html">Ochrana soukromí</a>
-<a href="terms.html">Podmínky</a>
-<a href="https://github.com/SinyaWeo/NOAgenda">Zdrojový kód</a>
-</nav>
-</div>
-</footer>
-</body>
+			<section class="cta-band">
+				<div class="wrap">
+					<h2>Přesvědčte se sami</h2>
+					<p>Přihlaste se do veřejného dema jedním z ukázkových uživatelů. Bez registrace.</p>
+					<div class="cta">
+						<a class="btn" href="https://demo.noagenda.app">Vyzkoušet demo</a>
+						<a class="btn btn-ghost" href="https://github.com/SinyaWeo/NOAgenda">Zobrazit na GitHubu</a>
+					</div>
+				</div>
+			</section>
+		</main>
+		<footer class="site-footer">
+			<div class="wrap">
+				<span>© NOAgenda. Svobodný software pod licencí AGPL-3.0-or-later.</span>
+				<nav aria-label="Footer">
+					<a href="privacy.html">Ochrana soukromí</a>
+					<a href="terms.html">Podmínky</a>
+					<a href="https://github.com/SinyaWeo/NOAgenda">Zdrojový kód</a>
+				</nav>
+			</div>
+		</footer>
+	</body>
 </html>
