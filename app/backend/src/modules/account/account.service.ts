@@ -190,7 +190,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
         // Rows that are not removed by the nodes' ON DELETE CASCADE:
         await q(`DELETE FROM webhook WHERE projectId IN (${inList})`, part);
         await q(`DELETE FROM kanban_buckets WHERE projectId IN (${inList})`, part);
-        for (const table of ['favorites', 'subscriptions', 'reactions']) {
+        for (const table of ['subscriptions', 'reactions']) {
           await q(`DELETE FROM ${table} WHERE entityType IN ('project','task') AND entityId IN (${inList})`, part);
         }
         await q(`DELETE FROM node_revisions WHERE nodeId IN (${inList})`, part);
@@ -218,7 +218,6 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
         'saved_filters',
         'api_tokens',
         'user_sessions',
-        'favorites',
         'subscriptions',
         'reactions',
         'webhook',
@@ -280,7 +279,6 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
       teamsOwned,
       teamMemberships: memberships,
       sharedProjectsWithMe: await q('SELECT projectId, permission FROM project_users WHERE userId = ?', [userId]),
-      favorites: await q('SELECT entityType, entityId, createdAt FROM favorites WHERE userId = ?', [userId]),
       subscriptions: await q('SELECT entityType, entityId, createdAt FROM subscriptions WHERE userId = ?', [userId]),
       reactions: await q('SELECT entityType, entityId, reaction, createdAt FROM reactions WHERE userId = ?', [userId]),
       notifications: await q('SELECT id, message, `read`, createdAt FROM notifications WHERE userId = ? ORDER BY id', [

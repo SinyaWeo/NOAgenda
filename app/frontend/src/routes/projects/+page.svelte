@@ -2,56 +2,32 @@
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { errMessage } from '$lib/errors';
 	import { onMount } from 'svelte';
-	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
+	import { apiGetAuth } from '$lib/api';
 	import type { Project } from '$lib/types';
-	import type { FavoriteRow } from '$lib/types-misc';
 	import { writable } from 'svelte/store';
 	import { Alert, Button, Card, Progressbar } from 'flowbite-svelte';
 	import { t } from '$lib/i18n';
-	import { FolderOutline, PlusOutline, StarOutline, StarSolid } from 'flowbite-svelte-icons';
+	import { FolderOutline, PlusOutline } from 'flowbite-svelte-icons';
 
 	const projects = writable<Project[]>([]);
-	const favorites = writable<Set<number>>(new Set());
 	const taskStats = writable<Record<number, { total: number; done: number }>>({});
 	const loading = writable(true);
 	const error = writable('');
 
 	onMount(async () => {
 		try {
-			const [ps, favs, stats] = await Promise.all([
+			const [ps, stats] = await Promise.all([
 				apiGetAuth<Project[]>('/projects'),
-				apiGetAuth<FavoriteRow[]>('/favorites').catch(() => [] as FavoriteRow[]),
 				apiGetAuth<Record<number, { total: number; done: number }>>('/projects/stats').catch(() => ({}))
 			]);
 			projects.set(ps);
 			taskStats.set(stats ?? {});
-			favorites.set(new Set(favs.filter((f) => f.entityType === 'project').map((f) => f.entityId)));
 		} catch (e: unknown) {
 			error.set(errMessage(e));
 		} finally {
 			loading.set(false);
 		}
 	});
-
-	async function toggleFavorite(projectId: number) {
-		const isFav = $favorites.has(projectId);
-		try {
-			if (isFav) {
-				await apiDeleteAuth(`/favorites/project/${projectId}`);
-				favorites.update((s) => {
-					const n = new Set(s);
-					n.delete(projectId);
-					return n;
-				});
-			} else {
-				await apiPostAuth('/favorites', {
-					entityType: 'project',
-					entityId: projectId
-				});
-				favorites.update((s) => new Set([...s, projectId]));
-			}
-		} catch (_) {}
-	}
 </script>
 
 <PageHeader title={$t('projects.title')}>
@@ -80,15 +56,6 @@
 								{project.description}
 							</p>{/if}
 					</div>
-					<button
-						onclick={() => toggleFavorite(project.id)}
-						class="p-1 text-gray-500 dark:text-gray-400 hover:text-amber-400 transition-colors shrink-0"
-						title={$favorites.has(project.id) ? $t('projects.favorite.remove') : $t('projects.favorite.add')}
-					>
-						{#if $favorites.has(project.id)}<StarSolid class="w-4 h-4 text-amber-400" />{:else}<StarOutline
-								class="w-4 h-4"
-							/>{/if}
-					</button>
 				</div>
 				{#if project.isArchived}<span class="text-xs font-medium tone-gray">
 						{$t('projects.archived')}

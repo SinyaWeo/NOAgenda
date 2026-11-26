@@ -3,8 +3,6 @@ export const messages = {
 	'projects.title': 'Projects',
 	'projects.new': 'New Project',
 	'projects.loading': 'Loading projects...',
-	'projects.favorite.add': 'Add to favorites',
-	'projects.favorite.remove': 'Remove from favorites',
 	'projects.archived': 'Archived',
 	'projects.taskStats': { one: '{done} / {count} tasks', other: '{done} / {count} tasks' },
 	'projects.open': 'Open',

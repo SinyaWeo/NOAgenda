@@ -19,7 +19,7 @@ A self-hosted task and project management app: projects, tasks, kanban boards, t
 - **Admin tools**: user management, team managers, the full audit trail, and handing a project to another user (or
   taking it over) with a logged reason, also when deleting an account so shared projects are not lost
 - **Activity log**: an audit trail of changes to tasks and projects
-- **Organization**: labels, saved filters, favorites, search across tasks and projects
+- **Organization**: labels, saved filters, search across tasks and projects
 - **Reminders** and **webhooks** for integrations, plus **API tokens** (read-only or read & write)
 - **Attachments** with per-user storage quotas, and a data export for every account
 - **Security by default**: JWT access tokens with rotating refresh cookies, default-deny routes, rate limiting and

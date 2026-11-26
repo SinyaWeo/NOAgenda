@@ -35,15 +35,7 @@ export interface SingleUserPreview {
 /** Tables with everything about who shares what with whom; all emptied by the switch. */
 const SHARING_TABLES = ['idea_teams', 'project_teams', 'project_users', 'team_members', 'teams'];
 /** Per-user rows of the other accounts, deleted with them (some would cascade, some have no foreign key). */
-const PER_USER_TABLES = [
-  'saved_filters',
-  'favorites',
-  'subscriptions',
-  'reactions',
-  'notifications',
-  'api_tokens',
-  'user_sessions',
-];
+const PER_USER_TABLES = ['saved_filters', 'subscriptions', 'reactions', 'notifications', 'api_tokens', 'user_sessions'];
 
 const num = (v: unknown) => Number(v ?? 0);
 

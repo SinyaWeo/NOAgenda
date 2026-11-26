@@ -41,13 +41,6 @@ export interface ProjectTeamMember {
 	team?: Team;
 }
 
-/** GET /favorites rows. */
-export interface FavoriteRow {
-	id: number;
-	entityType: 'project' | 'task';
-	entityId: number;
-}
-
 /** GET /info */
 export interface AppInfo {
 	name?: string;

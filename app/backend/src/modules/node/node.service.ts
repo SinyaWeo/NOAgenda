@@ -553,7 +553,7 @@ export class NodeService {
         );
         await q(`DELETE FROM webhook WHERE projectId IN (${inList})`, part);
         await q(`DELETE FROM kanban_buckets WHERE projectId IN (${inList})`, part);
-        for (const table of ['favorites', 'subscriptions', 'reactions']) {
+        for (const table of ['subscriptions', 'reactions']) {
           await q(`DELETE FROM ${table} WHERE entityType IN ('project','task') AND entityId IN (${inList})`, part);
         }
         await q(`DELETE FROM node_revisions WHERE nodeId IN (${inList})`, part);

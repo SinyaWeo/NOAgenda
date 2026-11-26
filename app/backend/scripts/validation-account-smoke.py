@@ -216,7 +216,6 @@ else:
     call('POST', '/team-members', {'teamId': vteam['id'], 'userId': oid}, V)
     call('POST', '/filters', {'name': 'vic filter'}, V)
     call('POST', '/tokens', {'name': 'vic token'}, V)
-    call('POST', '/favorites', {'entityType': 'project', 'entityId': vp['id']}, V)
     # vic's footprint inside OWN's project
     s, op, _ = call('POST', '/projects', {'name': 'Own shared project'}, O)
     call('POST', f'/projects/{op["id"]}/users', {'userId': vid, 'permission': 'write'}, O)
@@ -252,7 +251,7 @@ else:
     check("vic's project, tasks and personal tasks are gone", count('nodes', f"name = 'Vic project' OR title LIKE 'Vic task' OR title = 'Vic subtask' OR title = 'Vic personal task'"), 0)
     check("vic's comments and uploads are gone", (count('comments', f'authorId = {vid}'), count('attachments', f'uploaderId = {vid}')), (0, 0))
     check("vic's webhooks and buckets are gone", (count('webhook', f'userId = {vid} OR projectId = {vp["id"]}'), count('kanban_buckets', f'projectId = {vp["id"]}')), (0, 0))
-    check("vic's labels, filters, tokens, sessions, favorites are gone", sum(count(t, f'{c} = {vid}') for t, c in [('labels', 'createdBy'), ('saved_filters', 'userId'), ('api_tokens', 'userId'), ('user_sessions', 'userId'), ('favorites', 'userId')]), 0)
+    check("vic's labels, filters, tokens, sessions are gone", sum(count(t, f'{c} = {vid}') for t, c in [('labels', 'createdBy'), ('saved_filters', 'userId'), ('api_tokens', 'userId'), ('user_sessions', 'userId')]), 0)
     check("vic's team survives with its other manager; vic's memberships are gone", (count('teams', f"id = {vteam['id']}"), count('team_members', f'userId = {vid}'), count('team_members', f"teamId = {vteam['id']} AND userId = {oid} AND role = 'manager'")), (1, 0, 1))
     check('vic no longer appears in other projects', count('project_users', f'userId = {vid}'), 0)
     if LOCAL_FILES: check("vic's files were removed from disk", any(os.path.exists(p) for p in paths), False)

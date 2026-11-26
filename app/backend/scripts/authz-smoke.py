@@ -90,7 +90,6 @@ for name, m, path, body in [
     ('bob assignees', 'GET', f'/tasks/{tid}/assignees', None),
     ('bob reminders', 'GET', f'/tasks/{tid}/reminders', None),
     ('bob project users add self', 'POST', f'/projects/{pid}/users', {'userId': bid, 'permission': 'admin'}),
-    ('bob favorite alice project', 'POST', '/favorites', {'entityType': 'project', 'entityId': pid}),
     ('bob subscribe', 'PUT', f'/subscriptions/project/{pid}', None),
     ('bob react', 'POST', '/reactions', {'entityType': 'task', 'entityId': tid, 'reaction': '+1'}),
     ('bob list reactions', 'GET', f'/reactions?entityType=task&entityId={tid}', None),
@@ -147,7 +146,6 @@ s, _ = call('PUT', f'/projects/{pid}', {'name': 'hijack'}, Bt); check('bob(write
 s, _ = call('DELETE', f'/projects/{pid}', None, Bt); check('bob(write) cannot delete project', s, 403)
 s, _ = call('PUT', f'/tasks/{tid}', {'projectId': 999999}, Bt); check('cannot move task to missing project', s, [403, 404])
 s, _ = call('GET', f'/tasks/{tid}', None, C); check('carol still locked out', s, 403)
-s, _ = call('POST', '/favorites', {'entityType': 'project', 'entityId': pid}, Bt); check('bob(read+) can favorite shared project', s, 201)
 s, _ = call('POST', '/reactions', {'entityType': 'weird', 'entityId': tid, 'reaction': 'x'}, A); check('reaction bad entityType rejected', s, 400)
 
 # --- 5. team roles: manager (own team only) / member / outsider / app admin
