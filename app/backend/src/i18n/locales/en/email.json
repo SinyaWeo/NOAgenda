@@ -6,5 +6,13 @@
   "reset": {
     "subject": "Reset your {app} password",
     "body": "Hi {username},\n\nSomeone asked to reset the password for your account. Open this link within 1 hour to choose a new one:\n\n{link}\n\nIf this was not you, ignore this email: your password stays unchanged."
+  },
+  "change": {
+    "subject": "Confirm your new {app} email address",
+    "body": "Hi {username},\n\nYou asked to use this address for your {app} account. Open this link within 24 hours to confirm it:\n\n{link}\n\nUntil then your account keeps using its current address. If you did not ask for this, ignore this message: nothing will change."
+  },
+  "changed": {
+    "subject": "Your {app} email address was changed",
+    "body": "Hi {username},\n\nYour {app} account now uses {newEmail} instead of this address, so messages will no longer be sent here.\n\nIf you did not make this change, contact your administrator right away."
   }
 }

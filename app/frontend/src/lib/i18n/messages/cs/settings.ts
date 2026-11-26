@@ -5,18 +5,13 @@ import type { messages as en } from '../en/settings';
 export const messages: Record<keyof typeof en, Message> = {
 	'settings.title': 'Nastavení',
 	'settings.back': 'Zpět',
+	'settings.section.profile': 'Profil',
+	'settings.section.profile.desc': 'Jméno, fotka, e‑mail, heslo a předvolby',
+	'settings.profile.title': 'Profil',
 	'settings.admin': 'Správa',
 	'settings.quotes.title': 'Citáty',
 	'settings.quotes.desc': 'Správa motivačních citátů',
 
-	'settings.section.general': 'Obecné',
-	'settings.section.general.desc': 'Jméno, jazyk a předvolby',
-	'settings.section.avatar': 'Avatar',
-	'settings.section.avatar.desc': 'Změna profilového obrázku',
-	'settings.section.email': 'E‑mail',
-	'settings.section.email.desc': 'Změna e‑mailové adresy',
-	'settings.section.password': 'Heslo',
-	'settings.section.password.desc': 'Změna hesla',
 	'settings.section.apiTokens': 'API tokeny',
 	'settings.section.apiTokens.desc': 'Správa osobních přístupových tokenů',
 	'settings.section.sessions': 'Aktivní přihlášení',
@@ -28,20 +23,19 @@ export const messages: Record<keyof typeof en, Message> = {
 	'settings.section.deletion': 'Smazání účtu',
 	'settings.section.deletion.desc': 'Trvalé smazání vašeho účtu',
 
-	'settings.general.title': 'Obecné nastavení',
 	'settings.general.displayName': 'Zobrazované jméno',
-	'settings.general.timezone': 'Časové pásmo',
-	'settings.general.saveSettings': 'Uložit nastavení',
-	'settings.general.saved': 'Nastavení bylo uloženo.',
 
-	'settings.email.title': 'Změna e‑mailu',
 	'settings.email.intro': 'Na novou adresu pošleme potvrzovací odkaz. Změna se projeví, až adresu ověříte.',
 	'settings.email.newEmail': 'Nová e‑mailová adresa',
 	'settings.email.currentPassword': 'Současné heslo',
 	'settings.email.sending': 'Odesílám…',
 	'settings.email.submit': 'Změnit e‑mail',
-	'settings.email.done':
-		'E‑mail byl změněn. Na novou adresu jsme poslali odkaz: potvrďte ji, abyste se mohli dál přihlašovat.',
+	'settings.email.sent':
+		'Na adresu {email} jsme poslali potvrzovací odkaz. Adresa se změní, jakmile ho otevřete (do 24 hodin).',
+	'settings.email.changed': 'E‑mail byl změněn.',
+	'settings.email.pending': 'Čeká na potvrzení: {email}',
+	'settings.email.cancelPending': 'Zrušit změnu',
+	'settings.email.cancelled': 'Změna e‑mailu byla zrušena.',
 
 	'settings.password.title': 'Změna hesla',
 	'settings.password.show': 'Zobrazit hesla',
@@ -81,9 +75,6 @@ export const messages: Record<keyof typeof en, Message> = {
 	'settings.sessions.revoke': 'Odhlásit',
 	'settings.sessions.empty': 'Žádná aktivní přihlášení.',
 
-	'settings.avatar.title': 'Avatar',
-	'settings.avatar.current': 'Aktuální avatar',
-	'settings.avatar.photo': 'Profilová fotografie',
 	'settings.avatar.hint': 'JPG, PNG, GIF nebo WebP. Nejvýše 5 MB.',
 	'settings.avatar.upload': 'Nahrát novou fotografii',
 	'settings.avatar.failed': 'Nahrání se nezdařilo',

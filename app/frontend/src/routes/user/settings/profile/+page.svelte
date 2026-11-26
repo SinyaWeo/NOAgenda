@@ -1,22 +1,51 @@
 <script lang="ts">
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
-	import { apiGetAuth, API_BASE } from '$lib/api';
-	import { t, tr, fmt, LOCALES } from '$lib/i18n';
+	import { apiGetAuth, apiPostAuth, apiDeleteAuth, apiFetchAuth, API_BASE } from '$lib/api';
+	import { refreshCurrentUser } from '$lib/auth';
+	import { errMessage } from '$lib/errors';
+	import { t, tr, fmt, LOCALES, isLocale, setLocale } from '$lib/i18n';
 	import type { MessageKey } from '$lib/i18n';
-	import { Alert, Button, Card } from 'flowbite-svelte';
+	import { timeZoneOptions } from '$lib/timezones';
+	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
+	import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
 	import type { User } from '$lib/types';
+	import type { AvatarSettings } from '$lib/types-misc';
 
-	const user = writable<User | null>(null);
-	const loading = writable(true);
-	const error = writable('');
+	let user = $state<User | null>(null);
+	let loading = $state(true);
+	let error = $state('');
+	let success = $state('');
+
+	/** The field whose editor is open (only one at a time); null: all show their value. */
+	let editing = $state<'name' | 'email' | 'language' | 'timezone' | 'theme' | null>(null);
+	let nameDraft = $state('');
+	let saving = $state(false);
+
+	/** An address change waiting for the user to open the link sent to it. */
+	let pendingEmail = $state<string | null>(null);
+	let newEmail = $state('');
+	let emailPassword = $state('');
+
+	let oldPassword = $state('');
+	let newPassword = $state('');
+	let confirmPassword = $state('');
+	let showPasswords = $state(false);
+	let savingPassword = $state(false);
+
+	const VALUE =
+		'text-sm text-left cursor-pointer bg-transparent border-0 p-0 hover:underline focus:outline-none focus-visible:underline';
+	const ROW = 'flex justify-between items-center gap-4 py-2.5 text-sm';
+	const DT = 'font-medium text-gray-500 dark:text-gray-400';
+	const PANEL =
+		'mt-2 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 flex flex-col gap-2';
 
 	function resolveUrl(path: string | undefined): string {
 		if (!path) return '';
 		return path.startsWith('http') ? path : `${API_BASE}${path}`;
 	}
 	function getInitials(u: User): string {
-		const name: string = u.name ?? u.username ?? 'U';
+		const name: string = u.name || u.username || 'U';
 		return name
 			.split(' ')
 			.map((w: string) => w[0] ?? '')
@@ -33,56 +62,404 @@
 		return ['light', 'dark', 'system'].includes(th) ? translate(`common.theme.${th}` as MessageKey) : th;
 	}
 
+	function clearMessages() {
+		error = '';
+		success = '';
+	}
+
+	/** Save one field; the header (name, avatar, theme) and the UI language follow at once. */
+	async function save(patch: { name?: string; language?: string; timezone?: string; theme?: string }) {
+		if (saving) return;
+		saving = true;
+		clearMessages();
+		try {
+			user = await apiPostAuth<User>('/user/settings/general', patch);
+			if (isLocale(patch.language)) setLocale(patch.language);
+			await refreshCurrentUser();
+			editing = null;
+		} catch (e: unknown) {
+			error = errMessage(e);
+		} finally {
+			saving = false;
+		}
+	}
+
+	function editName() {
+		nameDraft = user?.name ?? '';
+		editing = 'name';
+	}
+
+	async function saveName(e: Event) {
+		e.preventDefault();
+		const next = nameDraft.trim();
+		if (next === (user?.name ?? '')) editing = null;
+		else await save({ name: next });
+	}
+
+	function toggleEmail() {
+		newEmail = '';
+		emailPassword = '';
+		editing = editing === 'email' ? null : 'email';
+	}
+
+	async function saveEmail(e: Event) {
+		e.preventDefault();
+		saving = true;
+		clearMessages();
+		try {
+			const res = await apiPostAuth<{ pendingEmail: string | null }>('/user/settings/email', {
+				email: newEmail,
+				password: emailPassword
+			});
+			pendingEmail = res.pendingEmail;
+			editing = null;
+			if (pendingEmail) {
+				success = tr('settings.email.sent', { email: pendingEmail });
+			} else {
+				// Without working mail the address changes at once (or the current one cancelled a change).
+				user = await apiGetAuth<User>('/users/me');
+				success = tr('settings.email.changed');
+			}
+		} catch (e: unknown) {
+			error = errMessage(e);
+		} finally {
+			saving = false;
+		}
+	}
+
+	async function cancelEmailChange() {
+		clearMessages();
+		try {
+			await apiDeleteAuth('/user/settings/email/pending');
+			pendingEmail = null;
+			success = tr('settings.email.cancelled');
+		} catch (e: unknown) {
+			error = errMessage(e);
+		}
+	}
+
+	async function uploadAvatar(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		clearMessages();
+		const fd = new FormData();
+		fd.append('avatar', file);
+		try {
+			const res = await apiFetchAuth('/user/settings/avatar/upload', { method: 'PUT', body: fd });
+			if (!res.ok) throw new Error(tr('settings.avatar.failed'));
+			const data: AvatarSettings = await res.json();
+			if (user) user = { ...user, avatarUrl: data.avatarUrl ?? undefined };
+			await refreshCurrentUser(); // the header shows the new picture straight away
+			success = tr('settings.avatar.done');
+		} catch (e: unknown) {
+			error = errMessage(e, tr('settings.avatar.failed'));
+		} finally {
+			input.value = '';
+		}
+	}
+
+	async function savePassword(e: Event) {
+		e.preventDefault();
+		clearMessages();
+		if (newPassword !== confirmPassword) {
+			error = tr('settings.password.mismatch');
+			return;
+		}
+		savingPassword = true;
+		try {
+			await apiPostAuth('/user/settings/password', { oldPassword, newPassword });
+			success = tr('settings.password.done');
+			oldPassword = '';
+			newPassword = '';
+			confirmPassword = '';
+		} catch (e: unknown) {
+			error = errMessage(e);
+		} finally {
+			savingPassword = false;
+		}
+	}
+
 	onMount(async () => {
 		try {
-			user.set(await apiGetAuth<User>('/users/me'));
+			[user, { pendingEmail }] = await Promise.all([
+				apiGetAuth<User>('/users/me'),
+				apiGetAuth<{ pendingEmail: string | null }>('/user/settings/email')
+			]);
 		} catch {
-			error.set(tr('auth.profile.loadFailed'));
+			error = tr('auth.profile.loadFailed');
 		} finally {
-			loading.set(false);
+			loading = false;
 		}
 	});
 </script>
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400 text-center py-8">{$t('common.loading')}</p>
-{:else if $error}
-	<Alert color="red">{$error}</Alert>
-{:else if $user}
-	<div class="max-w-md mx-auto">
-		<Card>
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape') editing = null;
+	}}
+/>
+
+<PageHeader
+	title={$t('settings.profile.title')}
+	back={{ href: '/user/settings', label: $t('settings.back') }}
+/>
+
+{#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
+{#if success}<Alert color="green" class="mb-4">{success}</Alert>{/if}
+
+{#if loading}
+	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
+{:else if user}
+	<div class="flex flex-col gap-4 max-w-xl">
+		<Card class="max-w-none">
 			<div class="flex flex-col items-center gap-3 mb-6">
-				{#if $user.avatarUrl}
-					<img
-						src={resolveUrl($user.avatarUrl)}
-						alt={$t('auth.profile.avatar')}
-						class="w-20 h-20 rounded-full object-cover"
-					/>
-				{:else}
-					<div
-						class="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-2xl font-bold text-primary-700 dark:text-primary-300"
-					>
-						{getInitials($user)}
-					</div>
-				{/if}
-				<div class="text-center">
-					<h1 class="text-xl font-bold text-gray-900 dark:text-white m-0">
-						{$user.name ?? $user.username}
-					</h1>
-					<p class="text-sm text-gray-500 dark:text-gray-400 m-0">@{$user.username}</p>
+				<label class="rounded-full cursor-pointer" title={$t('settings.avatar.upload')}>
+					{#if user.avatarUrl}
+						<img
+							src={resolveUrl(user.avatarUrl)}
+							alt={$t('auth.profile.avatar')}
+							class="w-20 h-20 rounded-full object-cover hover:opacity-80"
+						/>
+					{:else}
+						<div
+							class="w-20 h-20 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center text-2xl font-bold text-primary-700 dark:text-primary-300 hover:opacity-80"
+						>
+							{getInitials(user)}
+						</div>
+					{/if}
+					<span class="sr-only">{$t('settings.avatar.upload')}</span>
+					<input type="file" accept="image/*" onchange={uploadAvatar} class="sr-only" />
+				</label>
+				<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{$t('settings.avatar.hint')}</p>
+				<div class="text-center w-full">
+					{#if editing === 'name'}
+						<form onsubmit={saveName}>
+							<Input
+								bind:value={nameDraft}
+								maxlength={255}
+								autofocus
+								disabled={saving}
+								aria-label={$t('settings.general.displayName')}
+								onblur={() => (editing = null)}
+								class="text-center"
+							/>
+						</form>
+					{:else}
+						<h2 class="text-xl font-bold text-gray-900 dark:text-white m-0">
+							<button
+								type="button"
+								class="{VALUE} text-xl font-bold"
+								title={$t('tasks.details.change')}
+								onclick={editName}
+							>
+								{user.name || user.username}
+							</button>
+						</h2>
+					{/if}
+					<p class="text-sm text-gray-500 dark:text-gray-400 m-0">@{user.username}</p>
 				</div>
 			</div>
-			<dl class="divide-y divide-gray-100 dark:divide-gray-700">
-				{#each [[$t('common.field.email'), $user.email ?? '—'], [$t('auth.profile.memberSince'), $user.createdAt ? $fmt.date($user.createdAt) : '—'], [$t('common.field.language'), languageName($user.language)], [$t('auth.profile.timezone'), $user.timezone ?? 'UTC'], [$t('common.field.theme'), themeName($user.theme, $t)]] as [label, value]}
-					<div class="flex justify-between py-2.5 text-sm">
-						<dt class="font-medium text-gray-500 dark:text-gray-400">{label}</dt>
-						<dd class="text-gray-800 dark:text-gray-200">{value}</dd>
+			<dl class="divide-y divide-gray-100 dark:divide-gray-700 m-0">
+				<div class="py-2.5 text-sm">
+					<div class="flex justify-between items-center gap-4">
+						<dt class={DT}>{$t('common.field.email')}</dt>
+						<dd class="m-0 text-gray-800 dark:text-gray-200 min-w-0 break-all">
+							<button
+								type="button"
+								class={VALUE}
+								title={$t('tasks.details.change')}
+								aria-expanded={editing === 'email'}
+								onclick={toggleEmail}
+							>
+								{user.email ?? '—'}
+							</button>
+						</dd>
 					</div>
-				{/each}
+					{#if pendingEmail}
+						<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0 text-right">
+							{$t('settings.email.pending', { email: pendingEmail })}
+							·
+							<button
+								type="button"
+								class="bg-transparent border-0 p-0 cursor-pointer text-primary-700 dark:text-primary-500 hover:underline"
+								onclick={cancelEmailChange}
+							>
+								{$t('settings.email.cancelPending')}
+							</button>
+						</p>
+					{/if}
+					{#if editing === 'email'}
+						<form onsubmit={saveEmail} class={PANEL}>
+							<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{$t('settings.email.intro')}</p>
+							<Label for="new-email">{$t('settings.email.newEmail')}</Label>
+							<Input id="new-email" type="email" size="sm" bind:value={newEmail} required autofocus />
+							<Label for="email-pw">{$t('settings.email.currentPassword')}</Label>
+							<Input id="email-pw" type="password" size="sm" bind:value={emailPassword} required />
+							<div class="flex gap-2">
+								<Button type="submit" size="xs" disabled={saving}>
+									{saving ? $t('settings.email.sending') : $t('settings.email.submit')}
+								</Button>
+								<Button type="button" size="xs" color="light" onclick={() => (editing = null)}>
+									{$t('common.cancel')}
+								</Button>
+							</div>
+						</form>
+					{/if}
+				</div>
+				<div class={ROW}>
+					<dt class={DT}>{$t('auth.profile.memberSince')}</dt>
+					<dd class="m-0 text-gray-800 dark:text-gray-200">
+						{user.createdAt ? $fmt.date(user.createdAt) : '—'}
+					</dd>
+				</div>
+				<div class={ROW}>
+					<dt class={DT}>{$t('common.field.language')}</dt>
+					<dd class="m-0 text-gray-800 dark:text-gray-200">
+						{#if editing === 'language'}
+							<Select
+								placeholder=""
+								size="sm"
+								autofocus
+								disabled={saving}
+								value={user.language ?? 'en'}
+								aria-label={$t('common.field.language')}
+								onchange={(e) => save({ language: (e.target as HTMLSelectElement).value })}
+								onblur={() => (editing = null)}
+							>
+								{#each LOCALES as l (l.code)}<option value={l.code}>{l.label}</option>{/each}
+							</Select>
+						{:else}
+							<button
+								type="button"
+								class={VALUE}
+								title={$t('tasks.details.change')}
+								onclick={() => (editing = 'language')}
+							>
+								{languageName(user.language)}
+							</button>
+						{/if}
+					</dd>
+				</div>
+				<div class={ROW}>
+					<dt class={DT}>{$t('auth.profile.timezone')}</dt>
+					<dd class="m-0 text-gray-800 dark:text-gray-200 min-w-0">
+						{#if editing === 'timezone'}
+							<Select
+								placeholder=""
+								size="sm"
+								autofocus
+								disabled={saving}
+								value={user.timezone ?? 'UTC'}
+								aria-label={$t('auth.profile.timezone')}
+								onchange={(e) => save({ timezone: (e.target as HTMLSelectElement).value })}
+								onblur={() => (editing = null)}
+							>
+								{#each timeZoneOptions(user.timezone ?? 'UTC') as z (z.value)}
+									<option value={z.value}>{z.label}</option>
+								{/each}
+							</Select>
+						{:else}
+							<button
+								type="button"
+								class={VALUE}
+								title={$t('tasks.details.change')}
+								onclick={() => (editing = 'timezone')}
+							>
+								{user.timezone ?? 'UTC'}
+							</button>
+						{/if}
+					</dd>
+				</div>
+				<div class={ROW}>
+					<dt class={DT}>{$t('common.field.theme')}</dt>
+					<dd class="m-0 text-gray-800 dark:text-gray-200">
+						{#if editing === 'theme'}
+							<Select
+								placeholder=""
+								size="sm"
+								autofocus
+								disabled={saving}
+								value={user.theme ?? 'light'}
+								aria-label={$t('common.field.theme')}
+								onchange={(e) => save({ theme: (e.target as HTMLSelectElement).value })}
+								onblur={() => (editing = null)}
+							>
+								{#each ['light', 'dark', 'system'] as th (th)}
+									<option value={th}>{$t(`common.theme.${th}` as MessageKey)}</option>
+								{/each}
+							</Select>
+						{:else}
+							<button
+								type="button"
+								class={VALUE}
+								title={$t('tasks.details.change')}
+								onclick={() => (editing = 'theme')}
+							>
+								{themeName(user.theme, $t)}
+							</button>
+						{/if}
+					</dd>
+				</div>
 			</dl>
-			<div class="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-				<Button href="/user/settings/general" class="w-full">{$t('auth.profile.edit')}</Button>
-			</div>
+		</Card>
+
+		<Card class="max-w-none">
+			<h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+				{$t('settings.password.title')}
+			</h2>
+			<form onsubmit={savePassword} class="flex flex-col gap-4">
+				<label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+					<input type="checkbox" bind:checked={showPasswords} class="rounded" />
+					{$t('settings.password.show')}
+				</label>
+				<div>
+					<Label for="old-pw" class="mb-1">{$t('settings.password.current')}</Label>
+					<div class="relative">
+						<Input
+							id="old-pw"
+							type={showPasswords ? 'text' : 'password'}
+							bind:value={oldPassword}
+							required
+							class="pr-10"
+						/>
+						<button
+							type="button"
+							onclick={() => (showPasswords = !showPasswords)}
+							class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400 hover:text-gray-600"
+						>
+							{#if showPasswords}<EyeSlashOutline class="w-4 h-4" />{:else}<EyeOutline class="w-4 h-4" />{/if}
+						</button>
+					</div>
+				</div>
+				<div>
+					<Label for="new-pw" class="mb-1">
+						{$t('settings.password.new')}
+						<span class="text-xs text-gray-500 dark:text-gray-400">{$t('settings.password.min')}</span>
+					</Label>
+					<Input
+						id="new-pw"
+						type={showPasswords ? 'text' : 'password'}
+						bind:value={newPassword}
+						required
+						minlength={8}
+					/>
+				</div>
+				<div>
+					<Label for="confirm-pw" class="mb-1">{$t('settings.password.confirm')}</Label>
+					<Input
+						id="confirm-pw"
+						type={showPasswords ? 'text' : 'password'}
+						bind:value={confirmPassword}
+						required
+					/>
+				</div>
+				<div class="pt-2 border-t border-gray-100 dark:border-gray-700">
+					<Button type="submit" disabled={savingPassword}>
+						{savingPassword ? $t('settings.password.updating') : $t('settings.password.submit')}
+					</Button>
+				</div>
+			</form>
 		</Card>
 	</div>
 {/if}

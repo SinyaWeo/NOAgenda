@@ -6,5 +6,13 @@
   "reset": {
     "subject": "Obnovení hesla v aplikaci {app}",
     "body": "Dobrý den, {username},\n\nněkdo požádal o obnovení hesla k vašemu účtu. Otevřete tento odkaz do 1 hodiny a zvolte nové heslo:\n\n{link}\n\nPokud jste o to nežádali vy, tento e-mail ignorujte: vaše heslo zůstane beze změny."
+  },
+  "change": {
+    "subject": "Potvrďte svou novou e-mailovou adresu v aplikaci {app}",
+    "body": "Dobrý den, {username},\n\npožádali jste o použití této adresy pro váš účet v aplikaci {app}. Potvrďte ji otevřením tohoto odkazu do 24 hodin:\n\n{link}\n\nDo té doby váš účet používá stávající adresu. Pokud jste o změnu nežádali vy, tuto zprávu ignorujte: nic se nezmění."
+  },
+  "changed": {
+    "subject": "Vaše e-mailová adresa v aplikaci {app} byla změněna",
+    "body": "Dobrý den, {username},\n\nváš účet v aplikaci {app} nyní používá adresu {newEmail} místo této, takže sem už nebudeme posílat zprávy.\n\nPokud jste změnu neprovedli vy, ihned kontaktujte správce."
   }
 }

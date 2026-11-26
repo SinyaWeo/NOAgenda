@@ -2,18 +2,13 @@
 export const messages = {
 	'settings.title': 'Settings',
 	'settings.back': 'Back',
+	'settings.section.profile': 'Profile',
+	'settings.section.profile.desc': 'Name, photo, email, password and preferences',
+	'settings.profile.title': 'Profile',
 	'settings.admin': 'Admin',
 	'settings.quotes.title': 'Quotes',
 	'settings.quotes.desc': 'Manage motivational quotes',
 
-	'settings.section.general': 'General',
-	'settings.section.general.desc': 'Name, language, and preferences',
-	'settings.section.avatar': 'Avatar',
-	'settings.section.avatar.desc': 'Change your profile picture',
-	'settings.section.email': 'Email',
-	'settings.section.email.desc': 'Update your email address',
-	'settings.section.password': 'Password',
-	'settings.section.password.desc': 'Change your password',
 	'settings.section.apiTokens': 'API Tokens',
 	'settings.section.apiTokens.desc': 'Manage personal access tokens',
 	'settings.section.sessions': 'Active Sessions',
@@ -25,20 +20,20 @@ export const messages = {
 	'settings.section.deletion': 'Account Deletion',
 	'settings.section.deletion.desc': 'Permanently delete your account',
 
-	'settings.general.title': 'General Settings',
 	'settings.general.displayName': 'Display Name',
-	'settings.general.timezone': 'Timezone',
-	'settings.general.saveSettings': 'Save Settings',
-	'settings.general.saved': 'Settings saved.',
 
-	'settings.email.title': 'Update Email',
 	'settings.email.intro':
 		"A confirmation link will be sent to the new address. You'll need to verify it before the change takes effect.",
 	'settings.email.newEmail': 'New Email Address',
 	'settings.email.currentPassword': 'Current Password',
 	'settings.email.sending': 'Sending…',
 	'settings.email.submit': 'Update Email',
-	'settings.email.done': 'Email updated. We sent a link to the new address: confirm it to keep signing in.',
+	'settings.email.sent':
+		'We sent a confirmation link to {email}. Your address changes once you open it (within 24 hours).',
+	'settings.email.changed': 'Email updated.',
+	'settings.email.pending': 'Waiting for confirmation: {email}',
+	'settings.email.cancelPending': 'Cancel change',
+	'settings.email.cancelled': 'The email change was cancelled.',
 
 	'settings.password.title': 'Change Password',
 	'settings.password.show': 'Show passwords',
@@ -78,9 +73,6 @@ export const messages = {
 	'settings.sessions.revoke': 'Revoke',
 	'settings.sessions.empty': 'No active sessions.',
 
-	'settings.avatar.title': 'Avatar',
-	'settings.avatar.current': 'Current avatar',
-	'settings.avatar.photo': 'Profile photo',
 	'settings.avatar.hint': 'JPG, PNG, GIF or WebP. Max 5 MB.',
 	'settings.avatar.upload': 'Upload new photo',
 	'settings.avatar.failed': 'Upload failed',

@@ -15,7 +15,6 @@ export const messages = {
 	'layout.title.mindmap': 'Mind map',
 	'layout.title.about': 'About',
 	'layout.title.admin': 'Administration',
-	'layout.title.profile': 'Profile',
 	'layout.title.settings': 'Settings',
 	'layout.title.login': 'Sign in',
 	'layout.title.register': 'Create account',
@@ -86,13 +85,9 @@ export const messages = {
 	'layout.user.toggleTheme': 'Toggle light/dark theme',
 	'layout.user.accountMenu': 'Account menu',
 	'layout.user.admin': 'Admin',
-	'layout.user.profile': 'Profile',
 	'layout.user.teams': 'Teams',
 	'layout.user.settings': 'Settings',
-	'layout.user.terms': 'Terms of Service',
-	'layout.user.privacy': 'Privacy Policy',
 	'layout.user.logout': 'Logout',
-	'layout.user.language': 'Language',
 
 	// Toast
 	'layout.toast.dismiss': 'Dismiss',

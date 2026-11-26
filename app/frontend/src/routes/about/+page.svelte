@@ -62,6 +62,15 @@
 						AGPL-3.0-or-later
 					</a>
 				</dd>
+				<dt class="text-gray-500 dark:text-gray-400">{$t('auth.about.legal')}</dt>
+				<dd class="text-gray-900 dark:text-white font-medium m-0 flex flex-col gap-1">
+					<a href="/terms" class="text-primary-700 hover:underline dark:text-primary-500">
+						{$t('auth.about.terms')}
+					</a>
+					<a href="/privacy" class="text-primary-700 hover:underline dark:text-primary-500">
+						{$t('auth.about.privacy')}
+					</a>
+				</dd>
 			</dl>
 		</Card>
 	{:else}

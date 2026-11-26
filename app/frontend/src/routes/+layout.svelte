@@ -55,7 +55,6 @@
 		['/mindmap', 'layout.title.mindmap'],
 		['/about', 'layout.title.about'],
 		['/admin', 'layout.title.admin'],
-		['/user/profile', 'layout.title.profile'],
 		['/user/settings', 'layout.title.settings'],
 		['/user/login', 'layout.title.login'],
 		['/user/register', 'layout.title.register'],

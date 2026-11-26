@@ -5,6 +5,8 @@ import {
   Get,
   Post,
   Put,
+  Delete,
+  HttpCode,
   Body,
   UseGuards,
   Request,
@@ -81,25 +83,48 @@ export class UserSettingsController {
     return omit(user, 'password');
   }
 
-  /** POST /user/settings/email — change email address */
+  /** GET /user/settings/email — the current address and one waiting for confirmation, if any */
+  @Get('settings/email')
+  async getEmail(@Request() req: AuthRequest): Promise<{ email: string; pendingEmail: string | null }> {
+    const user = await this.userService.findById(req.user.userId);
+    if (!user) throw new NotFoundException();
+    return { email: user.email, pendingEmail: await this.emailVerification.pendingEmail(user) };
+  }
+
+  /**
+   * POST /user/settings/email — change email address. The new address takes effect only once the
+   * link sent to it is opened (unless mail cannot be delivered at all); until then everything keeps
+   * going to the current one. Asking for the current address cancels a pending change.
+   */
   // A wrong password here is bad INPUT (400), not a failed session: a 401 would make the
   // frontend treat it as "session expired" and sign the user out over a typo.
   @Post('settings/email')
   @UseGuards(NoApiTokenGuard, NotInDemoGuard)
-  async updateEmail(@Request() req: AuthRequest, @Body() body: UpdateEmailDto) {
+  async updateEmail(
+    @Request() req: AuthRequest,
+    @Body() body: UpdateEmailDto,
+  ): Promise<{ pendingEmail: string | null }> {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
     if (!(await verifyPassword(body.password, user.password))) throw new BadRequestException('Incorrect password');
+    if (body.email === user.email) {
+      await this.emailVerification.cancelChange(user);
+      return { pendingEmail: null };
+    }
     const existing = await this.userService.findByEmail(body.email);
     if (existing && existing.id !== user.id) throw new ConflictException('Email is already in use');
-    if (body.email !== user.email) {
-      // A new address is unverified until the owner clicks the emailed link.
-      await this.userService.update(user.id, { email: body.email, isEmailConfirmed: false });
-      void this.emailVerification
-        .send({ id: user.id, email: body.email, username: user.username, language: user.language })
-        .catch(() => undefined);
-    }
-    return { message: 'Email updated. Please check your inbox to verify the new address.' };
+    const pending = await this.emailVerification.requestChange(user, body.email);
+    return { pendingEmail: pending ? body.email : null };
+  }
+
+  /** DELETE /user/settings/email/pending — withdraw an address change that is not confirmed yet */
+  @Delete('settings/email/pending')
+  @UseGuards(NoApiTokenGuard)
+  @HttpCode(204)
+  async cancelEmailChange(@Request() req: AuthRequest): Promise<void> {
+    const user = await this.userService.findById(req.user.userId);
+    if (!user) throw new NotFoundException();
+    await this.emailVerification.cancelChange(user);
   }
 
   /** GET /user/settings/avatar — return avatar URL */

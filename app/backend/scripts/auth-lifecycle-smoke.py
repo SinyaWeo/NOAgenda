@@ -177,19 +177,29 @@ s, _, _ = call('GET', '/user/sessions', token=raw); check('API token cannot list
 s, _, _ = call('DELETE', f'/tokens/{t["id"]}', token=A); check('API token can be revoked', s, 204)
 s, _, _ = call('GET', '/users/me', token=raw); check('a revoked API token stops working', s, 401)
 
-# ================= email change needs re-verification =================
+# ================= email change waits for the link sent to the new address =================
 call('DELETE', '/api/v1/messages', base=M)
 new_mail = f'alice-new{run}@example.com'
 s, _, _ = call('POST', '/user/settings/email', {'email': new_mail, 'password': 'wrong'}, token=A); check('email change needs the password (400, not a session error)', s, 400)
 bob, bob_mail = register('bob')
 tokb = latest_token(bob_mail, 'Confirm'); call('POST', '/auth/email/verify', {'token': tokb})
 s, _, _ = call('POST', '/user/settings/email', {'email': bob_mail, 'password': NEW}, token=A); check('cannot take an address that is already in use', s, 409)
-s, _, _ = call('POST', '/user/settings/email', {'email': new_mail, 'password': NEW}, token=A); check('email change accepted', s, [200, 201])
-s, me, _ = call('GET', '/users/me', token=A); check('new address starts unverified', me['isEmailConfirmed'], False)
-tok = latest_token(new_mail, 'Confirm'); check('verification mail goes to the NEW address', bool(tok), True)
-s, _, _ = login(alice, NEW); check('unverified new address blocks the next login', s, 403)
-s, _, _ = call('POST', '/auth/email/verify', {'token': tok}); check('new address verified', s, 204)
-s, _, _ = login(alice, NEW); check('login works again after verifying', s, 200)
+s, r, _ = call('POST', '/user/settings/email', {'email': new_mail, 'password': NEW}, token=A); check('email change accepted', s, [200, 201])
+check('...and reported as pending', r.get('pendingEmail'), new_mail)
+s, me, _ = call('GET', '/users/me', token=A); check('the old address stays until confirmed', me['email'], alice_mail)
+check('...and stays verified', me['isEmailConfirmed'], True)
+s, pe, _ = call('GET', '/user/settings/email', token=A); check('pending address is listed', pe.get('pendingEmail'), new_mail)
+s, _, _ = login(alice, NEW); check('login keeps working while the change is pending', s, 200)
+s, _, _ = call('DELETE', '/user/settings/email/pending', token=A); check('a pending change can be cancelled', s, 204)
+s, pe, _ = call('GET', '/user/settings/email', token=A); check('...and is gone', pe.get('pendingEmail'), None)
+cancelled = latest_token(new_mail, 'Confirm')
+s, _, _ = call('POST', '/auth/email/verify', {'token': cancelled}); check('a cancelled change link no longer works', s, 400)
+call('POST', '/user/settings/email', {'email': new_mail, 'password': NEW}, token=A)
+tok = latest_token(new_mail, 'Confirm'); check('confirmation mail goes to the NEW address', bool(tok) and tok != cancelled, True)
+s, _, _ = call('POST', '/auth/email/verify', {'token': tok}); check('new address confirmed', s, 204)
+s, me, _ = call('GET', '/users/me', token=A); check('the address switches only after the link is opened', me['email'], new_mail)
+check('old address is told about the change', bool(mails_for(alice_mail, 'changed')), True)
+s, _, _ = login(alice, NEW); check('login works with the confirmed address', s, 200)
 
 # ================= lockout =================
 dave, dave_mail = register('dave')

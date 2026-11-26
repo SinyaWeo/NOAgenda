@@ -17,7 +17,6 @@ export const messages: Record<keyof typeof en, Message> = {
 	'layout.title.mindmap': 'Myšlenková mapa',
 	'layout.title.about': 'O aplikaci',
 	'layout.title.admin': 'Správa',
-	'layout.title.profile': 'Profil',
 	'layout.title.settings': 'Nastavení',
 	'layout.title.login': 'Přihlášení',
 	'layout.title.register': 'Vytvořit účet',
@@ -82,13 +81,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'layout.user.toggleTheme': 'Přepnout světlý/tmavý motiv',
 	'layout.user.accountMenu': 'Menu účtu',
 	'layout.user.admin': 'Správce',
-	'layout.user.profile': 'Profil',
 	'layout.user.teams': 'Týmy',
 	'layout.user.settings': 'Nastavení',
-	'layout.user.terms': 'Podmínky používání',
-	'layout.user.privacy': 'Zásady ochrany osobních údajů',
 	'layout.user.logout': 'Odhlásit se',
-	'layout.user.language': 'Jazyk',
 
 	'layout.toast.dismiss': 'Zavřít',
 

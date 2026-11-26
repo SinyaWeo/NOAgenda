@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { singleUserMode } from '$lib/appConfig';
 	import type { Snippet } from 'svelte';
-	import { authSession, refreshCurrentUser } from '$lib/auth';
-	import { t, locale, setLocale, LOCALES, type Locale } from '$lib/i18n';
-	import { errMessage } from '$lib/errors';
-	import { showToast } from '$lib/toast';
+	import { authSession } from '$lib/auth';
+	import { t } from '$lib/i18n';
 	import { apiGetAuth, apiPostAuth, API_BASE } from '$lib/api';
 	import { isAdmin } from '$lib/roles';
 	import type { Team, User } from '$lib/types';
@@ -12,7 +10,6 @@
 	import {
 		MoonOutline,
 		SunOutline,
-		UserCircleOutline,
 		UsersGroupOutline,
 		CogOutline,
 		ArrowRightToBracketOutline
@@ -52,18 +49,6 @@
 			}
 		})();
 	});
-
-	/** Switch now; a signed-in user's saved language wins on the next load, so save it on the account too. */
-	async function chooseLanguage(code: Locale) {
-		if (code === $locale) return;
-		setLocale(code);
-		try {
-			await apiPostAuth('/user/settings/general', { language: code });
-			await refreshCurrentUser();
-		} catch (e) {
-			showToast(errMessage(e), 'error');
-		}
-	}
 
 	async function toggleTheme() {
 		if (!$authSession.user) return;
@@ -121,9 +106,6 @@
 			<span class="inline-block mt-1 text-xs font-medium tone-red">{$t('layout.user.admin')}</span>
 		{/if}
 	</DropdownHeader>
-	<DropdownItem href="/user/profile" class="flex items-center">
-		<UserCircleOutline class="w-4 h-4 mr-2" />{$t('layout.user.profile')}
-	</DropdownItem>
 	{#if userTeams.length > 0 && !$singleUserMode}
 		<DropdownItem href="/teams" class="flex items-center">
 			<UsersGroupOutline class="w-4 h-4 mr-2" />{$t('layout.user.teams')}
@@ -132,28 +114,6 @@
 	<DropdownItem href="/user/settings" class="flex items-center">
 		<CogOutline class="w-4 h-4 mr-2" />{$t('layout.user.settings')}
 	</DropdownItem>
-	<DropdownItem href="/terms" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
-		{$t('layout.user.terms')}
-	</DropdownItem>
-	<DropdownItem href="/privacy" class="flex items-center text-xs text-gray-500 dark:text-gray-400">
-		{$t('layout.user.privacy')}
-	</DropdownItem>
-	<DropdownDivider />
-	<li role="presentation" class="px-4 pt-1 pb-0.5 text-xs text-gray-500 dark:text-gray-400">
-		{$t('layout.user.language')}
-	</li>
-	{#each LOCALES as l (l.code)}
-		<DropdownItem
-			role="menuitemradio"
-			aria-checked={$locale === l.code}
-			lang={l.code}
-			onclick={() => chooseLanguage(l.code)}
-			class="flex items-center justify-between {$locale === l.code ? 'font-semibold' : ''}"
-		>
-			{l.label}
-			{#if $locale === l.code}<span aria-hidden="true">✓</span>{/if}
-		</DropdownItem>
-	{/each}
 	<DropdownDivider />
 	<DropdownItem onclick={onlogout} class="flex items-center text-red-600 dark:text-red-400">
 		<ArrowRightToBracketOutline class="w-4 h-4 mr-2" />{$t('layout.user.logout')}

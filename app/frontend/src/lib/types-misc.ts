@@ -66,14 +66,6 @@ export interface SessionRow extends SessionInfo {
 	expiresAt?: string | null;
 }
 
-/** GET /user/settings/general */
-export interface GeneralSettings {
-	name?: string | null;
-	language?: string;
-	timezone?: string;
-	theme?: string;
-}
-
 /** GET and PUT /user/settings/avatar(/upload) */
 export interface AvatarSettings {
 	avatarUrl?: string | null;

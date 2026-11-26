@@ -6,9 +6,6 @@
 	import { Card } from 'flowbite-svelte';
 	import {
 		UserCircleOutline,
-		CogOutline,
-		LockOutline,
-		EnvelopeOutline,
 		ApiKeyOutline,
 		DesktopPcOutline,
 		LinkOutline,
@@ -21,28 +18,10 @@
 
 	const sections = [
 		{
-			href: '/user/settings/general',
+			href: '/user/settings/profile',
 			icon: UserCircleOutline,
-			labelKey: 'settings.section.general',
-			descKey: 'settings.section.general.desc'
-		},
-		{
-			href: '/user/settings/avatar',
-			icon: CogOutline,
-			labelKey: 'settings.section.avatar',
-			descKey: 'settings.section.avatar.desc'
-		},
-		{
-			href: '/user/settings/email-update',
-			icon: EnvelopeOutline,
-			labelKey: 'settings.section.email',
-			descKey: 'settings.section.email.desc'
-		},
-		{
-			href: '/user/settings/password-update',
-			icon: LockOutline,
-			labelKey: 'settings.section.password',
-			descKey: 'settings.section.password.desc'
+			labelKey: 'settings.section.profile',
+			descKey: 'settings.section.profile.desc'
 		},
 		{
 			href: '/user/settings/api-tokens',

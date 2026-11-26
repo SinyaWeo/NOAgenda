@@ -83,13 +83,15 @@ export const messages = {
 	'auth.profile.avatar': 'Avatar',
 	'auth.profile.memberSince': 'Member since',
 	'auth.profile.timezone': 'Timezone',
-	'auth.profile.edit': 'Edit Profile',
 
 	'auth.about.title': 'About {app}',
 	'auth.about.tagline': 'A project-focused task manager built with NestJS and SvelteKit.',
 	'auth.about.version': 'Version',
 	'auth.about.source': 'Source code',
 	'auth.about.license': 'License',
+	'auth.about.legal': 'Legal',
+	'auth.about.terms': 'Terms of Service',
+	'auth.about.privacy': 'Privacy Policy',
 	'auth.about.timeline.heading': 'Project timeline',
 	'auth.about.timeline.taskPage.title': 'Edit tasks in place',
 	'auth.about.timeline.taskPage.body':

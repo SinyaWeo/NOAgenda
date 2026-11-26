@@ -85,13 +85,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.profile.avatar': 'Avatar',
 	'auth.profile.memberSince': 'Členem od',
 	'auth.profile.timezone': 'Časové pásmo',
-	'auth.profile.edit': 'Upravit profil',
 
 	'auth.about.title': 'O aplikaci {app}',
 	'auth.about.tagline': 'Správce úkolů zaměřený na projekty, vytvořený v NestJS a SvelteKitu.',
 	'auth.about.version': 'Verze',
 	'auth.about.source': 'Zdrojový kód',
 	'auth.about.license': 'Licence',
+	'auth.about.legal': 'Právní informace',
+	'auth.about.terms': 'Podmínky používání',
+	'auth.about.privacy': 'Zásady ochrany osobních údajů',
 	'auth.about.timeline.heading': 'Časová osa projektu',
 	'auth.about.timeline.taskPage.title': 'Úpravy úkolu přímo na místě',
 	'auth.about.timeline.taskPage.body':
