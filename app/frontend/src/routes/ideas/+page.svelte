@@ -104,7 +104,8 @@
 <PageHeader title={$t('ideas.title')} subtitle={$t('ideas.subtitle')} />
 {#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-4">
+<!-- Same width as the dashboard's quick-add card: full width, half from lg up. -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-4">
 	<Card class="max-w-none p-4 h-full">
 		<form
 			onsubmit={(e) => {
