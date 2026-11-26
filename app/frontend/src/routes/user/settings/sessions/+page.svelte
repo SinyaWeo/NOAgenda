@@ -46,45 +46,50 @@
 	back={{ href: '/user/settings', label: $t('settings.back') }}
 />
 
-{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
+<!-- Same width as the dashboard's notes card: full width, half from lg up. -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+	<div class="min-w-0">
+		{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
-{:else if $sessions.length}
-	<Card class="p-0 overflow-hidden">
-		{#each $sessions as session, i (session.id)}
-			<div
-				class="flex items-center gap-3 px-4 py-3 {i < $sessions.length - 1
-					? 'border-b border-gray-100 dark:border-gray-700'
-					: ''}"
-			>
-				<div class="flex-1 min-w-0">
-					<p class="font-medium text-sm text-gray-900 dark:text-white m-0 truncate">
-						{session.userAgent ?? $t('settings.sessions.unknownClient')}
-						{#if session.current}<span
-								class="ml-2 text-xs font-normal text-primary-600 dark:text-primary-400"
-							>
-								{$t('settings.sessions.thisDevice')}
-							</span>{/if}
-					</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
-						{session.ipAddress
-							? $t('settings.sessions.metaIp', {
-									ip: session.ipAddress,
-									expires: expiresText(session.expiresAt)
-								})
-							: $t('settings.sessions.meta', { expires: expiresText(session.expiresAt) })}
-					</p>
-				</div>
-				<Button size="sm" color="red" outline onclick={() => deleteSession(session.id)}>
-					{$t('settings.sessions.revoke')}
-				</Button>
+		{#if $loading}
+			<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
+		{:else if $sessions.length}
+			<Card class="max-w-none p-0 overflow-hidden">
+				{#each $sessions as session, i (session.id)}
+					<div
+						class="flex items-center gap-3 px-4 py-3 {i < $sessions.length - 1
+							? 'border-b border-gray-100 dark:border-gray-700'
+							: ''}"
+					>
+						<div class="flex-1 min-w-0">
+							<p class="font-medium text-sm text-gray-900 dark:text-white m-0 truncate">
+								{session.userAgent ?? $t('settings.sessions.unknownClient')}
+								{#if session.current}<span
+										class="ml-2 text-xs font-normal text-primary-600 dark:text-primary-400"
+									>
+										{$t('settings.sessions.thisDevice')}
+									</span>{/if}
+							</p>
+							<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
+								{session.ipAddress
+									? $t('settings.sessions.metaIp', {
+											ip: session.ipAddress,
+											expires: expiresText(session.expiresAt)
+										})
+									: $t('settings.sessions.meta', { expires: expiresText(session.expiresAt) })}
+							</p>
+						</div>
+						<Button size="sm" color="red" outline onclick={() => deleteSession(session.id)}>
+							{$t('settings.sessions.revoke')}
+						</Button>
+					</div>
+				{/each}
+			</Card>
+		{:else}
+			<div class="text-center py-10 text-gray-500 dark:text-gray-400">
+				<DesktopPcOutline class="w-10 h-10 mx-auto mb-2" />
+				<p>{$t('settings.sessions.empty')}</p>
 			</div>
-		{/each}
-	</Card>
-{:else}
-	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
-		<DesktopPcOutline class="w-10 h-10 mx-auto mb-2" />
-		<p>{$t('settings.sessions.empty')}</p>
+		{/if}
 	</div>
-{/if}
+</div>

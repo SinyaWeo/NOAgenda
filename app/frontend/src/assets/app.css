@@ -55,6 +55,15 @@
 	--color-gray-950: #020617;
 }
 
+/* Text areas fill their container. Flowbite's Textarea gives the plain <textarea> no width, so it
+   fell back to the browser default (about 20 characters, roughly half a card). In the base layer,
+   so a width utility on a particular textarea still wins. */
+@layer base {
+	textarea {
+		width: 100%;
+	}
+}
+
 /* Base text color. Popper-based components (Dropdown, Popover, Tooltip, Modal) render
    outside the layout's coloured wrapper and inherit from <body>, so without this they get
    the browser's default dark text in dark mode. */

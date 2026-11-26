@@ -83,77 +83,82 @@
 	subtitle={$t('settings.webhooks.intro')}
 />
 
-{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
-{#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
+<!-- Same width as the dashboard's notes card: full width, half from lg up. -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+	<div class="min-w-0">
+		{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
+		{#if $success}<Alert color="green" class="mb-4">{$success}</Alert>{/if}
 
-<Card class="mb-4">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-		{$t('settings.webhooks.addTitle')}
-	</h2>
-	<form onsubmit={create} class="flex flex-col gap-4">
-		<div>
-			<Label for="wh-url" class="mb-1">
-				{$t('settings.webhooks.url')} <span class="text-red-500">*</span>
-			</Label>
-			<Input id="wh-url" type="url" bind:value={newUrl} placeholder="https://example.com/hook" required />
-		</div>
-		<div class="grid grid-cols-2 gap-4">
-			<div>
-				<Label for="wh-event" class="mb-1">{$t('settings.webhooks.event')}</Label>
-				<Select placeholder="" id="wh-event" bind:value={newEvent}>
-					<option value="*">{$t('settings.webhooks.allEvents')}</option>
-					{#each EVENT_OPTIONS as ev}<option value={ev}>{ev}</option>{/each}
-				</Select>
-			</div>
-			<div>
-				<Label for="wh-secret" class="mb-1">
-					{$t('settings.webhooks.secret')}
-					<span class="text-xs text-gray-500 dark:text-gray-400">({$t('common.optional')})</span>
-				</Label>
-				<Input
-					id="wh-secret"
-					type="text"
-					bind:value={newSecret}
-					placeholder={$t('settings.webhooks.secretPlaceholder')}
-				/>
-			</div>
-		</div>
-		<div>
-			<Button type="submit" disabled={$saving || !newUrl.trim()}>
-				{$saving ? $t('settings.webhooks.creating') : $t('settings.webhooks.create')}
-			</Button>
-		</div>
-	</form>
-</Card>
-
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
-{:else if $webhooks.length}
-	<Card class="p-0 overflow-hidden">
-		{#each $webhooks as wh, i (wh.id)}
-			<div
-				class="flex items-center gap-3 px-4 py-3 {i < $webhooks.length - 1
-					? 'border-b border-gray-100 dark:border-gray-700'
-					: ''}"
-			>
-				<div class="flex-1 min-w-0 flex flex-col gap-1">
-					<p class="font-medium text-sm text-gray-900 dark:text-white m-0 break-all">
-						{wh.url}
-					</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
-						{#each $t( 'settings.webhooks.eventLine', { event: '\u0001', state: wh.active ? $t('settings.webhooks.active') : $t('settings.webhooks.inactive') } ).split('\u0001') as part, pi}{#if pi > 0}<strong>
-									{wh.event}
-								</strong>{/if}{part}{/each}
-					</p>
-					<WebhookStatus webhook={wh} onChanged={load} />
+		<Card class="max-w-none mb-4">
+			<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
+				{$t('settings.webhooks.addTitle')}
+			</h2>
+			<form onsubmit={create} class="flex flex-col gap-4">
+				<div>
+					<Label for="wh-url" class="mb-1">
+						{$t('settings.webhooks.url')} <span class="text-red-500">*</span>
+					</Label>
+					<Input id="wh-url" type="url" bind:value={newUrl} placeholder="https://example.com/hook" required />
 				</div>
-				<Button size="sm" color="red" outline onclick={() => remove(wh.id)}>{$t('common.delete')}</Button>
+				<div class="grid grid-cols-2 gap-4">
+					<div>
+						<Label for="wh-event" class="mb-1">{$t('settings.webhooks.event')}</Label>
+						<Select placeholder="" id="wh-event" bind:value={newEvent}>
+							<option value="*">{$t('settings.webhooks.allEvents')}</option>
+							{#each EVENT_OPTIONS as ev}<option value={ev}>{ev}</option>{/each}
+						</Select>
+					</div>
+					<div>
+						<Label for="wh-secret" class="mb-1">
+							{$t('settings.webhooks.secret')}
+							<span class="text-xs text-gray-500 dark:text-gray-400">({$t('common.optional')})</span>
+						</Label>
+						<Input
+							id="wh-secret"
+							type="text"
+							bind:value={newSecret}
+							placeholder={$t('settings.webhooks.secretPlaceholder')}
+						/>
+					</div>
+				</div>
+				<div>
+					<Button type="submit" disabled={$saving || !newUrl.trim()}>
+						{$saving ? $t('settings.webhooks.creating') : $t('settings.webhooks.create')}
+					</Button>
+				</div>
+			</form>
+		</Card>
+
+		{#if $loading}
+			<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
+		{:else if $webhooks.length}
+			<Card class="max-w-none p-0 overflow-hidden">
+				{#each $webhooks as wh, i (wh.id)}
+					<div
+						class="flex items-center gap-3 px-4 py-3 {i < $webhooks.length - 1
+							? 'border-b border-gray-100 dark:border-gray-700'
+							: ''}"
+					>
+						<div class="flex-1 min-w-0 flex flex-col gap-1">
+							<p class="font-medium text-sm text-gray-900 dark:text-white m-0 break-all">
+								{wh.url}
+							</p>
+							<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
+								{#each $t( 'settings.webhooks.eventLine', { event: '\u0001', state: wh.active ? $t('settings.webhooks.active') : $t('settings.webhooks.inactive') } ).split('\u0001') as part, pi}{#if pi > 0}<strong>
+											{wh.event}
+										</strong>{/if}{part}{/each}
+							</p>
+							<WebhookStatus webhook={wh} onChanged={load} />
+						</div>
+						<Button size="sm" color="red" outline onclick={() => remove(wh.id)}>{$t('common.delete')}</Button>
+					</div>
+				{/each}
+			</Card>
+		{:else}
+			<div class="text-center py-10 text-gray-500 dark:text-gray-400">
+				<LinkOutline class="w-10 h-10 mx-auto mb-2" />
+				<p>{$t('settings.webhooks.empty')}</p>
 			</div>
-		{/each}
-	</Card>
-{:else}
-	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
-		<LinkOutline class="w-10 h-10 mx-auto mb-2" />
-		<p>{$t('settings.webhooks.empty')}</p>
+		{/if}
 	</div>
-{/if}
+</div>
