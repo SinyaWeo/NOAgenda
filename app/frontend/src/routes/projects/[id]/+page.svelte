@@ -169,7 +169,7 @@
 {:else if $error}
 	<Alert color="red">{$error}</Alert>
 {:else if $project}
-	<div class="page-narrow">
+	<div>
 		<div class="mb-6">
 			<div class="flex items-center gap-3 flex-wrap">
 				<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">

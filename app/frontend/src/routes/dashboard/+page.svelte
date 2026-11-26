@@ -160,7 +160,7 @@
 {#if $loading}
 	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
 {:else}
-	<div class="page-narrow">
+	<div>
 		{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
 		<!-- Header row: date left, stat cards right -->
 		<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">

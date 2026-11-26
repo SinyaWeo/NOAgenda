@@ -604,7 +604,7 @@ html.dark .svelte-flow .svelte-flow__controls-button svg {
 	}
 }
 
-/* Reading-width pages (dashboard, lists): capped and centered on wide screens. Gantt, Kanban, tables stay full width. */
+/* Page content width: every signed-in page is capped and centered on wide screens (applied in routes/+layout.svelte). */
 .page-narrow {
 	width: 100%;
 	max-width: 80rem;

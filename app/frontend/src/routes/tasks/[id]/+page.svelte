@@ -330,7 +330,7 @@
 	<Alert color="red">{$error}</Alert>
 {:else if task}
 	{@const current = task}
-	<div class="page-narrow">
+	<div>
 		<PageHeader
 			title={task.title ?? ''}
 			back={{

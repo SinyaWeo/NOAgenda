@@ -196,7 +196,9 @@
 
 				<!-- Page content -->
 				<div class="flex-1 p-3 sm:p-6 overflow-auto text-gray-900 dark:text-gray-100">
-					{@render children?.()}
+					<div class="page-narrow h-full">
+						{@render children?.()}
+					</div>
 				</div>
 			</main>
 		</div>
