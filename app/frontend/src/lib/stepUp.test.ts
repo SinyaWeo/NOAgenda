@@ -1,22 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 import { apiFetchAuth, STEP_UP_PATH } from './api';
-import { needsStepUp, pendingStepUp, requestStepUp } from './stepUp';
+import { needsStepUp, pendingStepUp, requestStepUp } from './stepUp.svelte';
 
 const json = (status: number, body: unknown) =>
 	new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 const STEP_UP = { code: 'STEP_UP_REQUIRED', message: 'Step-up required' };
 
-/** Answer the open step-up prompt as soon as it appears. */
+/** Answer every step-up prompt as soon as it appears, until the returned function is called. */
 function answerPrompt(ok: boolean) {
-	const unsubscribe = pendingStepUp.subscribe((req) => {
-		if (!req) return;
-		queueMicrotask(() => {
-			pendingStepUp.set(null);
+	let stopped = false;
+	const poll = () => {
+		if (stopped) return;
+		const req = pendingStepUp.current;
+		if (req) {
+			pendingStepUp.current = null;
 			req.resolve(ok);
-		});
-	});
-	return unsubscribe;
+		}
+		setTimeout(poll, 0);
+	};
+	poll();
+	return () => {
+		stopped = true;
+	};
 }
 
 describe('needsStepUp', () => {
@@ -35,17 +40,17 @@ describe('needsStepUp', () => {
 });
 
 describe('requestStepUp', () => {
-	afterEach(() => pendingStepUp.set(null));
+	afterEach(() => (pendingStepUp.current = null));
 
 	it('shares one prompt between requests that need it at the same time', async () => {
 		const a = requestStepUp();
 		const b = requestStepUp();
 		expect(a).toBe(b);
-		get(pendingStepUp)?.resolve(true);
+		pendingStepUp.current?.resolve(true);
 		expect(await a).toBe(true);
 		const next = requestStepUp();
 		expect(next).not.toBe(a); // the next one asks again
-		get(pendingStepUp)?.resolve(false);
+		pendingStepUp.current?.resolve(false);
 		expect(await next).toBe(false);
 	});
 });
@@ -73,7 +78,7 @@ describe('apiFetchAuth with a step-up', () => {
 	afterEach(() => {
 		stop();
 		vi.unstubAllGlobals();
-		pendingStepUp.set(null);
+		pendingStepUp.current = null;
 	});
 
 	it('asks for the password and sends the request once more', async () => {
@@ -98,6 +103,6 @@ describe('apiFetchAuth with a step-up', () => {
 		expect((await apiFetchAuth('/admin/users/2', { method: 'DELETE' })).status).toBe(403);
 		expect((await apiFetchAuth(STEP_UP_PATH, { method: 'POST' })).status).toBe(403);
 		expect(calls).toHaveLength(2);
-		expect(get(pendingStepUp)).toBeNull();
+		expect(pendingStepUp.current).toBeNull();
 	});
 });

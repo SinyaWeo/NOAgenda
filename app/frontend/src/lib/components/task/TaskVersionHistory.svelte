@@ -1,9 +1,9 @@
 <script lang="ts" generics="R">
-	import { t, fmt, tr } from '$lib/i18n';
-	import { apiGetAuth, apiPostAuth } from '$lib/api';
-	import { errMessage } from '$lib/errors';
-	import { showToast } from '$lib/toast';
-	import type { NodeRevision, NodeRevisionPage } from '$lib/types';
+	import { t, fmt } from '#lib/i18n/index.js';
+	import { apiGetAuth, apiPostAuth } from '#lib/api.js';
+	import { errMessage } from '#lib/errors.js';
+	import { showToast } from '#lib/toast.svelte.js';
+	import type { NodeRevision, NodeRevisionPage } from '#lib/types.js';
 	import { Button } from 'flowbite-svelte';
 
 	/**
@@ -71,9 +71,9 @@
 		busy = r.id;
 		try {
 			onRestored(await apiPostAuth<R>(restorePath(r.id), {}));
-			showToast(tr('tasks.history.restored'), 'success');
+			showToast(t('tasks.history.restored'), 'success');
 		} catch (e) {
-			showToast(errMessage(e, tr('tasks.history.restoreFailed')), 'error');
+			showToast(errMessage(e, t('tasks.history.restoreFailed')), 'error');
 		} finally {
 			busy = null;
 		}
@@ -83,9 +83,9 @@
 </script>
 
 {#if failed && !items.length}
-	<p class="text-sm text-red-500 m-0">{$t('tasks.history.loadFailed')}</p>
+	<p class="text-sm text-red-500 m-0">{t('tasks.history.loadFailed')}</p>
 {:else if loaded && !items.length}
-	<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('tasks.history.empty')}</p>
+	<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{t('tasks.history.empty')}</p>
 {:else if items.length}
 	<ul class="list-none p-0 m-0">
 		{#each items as r, i (r.id)}
@@ -94,7 +94,7 @@
 					<div class="min-w-0">
 						{#if showTitle}
 							<p class="text-sm font-medium text-gray-800 dark:text-gray-200 m-0">
-								{r.title ?? $t('activity.untitled')}
+								{r.title ?? t('activity.untitled')}
 							</p>
 						{/if}
 						{#if r.description}
@@ -107,26 +107,26 @@
 							</p>
 						{/if}
 						<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
-							{$fmt.dateTime(r.createdAt)} · {r.actor.username ?? $t('common.unknown')}
+							{fmt.dateTime(r.createdAt)} · {r.actor.username ?? t('common.unknown')}
 						</p>
 					</div>
 					{#if i > 0}
 						<Button size="xs" color="light" disabled={busy !== null} onclick={() => restore(r)}>
-							{$t('tasks.history.restore')}
+							{t('tasks.history.restore')}
 						</Button>
 					{:else}
 						<span class="text-xs text-gray-500 dark:text-gray-400 shrink-0">
-							{$t('tasks.history.current')}
+							{t('tasks.history.current')}
 						</span>
 					{/if}
 				</div>
 			</li>
 		{/each}
 	</ul>
-	{#if failed}<p class="text-sm text-red-500 m-0 mt-2">{$t('tasks.history.loadFailed')}</p>{/if}
+	{#if failed}<p class="text-sm text-red-500 m-0 mt-2">{t('tasks.history.loadFailed')}</p>{/if}
 	{#if next != null}
 		<div class="mt-3">
-			<Button size="xs" color="light" onclick={more}>{$t('activity.loadMore')}</Button>
+			<Button size="xs" color="light" onclick={more}>{t('activity.loadMore')}</Button>
 		</div>
 	{/if}
 {/if}

@@ -1,6 +1,5 @@
-import { get } from 'svelte/store';
 import { format, type Locale, type Params } from './core';
-import { locale } from './locale-store';
+import { locale } from './locale.svelte';
 import { cs, en, type MessageKey } from './messages';
 
 const catalogs = { en, cs } as const;
@@ -11,7 +10,10 @@ export function translate(l: Locale, key: MessageKey, params?: Params): string {
 	return message === undefined ? String(key) : format(l, message, params);
 }
 
-/** For plain (non-component) code: translate into the CURRENT language. */
-export function tr(key: MessageKey, params?: Params): string {
-	return translate(get(locale), key, params);
+/**
+ * Translate into the CURRENT language. Reactive: it reads `locale.current`, so markup and `$derived`
+ * values that call it update when the language changes.
+ */
+export function t(key: MessageKey, params?: Params): string {
+	return translate(locale.current, key, params);
 }

@@ -1,7 +1,6 @@
 import { goto } from '$app/navigation';
-import type { Writable } from 'svelte/store';
-import { getCurrentUser } from '$lib/auth';
-import { errMessage } from '$lib/errors';
+import { getCurrentUser } from '#lib/auth.svelte.js';
+import { errMessage } from '#lib/errors.js';
 
 /**
  * Load a page's data on mount AND whenever `key()` changes.
@@ -12,17 +11,22 @@ import { errMessage } from '$lib/errors';
  * `load` (via `isStale`) when it has been superseded so a slow response for the previous
  * key can never overwrite the current page.
  *
- * `error` is for LOAD failures only. Report failures of user actions with a toast, never
- * with this store: showing it replaces the whole page.
+ * Returns reactive `{ loading, error }` state for the page to render (and, for its own
+ * form submissions, to write). `error` is for LOAD failures: showing it replaces the whole
+ * page, so report failures of other user actions with a toast.
  *
  * Must be called during component initialisation.
  */
+export interface LoadState {
+	loading: boolean;
+	error: string;
+}
+
 export function loadOnParamChange(
 	key: () => string,
-	load: (key: string, isStale: () => boolean) => Promise<void>,
-	loading: Writable<boolean>,
-	error: Writable<string>
-): void {
+	load: (key: string, isStale: () => boolean) => Promise<void>
+): LoadState {
+	const state = $state<LoadState>({ loading: true, error: '' });
 	// A $derived only notifies when the VALUE changes. Reading `page.params.id` straight in the effect
 	// re-ran it on every navigation that merely replaced the params object (e.g. `?tab=activity`),
 	// which reloaded the task and unmounted the tab, wiping whatever the user had just typed.
@@ -30,8 +34,8 @@ export function loadOnParamChange(
 	$effect(() => {
 		const k = current; // the only reactive read: re-run only when the key itself changes
 		let stale = false;
-		loading.set(true);
-		error.set('');
+		state.loading = true;
+		state.error = '';
 		(async () => {
 			const me = await getCurrentUser();
 			if (stale) return;
@@ -42,13 +46,14 @@ export function loadOnParamChange(
 			try {
 				await load(k, () => stale);
 			} catch (e: unknown) {
-				if (!stale) error.set(errMessage(e));
+				if (!stale) state.error = errMessage(e);
 			} finally {
-				if (!stale) loading.set(false);
+				if (!stale) state.loading = false;
 			}
 		})();
 		return () => {
 			stale = true;
 		};
 	});
+	return state;
 }

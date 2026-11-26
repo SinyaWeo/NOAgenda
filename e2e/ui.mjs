@@ -113,6 +113,22 @@ ok('opening the link confirms the address', (await text()).includes('Email confi
 // ---------- sign in, unverified/verified handling and redirect-back
 await page.goto(BASE + '/tasks');
 await page.waitForURL(/\/user\/login/);
+
+// ---------- language switch (reactive translations, saved per browser)
+// (Compares the form's own label, not the whole body: SvelteKit's route announcer differs after a reload.)
+const submitLabel = () => page.locator('button[type=submit]').innerText();
+const englishLabel = await submitLabel();
+await page.click('button[lang="cs"]');
+await page.waitForFunction(() => document.documentElement.lang === 'cs');
+const czechLabel = await submitLabel();
+ok('switching to Czech re-renders the page without a reload', czechLabel !== englishLabel && (await page.getAttribute('button[lang="cs"]', 'aria-pressed')) === 'true', `${englishLabel} -> ${czechLabel}`);
+await page.reload();
+await page.waitForSelector('button[lang="cs"][aria-pressed="true"]');
+ok('the chosen language survives a reload', (await page.evaluate(() => document.documentElement.lang)) === 'cs' && (await submitLabel()) === czechLabel);
+await page.click('button[lang="en"]');
+await page.waitForFunction(() => document.documentElement.lang === 'en');
+ok('switching back to English restores the English texts', (await submitLabel()) === englishLabel, await submitLabel());
+
 await page.fill('#login-username', USER);
 await page.fill('#login-password', 'wrong password!!');
 await page.click('button[type=submit]');

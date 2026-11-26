@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
-	import type { Task } from '$lib/types';
+	import { t } from '#lib/i18n/index.js';
+	import type { Task } from '#lib/types.js';
 	import { Card } from 'flowbite-svelte';
-	import ActivityLog from '$lib/components/ActivityLog.svelte';
-	import TaskVersionHistory from '$lib/components/task/TaskVersionHistory.svelte';
+	import ActivityLog from '#lib/components/ActivityLog.svelte';
+	import TaskVersionHistory from '#lib/components/task/TaskVersionHistory.svelte';
 
 	let {
 		taskId,
@@ -19,12 +19,12 @@
 
 <!-- Version history -->
 <Card class="mb-4 max-w-none">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.history.title')}</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{t('tasks.history.title')}</h2>
 	<TaskVersionHistory {taskId} version={activityVersion} {onRestored} />
 </Card>
 
 <!-- Activity log -->
 <Card class="mb-4 max-w-none">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('activity.title')}</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{t('activity.title')}</h2>
 	<ActivityLog endpoint="/activity?nodeId={taskId}" version={activityVersion} />
 </Card>

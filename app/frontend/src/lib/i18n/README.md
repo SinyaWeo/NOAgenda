@@ -2,37 +2,40 @@
 
 The UI is available in English (`en`, the source) and Czech (`cs`). Everything lives in `src/lib/i18n/`.
 
-| File                                                      | What it is                                                                                                                                                                                                                                                                                     |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `messages/<lang>/<area>.ts`                               | The texts, one file per area: `common`, `activity`, `layout`, `auth`, `dashboard`, `tasks`, `projects`, `views`, `filters`, `ideas`, `teams`, `labels`, `settings`, `admin`, `legal`, `errors`. Lives in `messages/en/` (source) and `messages/cs/`, same file names; each exports `messages`. |
-| `messages/{en,cs}/index.ts`, `messages/index.ts`          | Merges the areas. **English defines the keys; Czech must have exactly the same ones** (enforced by `svelte-check` and by `catalog.test.ts`).                                                                                                                                                   |
-| `index.ts`                                                | What components import: `t`, `fmt`, `locale`, `setLocale`, `LOCALES`, `tr`.                                                                                                                                                                                                                    |
-| `translate.ts`, `locale-store.ts`, `core.ts`, `format.ts` | Plumbing (plural rules, interpolation, language detection, date/number formatting).                                                                                                                                                                                                            |
-| `server-messages.ts`                                      | Turns the backend's English error messages into the current language. Unknown messages are shown as the server sent them.                                                                                                                                                                      |
+| File                                                       | What it is                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `messages/<lang>/<area>.ts`                                | The texts, one file per area: `common`, `activity`, `layout`, `auth`, `dashboard`, `tasks`, `projects`, `views`, `filters`, `ideas`, `teams`, `labels`, `settings`, `admin`, `legal`, `errors`. Lives in `messages/en/` (source) and `messages/cs/`, same file names; each exports `messages`. |
+| `messages/{en,cs}/index.ts`, `messages/index.ts`           | Merges the areas. **English defines the keys; Czech must have exactly the same ones** (enforced by `svelte-check` and by `catalog.test.ts`).                                                                                                                                                   |
+| `index.ts`                                                 | What everything imports: `t`, `fmt`, `locale`, `setLocale`, `LOCALES`.                                                                                                                                                                                                                         |
+| `translate.ts`, `locale.svelte.ts`, `core.ts`, `format.ts` | Plumbing (plural rules, interpolation, language detection, date/number formatting).                                                                                                                                                                                                            |
+| `server-messages.ts`                                       | Turns the backend's English error messages into the current language. Unknown messages are shown as the server sent them.                                                                                                                                                                      |
 
 ## Using it
 
 ```svelte
 <script lang="ts">
-	import { t, fmt } from '$lib/i18n';
+	import { t, fmt } from '#lib/i18n/index.js';
 </script>
 
-<h1>{$t('tasks.title')}</h1>
-<input placeholder={$t('tasks.search.placeholder')} aria-label={$t('tasks.search.label')} />
-<p>{$t('tasks.count', { count: tasks.length })}</p>
+<h1>{t('tasks.title')}</h1>
+<input placeholder={t('tasks.search.placeholder')} aria-label={t('tasks.search.label')} />
+<p>{t('tasks.count', { count: tasks.length })}</p>
 <!-- plural forms chosen from `count` -->
-<p>{$t('tasks.dueOn', { date: $fmt.date(task.dueDate) })}</p>
+<p>{t('tasks.dueOn', { date: fmt.date(task.dueDate) })}</p>
 ```
 
-In plain TypeScript (toasts, helpers, anything that is not a component template) use `tr`:
+The same `t` works in plain TypeScript (toasts, helpers):
 
 ```ts
-import { tr } from '$lib/i18n';
-showToast(tr('tasks.saved'), 'success');
+import { t } from '#lib/i18n/index.js';
+showToast(t('tasks.saved'), 'success');
 ```
 
-`$fmt.date(...)`, `$fmt.dateTime(...)`, `$fmt.dateLong(...)`, `$fmt.number(...)` format in the current language **and
+`fmt.date(...)`, `fmt.dateTime(...)`, `fmt.dateLong(...)`, `fmt.number(...)` format in the current language **and
 the time zone saved in the user's settings**. Never call `toLocaleDateString()` directly.
+
+`t` and `fmt` are plain functions that read the current language (`locale.current`, a `$state` value), so markup
+and `$derived` values that call them update when the language changes. Switch it with `setLocale(...)`.
 
 ## Adding or changing a text
 

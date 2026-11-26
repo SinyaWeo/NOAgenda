@@ -4,8 +4,8 @@
 
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { t } from '$lib/i18n';
-	import type { Reminder } from '$lib/types';
+	import { t } from '#lib/i18n/index.js';
+	import type { Reminder } from '#lib/types.js';
 	import { Button, Input, Select } from 'flowbite-svelte';
 
 	let {
@@ -62,8 +62,8 @@
 				<button
 					type="button"
 					class="shrink-0 bg-transparent border-0 p-0 leading-none cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-600"
-					aria-label={$t('tasks.reminders.remove')}
-					title={$t('tasks.reminders.remove')}
+					aria-label={t('tasks.reminders.remove')}
+					title={t('tasks.reminders.remove')}
 					onclick={() => onDelete(rem.id)}
 				>
 					✕
@@ -74,34 +74,34 @@
 {/if}
 <form onsubmit={submit} class="flex flex-col gap-2">
 	<div>
-		<label for="reminder-kind" class={LABEL}>{$t('tasks.reminders.kind')}</label>
+		<label for="reminder-kind" class={LABEL}>{t('tasks.reminders.kind')}</label>
 		<Select id="reminder-kind" placeholder="" size="sm" bind:value={kind}>
-			<option value="date">{$t('tasks.reminders.kindDate')}</option>
-			<option value="before" disabled={!hasDueDate}>{$t('tasks.reminders.kindBefore')}</option>
+			<option value="date">{t('tasks.reminders.kindDate')}</option>
+			<option value="before" disabled={!hasDueDate}>{t('tasks.reminders.kindBefore')}</option>
 		</Select>
 	</div>
 	{#if kind === 'before'}
 		<div class="flex gap-2">
 			<div class="w-20">
-				<label for="reminder-days" class={LABEL}>{$t('tasks.reminders.daysBefore')}</label>
+				<label for="reminder-days" class={LABEL}>{t('tasks.reminders.daysBefore')}</label>
 				<Input id="reminder-days" type="number" size="sm" min="0" max="365" bind:value={daysBefore} />
 			</div>
 			<div class="flex-1">
-				<label for="reminder-time" class={LABEL}>{$t('tasks.reminders.atTime')}</label>
+				<label for="reminder-time" class={LABEL}>{t('tasks.reminders.atTime')}</label>
 				<Input id="reminder-time" type="time" size="sm" bind:value={atTime} required />
 			</div>
 		</div>
 	{:else}
 		<div>
-			<label for="reminder-date" class={LABEL}>{$t('tasks.reminders.date')}</label>
+			<label for="reminder-date" class={LABEL}>{t('tasks.reminders.date')}</label>
 			<Input id="reminder-date" type="datetime-local" size="sm" bind:value={reminderDate} />
 		</div>
 	{/if}
 	{#if !hasDueDate}
-		<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{$t('tasks.reminders.needsDueDate')}</p>
+		<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{t('tasks.reminders.needsDueDate')}</p>
 	{/if}
-	<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{$t('tasks.reminders.hint')}</p>
+	<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{t('tasks.reminders.hint')}</p>
 	<div>
-		<Button type="submit" size="xs" disabled={saving}>{$t('common.add')}</Button>
+		<Button type="submit" size="xs" disabled={saving}>{t('common.add')}</Button>
 	</div>
 </form>

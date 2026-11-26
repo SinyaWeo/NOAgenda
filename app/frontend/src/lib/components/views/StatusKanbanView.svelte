@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Task } from '$lib/types';
-	import type { KanbanColumn, StatusChangeHandler } from '$lib/types-views';
-	import { taskProjectId } from '$lib/project-groups';
-	import { t, fmt, type MessageKey } from '$lib/i18n';
+	import type { Task } from '#lib/types.js';
+	import type { KanbanColumn, StatusChangeHandler } from '#lib/types-views.js';
+	import { taskProjectId } from '#lib/project-groups.js';
+	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
 
 	interface Props {
 		tasks: Task[];
@@ -89,16 +89,16 @@
 						{#if task.dueDate}
 							{@const overdue = new Date(task.dueDate) < new Date() && task.status !== 'done'}
 							<div class="text-xs {overdue ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'} mt-1">
-								{$fmt.date(task.dueDate)}
+								{fmt.date(task.dueDate)}
 							</div>
 						{/if}
 						{#if task.priority && task.priority > 0}<div class="text-xs mt-0.5" data-priority={task.priority}>
-								{$t(`common.priority.${task.priority}` as MessageKey)}
+								{t(`common.priority.${task.priority}` as MessageKey)}
 							</div>{/if}
 					</div>
 				{/each}
 				{#if !colTasks.length}
-					<p class="text-xs text-gray-500 dark:text-gray-400 text-center m-0">{$t('views.column.empty')}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 text-center m-0">{t('views.column.empty')}</p>
 				{/if}
 			</div>
 		</div>

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { singleUserMode } from '$lib/appConfig';
-	import { appName } from '$lib/appName';
-	import Logo from '$lib/components/Logo.svelte';
+	import { singleUserMode } from '#lib/appConfig.svelte.js';
+	import { appName } from '#lib/appName.svelte.js';
+	import Logo from '#lib/components/Logo.svelte';
 	import { onMount } from 'svelte';
-	import { t, type MessageKey } from '$lib/i18n';
+	import { t, type MessageKey } from '#lib/i18n/index.js';
 	import {
 		HomeOutline,
 		HomeSolid,
@@ -61,7 +61,7 @@
 		{ href: '/trash', label: 'layout.nav.trash', icon: TrashBinOutline }
 	];
 	// No teams in single-user mode.
-	const organize = $derived(ORGANIZE.filter((i) => !($singleUserMode && i.href === '/teams')));
+	const organize = $derived(ORGANIZE.filter((i) => !(singleUserMode.current && i.href === '/teams')));
 	const ADMIN: NavItem = { href: '/admin', label: 'layout.nav.adminOverview', icon: CogOutline, exact: true };
 	const AUDIT: NavItem = { href: '/admin/activity', label: 'layout.nav.auditLog' };
 	const ABOUT: NavItem = { href: '/about', label: 'layout.nav.about', icon: InfoCircleOutline };
@@ -117,7 +117,7 @@
 					</svg>
 				{/if}
 			</span>
-			{#if !compact}<span>{$t(item.label)}</span>{/if}
+			{#if !compact}<span>{t(item.label)}</span>{/if}
 		</a>
 	</li>
 {/snippet}
@@ -135,7 +135,7 @@
 <div class="mobile-backdrop {mobileOpen ? 'open' : ''}" onclick={() => (mobileOpen = false)}></div>
 
 <nav
-	aria-label={$t('layout.nav.main')}
+	aria-label={t('layout.nav.main')}
 	id="main-nav"
 	class="sidebar-nav {compact ? 'sidebar-collapsed' : 'sidebar-expanded'} {mobileOpen ? 'mobile-open' : ''}"
 >
@@ -145,13 +145,13 @@
 				href="/dashboard"
 				class="flex items-center gap-2 brand-text font-bold text-base no-underline whitespace-nowrap overflow-hidden flex-1"
 			>
-				<Logo size={28} /><span class="truncate">{$appName}</span>
+				<Logo size={28} /><span class="truncate">{appName.current}</span>
 			</a>
 		{/if}
 		<button
 			onclick={toggleSidebar}
-			title={compact ? $t('layout.nav.expand') : $t('layout.nav.collapse')}
-			aria-label={compact ? $t('layout.nav.expand') : $t('layout.nav.collapse')}
+			title={compact ? t('layout.nav.expand') : t('layout.nav.collapse')}
+			aria-label={compact ? t('layout.nav.expand') : t('layout.nav.collapse')}
 			aria-expanded={!compact}
 			aria-controls="main-nav"
 			class="hidden md:flex bg-transparent border-0 text-slate-400 cursor-pointer p-1 rounded opacity-70 hover:bg-white/10 hover:opacity-100 items-center"
@@ -165,12 +165,12 @@
 	</div>
 
 	<ul class="nav-list">
-		{@render sectionTitle($t('layout.nav.work'))}
+		{@render sectionTitle(t('layout.nav.work'))}
 		{#each WORK as item (item.href)}{@render navItem(item)}{/each}
-		{@render sectionTitle($t('layout.nav.organize'))}
+		{@render sectionTitle(t('layout.nav.organize'))}
 		{#each organize as item (item.href)}{@render navItem(item)}{/each}
 		{#if showAdmin}
-			{@render sectionTitle($t('layout.nav.admin'))}
+			{@render sectionTitle(t('layout.nav.admin'))}
 			{@render navItem(ADMIN)}
 			{@render navItem(AUDIT)}
 		{/if}

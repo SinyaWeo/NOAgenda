@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { apiGetAuth, API_BASE } from '$lib/api';
-	import type { UserSummary } from '$lib/types';
-	import { t } from '$lib/i18n';
+	import { apiGetAuth, API_BASE } from '#lib/api.js';
+	import type { UserSummary } from '#lib/types.js';
+	import { t } from '#lib/i18n/index.js';
 
 	let {
 		id = 'user-picker',
@@ -36,7 +36,7 @@
 	const trimmed = $derived(query.trim());
 	const shown = $derived(results.filter((u) => !excludeIds.includes(u.id)));
 	const tooShort = $derived(trimmed.length < MIN_CHARS);
-	const labelText = $derived(label ?? $t('projects.userPicker.label'));
+	const labelText = $derived(label ?? t('projects.userPicker.label'));
 	const listId = $derived(`${id}-listbox`);
 
 	function resolveUrl(path: string): string {
@@ -161,28 +161,28 @@
 		{oninput}
 		{onkeydown}
 		onfocus={() => (open = true)}
-		placeholder={$t('projects.userPicker.placeholder')}
+		placeholder={t('projects.userPicker.placeholder')}
 		class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
 	/>
 	<p id="{id}-hint" class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0" role="status">
 		{#if selected}
-			{$t('projects.userPicker.selected', { name: selected.name || selected.username })}
+			{t('projects.userPicker.selected', { name: selected.name || selected.username })}
 		{:else if tooShort}
-			{$t('projects.userPicker.tooShort', { min: MIN_CHARS })}
+			{t('projects.userPicker.tooShort', { min: MIN_CHARS })}
 		{:else if searching}
-			{$t('projects.userPicker.searching')}
+			{t('projects.userPicker.searching')}
 		{:else if failed}
-			{$t('projects.userPicker.failed')}
+			{t('projects.userPicker.failed')}
 		{:else if showEmpty}
-			{$t('projects.userPicker.noMatches')}
+			{t('projects.userPicker.noMatches')}
 		{:else}
-			{$t('projects.userPicker.pick')}
+			{t('projects.userPicker.pick')}
 		{/if}
 	</p>
 	<ul
 		id={listId}
 		role="listbox"
-		aria-label={$t('projects.userPicker.results', { label: labelText })}
+		aria-label={t('projects.userPicker.results', { label: labelText })}
 		class="absolute z-20 mt-1 w-full max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800 p-0 list-none"
 		hidden={!showList}
 	>

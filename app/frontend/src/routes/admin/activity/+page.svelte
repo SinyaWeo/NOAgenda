@@ -1,8 +1,8 @@
 <script lang="ts">
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { t } from '$lib/i18n';
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import { t } from '#lib/i18n/index.js';
 	import { Button, Card, Input, Label, Select } from 'flowbite-svelte';
-	import ActivityLog from '$lib/components/ActivityLog.svelte';
+	import ActivityLog from '#lib/components/ActivityLog.svelte';
 
 	const ACTIONS = [
 		'task.created',
@@ -50,46 +50,46 @@
 </script>
 
 <svelte:head>
-	<title>{$t('activity.admin.pageTitle')}</title>
+	<title>{t('activity.admin.pageTitle')}</title>
 </svelte:head>
 
 <div class="max-w-4xl">
 	<PageHeader
-		title={$t('activity.admin.title')}
-		back={{ href: '/admin', label: $t('admin.back') }}
-		subtitle={$t('activity.admin.hint')}
+		title={t('activity.admin.title')}
+		back={{ href: '/admin', label: t('admin.back') }}
+		subtitle={t('activity.admin.hint')}
 	/>
 
 	<Card class="max-w-none mb-4">
 		<form onsubmit={apply} class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
 			<div>
-				<Label for="aud-actor" class="mb-1">{$t('activity.admin.filterActor')}</Label>
+				<Label for="aud-actor" class="mb-1">{t('activity.admin.filterActor')}</Label>
 				<Input id="aud-actor" type="text" inputmode="numeric" bind:value={actorId} />
 			</div>
 			<div>
-				<Label for="aud-project" class="mb-1">{$t('activity.admin.filterProject')}</Label>
+				<Label for="aud-project" class="mb-1">{t('activity.admin.filterProject')}</Label>
 				<Input id="aud-project" type="text" inputmode="numeric" bind:value={projectId} />
 			</div>
 			<div>
-				<Label for="aud-action" class="mb-1">{$t('activity.admin.filterAction')}</Label>
+				<Label for="aud-action" class="mb-1">{t('activity.admin.filterAction')}</Label>
 				<Select id="aud-action" bind:value={action}>
-					<option value="">{$t('activity.admin.anyAction')}</option>
+					<option value="">{t('activity.admin.anyAction')}</option>
 					{#each ACTIONS as a (a)}
 						<option value={a}>{a}</option>
 					{/each}
 				</Select>
 			</div>
 			<div>
-				<Label for="aud-from" class="mb-1">{$t('activity.admin.filterFrom')}</Label>
+				<Label for="aud-from" class="mb-1">{t('activity.admin.filterFrom')}</Label>
 				<Input id="aud-from" type="date" bind:value={from} />
 			</div>
 			<div>
-				<Label for="aud-to" class="mb-1">{$t('activity.admin.filterTo')}</Label>
+				<Label for="aud-to" class="mb-1">{t('activity.admin.filterTo')}</Label>
 				<Input id="aud-to" type="date" bind:value={to} />
 			</div>
 			<div class="flex gap-2">
-				<Button type="submit" size="sm">{$t('activity.admin.apply')}</Button>
-				<Button type="button" size="sm" color="light" onclick={reset}>{$t('activity.admin.reset')}</Button>
+				<Button type="submit" size="sm">{t('activity.admin.apply')}</Button>
+				<Button type="button" size="sm" color="light" onclick={reset}>{t('activity.admin.reset')}</Button>
 			</div>
 		</form>
 	</Card>

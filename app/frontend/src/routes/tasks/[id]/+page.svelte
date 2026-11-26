@@ -1,7 +1,7 @@
 <script lang="ts">
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { confirmDialog } from '$lib/confirm';
-	import { t, tr, type MessageKey } from '$lib/i18n';
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
+	import { t, type MessageKey } from '#lib/i18n/index.js';
 	import { page } from '$app/state';
 	import {
 		apiGetAuth,
@@ -11,14 +11,13 @@
 		apiDeleteAuth,
 		apiFetchAuth,
 		downloadAuthFile
-	} from '$lib/api';
-	import { authSession } from '$lib/auth';
-	import { errMessage } from '$lib/errors';
-	import { loadOnParamChange } from '$lib/param-loader.svelte';
-	import { writable } from 'svelte/store';
+	} from '#lib/api.js';
+	import { authSession } from '#lib/auth.svelte.js';
+	import { errMessage } from '#lib/errors.js';
+	import { loadOnParamChange } from '#lib/param-loader.svelte.js';
 	import { goto } from '$app/navigation';
-	import { showToast } from '$lib/toast';
-	import { announceRecurrence } from '$lib/recurrence';
+	import { showToast } from '#lib/toast.svelte.js';
+	import { announceRecurrence } from '#lib/recurrence.js';
 	import type {
 		Attachment,
 		Comment,
@@ -29,12 +28,12 @@
 		TaskLabel,
 		TaskRelation,
 		UserSummary
-	} from '$lib/types';
-	import TaskDetailsTab from '$lib/components/task/TaskDetailsTab.svelte';
-	import TaskActivityTab from '$lib/components/task/TaskActivityTab.svelte';
-	import TaskComments from '$lib/components/task/TaskComments.svelte';
-	import type { NewReminder } from '$lib/components/task/TaskReminderEditor.svelte';
-	import InlineText from '$lib/components/InlineText.svelte';
+	} from '#lib/types.js';
+	import TaskDetailsTab from '#lib/components/task/TaskDetailsTab.svelte';
+	import TaskActivityTab from '#lib/components/task/TaskActivityTab.svelte';
+	import TaskComments from '#lib/components/task/TaskComments.svelte';
+	import type { NewReminder } from '#lib/components/task/TaskReminderEditor.svelte';
+	import InlineText from '#lib/components/InlineText.svelte';
 	import { Alert, Button } from 'flowbite-svelte';
 
 	let task = $state<Task | null>(null);
@@ -48,8 +47,6 @@
 	let reminders = $state<Reminder[]>([]);
 	let relations = $state<TaskRelation[]>([]);
 	let subtasks = $state<Task[]>([]);
-	const loading = writable(true);
-	const error = writable('');
 
 	// An old `?tab=work` link (subtasks and relations are on Details now) falls back to Details.
 	const VALID_TABS = ['details', 'activity'] as const;
@@ -62,7 +59,7 @@
 
 	function setTab(tab: Tab) {
 		activeTab = tab;
-		goto(`?tab=${tab}`, { replaceState: true, reset: false });
+		goto(`?tab=${tab}`, { replace: true, reset: false });
 	}
 
 	async function loadTask(id: string, isStale: () => boolean) {
@@ -89,7 +86,7 @@
 		relations = rel;
 		subtasks = sub;
 		allLabels = mine;
-		const me = $authSession.user;
+		const me = authSession.user;
 		assignable =
 			me && members.length
 				? [{ id: me.id, username: me.username, name: me.name }, ...members.filter((m) => m.id !== me.id)]
@@ -109,7 +106,7 @@
 
 	// Reloads when only the id changes (subtask / relation links keep this component mounted).
 	// The tab components are unmounted while loading, so their inputs start empty for every task.
-	loadOnParamChange(() => page.params.id ?? '', loadTask, loading, error);
+	const pageLoad = loadOnParamChange(() => page.params.id ?? '', loadTask);
 
 	/** Failures of user actions are toasts: `error` is for load failures and replaces the page. */
 	function fail(e: unknown) {
@@ -142,7 +139,7 @@
 		acting = true;
 		try {
 			const copy = await apiPutAuth<Task>(`/tasks/${task.id}/duplicate`, {});
-			showToast(tr('tasks.toast.duplicated'), 'success');
+			showToast(t('tasks.toast.duplicated'), 'success');
 			await goto(`/tasks/${copy.id}`);
 		} catch (e: unknown) {
 			fail(e);
@@ -157,7 +154,7 @@
 		try {
 			const archiving = !task.isArchived;
 			task = await apiPatchAuth<Task>(`/nodes/${task.id}/${archiving ? 'archive' : 'unarchive'}`, {});
-			showToast(tr(archiving ? 'tasks.toast.archived' : 'tasks.toast.restored'), 'success');
+			showToast(t(archiving ? 'tasks.toast.archived' : 'tasks.toast.restored'), 'success');
 		} catch (e: unknown) {
 			fail(e);
 		} finally {
@@ -167,12 +164,12 @@
 
 	/** Soft delete: the task and its subtasks go to the trash and can be restored from there. */
 	async function deleteTask() {
-		if (!task || acting || !(await confirmDialog(tr('tasks.detail.confirmDelete')))) return;
+		if (!task || acting || !(await confirmDialog(t('tasks.detail.confirmDelete')))) return;
 		acting = true;
 		try {
 			const parent = task.parent;
 			await apiDeleteAuth(`/tasks/${task.id}`);
-			showToast(tr('tasks.toast.deleted'), 'success');
+			showToast(t('tasks.toast.deleted'), 'success');
 			await goto(parent ? `/${parent.type === 'project' ? 'projects' : 'tasks'}/${parent.id}` : '/tasks');
 		} catch (e: unknown) {
 			fail(e);
@@ -185,17 +182,17 @@
 		try {
 			await downloadAuthFile(`/attachments/${id}/download`, filename);
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('tasks.toast.downloadFailed')), 'error');
+			showToast(errMessage(e, t('tasks.toast.downloadFailed')), 'error');
 		}
 	}
 
 	/** Deleting a file is permanent, so it is confirmed first. */
 	async function deleteAttachment(att: Attachment) {
-		if (!(await confirmDialog(tr('tasks.attachments.confirmRemove', { name: att.filename })))) return;
+		if (!(await confirmDialog(t('tasks.attachments.confirmRemove', { name: att.filename })))) return;
 		try {
 			await apiDeleteAuth(`/attachments/${att.id}`);
 			attachments = await apiGetAuth<Attachment[]>(`/attachments?taskId=${page.params.id}`);
-			showToast(tr('tasks.toast.fileDeleted'), 'success');
+			showToast(t('tasks.toast.fileDeleted'), 'success');
 		} catch (e: unknown) {
 			fail(e);
 		}
@@ -247,7 +244,7 @@
 			// The parent task is all the server needs; the project is found through the task tree.
 			await apiPostAuth('/tasks', { title, parentTaskId: Number(id) });
 			subtasks = await apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`);
-			showToast(tr('tasks.toast.subtaskAdded'), 'success');
+			showToast(t('tasks.toast.subtaskAdded'), 'success');
 			return true;
 		} catch (e: unknown) {
 			fail(e);
@@ -282,7 +279,7 @@
 		try {
 			await apiPostAuth('/comments', { content, taskId: Number(id) });
 			comments = await apiGetAuth<Comment[]>(`/comments?taskId=${id}`);
-			showToast(tr('tasks.toast.commentPosted'), 'success');
+			showToast(t('tasks.toast.commentPosted'), 'success');
 			return true;
 		} catch (e: unknown) {
 			fail(e);
@@ -311,11 +308,11 @@
 				body: fd
 			});
 			if (!up.ok) {
-				showToast(tr(up.status === 403 ? 'tasks.toast.uploadDisabled' : 'tasks.toast.uploadFailed'), 'error');
+				showToast(t(up.status === 403 ? 'tasks.toast.uploadDisabled' : 'tasks.toast.uploadFailed'), 'error');
 				return;
 			}
 			attachments = await apiGetAuth<Attachment[]>(`/attachments?taskId=${id}`);
-			showToast(tr('tasks.toast.fileUploaded'), 'success');
+			showToast(t('tasks.toast.fileUploaded'), 'success');
 		} catch (e: unknown) {
 			fail(e);
 		} finally {
@@ -324,10 +321,10 @@
 	}
 </script>
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
-{:else if $error}
-	<Alert color="red">{$error}</Alert>
+{#if pageLoad.loading}
+	<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+{:else if pageLoad.error}
+	<Alert color="red">{pageLoad.error}</Alert>
 {:else if task}
 	{@const current = task}
 	<div>
@@ -337,7 +334,7 @@
 				href: task.parent
 					? `/${task.parent.type === 'project' ? 'projects' : 'tasks'}/${task.parent.id}`
 					: '/tasks',
-				label: $t('tasks.detail.back')
+				label: t('tasks.detail.back')
 			}}
 		>
 			{#snippet titleContent()}
@@ -345,7 +342,7 @@
 					value={current.title ?? ''}
 					required
 					maxlength={255}
-					label={$t('tasks.detail.editTitle')}
+					label={t('tasks.detail.editTitle')}
 					onSave={(v) => updateTask({ title: v })}
 				>
 					{#snippet display()}
@@ -355,24 +352,24 @@
 			{/snippet}
 			{#snippet actions()}
 				<Button color="light" size="sm" disabled={acting} onclick={duplicateTask}>
-					{$t('tasks.detail.duplicate')}
+					{t('tasks.detail.duplicate')}
 				</Button>
 				<Button color="light" size="sm" disabled={acting} onclick={toggleArchive}>
-					{current.isArchived ? $t('tasks.detail.restore') : $t('tasks.detail.archive')}
+					{current.isArchived ? t('tasks.detail.restore') : t('tasks.detail.archive')}
 				</Button>
 				<Button color="red" outline size="sm" disabled={acting} onclick={deleteTask}>
-					{$t('tasks.detail.delete')}
+					{t('tasks.detail.delete')}
 				</Button>
 			{/snippet}
 		</PageHeader>
 		{#if task.isArchived}
-			<Alert color="yellow" class="mb-4">{$t('tasks.detail.archivedNotice')}</Alert>
+			<Alert color="yellow" class="mb-4">{t('tasks.detail.archivedNotice')}</Alert>
 		{/if}
 
 		<!-- Tabs navigation -->
 		<div
 			role="tablist"
-			aria-label={$t('tasks.detail.tabsLabel')}
+			aria-label={t('tasks.detail.tabsLabel')}
 			class="flex gap-1 mb-4 border-b border-gray-200 dark:border-gray-700"
 		>
 			{#each [{ id: 'details', label: 'tasks.tab.details' }, { id: 'activity', label: 'tasks.tab.activity' }] as tab (tab.id)}
@@ -384,7 +381,7 @@
 						? 'border-primary-600 text-primary-600 dark:text-primary-400 dark:border-primary-400'
 						: 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}"
 				>
-					{$t(tab.label as MessageKey)}
+					{t(tab.label as MessageKey)}
 				</button>
 			{/each}
 		</div>
@@ -419,7 +416,7 @@
 			<TaskComments
 				taskId={task.id}
 				{comments}
-				currentUserId={$authSession.user?.id}
+				currentUserId={authSession.user?.id}
 				onPostComment={postComment}
 				onDeleteComment={deleteComment}
 			/>
@@ -439,5 +436,5 @@
 		{/if}
 	</div>
 {:else}
-	<p class="text-gray-500 dark:text-gray-400">{$t('tasks.detail.notFound')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{t('tasks.detail.notFound')}</p>
 {/if}

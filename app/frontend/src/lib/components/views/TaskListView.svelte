@@ -1,11 +1,11 @@
 <script lang="ts">
-	import type { Task } from '$lib/types';
-	import type { StatusChangeHandler } from '$lib/types-views';
+	import type { Task } from '#lib/types.js';
+	import type { StatusChangeHandler } from '#lib/types-views.js';
 	import { Card, Progressbar } from 'flowbite-svelte';
 	import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
 	import { isOverdue } from './util';
-	import { t, fmt, type MessageKey } from '$lib/i18n';
-	import { groupByProject } from '$lib/project-groups';
+	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
+	import { groupByProject } from '#lib/project-groups.js';
 
 	interface Props {
 		tasks: Task[];
@@ -26,7 +26,7 @@
 			{#if group.projectId != null}
 				<a href="/projects/{group.projectId}" class="hover:underline">{group.name}</a>
 			{:else}
-				{$t('views.tasks.noProject')}
+				{t('views.tasks.noProject')}
 			{/if}
 			<span class="text-xs font-normal text-gray-500 dark:text-gray-400">{group.tasks.length}</span>
 		</h3>
@@ -46,7 +46,7 @@
 								class="w-4 h-4 shrink-0 cursor-pointer"
 								checked={selected.includes(task.id)}
 								onchange={() => onToggle(task.id)}
-								aria-label={$t('views.bulk.select', { title: task.title ?? '' })}
+								aria-label={t('views.bulk.select', { title: task.title ?? '' })}
 							/>
 						{/if}
 						<div class="flex-1 min-w-48">
@@ -66,14 +66,14 @@
 									: due !== null
 										? 'text-gray-600 dark:text-gray-300'
 										: 'text-gray-500 dark:text-gray-400'}"
-								title={$t('common.field.dueDate')}
+								title={t('common.field.dueDate')}
 							>
 								{#if overdue}<ExclamationCircleOutline class="w-3.5 h-3.5 shrink-0" />{/if}
-								{due !== null ? $fmt.date(due) : $t('views.notSet')}
+								{due !== null ? fmt.date(due) : t('views.notSet')}
 							</span>
-							<span class="text-xs w-16" data-priority={task.priority} title={$t('common.field.priority')}>
+							<span class="text-xs w-16" data-priority={task.priority} title={t('common.field.priority')}>
 								{task.priority && task.priority > 0
-									? $t(`common.priority.${task.priority}` as MessageKey)
+									? t(`common.priority.${task.priority}` as MessageKey)
 									: '—'}
 							</span>
 							<select
@@ -85,12 +85,12 @@
 										task.id,
 										(e.target as HTMLSelectElement).value as 'open' | 'in_progress' | 'done'
 									)}
-								aria-label={$t('views.changeStatus')}
-								title={$t('common.field.status')}
+								aria-label={t('views.changeStatus')}
+								title={t('common.field.status')}
 							>
-								<option value="open">{$t('common.status.open')}</option>
-								<option value="in_progress">{$t('common.status.in_progress')}</option>
-								<option value="done">{$t('common.status.done')}</option>
+								<option value="open">{t('common.status.open')}</option>
+								<option value="in_progress">{t('common.status.in_progress')}</option>
+								<option value="done">{t('common.status.done')}</option>
 							</select>
 						</div>
 					</div>

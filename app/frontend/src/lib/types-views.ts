@@ -1,4 +1,4 @@
-import type { NodeStatus } from '$lib/types';
+import type { NodeStatus } from '#lib/types.js';
 
 /** The view modes of the global task list page. */
 export type TaskViewMode = 'list' | 'kanban' | 'table' | 'gantt' | 'calendar';

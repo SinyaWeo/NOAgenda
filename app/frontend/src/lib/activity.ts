@@ -1,7 +1,7 @@
-import type { MessageKey, Params } from '$lib/i18n';
-import type { ActivityEntry } from '$lib/types';
+import type { MessageKey, Params } from '#lib/i18n/index.js';
+import type { ActivityEntry } from '#lib/types.js';
 
-/** `$t` (in a component) or `tr` (anywhere else), so these helpers stay pure and testable. */
+/** The translator `t` is passed in, so these helpers stay pure and testable. */
 export type Translate = (key: MessageKey, params?: Params) => string;
 
 const k = (key: string) => key as MessageKey;

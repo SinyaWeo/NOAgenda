@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { t, fmt } from '$lib/i18n';
-	import type { Comment } from '$lib/types';
+	import { t, fmt } from '#lib/i18n/index.js';
+	import type { Comment } from '#lib/types.js';
 	import { Button, Card, Input } from 'flowbite-svelte';
 
 	let {
@@ -45,7 +45,7 @@
 
 <!-- Comments -->
 <Card class="mb-4 max-w-none">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('tasks.comments.title')}</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{t('tasks.comments.title')}</h2>
 	{#if comments.length}
 		<div class="mb-4">
 			{#each comments as comment, i (comment.id)}
@@ -56,13 +56,13 @@
 				>
 					<div class="flex items-center justify-between">
 						<span class="text-sm font-bold text-primary-600 dark:text-primary-400">
-							{comment.author?.username ?? $t('common.unknown')}
+							{comment.author?.username ?? t('common.unknown')}
 						</span>
 						<div class="flex items-center gap-2">
-							<span class="text-xs text-gray-500 dark:text-gray-400">{$fmt.dateTime(comment.createdAt)}</span>
+							<span class="text-xs text-gray-500 dark:text-gray-400">{fmt.dateTime(comment.createdAt)}</span>
 							{#if canDeleteComment(comment)}
 								<Button size="xs" color="light" onclick={() => onDeleteComment(comment.id)}>
-									{$t('common.delete')}
+									{t('common.delete')}
 								</Button>
 							{/if}
 						</div>
@@ -74,15 +74,10 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{$t('tasks.comments.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 mb-4">{t('tasks.comments.empty')}</p>
 	{/if}
 	<form onsubmit={submitComment} class="flex gap-2">
-		<Input
-			type="text"
-			bind:value={newComment}
-			placeholder={$t('tasks.comments.placeholder')}
-			class="flex-1"
-		/>
-		<Button type="submit" size="sm" disabled={addingComment}>{$t('tasks.comments.post')}</Button>
+		<Input type="text" bind:value={newComment} placeholder={t('tasks.comments.placeholder')} class="flex-1" />
+		<Button type="submit" size="sm" disabled={addingComment}>{t('tasks.comments.post')}</Button>
 	</form>
 </Card>

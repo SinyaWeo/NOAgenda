@@ -1,24 +1,23 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/confirm';
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
-	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
-	import { errMessage } from '$lib/errors';
-	import { t, tr } from '$lib/i18n';
-	import { cleanCriteria, describeCriteria } from '$lib/filters';
-	import { loadProjectNames } from '$lib/project-names';
+	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '#lib/api.js';
+	import { getCurrentUser } from '#lib/auth.svelte.js';
+	import { errMessage } from '#lib/errors.js';
+	import { t } from '#lib/i18n/index.js';
+	import { cleanCriteria, describeCriteria } from '#lib/filters.js';
+	import { loadProjectNames } from '#lib/project-names.js';
 	import { goto } from '$app/navigation';
 	import { Alert, Badge, Button, Card, Input } from 'flowbite-svelte';
 	import { FilterOutline } from 'flowbite-svelte-icons';
-	import CriteriaEditor from '$lib/components/views/CriteriaEditor.svelte';
-	import type { FilterCriteria, SavedFilter } from '$lib/types';
-	import type { ProjectOption } from '$lib/types-views';
+	import CriteriaEditor from '#lib/components/views/CriteriaEditor.svelte';
+	import type { FilterCriteria, SavedFilter } from '#lib/types.js';
+	import type { ProjectOption } from '#lib/types-views.js';
 
-	const filters = writable<SavedFilter[]>([]);
-	const loading = writable(true);
-	const error = writable('');
+	let filters = $state<SavedFilter[]>([]);
+	let loading = $state(true);
+	let error = $state('');
 	let editingId = $state<number | null>(null);
 	let newName = $state('');
 	let newDescription = $state('');
@@ -33,7 +32,7 @@
 	);
 
 	async function load() {
-		filters.set(await apiGetAuth<SavedFilter[]>('/filters'));
+		filters = await apiGetAuth<SavedFilter[]>('/filters');
 	}
 
 	async function create(e: Event) {
@@ -49,7 +48,7 @@
 			newCriteria = {};
 			await load();
 		} catch (err: unknown) {
-			error.set(errMessage(err));
+			error = errMessage(err);
 		}
 	}
 
@@ -70,17 +69,17 @@
 			editingId = null;
 			await load();
 		} catch (err: unknown) {
-			error.set(errMessage(err));
+			error = errMessage(err);
 		}
 	}
 
 	async function deleteFilter(id: number) {
-		if (!(await confirmDialog(tr('filters.confirmDelete')))) return;
+		if (!(await confirmDialog(t('filters.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/filters/${id}`);
 			await load();
 		} catch (err: unknown) {
-			error.set(errMessage(err));
+			error = errMessage(err);
 		}
 	}
 
@@ -94,15 +93,15 @@
 		try {
 			await load();
 		} catch (err: unknown) {
-			error.set(errMessage(err));
+			error = errMessage(err);
 		} finally {
-			loading.set(false);
+			loading = false;
 		}
 	});
 </script>
 
-<PageHeader title={$t('filters.title')} />
-{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
+<PageHeader title={t('filters.title')} />
+{#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 
 <Card class="mb-4 max-w-none">
 	<form onsubmit={create} class="flex flex-col gap-3">
@@ -110,35 +109,35 @@
 			<Input
 				type="text"
 				bind:value={newName}
-				placeholder={$t('filters.name')}
+				placeholder={t('filters.name')}
 				required
 				class="flex-1 min-w-36"
 			/>
 			<Input
 				type="text"
 				bind:value={newDescription}
-				placeholder={$t('filters.descriptionOptional')}
+				placeholder={t('filters.descriptionOptional')}
 				class="flex-1 min-w-36"
 			/>
 		</div>
 		<CriteriaEditor bind:criteria={newCriteria} projects={projectOptions} idPrefix="new-crit" />
-		<div><Button type="submit">{$t('filters.save')}</Button></div>
+		<div><Button type="submit">{t('filters.save')}</Button></div>
 	</form>
 </Card>
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
-{:else if $filters.length === 0}
+{#if loading}
+	<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+{:else if filters.length === 0}
 	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<FilterOutline class="w-12 h-12 mx-auto mb-3" />
-		<p>{$t('filters.empty')}</p>
+		<p>{t('filters.empty')}</p>
 	</div>
 {:else}
 	<Card class="p-0 overflow-hidden max-w-none">
-		{#each $filters as filter, i (filter.id)}
-			{@const chips = describeCriteria(filter.filters, $t)}
+		{#each filters as filter, i (filter.id)}
+			{@const chips = describeCriteria(filter.filters, t)}
 			<div
-				class="flex items-center gap-3 p-4 {i < $filters.length - 1
+				class="flex items-center gap-3 p-4 {i < filters.length - 1
 					? 'border-b border-gray-100 dark:border-gray-700'
 					: ''}"
 			>
@@ -156,9 +155,9 @@
 						</div>
 						<CriteriaEditor bind:criteria={editCriteria} projects={projectOptions} idPrefix="edit-crit" />
 						<div class="flex gap-2">
-							<Button type="submit" size="sm">{$t('common.save')}</Button>
+							<Button type="submit" size="sm">{t('common.save')}</Button>
 							<Button type="button" color="light" size="sm" onclick={() => (editingId = null)}>
-								{$t('common.cancel')}
+								{t('common.cancel')}
 							</Button>
 						</div>
 					</form>
@@ -175,10 +174,10 @@
 						{/if}
 					</div>
 					<div class="flex gap-2 shrink-0">
-						<Button size="sm" href="/tasks?filter={filter.id}">{$t('common.apply')}</Button>
-						<Button size="sm" color="light" onclick={() => startEdit(filter)}>{$t('common.edit')}</Button>
+						<Button size="sm" href="/tasks?filter={filter.id}">{t('common.apply')}</Button>
+						<Button size="sm" color="light" onclick={() => startEdit(filter)}>{t('common.edit')}</Button>
 						<Button size="sm" color="red" outline onclick={() => deleteFilter(filter.id)}>
-							{$t('common.delete')}
+							{t('common.delete')}
 						</Button>
 					</div>
 				{/if}

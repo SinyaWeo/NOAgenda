@@ -1,4 +1,3 @@
-import { writable } from 'svelte/store';
 import { DEFAULT_LOCALE, detectLocale, isLocale, type Locale } from './core';
 
 const STORAGE_KEY = 'lang';
@@ -15,15 +14,8 @@ function initialLocale(): Locale {
 	return detectLocale(navigator.languages);
 }
 
-/** The current interface language. Kept free of any auth/api import so every module may use it. */
-export const locale = writable<Locale>(initialLocale());
-
-/** Switch language for this browser. (Saving it to the account is the settings page's job.) */
-export function setLocale(next: Locale): void {
-	locale.set(next);
-}
-
-locale.subscribe((l) => {
+/** Remember the language in this browser and tell the document (screen readers, hyphenation). */
+function apply(l: Locale): void {
 	if (typeof window === 'undefined') return;
 	try {
 		localStorage.setItem(STORAGE_KEY, l);
@@ -31,4 +23,15 @@ locale.subscribe((l) => {
 		/* ignore */
 	}
 	document.documentElement.lang = l;
-});
+}
+
+/** The current interface language (`locale.current`). Kept free of any auth/api import so every module may use it. */
+export const locale = $state<{ current: Locale }>({ current: initialLocale() });
+apply(locale.current);
+
+/** Switch language for this browser. (Saving it to the account is the settings page's job.) */
+export function setLocale(next: Locale): void {
+	if (next === locale.current) return;
+	locale.current = next;
+	apply(next);
+}

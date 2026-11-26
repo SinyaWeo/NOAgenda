@@ -48,5 +48,9 @@
 	},
 	"dependencies": {
 		"@xyflow/svelte": "^2.0.2"
+	},
+	"imports": {
+		"#lib": "./src/lib/index.js",
+		"#lib/*": "./src/lib/*"
 	}
 }

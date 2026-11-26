@@ -1,4 +1,4 @@
-import type { Task } from '$lib/types';
+import type { Task } from '#lib/types.js';
 
 /** Due in the past and not done. */
 export function isOverdue(task: Task): boolean {

@@ -1,26 +1,36 @@
-import { derived, get } from 'svelte/store';
-import { authSession } from '$lib/auth';
+import { authSession } from '#lib/auth.svelte.js';
 import { LOCALES, isLocale, type Locale, type Params } from './core';
-import { makeFormatters } from './format';
-import { locale, setLocale } from './locale-store';
+import { makeFormatters, type Formatters } from './format';
+import { locale, setLocale } from './locale.svelte';
 import type { MessageKey } from './messages';
-import { translate, tr } from './translate';
-
-export { LOCALES, isLocale, locale, setLocale, translate, tr, type Locale, type MessageKey, type Params };
-
-// A signed-in user's saved language wins over this browser's guess.
-authSession.subscribe((s) => {
-	const saved = s.user?.language;
-	if (isLocale(saved) && saved !== get(locale)) setLocale(saved);
-});
+import { translate, t } from './translate';
 
 /**
- * In components: `{$t('common.save')}`, `{$t('tasks.count', { count: n })}` (plural forms are chosen
- * from `count`), `placeholder={$t('...')}`. In plain functions use `tr('key')`.
+ * `{t('common.save')}`, `{t('tasks.count', { count: n })}` (plural forms are chosen from `count`),
+ * `placeholder={t('...')}`. The same function works in markup and in plain TypeScript.
  */
-export const t = derived(locale, ($l) => (key: MessageKey, params?: Params) => translate($l, key, params));
+export { LOCALES, isLocale, locale, setLocale, translate, t, type Locale, type MessageKey, type Params };
 
-/** Dates and numbers in the current language and the user's saved time zone: `{$fmt.date(task.dueDate)}`. */
-export const fmt = derived([locale, authSession], ([$l, $s]) =>
-	makeFormatters($l, $s.user?.timezone ?? undefined)
-);
+let cache: { key: string; formatters: Formatters } | null = null;
+
+/** Formatters for the current language and the user's saved time zone (built once per combination). */
+function current(): Formatters {
+	const l = locale.current;
+	const zone = authSession.user?.timezone ?? undefined;
+	const key = `${l}|${zone ?? ''}`;
+	if (cache?.key !== key) cache = { key, formatters: makeFormatters(l, zone) };
+	return cache.formatters;
+}
+
+/**
+ * Dates and numbers in the current language and the user's saved time zone: `{fmt.date(task.dueDate)}`.
+ * Reactive like `t`: each call reads the current language and time zone.
+ */
+export const fmt: Formatters = {
+	date: (v) => current().date(v),
+	dateTime: (v) => current().dateTime(v),
+	dateLong: (v) => current().dateLong(v),
+	number: (v) => current().number(v),
+	weekdayShort: (day) => current().weekdayShort(day),
+	monthYear: (day) => current().monthYear(day)
+};

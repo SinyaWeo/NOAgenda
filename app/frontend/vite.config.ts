@@ -21,8 +21,6 @@ export default defineConfig({
 		// SvelteKit 3 reads its configuration from the plugin (svelte.config.js is no longer supported).
 		sveltekit({
 			adapter: adapter(),
-			// Kit 3 removed the built-in $lib; keep the existing imports working (migrate to #lib later).
-			alias: { $lib: 'src/lib' },
 			// Content-Security-Policy. SvelteKit adds nonces/hashes for its own inline scripts.
 			// 'unsafe-inline' for styles is required by Flowbite/Tailwind runtime styles.
 			csp: {

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { t, fmt, type MessageKey } from '$lib/i18n';
-	import type { Task } from '$lib/types';
+	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
+	import type { Task } from '#lib/types.js';
 	import { Card } from 'flowbite-svelte';
 	import { CheckCircleOutline } from 'flowbite-svelte-icons';
 	import { isOverdue } from './util';
@@ -26,15 +26,15 @@
 					{task.title}
 				</a>
 				<span class="inline-flex items-center text-xs font-semibold shrink-0" data-status={task.status}>
-					{$t(`common.status.${task.status ?? 'open'}` as MessageKey)}
+					{t(`common.status.${task.status ?? 'open'}` as MessageKey)}
 				</span>
 				{#if task.dueDate}<span
 						class="text-xs shrink-0 {isOverdue(task) ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'}"
 					>
-						{$fmt.date(task.dueDate)}
+						{fmt.date(task.dueDate)}
 					</span>{/if}
 				{#if task.priority}<span class="text-xs shrink-0" data-priority={task.priority ?? 0}>
-						{$t(`common.priorityShort.${task.priority}` as MessageKey)}
+						{t(`common.priorityShort.${task.priority}` as MessageKey)}
 					</span>{/if}
 			</div>
 		{/each}
@@ -42,6 +42,6 @@
 {:else}
 	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
 		<CheckCircleOutline class="w-10 h-10 mx-auto mb-2" />
-		<p>{$t('views.list.empty')}</p>
+		<p>{t('views.list.empty')}</p>
 	</div>
 {/if}

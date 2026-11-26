@@ -1,38 +1,35 @@
 <script lang="ts">
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { writable } from 'svelte/store';
-	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-	import { loadOnParamChange } from '$lib/param-loader.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '#lib/api.js';
+	import { loadOnParamChange } from '#lib/param-loader.svelte.js';
 	import { page } from '$app/state';
 	import { Alert, Button, Card, Input, Select } from 'flowbite-svelte';
-	import UserPicker from '$lib/components/UserPicker.svelte';
-	import { errMessage } from '$lib/errors';
-	import { t, type MessageKey } from '$lib/i18n';
-	import { showToast } from '$lib/toast';
-	import type { Permission, ProjectMember, Team, UserSummary } from '$lib/types';
-	import type { ProjectTeamMember } from '$lib/types-misc';
+	import UserPicker from '#lib/components/UserPicker.svelte';
+	import { errMessage } from '#lib/errors.js';
+	import { t, type MessageKey } from '#lib/i18n/index.js';
+	import { showToast } from '#lib/toast.svelte.js';
+	import type { Permission, ProjectMember, Team, UserSummary } from '#lib/types.js';
+	import type { ProjectTeamMember } from '#lib/types-misc.js';
 
 	const projectId = () => page.params.id;
-	const permName = (p: string | null | undefined) => (p ? $t(`common.permission.${p}` as MessageKey) : '—');
-	const users = writable<ProjectMember[]>([]);
-	const teams = writable<ProjectTeamMember[]>([]);
-	const allTeams = writable<Team[]>([]);
-	const loading = writable(true);
-	const error = writable('');
+	const permName = (p: string | null | undefined) => (p ? t(`common.permission.${p}` as MessageKey) : '—');
+	let users = $state<ProjectMember[]>([]);
+	let teams = $state<ProjectTeamMember[]>([]);
+	let allTeams = $state<Team[]>([]);
 	let newUser = $state<UserSummary | null>(null);
 	let picker: ReturnType<typeof UserPicker> | undefined = $state();
 	let newTeamId = $state('');
 	let newPermission = $state<Permission>('read');
 
-	const memberIds = $derived($users.map((m) => m.user?.id).filter((id): id is number => id != null));
+	const memberIds = $derived(users.map((m) => m.user?.id).filter((id): id is number => id != null));
 
 	async function reload() {
 		const [u, t] = await Promise.all([
 			apiGetAuth<ProjectMember[]>(`/projects/${projectId()}/users`),
 			apiGetAuth<ProjectTeamMember[]>(`/projects/${projectId()}/teams`)
 		]);
-		users.set(u);
-		teams.set(t);
+		users = u;
+		teams = t;
 	}
 
 	async function load(id: string, isStale: () => boolean) {
@@ -42,12 +39,12 @@
 			apiGetAuth<Team[]>('/teams').catch(() => [] as Team[])
 		]);
 		if (isStale()) return;
-		users.set(u);
-		teams.set(t);
-		allTeams.set(at);
+		users = u;
+		teams = t;
+		allTeams = at;
 	}
 
-	loadOnParamChange(() => page.params.id ?? '', load, loading, error);
+	const pageLoad = loadOnParamChange(() => page.params.id ?? '', load);
 
 	async function addUser(e: Event) {
 		e.preventDefault();
@@ -95,22 +92,22 @@
 </script>
 
 <PageHeader
-	title={$t('projects.share.title')}
-	back={{ href: `/projects/${page.params.id}/edit`, label: $t('common.back') }}
+	title={t('projects.share.title')}
+	back={{ href: `/projects/${page.params.id}/edit`, label: t('common.back') }}
 />
-{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
+{#if pageLoad.error}<Alert color="red" class="mb-4">{pageLoad.error}</Alert>{/if}
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
+{#if pageLoad.loading}
+	<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
 {:else}
 	<Card class="mb-4">
 		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-			{$t('projects.share.users')}
+			{t('projects.share.users')}
 		</h2>
 		<form onsubmit={addUser} class="flex gap-2 mb-4 flex-wrap items-start">
 			<UserPicker
 				id="project-member-picker"
-				label={$t('projects.share.addUserLabel')}
+				label={t('projects.share.addUserLabel')}
 				bind:selected={newUser}
 				excludeIds={memberIds}
 				bind:this={picker}
@@ -119,82 +116,82 @@
 				placeholder=""
 				bind:value={newPermission}
 				class="w-auto self-start mt-6"
-				aria-label={$t('projects.share.permission')}
+				aria-label={t('projects.share.permission')}
 			>
-				<option value="read">{$t('common.permission.read')}</option><option value="write">
-					{$t('common.permission.write')}
-				</option><option value="admin">{$t('common.permission.admin')}</option>
+				<option value="read">{t('common.permission.read')}</option><option value="write">
+					{t('common.permission.write')}
+				</option><option value="admin">{t('common.permission.admin')}</option>
 			</Select>
 			<Button type="submit" disabled={!newUser} class="self-start mt-6">
-				{$t('projects.share.addUser')}
+				{t('projects.share.addUser')}
 			</Button>
 		</form>
-		{#if $users.length}
-			{#each $users as u, i (u.id)}
+		{#if users.length}
+			{#each users as u, i (u.id)}
 				<div
-					class="flex items-center gap-3 py-2 {i < $users.length - 1
+					class="flex items-center gap-3 py-2 {i < users.length - 1
 						? 'border-b border-gray-100 dark:border-gray-700'
 						: ''}"
 				>
 					<span class="flex-1 font-medium text-gray-900 dark:text-white">
 						{u.user
-							? u.user.name || u.user.username || $t('projects.share.userFallback', { id: u.user.id })
-							: $t('projects.share.userFallback', { id: u.id })}
+							? u.user.name || u.user.username || t('projects.share.userFallback', { id: u.user.id })
+							: t('projects.share.userFallback', { id: u.id })}
 					</span>
 					<span class="text-xs text-gray-500 dark:text-gray-400">{permName(u.permission)}</span>
 					<Button size="sm" color="red" outline onclick={() => removeUser(u.user?.id ?? u.id)}>
-						{$t('common.remove')}
+						{t('common.remove')}
 					</Button>
 				</div>
 			{/each}
-		{:else}<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('projects.share.noUsers')}</p>{/if}
+		{:else}<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{t('projects.share.noUsers')}</p>{/if}
 	</Card>
 
 	<Card>
 		<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-			{$t('projects.share.teams')}
+			{t('projects.share.teams')}
 		</h2>
 		<form onsubmit={addTeam} class="flex gap-2 mb-4 flex-wrap">
-			{#if $allTeams.length}
+			{#if allTeams.length}
 				<Select placeholder="" bind:value={newTeamId} required class="flex-1 min-w-36">
-					<option value="">{$t('projects.share.selectTeam')}</option>
-					{#each $allTeams as t (t.id)}<option value={String(t.id)}>{t.name}</option>{/each}
+					<option value="">{t('projects.share.selectTeam')}</option>
+					{#each allTeams as t (t.id)}<option value={String(t.id)}>{t.name}</option>{/each}
 				</Select>
 			{:else}
 				<Input
 					type="number"
 					bind:value={newTeamId}
-					placeholder={$t('projects.share.teamId')}
+					placeholder={t('projects.share.teamId')}
 					required
 					min="1"
 					class="w-28"
 				/>
 			{/if}
 			<Select placeholder="" bind:value={newPermission} class="w-auto">
-				<option value="read">{$t('common.permission.read')}</option><option value="write">
-					{$t('common.permission.write')}
-				</option><option value="admin">{$t('common.permission.admin')}</option>
+				<option value="read">{t('common.permission.read')}</option><option value="write">
+					{t('common.permission.write')}
+				</option><option value="admin">{t('common.permission.admin')}</option>
 			</Select>
-			<Button type="submit">{$t('projects.share.addTeam')}</Button>
+			<Button type="submit">{t('projects.share.addTeam')}</Button>
 		</form>
-		{#if $teams.length}
-			{#each $teams as tm, i (tm.id)}
+		{#if teams.length}
+			{#each teams as tm, i (tm.id)}
 				<div
-					class="flex items-center gap-3 py-2 {i < $teams.length - 1
+					class="flex items-center gap-3 py-2 {i < teams.length - 1
 						? 'border-b border-gray-100 dark:border-gray-700'
 						: ''}"
 				>
 					<span class="flex-1 font-medium text-gray-900 dark:text-white">
 						{tm.team
-							? (tm.team.name ?? $t('projects.share.teamFallback', { id: tm.team.id }))
-							: $t('projects.share.teamFallback', { id: tm.id })}
+							? (tm.team.name ?? t('projects.share.teamFallback', { id: tm.team.id }))
+							: t('projects.share.teamFallback', { id: tm.id })}
 					</span>
 					<span class="text-xs text-gray-500 dark:text-gray-400">{permName(tm.permission)}</span>
 					<Button size="sm" color="red" outline onclick={() => removeTeam(tm.team?.id ?? tm.id)}>
-						{$t('common.remove')}
+						{t('common.remove')}
 					</Button>
 				</div>
 			{/each}
-		{:else}<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('projects.share.noTeams')}</p>{/if}
+		{:else}<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{t('projects.share.noTeams')}</p>{/if}
 	</Card>
 {/if}

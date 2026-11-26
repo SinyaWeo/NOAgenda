@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('$lib/i18n', async () => {
-	const { readable } = await import('svelte/store');
-	return {
-		locale: readable('en'),
-		fmt: readable({ date: (d: string) => `D(${d})` }),
-		tr: (key: string, params?: Record<string, unknown>) => (params ? `${key}:${JSON.stringify(params)}` : key)
-	};
-});
+vi.mock('#lib/i18n/index.js', () => ({
+	locale: { current: 'en' },
+	fmt: { date: (d: string) => `D(${d})` },
+	t: (key: string, params?: Record<string, unknown>) => (params ? `${key}:${JSON.stringify(params)}` : key)
+}));
 
 import {
 	describeRepeat,

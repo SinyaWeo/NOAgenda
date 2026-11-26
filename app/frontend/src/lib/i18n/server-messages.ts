@@ -1,5 +1,5 @@
 import type { MessageKey } from './messages';
-import { tr } from './translate';
+import { t } from './translate';
 import type { Params } from './core';
 
 /**
@@ -106,12 +106,12 @@ const PATTERNS: [RegExp, (m: RegExpExecArray) => [MessageKey, Params]][] = [
 export function localizeServerMessage(message: string): string {
 	const trimmed = message.trim();
 	const exact = EXACT[trimmed];
-	if (exact) return tr(exact);
+	if (exact) return t(exact);
 	for (const [re, make] of PATTERNS) {
 		const m = re.exec(trimmed);
 		if (m) {
 			const [key, params] = make(m);
-			return tr(key, params);
+			return t(key, params);
 		}
 	}
 	// "a, b, c" from joined validation errors: translate each part that we know.

@@ -1,5 +1,5 @@
-import type { MessageKey } from '$lib/i18n';
-import type { RelationKind } from '$lib/types';
+import type { MessageKey } from '#lib/i18n/index.js';
+import type { RelationKind } from '#lib/types.js';
 
 export const RELATION_KINDS: RelationKind[] = [
 	'related',
@@ -15,7 +15,7 @@ export function relationKindKey(kind: RelationKind): MessageKey {
 	return `tasks.relationKind.${kind}` as MessageKey;
 }
 
-/** How a relation reads from the point of view of the task being viewed (a message key: translate it with $t). */
+/** How a relation reads from the point of view of the task being viewed (a message key: translate it with t). */
 const OUTGOING: Record<RelationKind, MessageKey> = {
 	related: 'tasks.relation.related',
 	subtask: 'tasks.relation.subtaskOf',

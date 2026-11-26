@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { t, fmt, type MessageKey } from '$lib/i18n';
+	import { t, fmt, locale, type MessageKey } from '#lib/i18n/index.js';
 	import type {
 		Attachment,
 		Label,
@@ -9,12 +9,12 @@
 		TaskLabel,
 		TaskRelation,
 		UserSummary
-	} from '$lib/types';
-	import { describeRepeat, formFromTask, repeatPayload, type RepeatForm } from '$lib/repeat';
-	import { dateInputToIso, isoToDateInput } from '$lib/dates';
+	} from '#lib/types.js';
+	import { describeRepeat, formFromTask, repeatPayload, type RepeatForm } from '#lib/repeat.js';
+	import { dateInputToIso, isoToDateInput } from '#lib/dates.js';
 	import RepeatHistory from './RepeatHistory.svelte';
 	import RepeatFields from './RepeatFields.svelte';
-	import InlineText from '$lib/components/InlineText.svelte';
+	import InlineText from '#lib/components/InlineText.svelte';
 	import TaskWorkItems from './TaskWorkItems.svelte';
 	import TaskReminderEditor, { type NewReminder } from './TaskReminderEditor.svelte';
 	import { EditOutline, PaperClipOutline } from 'flowbite-svelte-icons';
@@ -155,12 +155,12 @@
 	const canAssign = $derived(assignable.length > 1);
 	const assigneeNames = $derived(
 		assignees
-			.map((a) => a.user?.name || a.user?.username || $t('tasks.details.userFallback', { id: a.id }))
+			.map((a) => a.user?.name || a.user?.username || t('tasks.details.userFallback', { id: a.id }))
 			.join(', ')
 	);
 
 	const repeatSummary = $derived.by(() => {
-		void $t; // re-runs when the language changes
+		void locale.current; // re-runs when the language changes
 		return describeRepeat(task);
 	});
 </script>
@@ -174,28 +174,28 @@
 {#snippet reminderText(rem: Reminder)}
 	{#if rem.daysBefore != null && rem.atTime}
 		{rem.daysBefore === 0
-			? $t('tasks.reminders.onDueDay', { time: rem.atTime })
-			: $t('tasks.reminders.relative', { count: rem.daysBefore, time: rem.atTime })}
+			? t('tasks.reminders.onDueDay', { time: rem.atTime })
+			: t('tasks.reminders.relative', { count: rem.daysBefore, time: rem.atTime })}
 		<span class="text-xs text-gray-500 dark:text-gray-400 not-italic">
-			· {$fmt.dateTime(rem.reminderDate)}
+			· {fmt.dateTime(rem.reminderDate)}
 		</span>
 	{:else}
-		{$fmt.dateTime(rem.reminderDate)}
+		{fmt.dateTime(rem.reminderDate)}
 	{/if}
-	{#if rem.sentAt}<span class="text-xs font-medium tone-green">· {$t('tasks.reminders.sent')}</span>{/if}
+	{#if rem.sentAt}<span class="text-xs font-medium tone-green">· {t('tasks.reminders.sent')}</span>{/if}
 {/snippet}
 
 <Card class="mb-4 max-w-none">
 	<div class="flex flex-col md:flex-row gap-6">
 		<div class="flex-1 min-w-0">
 			<div class="mb-4">
-				<p class={LABEL}>{$t('common.field.description')}</p>
+				<p class={LABEL}>{t('common.field.description')}</p>
 				<div class="text-sm text-gray-700 dark:text-gray-300">
 					<InlineText
 						value={task.description ?? ''}
 						multiline
-						label={$t('tasks.details.editDescription')}
-						emptyText={$t('tasks.details.noDescription')}
+						label={t('tasks.details.editDescription')}
+						emptyText={t('tasks.details.noDescription')}
 						onSave={(v) => onUpdate({ description: v })}
 					/>
 				</div>
@@ -207,7 +207,7 @@
 						for="task-progress"
 						class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0"
 					>
-						{$t('common.field.progress')}
+						{t('common.field.progress')}
 					</label>
 					<span class="text-sm font-medium">{progress}%</span>
 				</div>
@@ -248,7 +248,7 @@
 			class="md:w-60 shrink-0 m-0 flex flex-col gap-4 border-t pt-6 md:border-t-0 md:pt-0 md:border-l md:pl-6 border-gray-100 dark:border-gray-700"
 		>
 			<div>
-				<dt class={LABEL}>{$t('common.field.status')}</dt>
+				<dt class={LABEL}>{t('common.field.status')}</dt>
 				<dd class="m-0">
 					{#if editing === 'status'}
 						<Select
@@ -256,7 +256,7 @@
 							size="sm"
 							autofocus
 							value={task.status ?? 'open'}
-							aria-label={$t('common.field.status')}
+							aria-label={t('common.field.status')}
 							onchange={(e) => {
 								onStatus((e.target as HTMLSelectElement).value);
 								editing = null;
@@ -264,7 +264,7 @@
 							onblur={() => (editing = null)}
 						>
 							{#each ['open', 'in_progress', 'done'] as st (st)}
-								<option value={st}>{$t(`common.status.${st}` as MessageKey)}</option>
+								<option value={st}>{t(`common.status.${st}` as MessageKey)}</option>
 							{/each}
 						</Select>
 					{:else}
@@ -272,16 +272,16 @@
 							type="button"
 							class="{VALUE} font-semibold"
 							data-status={task.status ?? 'open'}
-							title={$t('tasks.details.change')}
+							title={t('tasks.details.change')}
 							onclick={() => (editing = 'status')}
 						>
-							{$t(`common.status.${task.status ?? 'open'}` as MessageKey)}
+							{t(`common.status.${task.status ?? 'open'}` as MessageKey)}
 						</button>
 					{/if}
 				</dd>
 			</div>
 			<div>
-				<dt class={LABEL}>{$t('common.field.priority')}</dt>
+				<dt class={LABEL}>{t('common.field.priority')}</dt>
 				<dd class="m-0">
 					{#if editing === 'priority'}
 						<Select
@@ -289,16 +289,16 @@
 							size="sm"
 							autofocus
 							value={String(task.priority ?? 0)}
-							aria-label={$t('common.field.priority')}
+							aria-label={t('common.field.priority')}
 							onchange={async (e) => {
 								if (await onUpdate({ priority: Number((e.target as HTMLSelectElement).value) }))
 									editing = null;
 							}}
 							onblur={() => (editing = null)}
 						>
-							<option value="0">{$t('tasks.form.priorityUnset')}</option>
+							<option value="0">{t('tasks.form.priorityUnset')}</option>
 							{#each [1, 2, 3, 4, 5] as p (p)}<option value={String(p)}>
-									{$t(`common.priority.${p}` as MessageKey)}
+									{t(`common.priority.${p}` as MessageKey)}
 								</option>{/each}
 						</Select>
 					{:else}
@@ -306,10 +306,10 @@
 							type="button"
 							class="{VALUE} {task.priority ? 'font-semibold' : 'text-gray-500 dark:text-gray-400 italic'}"
 							data-priority={task.priority || undefined}
-							title={$t('tasks.details.change')}
+							title={t('tasks.details.change')}
 							onclick={() => (editing = 'priority')}
 						>
-							{task.priority ? $t(`common.priority.${task.priority}` as MessageKey) : $t('views.notSet')}
+							{task.priority ? t(`common.priority.${task.priority}` as MessageKey) : t('views.notSet')}
 						</button>
 					{/if}
 				</dd>
@@ -318,7 +318,7 @@
 				{@const value = task[d.field]}
 				{@const late = d.field === 'dueDate' && overdue}
 				<div>
-					<dt class={LABEL}>{$t(d.label)}</dt>
+					<dt class={LABEL}>{t(d.label)}</dt>
 					<dd class="m-0">
 						<button
 							type="button"
@@ -328,12 +328,12 @@
 									? 'text-gray-900 dark:text-white'
 									: 'text-gray-500 dark:text-gray-400 italic'}"
 							data-status={late ? 'overdue' : undefined}
-							title={$t('tasks.details.change')}
+							title={t('tasks.details.change')}
 							aria-expanded={editing === d.field}
 							onclick={() => (editing = editing === d.field ? null : d.field)}
 						>
-							{value ? $fmt.date(value) : $t('views.notSet')}
-							{#if late}· {$t('tasks.details.overdue')}{/if}
+							{value ? fmt.date(value) : t('views.notSet')}
+							{#if late}· {t('tasks.details.overdue')}{/if}
 						</button>
 						{#if editing === d.field}
 							<div
@@ -343,34 +343,34 @@
 									type="date"
 									size="sm"
 									value={isoToDateInput(value)}
-									aria-label={$t(d.label)}
+									aria-label={t(d.label)}
 									onchange={(e) => saveDate(d.field, (e.target as HTMLInputElement).value)}
 									{@attach showPicker}
 								/>
 								{#if d.field === 'dueDate' && value}
 									<div class="flex items-center gap-1 flex-wrap">
 										<span class="text-xs text-gray-500 dark:text-gray-400">
-											{$t('tasks.details.deferLabel')}
+											{t('tasks.details.deferLabel')}
 										</span>
 										<Button size="xs" color="light" onclick={() => defer(1)}>
-											{$t('tasks.details.defer1')}
+											{t('tasks.details.defer1')}
 										</Button>
 										<Button size="xs" color="light" onclick={() => defer(3)}>
-											{$t('tasks.details.defer3')}
+											{t('tasks.details.defer3')}
 										</Button>
 										<Button size="xs" color="light" onclick={() => defer(7)}>
-											{$t('tasks.details.defer7')}
+											{t('tasks.details.defer7')}
 										</Button>
 									</div>
 								{/if}
 								<div class="flex gap-2">
 									{#if value}
 										<Button size="xs" color="light" onclick={() => saveDate(d.field, '')}>
-											{$t('common.clear')}
+											{t('common.clear')}
 										</Button>
 									{/if}
 									<Button size="xs" color="light" onclick={() => (editing = null)}>
-										{$t('common.cancel')}
+										{t('common.cancel')}
 									</Button>
 								</div>
 							</div>
@@ -379,24 +379,24 @@
 				</div>
 			{/each}
 			<div>
-				<dt class={LABEL}>{$t('tasks.details.labels')}</dt>
+				<dt class={LABEL}>{t('tasks.details.labels')}</dt>
 				<dd class="m-0">
 					<button
 						type="button"
 						class="{VALUE} flex flex-wrap gap-x-3 gap-y-1 {taskLabels.length
 							? 'text-gray-900 dark:text-white'
 							: 'text-gray-500 dark:text-gray-400 italic'}"
-						title={$t('tasks.details.change')}
+						title={t('tasks.details.change')}
 						aria-expanded={editing === 'labels'}
 						onclick={() => (editing = editing === 'labels' ? null : 'labels')}
 					>
 						{#each taskLabels as tl (tl.id)}
 							<span class="inline-flex items-center gap-1.5">
 								<span class="color-dot" style="--dot-color:{tl.label?.color ?? '#6366f1'}"></span>
-								{tl.label?.title ?? $t('tasks.details.labelFallback', { id: tl.id })}
+								{tl.label?.title ?? t('tasks.details.labelFallback', { id: tl.id })}
 							</span>
 						{:else}
-							{$t('common.none')}
+							{t('common.none')}
 						{/each}
 					</button>
 					{#if editing === 'labels'}
@@ -421,15 +421,15 @@
 								</ul>
 							{:else}
 								<p class="m-0 text-xs text-gray-500 dark:text-gray-400">
-									{$t('tasks.details.noLabelsYet')}
+									{t('tasks.details.noLabelsYet')}
 									<a href="/labels" class="text-primary-600 hover:underline">
-										{$t('tasks.details.createLabels')}
+										{t('tasks.details.createLabels')}
 									</a>
 								</p>
 							{/if}
 							<div>
 								<Button size="xs" color="light" onclick={() => (editing = null)}>
-									{$t('common.close')}
+									{t('common.close')}
 								</Button>
 							</div>
 						</div>
@@ -438,7 +438,7 @@
 			</div>
 			{#if canAssign || assignees.length}
 				<div>
-					<dt class={LABEL}>{$t('tasks.details.assignee')}</dt>
+					<dt class={LABEL}>{t('tasks.details.assignee')}</dt>
 					<dd class="m-0">
 						{#if editing === 'assignee'}
 							<Select
@@ -446,7 +446,7 @@
 								size="sm"
 								autofocus
 								value={assignees[0]?.user?.id ?? ''}
-								aria-label={$t('tasks.details.assignee')}
+								aria-label={t('tasks.details.assignee')}
 								onchange={(e) => {
 									onAssign(Number((e.target as HTMLSelectElement).value));
 									editing = null;
@@ -454,7 +454,7 @@
 								onblur={() => (editing = null)}
 							>
 								{#if !assignees.length}<option value="" disabled>
-										{$t('tasks.details.unassigned')}
+										{t('tasks.details.unassigned')}
 									</option>{/if}
 								{#each assignable as u (u.id)}<option value={u.id}>{u.name || u.username}</option>{/each}
 							</Select>
@@ -464,10 +464,10 @@
 								class="{VALUE} {assignees.length
 									? 'text-gray-900 dark:text-white'
 									: 'text-gray-500 dark:text-gray-400 italic'}"
-								title={$t('tasks.details.change')}
+								title={t('tasks.details.change')}
 								onclick={() => (editing = 'assignee')}
 							>
-								{assigneeNames || $t('tasks.details.unassigned')}
+								{assigneeNames || t('tasks.details.unassigned')}
 							</button>
 						{:else}
 							<span class="text-sm text-gray-900 dark:text-white">{assigneeNames}</span>
@@ -476,36 +476,36 @@
 				</div>
 			{/if}
 			<div>
-				<dt class={LABEL}>{$t('tasks.repeat.summaryLabel')}</dt>
+				<dt class={LABEL}>{t('tasks.repeat.summaryLabel')}</dt>
 				<dd class="m-0">
 					<button
 						type="button"
 						class="{VALUE} {repeatSummary
 							? 'text-gray-900 dark:text-white'
 							: 'text-gray-500 dark:text-gray-400 italic'}"
-						title={$t('tasks.details.editRepeat')}
+						title={t('tasks.details.editRepeat')}
 						onclick={openRepeat}
 					>
-						{repeatSummary || $t('tasks.repeat.kind.none')}
+						{repeatSummary || t('tasks.repeat.kind.none')}
 					</button>
 				</dd>
 			</div>
 			<div>
-				<dt class={LABEL}>{$t('tasks.reminders.title')}</dt>
+				<dt class={LABEL}>{t('tasks.reminders.title')}</dt>
 				<dd class="m-0">
 					<button
 						type="button"
 						class="{VALUE} flex flex-col gap-1 {reminders.length
 							? 'text-gray-900 dark:text-white'
 							: 'text-gray-500 dark:text-gray-400 italic'}"
-						title={$t('tasks.details.change')}
+						title={t('tasks.details.change')}
 						aria-expanded={editing === 'reminders'}
 						onclick={() => (editing = editing === 'reminders' ? null : 'reminders')}
 					>
 						{#each reminders as rem (rem.id)}
 							<span class="block">{@render reminderText(rem)}</span>
 						{:else}
-							{$t('common.none')}
+							{t('common.none')}
 						{/each}
 					</button>
 					{#if editing === 'reminders'}
@@ -519,7 +519,7 @@
 							/>
 							<div>
 								<Button size="xs" color="light" onclick={() => (editing = null)}>
-									{$t('common.close')}
+									{t('common.close')}
 								</Button>
 							</div>
 						</div>
@@ -528,12 +528,12 @@
 			</div>
 			<div>
 				<dt class="{LABEL} flex items-center gap-1">
-					{$t('tasks.attachments.title')}
+					{t('tasks.attachments.title')}
 					<button
 						type="button"
 						class="p-0.5 rounded bg-transparent border-0 cursor-pointer text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
-						aria-label={$t('tasks.attachments.edit')}
-						title={$t('tasks.attachments.edit')}
+						aria-label={t('tasks.attachments.edit')}
+						title={t('tasks.attachments.edit')}
 						aria-expanded={editing === 'attachments'}
 						onclick={() => (editing = editing === 'attachments' ? null : 'attachments')}
 					>
@@ -557,8 +557,8 @@
 										<button
 											type="button"
 											class="ml-auto shrink-0 bg-transparent border-0 p-0 leading-none cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-600"
-											aria-label={$t('tasks.attachments.remove', { name: att.filename })}
-											title={$t('tasks.attachments.remove', { name: att.filename })}
+											aria-label={t('tasks.attachments.remove', { name: att.filename })}
+											title={t('tasks.attachments.remove', { name: att.filename })}
 											onclick={() => onDeleteAttachment(att)}
 										>
 											✕
@@ -571,10 +571,10 @@
 						<button
 							type="button"
 							class="{VALUE} text-gray-500 dark:text-gray-400 italic"
-							title={$t('tasks.details.change')}
+							title={t('tasks.details.change')}
 							onclick={() => (editing = editing === 'attachments' ? null : 'attachments')}
 						>
-							{$t('common.none')}
+							{t('common.none')}
 						</button>
 					{/if}
 					{#if editing === 'attachments'}
@@ -582,11 +582,11 @@
 							<label
 								class="inline-flex items-center gap-2 cursor-pointer px-3 py-1.5 text-xs font-medium border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
 							>
-								{$t('tasks.attachments.upload')}
+								{t('tasks.attachments.upload')}
 								<input type="file" onchange={onUpload} class="sr-only" />
 							</label>
 							<Button size="xs" color="light" onclick={() => (editing = null)}>
-								{$t('common.close')}
+								{t('common.close')}
 							</Button>
 						</div>
 					{/if}
@@ -596,12 +596,12 @@
 	</div>
 </Card>
 
-<Modal title={$t('tasks.details.editRepeat')} bind:open={repeatOpen} size="md">
+<Modal title={t('tasks.details.editRepeat')} bind:open={repeatOpen} size="md">
 	<RepeatFields bind:form={repeatForm} />
 	{#snippet footer()}
 		<Button onclick={saveRepeat} disabled={savingRepeat}>
-			{savingRepeat ? $t('common.saving') : $t('common.save')}
+			{savingRepeat ? t('common.saving') : t('common.save')}
 		</Button>
-		<Button color="light" onclick={() => (repeatOpen = false)}>{$t('common.cancel')}</Button>
+		<Button color="light" onclick={() => (repeatOpen = false)}>{t('common.cancel')}</Button>
 	{/snippet}
 </Modal>

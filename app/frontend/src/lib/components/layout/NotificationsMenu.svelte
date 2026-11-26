@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
-	import { apiDeleteAuth, apiGetAuth, apiPostAuth } from '$lib/api';
-	import type { AppNotification } from '$lib/types';
+	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
+	import { apiDeleteAuth, apiGetAuth, apiPostAuth } from '#lib/api.js';
+	import type { AppNotification } from '#lib/types.js';
 	import { Badge, Dropdown } from 'flowbite-svelte';
 	import { BellOutline } from 'flowbite-svelte-icons';
 
@@ -35,12 +35,12 @@
 	function textOf(n: AppNotification): string {
 		if (n.type) {
 			const p = parseParams(n);
-			return tr(`layout.notifications.${n.type}` as MessageKey, {
+			return t(`layout.notifications.${n.type}` as MessageKey, {
 				actor: p.actor ?? '',
 				title: p.title ?? ''
 			});
 		}
-		return n.message ?? tr('layout.notifications.fallback', { id: n.id });
+		return n.message ?? t('layout.notifications.fallback', { id: n.id });
 	}
 
 	function hrefOf(n: AppNotification): string | null {
@@ -92,8 +92,8 @@
 <button
 	id="notif-btn"
 	aria-label={unreadCount > 0
-		? $t('layout.notifications.withUnread', { count: unreadCount })
-		: $t('layout.notifications.title')}
+		? t('layout.notifications.withUnread', { count: unreadCount })
+		: t('layout.notifications.title')}
 	class="relative bg-transparent border-0 cursor-pointer p-1.5 rounded-md text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
 	onclick={loadNotifications}
 >
@@ -109,16 +109,16 @@
 </button>
 <Dropdown triggeredBy="#notif-btn" placement="bottom-end" class="w-80 max-h-[420px] overflow-y-auto">
 	<div class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-600">
-		<strong class="text-sm text-gray-900 dark:text-white">{$t('layout.notifications.title')}</strong>
+		<strong class="text-sm text-gray-900 dark:text-white">{t('layout.notifications.title')}</strong>
 		<button
 			onclick={markAllRead}
 			class="text-xs text-primary-600 dark:text-primary-400 bg-transparent border-0 cursor-pointer"
 		>
-			{$t('layout.notifications.markAllRead')}
+			{t('layout.notifications.markAllRead')}
 		</button>
 	</div>
 	{#if notifications.length === 0}
-		<p class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{$t('layout.notifications.empty')}</p>
+		<p class="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{t('layout.notifications.empty')}</p>
 	{:else}
 		{#each notifications as n (n.id)}
 			<div
@@ -138,13 +138,13 @@
 					{:else}
 						<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{textOf(n)}</p>
 					{/if}
-					<small class="text-xs text-gray-500 dark:text-gray-400">{$fmt.dateTime(n.createdAt)}</small>
+					<small class="text-xs text-gray-500 dark:text-gray-400">{fmt.dateTime(n.createdAt)}</small>
 				</div>
 				<button
 					type="button"
 					class="bg-transparent border-0 cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-600 p-0.5 leading-none"
-					aria-label={$t('layout.notifications.dismiss')}
-					title={$t('layout.notifications.dismiss')}
+					aria-label={t('layout.notifications.dismiss')}
+					title={t('layout.notifications.dismiss')}
 					onclick={() => dismiss(n)}
 				>
 					✕

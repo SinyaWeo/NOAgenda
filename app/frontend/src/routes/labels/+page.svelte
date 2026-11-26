@@ -1,18 +1,17 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/confirm';
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { errMessage } from '$lib/errors';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import { errMessage } from '#lib/errors.js';
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
-	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
-	import type { Label } from '$lib/types';
+	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '#lib/api.js';
+	import type { Label } from '#lib/types.js';
 	import { Alert, Button, Card, Input } from 'flowbite-svelte';
 	import { TagOutline } from 'flowbite-svelte-icons';
-	import { t, tr } from '$lib/i18n';
+	import { t } from '#lib/i18n/index.js';
 
-	const labels = writable<Label[]>([]);
-	const loading = writable(true);
-	const error = writable('');
+	let labels = $state<Label[]>([]);
+	let loading = $state(true);
+	let error = $state('');
 	let newTitle = $state('');
 	let newColor = $state('#6366f1');
 	let creating = $state(false);
@@ -21,7 +20,7 @@
 	let editColor = $state('');
 
 	async function loadLabels() {
-		labels.set(await apiGetAuth<Label[]>('/labels'));
+		labels = await apiGetAuth<Label[]>('/labels');
 	}
 
 	async function createLabel() {
@@ -32,7 +31,7 @@
 			newTitle = '';
 			await loadLabels();
 		} catch (e: unknown) {
-			error.set(errMessage(e));
+			error = errMessage(e);
 		} finally {
 			creating = false;
 		}
@@ -44,17 +43,17 @@
 			editId = null;
 			await loadLabels();
 		} catch (e: unknown) {
-			error.set(errMessage(e));
+			error = errMessage(e);
 		}
 	}
 
 	async function deleteLabel(id: number) {
-		if (!(await confirmDialog(tr('labels.confirmDelete')))) return;
+		if (!(await confirmDialog(t('labels.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/labels/${id}`);
 			await loadLabels();
 		} catch (e: unknown) {
-			error.set(errMessage(e));
+			error = errMessage(e);
 		}
 	}
 
@@ -68,14 +67,14 @@
 		try {
 			await loadLabels();
 		} catch (e: unknown) {
-			error.set(errMessage(e));
+			error = errMessage(e);
 		}
-		loading.set(false);
+		loading = false;
 	});
 </script>
 
-<PageHeader title={$t('labels.title')} />
-{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
+<PageHeader title={t('labels.title')} />
+{#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 
 <Card class="max-w-none mb-4">
 	<form
@@ -88,7 +87,7 @@
 		<Input
 			type="text"
 			bind:value={newTitle}
-			placeholder={$t('labels.newPlaceholder')}
+			placeholder={t('labels.newPlaceholder')}
 			required
 			class="flex-1 min-w-36"
 		/>
@@ -96,24 +95,24 @@
 			type="color"
 			bind:value={newColor}
 			class="w-9 h-9 p-0.5 border border-gray-300 dark:border-gray-600 rounded cursor-pointer bg-white dark:bg-gray-700"
-			title={$t('labels.pickColor')}
+			title={t('labels.pickColor')}
 		/>
-		<Button type="submit" disabled={creating}>{creating ? $t('labels.adding') : $t('labels.add')}</Button>
+		<Button type="submit" disabled={creating}>{creating ? t('labels.adding') : t('labels.add')}</Button>
 	</form>
 </Card>
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
-{:else if $labels.length === 0}
+{#if loading}
+	<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
+{:else if labels.length === 0}
 	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<TagOutline class="w-12 h-12 mx-auto mb-3" />
-		<p>{$t('labels.empty')}</p>
+		<p>{t('labels.empty')}</p>
 	</div>
 {:else}
 	<Card class="max-w-none p-0 overflow-hidden">
-		{#each $labels as label, i (label.id)}
+		{#each labels as label, i (label.id)}
 			<div
-				class="flex items-center gap-3 p-4 {i < $labels.length - 1
+				class="flex items-center gap-3 p-4 {i < labels.length - 1
 					? 'border-b border-gray-100 dark:border-gray-700'
 					: ''}"
 			>
@@ -124,15 +123,15 @@
 						bind:value={editColor}
 						class="w-9 h-9 p-0.5 border border-gray-300 dark:border-gray-600 rounded cursor-pointer bg-white dark:bg-gray-700"
 					/>
-					<Button size="sm" onclick={() => saveEdit(label.id)}>{$t('common.save')}</Button>
-					<Button size="sm" color="light" onclick={() => (editId = null)}>{$t('common.cancel')}</Button>
+					<Button size="sm" onclick={() => saveEdit(label.id)}>{t('common.save')}</Button>
+					<Button size="sm" color="light" onclick={() => (editId = null)}>{t('common.cancel')}</Button>
 				{:else}
 					<span class="color-dot shrink-0" style="--dot-color:{label.color ?? '#6366f1'}"></span>
 					<span class="flex-1 font-medium text-gray-900 dark:text-white">{label.title}</span>
 					<div class="flex gap-2 shrink-0">
-						<Button size="sm" color="light" onclick={() => startEdit(label)}>{$t('common.edit')}</Button>
+						<Button size="sm" color="light" onclick={() => startEdit(label)}>{t('common.edit')}</Button>
 						<Button size="sm" color="red" outline onclick={() => deleteLabel(label.id)}>
-							{$t('common.delete')}
+							{t('common.delete')}
 						</Button>
 					</div>
 				{/if}

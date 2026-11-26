@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { Task } from '$lib/types';
+	import type { Task } from '#lib/types.js';
 	import { CalendarMonthOutline } from 'flowbite-svelte-icons';
 	import { isOverdue } from './util';
-	import { taskProjectId } from '$lib/project-groups';
-	import { t, fmt, locale } from '$lib/i18n';
-	import { addDays, diffDays, startOfDay } from '$lib/dates';
+	import { taskProjectId } from '#lib/project-groups.js';
+	import { t, fmt, locale } from '#lib/i18n/index.js';
+	import { addDays, diffDays, startOfDay } from '#lib/dates.js';
 
 	interface Props {
 		tasks: Task[];
@@ -53,7 +53,7 @@
 	const days = $derived(Array.from({ length: range.days }, (_, i) => addDays(range.from, i)));
 	const months = $derived.by(() => {
 		const out: { label: string; x: number; w: number }[] = [];
-		const f = new Intl.DateTimeFormat($locale, { month: 'long', year: 'numeric' });
+		const f = new Intl.DateTimeFormat(locale.current, { month: 'long', year: 'numeric' });
 		days.forEach((d, i) => {
 			const last = out[out.length - 1];
 			if (last && d.getDate() !== 1) last.w += px;
@@ -98,7 +98,7 @@
 					: 'text-gray-500 dark:text-gray-400 hover:underline'}"
 				onclick={() => (zoom = z as Zoom)}
 			>
-				{$t(`views.gantt.zoom.${z}` as 'views.gantt.zoom.day')}
+				{t(`views.gantt.zoom.${z}` as 'views.gantt.zoom.day')}
 			</button>
 		{/each}
 	</div>
@@ -110,7 +110,7 @@
 				class="px-3 flex items-center text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700"
 				style="height:{HEADER}px"
 			>
-				{$t('views.gantt.task')}
+				{t('views.gantt.task')}
 			</div>
 			{#each rows as { task } (task.id)}
 				{@const pid = taskProjectId(task, projectNames)}
@@ -183,7 +183,7 @@
 							class="absolute top-2.5 h-5 rounded overflow-hidden bg-current opacity-90 hover:opacity-100"
 							style="left:{b.left}px; width:{b.width}px"
 							data-status={overdue ? 'overdue' : (r.task.status ?? 'open')}
-							title="{r.task.title} · {$fmt.date(r.start)}{r.end > r.start ? ' – ' + $fmt.date(r.end) : ''}"
+							title="{r.task.title} · {fmt.date(r.start)}{r.end > r.start ? ' – ' + fmt.date(r.end) : ''}"
 						>
 							{#if r.task.percentDone}
 								<span
@@ -198,7 +198,7 @@
 				<div
 					class="absolute top-0 bottom-0 w-px bg-red-500 pointer-events-none"
 					style="left:{todayX}px"
-					title={$t('views.gantt.today')}
+					title={t('views.gantt.today')}
 				></div>
 			</div>
 		</div>
@@ -206,6 +206,6 @@
 {:else}
 	<div class="text-center {large ? 'py-12' : 'py-10'} text-gray-500 dark:text-gray-400">
 		<CalendarMonthOutline class="{large ? 'w-12 h-12 mb-3' : 'w-10 h-10 mb-2'} mx-auto" />
-		<p>{$t('views.gantt.empty')}</p>
+		<p>{t('views.gantt.empty')}</p>
 	</div>
 {/if}

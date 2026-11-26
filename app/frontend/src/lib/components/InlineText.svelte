@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { Button, Input, Textarea } from 'flowbite-svelte';
 	import { EditOutline } from 'flowbite-svelte-icons';
-	import { t } from '$lib/i18n';
+	import { t } from '#lib/i18n/index.js';
 
 	interface Props {
 		value: string;
@@ -69,10 +69,10 @@
 		{/if}
 		<div class="flex gap-2">
 			<Button type="submit" size="xs" disabled={saving || (required && !draft.trim())}>
-				{saving ? $t('common.saving') : $t('common.save')}
+				{saving ? t('common.saving') : t('common.save')}
 			</Button>
 			<Button type="button" size="xs" color="light" onclick={() => (editing = false)}>
-				{$t('common.cancel')}
+				{t('common.cancel')}
 			</Button>
 		</div>
 	</form>

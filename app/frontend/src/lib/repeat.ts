@@ -1,7 +1,6 @@
-import { get } from 'svelte/store';
-import { fmt, locale, tr } from '$lib/i18n';
-import { dateInputToIso, isoToDateInput } from '$lib/dates';
-import type { Task } from '$lib/types';
+import { fmt, locale, t } from '#lib/i18n/index.js';
+import { dateInputToIso, isoToDateInput } from '#lib/dates.js';
+import type { Task } from '#lib/types.js';
 
 /** Which repeat rule a task uses; `none` = it does not repeat. The rest are the API's `repeatMode` values. */
 export type RepeatKind =
@@ -100,7 +99,7 @@ export function toggleWeekday(days: number[], day: number): number[] {
 /** Short weekday name in the current language (1 = Monday ... 7 = Sunday). */
 export function weekdayName(day: number, style: 'short' | 'long' = 'short'): string {
 	// 2024-01-01 was a Monday.
-	return new Intl.DateTimeFormat(get(locale), { weekday: style, timeZone: 'UTC' }).format(
+	return new Intl.DateTimeFormat(locale.current, { weekday: style, timeZone: 'UTC' }).format(
 		new Date(Date.UTC(2024, 0, day))
 	);
 }
@@ -117,28 +116,28 @@ export function describeRepeat(
 		case 'weekly': {
 			const days = form.weekdays.map((d) => weekdayName(d)).join(', ');
 			text = days
-				? tr('tasks.repeat.summary.weeklyOn', { count, days })
-				: tr('tasks.repeat.summary.weekly', { count });
+				? t('tasks.repeat.summary.weeklyOn', { count, days })
+				: t('tasks.repeat.summary.weekly', { count });
 			break;
 		}
 		case 'monthly':
-			text = tr('tasks.repeat.summary.monthly', { count });
+			text = t('tasks.repeat.summary.monthly', { count });
 			break;
 		case 'monthly_weekday':
-			text = tr('tasks.repeat.summary.monthlyWeekday', { count });
+			text = t('tasks.repeat.summary.monthlyWeekday', { count });
 			break;
 		case 'month_end':
-			text = tr('tasks.repeat.summary.monthEnd', { count });
+			text = t('tasks.repeat.summary.monthEnd', { count });
 			break;
 		case 'from_current_date':
-			text = tr('tasks.repeat.summary.afterCompletion', { count });
+			text = t('tasks.repeat.summary.afterCompletion', { count });
 			break;
 		default:
-			text = tr('tasks.repeat.summary.daily', { count });
+			text = t('tasks.repeat.summary.daily', { count });
 	}
-	if (form.end === 'count') text += ` · ${tr('tasks.repeat.summary.left', { count: form.count })}`;
+	if (form.end === 'count') text += ` · ${t('tasks.repeat.summary.left', { count: form.count })}`;
 	else if (form.end === 'until' && task.repeatUntil) {
-		text += ` · ${tr('tasks.repeat.summary.until', { date: get(fmt).date(task.repeatUntil) })}`;
+		text += ` · ${t('tasks.repeat.summary.until', { date: fmt.date(task.repeatUntil) })}`;
 	}
 	return text;
 }

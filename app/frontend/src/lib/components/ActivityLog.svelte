@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { t, fmt } from '$lib/i18n';
-	import { apiGetAuth } from '$lib/api';
-	import { changeLines, describeActivity } from '$lib/activity';
-	import type { ActivityEntry, ActivityPage } from '$lib/types';
+	import { t, fmt } from '#lib/i18n/index.js';
+	import { apiGetAuth } from '#lib/api.js';
+	import { changeLines, describeActivity } from '#lib/activity.js';
+	import type { ActivityEntry, ActivityPage } from '#lib/types.js';
 	import { Button } from 'flowbite-svelte';
 
 	/**
@@ -60,9 +60,9 @@
 </script>
 
 {#if failed && !items.length}
-	<p class="text-sm text-red-500 m-0">{$t('activity.loadFailed')}</p>
+	<p class="text-sm text-red-500 m-0">{t('activity.loadFailed')}</p>
 {:else if loaded && !items.length}
-	<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('activity.empty')}</p>
+	<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{t('activity.empty')}</p>
 {:else if items.length}
 	<ul class="list-none p-0 m-0">
 		{#each items as e, i (e.id)}
@@ -70,25 +70,25 @@
 				class="py-2 {i < items.length - 1 ? 'border-b border-gray-100 dark:border-gray-700' : ''}"
 				data-activity-action={e.action}
 			>
-				<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{describeActivity(e, $t)}</p>
-				{#each changeLines(e, $t, $fmt.dateTime) as line (line)}
+				<p class="text-sm text-gray-800 dark:text-gray-200 m-0">{describeActivity(e, t)}</p>
+				{#each changeLines(e, t, fmt.dateTime) as line (line)}
 					<p class="text-xs text-gray-500 dark:text-gray-400 m-0 ml-3">{line}</p>
 				{/each}
 				<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
-					{$fmt.dateTime(e.createdAt)}
+					{fmt.dateTime(e.createdAt)}
 					{#if showProject}
 						· {e.projectId
-							? $t('activity.admin.projectId', { id: e.projectId })
-							: $t('activity.admin.projectNone')}
+							? t('activity.admin.projectId', { id: e.projectId })
+							: t('activity.admin.projectNone')}
 					{/if}
 				</p>
 			</li>
 		{/each}
 	</ul>
-	{#if failed}<p class="text-sm text-red-500 m-0 mt-2">{$t('activity.loadFailed')}</p>{/if}
+	{#if failed}<p class="text-sm text-red-500 m-0 mt-2">{t('activity.loadFailed')}</p>{/if}
 	{#if next != null}
 		<div class="mt-3">
-			<Button size="xs" color="light" disabled={loadingMore} onclick={more}>{$t('activity.loadMore')}</Button>
+			<Button size="xs" color="light" disabled={loadingMore} onclick={more}>{t('activity.loadMore')}</Button>
 		</div>
 	{/if}
 {/if}

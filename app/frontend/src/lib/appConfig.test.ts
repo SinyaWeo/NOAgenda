@@ -1,36 +1,35 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 const apiFetch = vi.fn();
 vi.mock('./api', () => ({ apiFetch: (...a: unknown[]) => apiFetch(...a) }));
 
-import { isMultiUserPage, loadAppConfig, singleUserMode } from './appConfig';
+import { isMultiUserPage, loadAppConfig, singleUserMode } from './appConfig.svelte';
 
 const answer = (body: unknown, ok = true) => ({ ok, json: async () => body });
 
 describe('loadAppConfig', () => {
 	beforeEach(() => {
 		apiFetch.mockReset();
-		singleUserMode.set(false);
+		singleUserMode.current = false;
 	});
 
 	it('takes single-user mode from /auth/config', async () => {
 		apiFetch.mockResolvedValue(answer({ singleUserMode: true }));
 		await loadAppConfig();
 		expect(apiFetch).toHaveBeenCalledWith('/auth/config');
-		expect(get(singleUserMode)).toBe(true);
+		expect(singleUserMode.current).toBe(true);
 	});
 
 	it('stays in multi-user mode when the flag is missing or the call fails', async () => {
 		apiFetch.mockResolvedValue(answer({}));
 		await loadAppConfig();
-		expect(get(singleUserMode)).toBe(false);
+		expect(singleUserMode.current).toBe(false);
 		apiFetch.mockResolvedValue(answer({ singleUserMode: true }, false));
 		await loadAppConfig();
-		expect(get(singleUserMode)).toBe(false);
+		expect(singleUserMode.current).toBe(false);
 		apiFetch.mockRejectedValue(new Error('offline'));
 		await loadAppConfig();
-		expect(get(singleUserMode)).toBe(false);
+		expect(singleUserMode.current).toBe(false);
 	});
 });
 

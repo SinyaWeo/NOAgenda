@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { initializeAuth } from '$lib/auth';
+	import { initializeAuth } from '#lib/auth.svelte.js';
 	import { goto } from '$app/navigation';
-	import { t } from '$lib/i18n';
+	import { t } from '#lib/i18n/index.js';
 
 	onMount(async () => {
 		const u = await initializeAuth();
@@ -14,4 +14,4 @@
 	});
 </script>
 
-<p>{$t('common.loading')}</p>
+<p>{t('common.loading')}</p>

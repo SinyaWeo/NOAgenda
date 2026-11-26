@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { singleUserMode } from '$lib/appConfig';
-	import { confirmDialog } from '$lib/confirm';
-	import PageHeader from '$lib/components/PageHeader.svelte';
-	import { errMessage } from '$lib/errors';
+	import { singleUserMode } from '#lib/appConfig.svelte.js';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
+	import PageHeader from '#lib/components/PageHeader.svelte';
+	import { errMessage } from '#lib/errors.js';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
-	import type { Idea, Team } from '$lib/types-misc';
-	import type { Project } from '$lib/types';
+	import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from '#lib/api.js';
+	import { getCurrentUser } from '#lib/auth.svelte.js';
+	import type { Idea, Team } from '#lib/types-misc.js';
+	import type { Project } from '#lib/types.js';
 	import { Alert, Button, Card, Checkbox, Select, Textarea } from 'flowbite-svelte';
-	import TaskVersionHistory from '$lib/components/task/TaskVersionHistory.svelte';
+	import TaskVersionHistory from '#lib/components/task/TaskVersionHistory.svelte';
 	import { LightbulbOutline } from 'flowbite-svelte-icons';
-	import { t, tr, fmt } from '$lib/i18n';
+	import { t, fmt } from '#lib/i18n/index.js';
 
 	let ideas = $state<Idea[]>([]);
 	let projects = $state<Project[]>([]);
@@ -64,7 +64,7 @@
 	}
 
 	async function deleteIdea(id: number) {
-		if (!(await confirmDialog(tr('ideas.confirmDelete')))) return;
+		if (!(await confirmDialog(t('ideas.confirmDelete')))) return;
 		try {
 			await apiDeleteAuth(`/ideas/${id}`);
 			ideas = ideas.filter((i) => i.id !== id);
@@ -92,7 +92,7 @@
 				apiGetAuth<Idea[]>('/ideas'),
 				apiGetAuth<Project[]>('/projects'),
 				// No teams to share with in single-user mode (the call is refused there).
-				$singleUserMode ? Promise.resolve([]) : apiGetAuth<Team[]>('/teams').catch((): Team[] => [])
+				singleUserMode.current ? Promise.resolve([]) : apiGetAuth<Team[]>('/teams').catch((): Team[] => [])
 			]);
 		} catch (e: unknown) {
 			error = errMessage(e);
@@ -101,7 +101,7 @@
 	});
 </script>
 
-<PageHeader title={$t('ideas.title')} subtitle={$t('ideas.subtitle')} />
+<PageHeader title={t('ideas.title')} subtitle={t('ideas.subtitle')} />
 {#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 
 <!-- Same width as the dashboard's quick-add card: full width, half from lg up. -->
@@ -117,22 +117,22 @@
 			<Textarea
 				bind:value={newText}
 				rows={4}
-				placeholder={$t('ideas.newPlaceholder')}
-				aria-label={$t('ideas.newPlaceholder')}
+				placeholder={t('ideas.newPlaceholder')}
+				aria-label={t('ideas.newPlaceholder')}
 				required
 			/>
 			<div class="flex gap-2 items-center flex-wrap">
 				<Select
 					placeholder=""
 					bind:value={newProjectId}
-					aria-label={$t('ideas.project')}
+					aria-label={t('ideas.project')}
 					class="flex-1 min-w-36"
 				>
-					<option value="">{$t('ideas.noProject')}</option>
+					<option value="">{t('ideas.noProject')}</option>
 					{#each projects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
 				</Select>
 				<Button type="submit" disabled={creating || !newText.trim()}>
-					{creating ? $t('ideas.adding') : $t('ideas.add')}
+					{creating ? t('ideas.adding') : t('ideas.add')}
 				</Button>
 			</div>
 		</form>
@@ -140,11 +140,11 @@
 </div>
 
 {#if loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
 {:else if ideas.length === 0}
 	<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 		<LightbulbOutline class="w-12 h-12 mx-auto mb-3" />
-		<p>{$t('ideas.empty')}</p>
+		<p>{t('ideas.empty')}</p>
 	</div>
 {:else}
 	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -153,22 +153,22 @@
 				<div class="flex items-start justify-between gap-2 text-xs text-gray-500 dark:text-gray-400">
 					<span class="min-w-0 truncate">
 						{#if !idea.isMine}
-							{$t('ideas.sharedBy', {
+							{t('ideas.sharedBy', {
 								name: idea.owner?.name || idea.owner?.username || ''
 							})}
 						{:else if idea.project}
 							<a href="/projects/{idea.project.id}" class="hover:underline">{idea.project.name}</a>
 						{/if}
 					</span>
-					<time class="shrink-0" datetime={idea.createdAt}>{$fmt.date(idea.createdAt)}</time>
+					<time class="shrink-0" datetime={idea.createdAt}>{fmt.date(idea.createdAt)}</time>
 				</div>
 
 				{#if editId === idea.id}
-					<Textarea bind:value={editText} rows={4} aria-label={$t('common.edit')} />
+					<Textarea bind:value={editText} rows={4} aria-label={t('common.edit')} />
 					<div class="flex gap-2">
-						<Button size="sm" onclick={() => saveEdit(idea.id)}>{$t('common.save')}</Button>
+						<Button size="sm" onclick={() => saveEdit(idea.id)}>{t('common.save')}</Button>
 						<Button size="sm" color="light" onclick={() => (editId = null)}>
-							{$t('common.cancel')}
+							{t('common.cancel')}
 						</Button>
 					</div>
 				{:else}
@@ -176,7 +176,7 @@
 					{#if idea.isMine}
 						{#if idea.sharedTeamIds.length}
 							<p class="text-xs text-gray-500 dark:text-gray-400">
-								{$t('ideas.sharedWithCount', { count: idea.sharedTeamIds.length })}
+								{t('ideas.sharedWithCount', { count: idea.sharedTeamIds.length })}
 							</p>
 						{/if}
 						<div class="flex gap-2 flex-wrap mt-auto">
@@ -188,15 +188,15 @@
 									editText = idea.text;
 								}}
 							>
-								{$t('common.edit')}
+								{t('common.edit')}
 							</Button>
-							{#if !$singleUserMode}
+							{#if !singleUserMode.current}
 								<Button
 									size="xs"
 									color="light"
 									onclick={() => (shareId = shareId === idea.id ? null : idea.id)}
 								>
-									{$t('ideas.share')}
+									{t('ideas.share')}
 								</Button>
 							{/if}
 							<Button
@@ -204,10 +204,10 @@
 								color="light"
 								onclick={() => (historyId = historyId === idea.id ? null : idea.id)}
 							>
-								{$t('tasks.history.title')}
+								{t('tasks.history.title')}
 							</Button>
 							<Button size="sm" color="red" outline onclick={() => deleteIdea(idea.id)}>
-								{$t('common.delete')}
+								{t('common.delete')}
 							</Button>
 						</div>
 						{#if historyId === idea.id}
@@ -228,10 +228,10 @@
 						{#if shareId === idea.id}
 							<div class="border-t border-gray-100 dark:border-gray-700 pt-2">
 								<p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-									{$t('ideas.shareWith')}
+									{t('ideas.shareWith')}
 								</p>
 								{#if teams.length === 0}
-									<p class="text-sm text-gray-500 dark:text-gray-400">{$t('ideas.noTeams')}</p>
+									<p class="text-sm text-gray-500 dark:text-gray-400">{t('ideas.noTeams')}</p>
 								{:else}
 									<div class="flex flex-col gap-1">
 										{#each teams as team (team.id)}

@@ -2,12 +2,12 @@
 	import { onMount } from 'svelte';
 	import { Card, Checkbox, Dropdown, DropdownItem, Input } from 'flowbite-svelte';
 	import { EditOutline, ForwardOutline, TrashBinOutline } from 'flowbite-svelte-icons';
-	import { apiDeleteAuth, apiGetAuth, apiPatchAuth, apiPostAuth } from '$lib/api';
-	import { confirmDialog } from '$lib/confirm';
-	import { errMessage } from '$lib/errors';
-	import { showToast } from '$lib/toast';
-	import { t } from '$lib/i18n';
-	import type { Note, NoteTarget } from '$lib/types-misc';
+	import { apiDeleteAuth, apiGetAuth, apiPatchAuth, apiPostAuth } from '#lib/api.js';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
+	import { errMessage } from '#lib/errors.js';
+	import { showToast } from '#lib/toast.svelte.js';
+	import { t } from '#lib/i18n/index.js';
+	import type { Note, NoteTarget } from '#lib/types-misc.js';
 
 	/** Called after a note became a project/task/idea, so the page can refresh what it shows. */
 	let { onconverted }: { onconverted?: () => void } = $props();
@@ -40,7 +40,7 @@
 		try {
 			notes = await apiGetAuth<Note[]>('/notes');
 		} catch (e) {
-			showToast(errMessage(e, $t('dashboard.notes.loadFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.notes.loadFailed')), 'error');
 		} finally {
 			loaded = true;
 		}
@@ -65,7 +65,7 @@
 			notes = [...notes.filter((n) => !n.done), note, ...notes.filter((n) => n.done)];
 		} catch (e) {
 			if (!text) text = value;
-			showToast(errMessage(e, $t('dashboard.notes.addFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.notes.addFailed')), 'error');
 		}
 	}
 
@@ -81,7 +81,7 @@
 				? [...notes.filter((n) => !n.done && n.id !== note.id), saved, ...notes.filter((n) => n.done)]
 				: [...notes.filter((n) => !n.done), saved, ...notes.filter((n) => n.done && n.id !== note.id)];
 		} catch (e) {
-			showToast(errMessage(e, $t('dashboard.notes.saveFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.notes.saveFailed')), 'error');
 			await load();
 		}
 	}
@@ -98,7 +98,7 @@
 		try {
 			replace(await apiPatchAuth<Note>(`/notes/${note.id}`, { text: value }));
 		} catch (e) {
-			showToast(errMessage(e, $t('dashboard.notes.saveFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.notes.saveFailed')), 'error');
 		}
 	}
 
@@ -114,17 +114,17 @@
 			await apiDeleteAuth(`/notes/${note.id}`);
 			notes = notes.filter((n) => n.id !== note.id);
 		} catch (e) {
-			showToast(errMessage(e, $t('dashboard.notes.deleteFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.notes.deleteFailed')), 'error');
 		}
 	}
 
 	async function clearDone() {
-		if (!(await confirmDialog($t('dashboard.notes.clearConfirm')))) return;
+		if (!(await confirmDialog(t('dashboard.notes.clearConfirm')))) return;
 		try {
 			await apiDeleteAuth('/notes/completed');
 			notes = notes.filter((n) => !n.done);
 		} catch (e) {
-			showToast(errMessage(e, $t('dashboard.notes.deleteFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.notes.deleteFailed')), 'error');
 		}
 	}
 
@@ -132,10 +132,10 @@
 		try {
 			await apiPostAuth(`/notes/${note.id}/convert`, { to });
 			notes = notes.filter((n) => n.id !== note.id);
-			showToast($t(`dashboard.notes.converted.${to}`));
+			showToast(t(`dashboard.notes.converted.${to}`));
 			onconverted?.();
 		} catch (e) {
-			showToast(errMessage(e, $t('dashboard.notes.convertFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.notes.convertFailed')), 'error');
 		}
 	}
 </script>
@@ -156,7 +156,7 @@
 				maxlength={MAX_LEN}
 				onkeydown={(e) => onEditKey(e, note)}
 				onblur={() => saveEdit(note)}
-				aria-label={$t('common.edit')}
+				aria-label={t('common.edit')}
 				autofocus
 				class="flex-1 min-w-0 text-sm rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-2 py-1"
 			/>
@@ -172,8 +172,8 @@
 				<button
 					type="button"
 					class="shrink-0 p-1 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
-					title={$t('common.delete')}
-					aria-label={$t('common.delete')}
+					title={t('common.delete')}
+					aria-label={t('common.delete')}
 					onclick={() => remove(note)}
 				>
 					<TrashBinOutline class="w-4 h-4" />
@@ -182,8 +182,8 @@
 				<button
 					type="button"
 					class="shrink-0 p-1 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-					title={$t('common.edit')}
-					aria-label={$t('common.edit')}
+					title={t('common.edit')}
+					aria-label={t('common.edit')}
 					onclick={() => startEdit(note)}
 				>
 					<EditOutline class="w-4 h-4" />
@@ -192,15 +192,15 @@
 					type="button"
 					id="note-convert-{note.id}"
 					class="shrink-0 p-1 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-					title={$t('dashboard.notes.convert')}
-					aria-label={$t('dashboard.notes.convert')}
+					title={t('dashboard.notes.convert')}
+					aria-label={t('dashboard.notes.convert')}
 				>
 					<ForwardOutline class="w-4 h-4" />
 				</button>
 				<Dropdown triggeredBy="#note-convert-{note.id}" placement="bottom-end" class="w-44">
 					{#each targets as to (to)}
 						<DropdownItem onclick={() => convert(note, to)}>
-							{$t(`dashboard.notes.convertTo.${to}`)}
+							{t(`dashboard.notes.convertTo.${to}`)}
 						</DropdownItem>
 					{/each}
 				</Dropdown>
@@ -210,7 +210,7 @@
 {/snippet}
 
 <Card class="max-w-none h-full">
-	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{$t('dashboard.notes.title')}</h2>
+	<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">{t('dashboard.notes.title')}</h2>
 	<form
 		onsubmit={(e) => {
 			e.preventDefault();
@@ -222,14 +222,14 @@
 			type="text"
 			bind:value={text}
 			maxlength={MAX_LEN}
-			placeholder={$t('dashboard.notes.placeholder')}
-			aria-label={$t('dashboard.notes.placeholder')}
+			placeholder={t('dashboard.notes.placeholder')}
+			aria-label={t('dashboard.notes.placeholder')}
 			class="w-full"
 		/>
 	</form>
 
 	{#if loaded && open.length === 0}
-		<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('dashboard.notes.empty')}</p>
+		<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{t('dashboard.notes.empty')}</p>
 	{/if}
 	<ul class="list-none p-0 m-0">
 		{#each open as note (note.id)}{@render row(note)}{/each}
@@ -244,8 +244,8 @@
 				onclick={toggleShowDone}
 			>
 				{showDone
-					? $t('dashboard.notes.hideCompleted', { count: done.length })
-					: $t('dashboard.notes.showCompleted', { count: done.length })}
+					? t('dashboard.notes.hideCompleted', { count: done.length })
+					: t('dashboard.notes.showCompleted', { count: done.length })}
 			</button>
 			{#if showDone}
 				<button
@@ -253,7 +253,7 @@
 					class="text-sm text-gray-500 dark:text-gray-400 hover:underline"
 					onclick={clearDone}
 				>
-					{$t('dashboard.notes.clearCompleted')}
+					{t('dashboard.notes.clearCompleted')}
 				</button>
 			{/if}
 		</div>

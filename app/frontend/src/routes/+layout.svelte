@@ -1,29 +1,28 @@
 <script lang="ts">
-	import ConfirmDialog from '$lib/components/ConfirmDialog.svelte';
-	import StepUpDialog from '$lib/components/StepUpDialog.svelte';
-	import { appName, loadAppName } from '$lib/appName';
-	import { isMultiUserPage, loadAppConfig, singleUserMode } from '$lib/appConfig';
+	import ConfirmDialog from '#lib/components/ConfirmDialog.svelte';
+	import StepUpDialog from '#lib/components/StepUpDialog.svelte';
+	import { appName, loadAppName } from '#lib/appName.svelte.js';
+	import { isMultiUserPage, loadAppConfig, singleUserMode } from '#lib/appConfig.svelte.js';
 	import '../assets/app.css';
 	import { onMount } from 'svelte';
 	import type { Snippet } from 'svelte';
-	import { authSession, clearAuthSession, initializeAuth, logout as signOut } from '$lib/auth';
-	import { isAdmin } from '$lib/roles';
-	import ToastContainer from '$lib/components/Toast.svelte';
-	import Sidebar from '$lib/components/layout/Sidebar.svelte';
-	import SearchBox from '$lib/components/layout/SearchBox.svelte';
-	import QuickAdd from '$lib/components/layout/QuickAdd.svelte';
-	import NotificationsMenu from '$lib/components/layout/NotificationsMenu.svelte';
-	import UserMenu from '$lib/components/layout/UserMenu.svelte';
-	import { derived } from 'svelte/store';
+	import { authSession, clearAuthSession, initializeAuth, logout as signOut } from '#lib/auth.svelte.js';
+	import { isAdmin } from '#lib/roles.js';
+	import ToastContainer from '#lib/components/Toast.svelte';
+	import Sidebar from '#lib/components/layout/Sidebar.svelte';
+	import SearchBox from '#lib/components/layout/SearchBox.svelte';
+	import QuickAdd from '#lib/components/layout/QuickAdd.svelte';
+	import NotificationsMenu from '#lib/components/layout/NotificationsMenu.svelte';
+	import UserMenu from '#lib/components/layout/UserMenu.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { t, type MessageKey } from '$lib/i18n';
+	import { t, type MessageKey } from '#lib/i18n/index.js';
 	import { ThemeProvider } from 'flowbite-svelte';
 	import { BarsOutline } from 'flowbite-svelte-icons';
 
 	let { children }: { children?: Snippet } = $props();
 
-	const user = derived(authSession, ($authSession) => $authSession.user);
+	const user = $derived(authSession.user);
 	const currentPath = $derived(page.url.pathname);
 
 	// Pages anyone may open without being signed in. Everything else needs a session.
@@ -68,7 +67,7 @@
 		const key = TITLES.find(
 			([prefix]) => currentPath === prefix || currentPath.startsWith(prefix + '/')
 		)?.[1];
-		return key ? $t(key) : undefined;
+		return key ? t(key) : undefined;
 	});
 
 	// Mobile: the sidebar becomes a slide-in drawer.
@@ -91,8 +90,8 @@
 		// done in another tab instead of staying "signed in" until the next failing request.
 		const onStorage = (e: StorageEvent) => {
 			if (e.key !== 'access_token') return;
-			if (!e.newValue && $authSession.status === 'authenticated') clearAuthSession();
-			else if (e.newValue && $authSession.status === 'unauthenticated') void initializeAuth();
+			if (!e.newValue && authSession.status === 'authenticated') clearAuthSession();
+			else if (e.newValue && authSession.status === 'unauthenticated') void initializeAuth();
 		};
 		window.addEventListener('storage', onStorage);
 
@@ -111,19 +110,19 @@
 
 	// Central route guard: no session on a protected page -> sign in, then come back here.
 	$effect(() => {
-		if ($authSession.status !== 'unauthenticated' || isPublicRoute || signingOut) return;
+		if (authSession.status !== 'unauthenticated' || isPublicRoute || signingOut) return;
 		const back = page.url.pathname + page.url.search;
-		goto(`/user/login?redirect=${encodeURIComponent(back)}`, { replaceState: true });
+		goto(`/user/login?redirect=${encodeURIComponent(back)}`, { replace: true });
 	});
 
 	// Single-user mode: no teams and no sharing pages.
 	$effect(() => {
-		if ($singleUserMode && isMultiUserPage(currentPath)) goto('/dashboard', { replaceState: true });
+		if (singleUserMode.current && isMultiUserPage(currentPath)) goto('/dashboard', { replace: true });
 	});
 
 	// Apply the signed-in user's theme.
 	$effect(() => {
-		const session = $authSession;
+		const session = authSession;
 		if (session.status !== 'authenticated' || !session.user) return;
 		const theme = session.user.theme ?? 'light';
 		document.documentElement.classList.toggle(
@@ -150,19 +149,23 @@
 	<link rel="icon" href="/favicon.ico" sizes="48x48" />
 	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-	<title>{pageTitle ? $t('layout.titleWithApp', { title: pageTitle, app: $appName }) : $appName}</title>
+	<title
+		>{pageTitle
+			? t('layout.titleWithApp', { title: pageTitle, app: appName.current })
+			: appName.current}</title
+	>
 </svelte:head>
 
 <ThemeProvider theme={{ card: { base: 'p-5' } }}>
-	{#if $user !== null}
+	{#if user !== null}
 		<a
 			href="#main-content"
 			class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-500 focus:bg-white focus:text-primary-700 focus:px-3 focus:py-2 focus:rounded focus:shadow"
 		>
-			{$t('layout.skipToContent')}
+			{t('layout.skipToContent')}
 		</a>
 		<div class="sidebar-shell">
-			<Sidebar {currentPath} showAdmin={isAdmin($user)} {isMobile} bind:mobileOpen={mobileNavOpen} />
+			<Sidebar {currentPath} showAdmin={isAdmin(user)} {isMobile} bind:mobileOpen={mobileNavOpen} />
 
 			<main
 				id="main-content"
@@ -177,7 +180,7 @@
 					<button
 						type="button"
 						class="md:hidden bg-transparent border-0 cursor-pointer p-1.5 -ml-1 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center"
-						aria-label={$t('layout.openMenu')}
+						aria-label={t('layout.openMenu')}
 						aria-controls="main-nav"
 						aria-expanded={mobileNavOpen}
 						onclick={() => (mobileNavOpen = true)}
@@ -187,8 +190,8 @@
 					<SearchBox />
 					<div class="flex items-center gap-1 ml-auto">
 						<QuickAdd />
-						<UserMenu user={$user} onlogout={logout}>
-							<NotificationsMenu userId={$user.id} />
+						<UserMenu {user} onlogout={logout}>
+							<NotificationsMenu userId={user.id} />
 						</UserMenu>
 					</div>
 				</header>
@@ -210,7 +213,7 @@
 			class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500"
 			role="status"
 		>
-			<p>{$authSession.status === 'loading' ? $t('common.loading') : $t('layout.redirecting')}</p>
+			<p>{authSession.status === 'loading' ? t('common.loading') : t('layout.redirecting')}</p>
 		</div>
 	{/if}
 	<ToastContainer />

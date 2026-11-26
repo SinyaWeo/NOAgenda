@@ -1,26 +1,25 @@
 <script lang="ts">
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { untrack } from 'svelte';
 	import { onMount } from 'svelte';
-	import { apiGetAuth, apiPostAuth, apiPutAuth, MAX_PAGE_SIZE } from '$lib/api';
-	import { getCurrentUser } from '$lib/auth';
-	import { errMessage } from '$lib/errors';
-	import { cleanCriteria, criteriaToQuery, describeCriteria, needsClientDueFilter } from '$lib/filters';
-	import { loadProjectNames } from '$lib/project-names';
-	import { writable } from 'svelte/store';
+	import { apiGetAuth, apiPostAuth, apiPutAuth, MAX_PAGE_SIZE } from '#lib/api.js';
+	import { getCurrentUser } from '#lib/auth.svelte.js';
+	import { errMessage } from '#lib/errors.js';
+	import { cleanCriteria, criteriaToQuery, describeCriteria, needsClientDueFilter } from '#lib/filters.js';
+	import { loadProjectNames } from '#lib/project-names.js';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { showToast } from '$lib/toast';
-	import { announceRecurrence } from '$lib/recurrence';
-	import { t, tr, type MessageKey } from '$lib/i18n';
-	import type { FilterCriteria, NodeStatus, SavedFilter, Task } from '$lib/types';
-	import type { KanbanColumn, ProjectOption, TaskViewMode } from '$lib/types-views';
-	import TaskListView from '$lib/components/views/TaskListView.svelte';
-	import StatusKanbanView from '$lib/components/views/StatusKanbanView.svelte';
-	import TableView from '$lib/components/views/TableView.svelte';
-	import CalendarView from '$lib/components/views/CalendarView.svelte';
-	import GanttView from '$lib/components/views/GanttView.svelte';
-	import CriteriaEditor from '$lib/components/views/CriteriaEditor.svelte';
+	import { showToast } from '#lib/toast.svelte.js';
+	import { announceRecurrence } from '#lib/recurrence.js';
+	import { t, type MessageKey } from '#lib/i18n/index.js';
+	import type { FilterCriteria, NodeStatus, SavedFilter, Task } from '#lib/types.js';
+	import type { KanbanColumn, ProjectOption, TaskViewMode } from '#lib/types-views.js';
+	import TaskListView from '#lib/components/views/TaskListView.svelte';
+	import StatusKanbanView from '#lib/components/views/StatusKanbanView.svelte';
+	import TableView from '#lib/components/views/TableView.svelte';
+	import CalendarView from '#lib/components/views/CalendarView.svelte';
+	import GanttView from '#lib/components/views/GanttView.svelte';
+	import CriteriaEditor from '#lib/components/views/CriteriaEditor.svelte';
 	import { Alert, Badge, Button, ButtonGroup, Input, Select } from 'flowbite-svelte';
 	import {
 		CheckCircleOutline,
@@ -29,15 +28,15 @@
 		PlusOutline
 	} from 'flowbite-svelte-icons';
 
-	const tasks = writable<Task[]>([]);
+	let tasks = $state<Task[]>([]);
 	let projectNames = $state<Record<number, string>>({});
-	const loading = writable(true);
-	const error = writable('');
-	const sort = writable('createdAt');
-	const order = writable<'ASC' | 'DESC'>('DESC');
-	const currentPage = writable(1);
+	let loading = $state(true);
+	let error = $state('');
+	let sort = $state('createdAt');
+	let order = $state<'ASC' | 'DESC'>('DESC');
+	let currentPage = $state(1);
 	const limit = 20;
-	const hasMore = writable(false);
+	let hasMore = $state(false);
 
 	// Saved filters / applied criteria
 	let savedFilters = $state<SavedFilter[]>([]);
@@ -76,9 +75,9 @@
 	];
 
 	const KANBAN_COLS = $derived<KanbanColumn[]>([
-		{ key: 'open', label: $t('common.status.open') },
-		{ key: 'in_progress', label: $t('common.status.in_progress') },
-		{ key: 'done', label: $t('common.status.done') }
+		{ key: 'open', label: t('common.status.open') },
+		{ key: 'in_progress', label: t('common.status.in_progress') },
+		{ key: 'done', label: t('common.status.done') }
 	]);
 
 	const validViews = new Set<string>(['list', 'kanban', 'table', 'gantt', 'calendar']);
@@ -97,7 +96,7 @@
 		}
 		const qs = params.toString();
 		goto(`${page.url.pathname}${qs ? `?${qs}` : ''}`, {
-			replaceState: true,
+			replace: true,
 			reset: false
 		});
 	}
@@ -108,36 +107,36 @@
 
 	async function loadTasks() {
 		const seq = ++loadSeq;
-		loading.set(true);
-		error.set('');
+		loading = true;
+		error = '';
 		try {
 			const q = criteriaToQuery(criteria);
-			q.set('sort', $sort);
-			q.set('order', $order);
+			q.set('sort', sort);
+			q.set('order', order);
 			let rows: Task[];
 			let more: boolean;
 			if (needsClientDueFilter(criteria)) {
 				// No server parameter for "no due date": fetch a large page and filter + page here.
 				q.set('limit', String(MAX_PAGE_SIZE));
 				const all = (await apiGetAuth<Task[]>(`/tasks?${q}`)).filter((t) => !t.dueDate);
-				const start = ($currentPage - 1) * limit;
+				const start = (currentPage - 1) * limit;
 				rows = all.slice(start, start + limit);
 				more = all.length > start + limit;
 			} else {
-				q.set('page', String($currentPage));
+				q.set('page', String(currentPage));
 				q.set('limit', String(limit + 1));
 				const list = await apiGetAuth<Task[]>(`/tasks?${q}`);
 				more = list.length > limit;
 				rows = list.slice(0, limit);
 			}
 			if (seq !== loadSeq) return;
-			hasMore.set(more);
-			tasks.set(rows);
+			hasMore = more;
+			tasks = rows;
 			selected = []; // a new page or filter starts with nothing selected
 		} catch (e: unknown) {
-			if (seq === loadSeq) error.set(errMessage(e));
+			if (seq === loadSeq) error = errMessage(e);
 		} finally {
-			if (seq === loadSeq) loading.set(false);
+			if (seq === loadSeq) loading = false;
 		}
 	}
 
@@ -152,10 +151,10 @@
 		const count = selected.length;
 		try {
 			await apiPostAuth('/tasks/bulk', { ids: selected, data });
-			showToast(tr('views.bulk.done', { count }), 'success');
+			showToast(t('views.bulk.done', { count }), 'success');
 			await loadTasks();
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('views.bulk.failed')), 'error');
+			showToast(errMessage(e, t('views.bulk.failed')), 'error');
 		} finally {
 			bulkBusy = false;
 		}
@@ -167,7 +166,7 @@
 			savedFilters = await apiGetAuth<SavedFilter[]>('/filters');
 			filtersLoaded = true;
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('views.toast.loadFiltersFailed')), 'error');
+			showToast(errMessage(e, t('views.toast.loadFiltersFailed')), 'error');
 		}
 	}
 
@@ -182,7 +181,7 @@
 				criteria = { ...(f.filters ?? {}) };
 				selectedFilterId = String(f.id);
 			} else {
-				showToast(tr('views.toast.filterNotFound'), 'error');
+				showToast(t('views.toast.filterNotFound'), 'error');
 				criteria = {};
 				selectedFilterId = '';
 				lastFilterParam = null;
@@ -192,7 +191,7 @@
 			criteria = {};
 			selectedFilterId = '';
 		}
-		currentPage.set(1);
+		currentPage = 1;
 		await loadTasks();
 	}
 
@@ -224,7 +223,7 @@
 		} else {
 			criteria = {};
 			selectedFilterId = '';
-			currentPage.set(1);
+			currentPage = 1;
 			void loadTasks();
 		}
 	}
@@ -239,7 +238,7 @@
 		criteria = cleanCriteria(draftCriteria);
 		selectedFilterId = '';
 		showRefine = false;
-		currentPage.set(1);
+		currentPage = 1;
 		if (lastFilterParam) {
 			lastFilterParam = null; // so the URL change below does not reload a second time
 			setParams({ filter: null });
@@ -262,66 +261,66 @@
 			selectedFilterId = String(created.id);
 			lastFilterParam = String(created.id); // criteria are already applied: no reload needed
 			setParams({ filter: String(created.id) });
-			showToast(tr('views.toast.filterSaved'), 'success');
+			showToast(t('views.toast.filterSaved'), 'success');
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('views.toast.saveFilterFailed')), 'error');
+			showToast(errMessage(e, t('views.toast.saveFilterFailed')), 'error');
 		} finally {
 			saving = false;
 		}
 	}
 
 	async function changeSort(field: string) {
-		if ($sort === field) {
-			order.update((o) => (o === 'ASC' ? 'DESC' : 'ASC'));
+		if (sort === field) {
+			order = order === 'ASC' ? 'DESC' : 'ASC';
 		} else {
-			sort.set(field);
-			order.set('ASC');
+			sort = field;
+			order = 'ASC';
 		}
-		currentPage.set(1);
+		currentPage = 1;
 		await loadTasks();
 	}
 	async function prevPage() {
-		if ($currentPage > 1) {
-			currentPage.update((p) => p - 1);
+		if (currentPage > 1) {
+			currentPage -= 1;
 			await loadTasks();
 		}
 	}
 	async function nextPage() {
-		if ($hasMore) {
-			currentPage.update((p) => p + 1);
+		if (hasMore) {
+			currentPage += 1;
 			await loadTasks();
 		}
 	}
 
 	async function updateTaskStatus(taskId: number, status: NodeStatus) {
 		try {
-			const before = $tasks.find((t) => t.id === taskId)?.status;
+			const before = tasks.find((t) => t.id === taskId)?.status;
 			const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, { status });
-			tasks.update((list) => list.map((t) => (t.id === taskId ? { ...t, ...updated } : t)));
-			if (!announceRecurrence(status, before, updated)) showToast(tr('views.toast.statusUpdated'), 'success');
+			tasks = tasks.map((t) => (t.id === taskId ? { ...t, ...updated } : t));
+			if (!announceRecurrence(status, before, updated)) showToast(t('views.toast.statusUpdated'), 'success');
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('views.toast.statusFailed')), 'error');
+			showToast(errMessage(e, t('views.toast.statusFailed')), 'error');
 		}
 	}
 </script>
 
-<PageHeader title={$t('views.tasks.title')}>
+<PageHeader title={t('views.tasks.title')}>
 	{#snippet actions()}
-		<Button href="/tasks/create"><PlusOutline class="w-4 h-4 mr-1" />{$t('views.tasks.create')}</Button>
+		<Button href="/tasks/create"><PlusOutline class="w-4 h-4 mr-1" />{t('views.tasks.create')}</Button>
 	{/snippet}
 </PageHeader>
 
 <ButtonGroup class="mb-4 max-w-full overflow-x-auto *:shrink-0 *:whitespace-nowrap *:ring-primary-700!">
 	{#each VIEWS as v (v.id)}
 		<Button size="sm" color={viewMode === v.id ? 'primary' : 'light'} onclick={() => setView(v.id)}>
-			{$t(v.label)}
+			{t(v.label)}
 		</Button>
 	{/each}
 </ButtonGroup>
 
 <div class="flex items-center gap-2 mb-3 flex-wrap">
 	<label for="saved-filter" class="text-sm text-gray-500 dark:text-gray-400">
-		{$t('views.savedFilter.label')}
+		{t('views.savedFilter.label')}
 	</label>
 	<Select
 		placeholder=""
@@ -330,32 +329,32 @@
 		value={selectedFilterId}
 		onchange={(e) => chooseSavedFilter((e.target as HTMLSelectElement).value)}
 	>
-		<option value="">{$t('common.none')}</option>
+		<option value="">{t('common.none')}</option>
 		{#each savedFilters as f (f.id)}<option value={String(f.id)}>{f.name}</option>{/each}
 	</Select>
 	<Button size="sm" color="light" onclick={openRefine}>
-		{showRefine ? $t('views.filter.hideEditor') : $t('views.filter.edit')}
+		{showRefine ? t('views.filter.hideEditor') : t('views.filter.edit')}
 	</Button>
-	<a href="/filters" class="text-xs text-primary-600 hover:underline">{$t('views.filter.manage')}</a>
+	<a href="/filters" class="text-xs text-primary-600 hover:underline">{t('views.filter.manage')}</a>
 </div>
 
 {#if showRefine}
 	<div class="mb-3 p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
 		<CriteriaEditor bind:criteria={draftCriteria} projects={projectOptions} idPrefix="tasks-crit" />
 		<div class="mt-3 flex gap-2">
-			<Button size="sm" onclick={applyRefine}>{$t('views.filter.apply')}</Button>
-			<Button size="sm" color="light" onclick={() => (showRefine = false)}>{$t('common.cancel')}</Button>
+			<Button size="sm" onclick={applyRefine}>{t('views.filter.apply')}</Button>
+			<Button size="sm" color="light" onclick={() => (showRefine = false)}>{t('common.cancel')}</Button>
 		</div>
 	</div>
 {/if}
 
 {#if chips.length}
-	<div class="flex items-center gap-2 mb-3 flex-wrap" aria-label={$t('views.filter.active')}>
+	<div class="flex items-center gap-2 mb-3 flex-wrap" aria-label={t('views.filter.active')}>
 		{#each chips as chip (chip)}<Badge color="indigo">{chip}</Badge>{/each}
-		<Button size="xs" color="light" onclick={clearFilter}>{$t('common.clear')}</Button>
+		<Button size="xs" color="light" onclick={clearFilter}>{t('common.clear')}</Button>
 		{#if !showSave}
 			<Button size="xs" color="light" onclick={() => (showSave = true)}>
-				{$t('views.filter.saveCurrent')}
+				{t('views.filter.saveCurrent')}
 			</Button>
 		{:else}
 			<form onsubmit={saveCurrentFilters} class="flex items-center gap-2">
@@ -363,14 +362,14 @@
 					type="text"
 					size="sm"
 					bind:value={saveName}
-					placeholder={$t('views.filter.name')}
+					placeholder={t('views.filter.name')}
 					required
 					class="w-44"
-					aria-label={$t('views.filter.name')}
+					aria-label={t('views.filter.name')}
 				/>
-				<Button type="submit" size="xs" disabled={saving || !saveName.trim()}>{$t('common.save')}</Button>
+				<Button type="submit" size="xs" disabled={saving || !saveName.trim()}>{t('common.save')}</Button>
 				<Button type="button" size="xs" color="light" onclick={() => (showSave = false)}>
-					{$t('common.cancel')}
+					{t('common.cancel')}
 				</Button>
 			</form>
 		{/if}
@@ -379,11 +378,11 @@
 
 {#if viewMode !== 'kanban'}
 	<div class="flex items-center gap-2 mb-4 flex-wrap">
-		<span class="text-sm text-gray-500 dark:text-gray-400">{$t('views.sort.label')}</span>
+		<span class="text-sm text-gray-500 dark:text-gray-400">{t('views.sort.label')}</span>
 		<ButtonGroup class="max-w-full overflow-x-auto *:shrink-0 *:whitespace-nowrap *:ring-primary-700!">
 			{#each SORT_FIELDS as [field, label] (field)}
-				<Button size="sm" color={$sort === field ? 'primary' : 'light'} onclick={() => changeSort(field)}>
-					{$t(label)}{$sort === field ? ($order === 'ASC' ? ' ↑' : ' ↓') : ''}
+				<Button size="sm" color={sort === field ? 'primary' : 'light'} onclick={() => changeSort(field)}>
+					{t(label)}{sort === field ? (order === 'ASC' ? ' ↑' : ' ↓') : ''}
 				</Button>
 			{/each}
 		</ButtonGroup>
@@ -392,37 +391,37 @@
 
 {#snippet pager(extraClass: string)}
 	<div class="flex items-center gap-3 justify-center {extraClass}">
-		<Button size="sm" color="light" disabled={$currentPage === 1} onclick={prevPage}>
-			<ChevronLeftOutline class="w-4 h-4 mr-1" />{$t('views.pager.prev')}
+		<Button size="sm" color="light" disabled={currentPage === 1} onclick={prevPage}>
+			<ChevronLeftOutline class="w-4 h-4 mr-1" />{t('views.pager.prev')}
 		</Button>
 		<span class="text-sm text-gray-500 dark:text-gray-400">
-			{$t('common.pageOf', { page: $currentPage })}
+			{t('common.pageOf', { page: currentPage })}
 		</span>
-		<Button size="sm" color="light" disabled={!$hasMore} onclick={nextPage}>
-			{$t('common.next')}<ChevronRightOutline class="w-4 h-4 ml-1" />
+		<Button size="sm" color="light" disabled={!hasMore} onclick={nextPage}>
+			{t('common.next')}<ChevronRightOutline class="w-4 h-4 ml-1" />
 		</Button>
 	</div>
 {/snippet}
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('views.tasks.loading')}</p>
-{:else if $error}
-	<Alert color="red">{$error}</Alert>
+{#if loading}
+	<p class="text-gray-500 dark:text-gray-400">{t('views.tasks.loading')}</p>
+{:else if error}
+	<Alert color="red">{error}</Alert>
 {:else if viewMode === 'list'}
-	{#if $tasks.length}
+	{#if tasks.length}
 		<div class="flex items-center gap-2 mb-3 flex-wrap">
 			<label class="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 cursor-pointer">
 				<input
 					type="checkbox"
 					class="w-4 h-4"
-					checked={selected.length > 0 && selected.length === $tasks.length}
-					onchange={() => (selected = selected.length === $tasks.length ? [] : $tasks.map((t) => t.id))}
+					checked={selected.length > 0 && selected.length === tasks.length}
+					onchange={() => (selected = selected.length === tasks.length ? [] : tasks.map((t) => t.id))}
 				/>
-				{$t('views.bulk.selectAll')}
+				{t('views.bulk.selectAll')}
 			</label>
 			{#if selected.length}
 				<span class="text-sm text-gray-700 dark:text-gray-300">
-					{$t('views.bulk.selected', { count: selected.length })}
+					{t('views.bulk.selected', { count: selected.length })}
 				</span>
 				<Select
 					placeholder=""
@@ -430,17 +429,17 @@
 					class="w-auto"
 					disabled={bulkBusy}
 					value=""
-					aria-label={$t('views.bulk.setStatus')}
+					aria-label={t('views.bulk.setStatus')}
 					onchange={(e) => {
 						const el = e.target as HTMLSelectElement;
 						if (el.value) void bulkUpdate({ status: el.value as NodeStatus });
 						el.value = '';
 					}}
 				>
-					<option value="">{$t('views.bulk.setStatus')}</option>
-					<option value="open">{$t('common.status.open')}</option>
-					<option value="in_progress">{$t('common.status.in_progress')}</option>
-					<option value="done">{$t('common.status.done')}</option>
+					<option value="">{t('views.bulk.setStatus')}</option>
+					<option value="open">{t('common.status.open')}</option>
+					<option value="in_progress">{t('common.status.in_progress')}</option>
+					<option value="done">{t('common.status.done')}</option>
 				</Select>
 				<Select
 					placeholder=""
@@ -448,23 +447,23 @@
 					class="w-auto"
 					disabled={bulkBusy}
 					value=""
-					aria-label={$t('views.bulk.setPriority')}
+					aria-label={t('views.bulk.setPriority')}
 					onchange={(e) => {
 						const el = e.target as HTMLSelectElement;
 						if (el.value) void bulkUpdate({ priority: Number(el.value) });
 						el.value = '';
 					}}
 				>
-					<option value="">{$t('views.bulk.setPriority')}</option>
+					<option value="">{t('views.bulk.setPriority')}</option>
 					{#each [1, 2, 3, 4, 5] as p (p)}<option value={p}>
-							{$t(`common.priority.${p}` as MessageKey)}
+							{t(`common.priority.${p}` as MessageKey)}
 						</option>{/each}
 				</Select>
-				<Button size="xs" color="light" onclick={() => (selected = [])}>{$t('common.clear')}</Button>
+				<Button size="xs" color="light" onclick={() => (selected = [])}>{t('common.clear')}</Button>
 			{/if}
 		</div>
 		<TaskListView
-			tasks={$tasks}
+			{tasks}
 			{projectNames}
 			onStatusChange={updateTaskStatus}
 			{selected}
@@ -475,18 +474,18 @@
 		<div class="text-center py-12 text-gray-500 dark:text-gray-400">
 			<CheckCircleOutline class="w-12 h-12 mx-auto mb-3" />
 			<p>
-				{$t('views.tasks.empty')}
-				<a href="/tasks/create" class="text-primary-600 hover:underline">{$t('views.tasks.emptyCreate')}</a>
+				{t('views.tasks.empty')}
+				<a href="/tasks/create" class="text-primary-600 hover:underline">{t('views.tasks.emptyCreate')}</a>
 			</p>
 		</div>
 	{/if}
 {:else if viewMode === 'kanban'}
-	<StatusKanbanView tasks={$tasks} columns={KANBAN_COLS} onStatusChange={updateTaskStatus} {projectNames} />
+	<StatusKanbanView {tasks} columns={KANBAN_COLS} onStatusChange={updateTaskStatus} {projectNames} />
 {:else if viewMode === 'table'}
-	<TableView tasks={$tasks} large {projectNames} />
-	{#if $tasks.length}{@render pager('mt-4')}{/if}
+	<TableView {tasks} large {projectNames} />
+	{#if tasks.length}{@render pager('mt-4')}{/if}
 {:else if viewMode === 'gantt'}
-	<GanttView tasks={$tasks} large {projectNames} />
+	<GanttView {tasks} large {projectNames} />
 {:else if viewMode === 'calendar'}
 	<CalendarView {criteria} {projectNames} />
 {/if}

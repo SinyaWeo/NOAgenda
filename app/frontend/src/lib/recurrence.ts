@@ -1,7 +1,6 @@
-import { get } from 'svelte/store';
-import { fmt, tr } from '$lib/i18n';
-import { showToast } from '$lib/toast';
-import type { Task } from '$lib/types';
+import { fmt, t } from '#lib/i18n/index.js';
+import { showToast } from '#lib/toast.svelte.js';
+import type { Task } from '#lib/types.js';
 
 /**
  * Completing a repeating task does not leave it done: the server reopens it with the next due date,
@@ -16,10 +15,10 @@ export function announceRecurrence(
 	if (requestedStatus !== 'done' || before === 'done') return false;
 	if (!updated.repeatAfter) return false;
 	if (updated.status === 'done') {
-		showToast(tr('tasks.repeat.finished'), 'success', 5000);
+		showToast(t('tasks.repeat.finished'), 'success', 5000);
 		return true;
 	}
 	if (!updated.dueDate) return false;
-	showToast(tr('tasks.repeat.nextCycle', { date: get(fmt).date(updated.dueDate) }), 'success', 5000);
+	showToast(t('tasks.repeat.nextCycle', { date: fmt.date(updated.dueDate) }), 'success', 5000);
 	return true;
 }

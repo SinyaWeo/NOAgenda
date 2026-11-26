@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiGetAuth, apiPatchAuth } from '$lib/api';
-	import { errMessage } from '$lib/errors';
-	import { t, tr } from '$lib/i18n';
-	import { canMove, findDropTarget, layoutForest, NODE_W } from '$lib/mindmap';
-	import { showToast } from '$lib/toast';
-	import type { Node as AppNode } from '$lib/types';
+	import { apiGetAuth, apiPatchAuth } from '#lib/api.js';
+	import { errMessage } from '#lib/errors.js';
+	import { t } from '#lib/i18n/index.js';
+	import { canMove, findDropTarget, layoutForest, NODE_W } from '#lib/mindmap.js';
+	import { showToast } from '#lib/toast.svelte.js';
+	import type { Node as AppNode } from '#lib/types.js';
 	import {
 		SvelteFlow,
 		Controls,
@@ -53,7 +53,7 @@
 			width: NODE_W,
 			// In a read-only project nothing can be picked up (moving needs write; the project itself, admin).
 			draggable: canMove(n, permission()),
-			data: { label: n.name ?? n.title ?? tr('views.mindmap.nodeFallback', { id: n.id }) },
+			data: { label: n.name ?? n.title ?? t('views.mindmap.nodeFallback', { id: n.id }) },
 			style:
 				n.type === 'project'
 					? 'background:#3b82f6;color:#fff;border-radius:8px;padding:8px 14px;font-weight:600;border:none;' +
@@ -91,7 +91,7 @@
 			mmEdges = edges;
 			relayout();
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('views.toast.mindmapLoadFailed')), 'error');
+			showToast(errMessage(e, t('views.toast.mindmapLoadFailed')), 'error');
 		} finally {
 			loaded = true;
 		}
@@ -122,9 +122,9 @@
 					list.filter((c) => String(c.id) !== node.id)
 				);
 			if (moved) childMap.set(Number(parent.id), [...(childMap.get(Number(parent.id)) ?? []), moved]);
-			showToast(tr('views.toast.moved'), 'success');
+			showToast(t('views.toast.moved'), 'success');
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('views.toast.moveFailed')), 'error');
+			showToast(errMessage(e, t('views.toast.moveFailed')), 'error');
 			relayout(); // put the node back under its old parent
 		}
 	}
@@ -149,10 +149,10 @@
 		</SvelteFlow>
 	</div>
 	<p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
-		{$t('views.mindmap.hint')}
+		{t('views.mindmap.hint')}
 	</p>
 {:else if loaded}
 	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
-		<p>{$t('views.mindmap.noTasks')}</p>
+		<p>{t('views.mindmap.noTasks')}</p>
 	</div>
 {/if}

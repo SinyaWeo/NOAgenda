@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { locale } from './locale-store';
+import { locale } from './locale.svelte';
 import { localizeServerMessage } from './server-messages';
 
 describe('localizeServerMessage', () => {
-	beforeEach(() => locale.set('cs'));
+	beforeEach(() => (locale.current = 'cs'));
 
 	it('translates messages the backend really sends', () => {
 		expect(localizeServerMessage('Invalid credentials, or the account is temporarily locked')).toBe(
@@ -38,7 +38,7 @@ describe('localizeServerMessage', () => {
 	});
 
 	it('uses English when the language is English', () => {
-		locale.set('en');
+		locale.current = 'en';
 		expect(localizeServerMessage('password must be longer than or equal to 8 characters')).toBe(
 			'password must be at least 8 characters'
 		);

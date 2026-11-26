@@ -1,6 +1,6 @@
-import type { FilterCriteria } from '$lib/types';
-import { tr } from '$lib/i18n/translate';
-import type { MessageKey } from '$lib/i18n/messages';
+import type { FilterCriteria } from '#lib/types.js';
+import { t } from '#lib/i18n/translate.js';
+import type { MessageKey } from '#lib/i18n/messages/index.js';
 
 /** Midnight (local time) at the start of the day that contains `d`. */
 function startOfDay(d: Date): Date {
@@ -59,13 +59,13 @@ export function needsClientDueFilter(criteria: FilterCriteria): boolean {
 
 /** Translated text for a dynamic key; unknown values (e.g. a status added later) fall back to the raw value. */
 function lookup(key: string, fallback: string): string {
-	const text = tr(key as MessageKey);
+	const text = t(key as MessageKey);
 	return text === key ? fallback : text;
 }
 
 /**
- * Short human-readable chips for the criteria (in the current language; pass the `$t` store value as the second
- * argument from a template so the chips are recomputed when the language changes), e.g. ["Status: Open", "Due: this week"]. */
+ * Short human-readable chips for the criteria, in the current language, e.g. ["Status: Open", "Due: this week"].
+ * The translator is a parameter (normally `t`) so tests can pass their own. */
 export function describeCriteria(
 	c: FilterCriteria | null | undefined,
 	_languageDependency?: unknown
@@ -73,16 +73,16 @@ export function describeCriteria(
 	if (!c) return [];
 	const chips: string[] = [];
 	if (c.status)
-		chips.push(tr('filters.chip.status', { value: lookup(`common.status.${c.status}`, c.status) }));
+		chips.push(t('filters.chip.status', { value: lookup(`common.status.${c.status}`, c.status) }));
 	if (c.priority !== undefined && c.priority !== null)
 		chips.push(
-			tr('filters.chip.priority', { value: lookup(`common.priority.${c.priority}`, String(c.priority)) })
+			t('filters.chip.priority', { value: lookup(`common.priority.${c.priority}`, String(c.priority)) })
 		);
 	if (c.projectId !== undefined && c.projectId !== null)
-		chips.push(tr('filters.chip.project', { id: c.projectId }));
-	if (c.search && c.search.trim()) chips.push(tr('filters.chip.search', { value: c.search.trim() }));
-	if (c.due) chips.push(tr('filters.chip.due', { value: lookup(`filters.due.${c.due}`, c.due) }));
-	if (c.hideDone) chips.push(tr('filters.chip.hideDone'));
+		chips.push(t('filters.chip.project', { id: c.projectId }));
+	if (c.search && c.search.trim()) chips.push(t('filters.chip.search', { value: c.search.trim() }));
+	if (c.due) chips.push(t('filters.chip.due', { value: lookup(`filters.due.${c.due}`, c.due) }));
+	if (c.hideDone) chips.push(t('filters.chip.hideDone'));
 	return chips;
 }
 

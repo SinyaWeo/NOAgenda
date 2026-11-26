@@ -1,5 +1,5 @@
-import { apiGetAuth } from '$lib/api';
-import type { Project } from '$lib/types';
+import { apiGetAuth } from '#lib/api.js';
+import type { Project } from '#lib/types.js';
 
 /** id -> name of the projects the user can see (for labelling tasks with their project). */
 export async function loadProjectNames(): Promise<Record<number, string>> {

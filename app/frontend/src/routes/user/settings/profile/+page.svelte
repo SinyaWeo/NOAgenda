@@ -1,16 +1,16 @@
 <script lang="ts">
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { onMount } from 'svelte';
-	import { apiGetAuth, apiPostAuth, apiDeleteAuth, apiFetchAuth, API_BASE } from '$lib/api';
-	import { refreshCurrentUser } from '$lib/auth';
-	import { errMessage } from '$lib/errors';
-	import { t, tr, fmt, LOCALES, isLocale, setLocale } from '$lib/i18n';
-	import type { MessageKey } from '$lib/i18n';
-	import { timeZoneOptions } from '$lib/timezones';
+	import { apiGetAuth, apiPostAuth, apiDeleteAuth, apiFetchAuth, API_BASE } from '#lib/api.js';
+	import { refreshCurrentUser } from '#lib/auth.svelte.js';
+	import { errMessage } from '#lib/errors.js';
+	import { t, fmt, LOCALES, isLocale, setLocale } from '#lib/i18n/index.js';
+	import type { MessageKey } from '#lib/i18n/index.js';
+	import { timeZoneOptions } from '#lib/timezones.js';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
 	import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
-	import type { User } from '$lib/types';
-	import type { AvatarSettings } from '$lib/types-misc';
+	import type { User } from '#lib/types.js';
+	import type { AvatarSettings } from '#lib/types-misc.js';
 
 	let user = $state<User | null>(null);
 	let loading = $state(true);
@@ -114,11 +114,11 @@
 			pendingEmail = res.pendingEmail;
 			editing = null;
 			if (pendingEmail) {
-				success = tr('settings.email.sent', { email: pendingEmail });
+				success = t('settings.email.sent', { email: pendingEmail });
 			} else {
 				// Without working mail the address changes at once (or the current one cancelled a change).
 				user = await apiGetAuth<User>('/users/me');
-				success = tr('settings.email.changed');
+				success = t('settings.email.changed');
 			}
 		} catch (e: unknown) {
 			error = errMessage(e);
@@ -132,7 +132,7 @@
 		try {
 			await apiDeleteAuth('/user/settings/email/pending');
 			pendingEmail = null;
-			success = tr('settings.email.cancelled');
+			success = t('settings.email.cancelled');
 		} catch (e: unknown) {
 			error = errMessage(e);
 		}
@@ -147,13 +147,13 @@
 		fd.append('avatar', file);
 		try {
 			const res = await apiFetchAuth('/user/settings/avatar/upload', { method: 'PUT', body: fd });
-			if (!res.ok) throw new Error(tr('settings.avatar.failed'));
+			if (!res.ok) throw new Error(t('settings.avatar.failed'));
 			const data: AvatarSettings = await res.json();
 			if (user) user = { ...user, avatarUrl: data.avatarUrl ?? undefined };
 			await refreshCurrentUser(); // the header shows the new picture straight away
-			success = tr('settings.avatar.done');
+			success = t('settings.avatar.done');
 		} catch (e: unknown) {
-			error = errMessage(e, tr('settings.avatar.failed'));
+			error = errMessage(e, t('settings.avatar.failed'));
 		} finally {
 			input.value = '';
 		}
@@ -163,13 +163,13 @@
 		e.preventDefault();
 		clearMessages();
 		if (newPassword !== confirmPassword) {
-			error = tr('settings.password.mismatch');
+			error = t('settings.password.mismatch');
 			return;
 		}
 		savingPassword = true;
 		try {
 			await apiPostAuth('/user/settings/password', { oldPassword, newPassword });
-			success = tr('settings.password.done');
+			success = t('settings.password.done');
 			oldPassword = '';
 			newPassword = '';
 			confirmPassword = '';
@@ -187,7 +187,7 @@
 				apiGetAuth<{ pendingEmail: string | null }>('/user/settings/email')
 			]);
 		} catch {
-			error = tr('auth.profile.loadFailed');
+			error = t('auth.profile.loadFailed');
 		} finally {
 			loading = false;
 		}
@@ -201,24 +201,24 @@
 />
 
 <PageHeader
-	title={$t('settings.profile.title')}
-	back={{ href: '/user/settings', label: $t('settings.back') }}
+	title={t('settings.profile.title')}
+	back={{ href: '/user/settings', label: t('settings.back') }}
 />
 
 {#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 {#if success}<Alert color="green" class="mb-4">{success}</Alert>{/if}
 
 {#if loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
+	<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
 {:else if user}
 	<div class="flex flex-col gap-4 max-w-xl">
 		<Card class="max-w-none">
 			<div class="flex flex-col items-center gap-3 mb-6">
-				<label class="rounded-full cursor-pointer" title={$t('settings.avatar.upload')}>
+				<label class="rounded-full cursor-pointer" title={t('settings.avatar.upload')}>
 					{#if user.avatarUrl}
 						<img
 							src={resolveUrl(user.avatarUrl)}
-							alt={$t('auth.profile.avatar')}
+							alt={t('auth.profile.avatar')}
 							class="w-20 h-20 rounded-full object-cover hover:opacity-80"
 						/>
 					{:else}
@@ -228,10 +228,10 @@
 							{getInitials(user)}
 						</div>
 					{/if}
-					<span class="sr-only">{$t('settings.avatar.upload')}</span>
+					<span class="sr-only">{t('settings.avatar.upload')}</span>
 					<input type="file" accept="image/*" onchange={uploadAvatar} class="sr-only" />
 				</label>
-				<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{$t('settings.avatar.hint')}</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{t('settings.avatar.hint')}</p>
 				<div class="text-center w-full">
 					{#if editing === 'name'}
 						<form onsubmit={saveName}>
@@ -240,7 +240,7 @@
 								maxlength={255}
 								autofocus
 								disabled={saving}
-								aria-label={$t('settings.general.displayName')}
+								aria-label={t('settings.general.displayName')}
 								onblur={() => (editing = null)}
 								class="text-center"
 							/>
@@ -250,7 +250,7 @@
 							<button
 								type="button"
 								class="{VALUE} text-xl font-bold"
-								title={$t('tasks.details.change')}
+								title={t('tasks.details.change')}
 								onclick={editName}
 							>
 								{user.name || user.username}
@@ -263,12 +263,12 @@
 			<dl class="divide-y divide-gray-100 dark:divide-gray-700 m-0">
 				<div class="py-2.5 text-sm">
 					<div class="flex justify-between items-center gap-4">
-						<dt class={DT}>{$t('common.field.email')}</dt>
+						<dt class={DT}>{t('common.field.email')}</dt>
 						<dd class="m-0 text-gray-800 dark:text-gray-200 min-w-0 break-all">
 							<button
 								type="button"
 								class={VALUE}
-								title={$t('tasks.details.change')}
+								title={t('tasks.details.change')}
 								aria-expanded={editing === 'email'}
 								onclick={toggleEmail}
 							>
@@ -278,43 +278,43 @@
 					</div>
 					{#if pendingEmail}
 						<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0 text-right">
-							{$t('settings.email.pending', { email: pendingEmail })}
+							{t('settings.email.pending', { email: pendingEmail })}
 							·
 							<button
 								type="button"
 								class="bg-transparent border-0 p-0 cursor-pointer text-primary-700 dark:text-primary-500 hover:underline"
 								onclick={cancelEmailChange}
 							>
-								{$t('settings.email.cancelPending')}
+								{t('settings.email.cancelPending')}
 							</button>
 						</p>
 					{/if}
 					{#if editing === 'email'}
 						<form onsubmit={saveEmail} class={PANEL}>
-							<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{$t('settings.email.intro')}</p>
-							<Label for="new-email">{$t('settings.email.newEmail')}</Label>
+							<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{t('settings.email.intro')}</p>
+							<Label for="new-email">{t('settings.email.newEmail')}</Label>
 							<Input id="new-email" type="email" size="sm" bind:value={newEmail} required autofocus />
-							<Label for="email-pw">{$t('settings.email.currentPassword')}</Label>
+							<Label for="email-pw">{t('settings.email.currentPassword')}</Label>
 							<Input id="email-pw" type="password" size="sm" bind:value={emailPassword} required />
 							<div class="flex gap-2">
 								<Button type="submit" size="xs" disabled={saving}>
-									{saving ? $t('settings.email.sending') : $t('settings.email.submit')}
+									{saving ? t('settings.email.sending') : t('settings.email.submit')}
 								</Button>
 								<Button type="button" size="xs" color="light" onclick={() => (editing = null)}>
-									{$t('common.cancel')}
+									{t('common.cancel')}
 								</Button>
 							</div>
 						</form>
 					{/if}
 				</div>
 				<div class={ROW}>
-					<dt class={DT}>{$t('auth.profile.memberSince')}</dt>
+					<dt class={DT}>{t('auth.profile.memberSince')}</dt>
 					<dd class="m-0 text-gray-800 dark:text-gray-200">
-						{user.createdAt ? $fmt.date(user.createdAt) : '—'}
+						{user.createdAt ? fmt.date(user.createdAt) : '—'}
 					</dd>
 				</div>
 				<div class={ROW}>
-					<dt class={DT}>{$t('common.field.language')}</dt>
+					<dt class={DT}>{t('common.field.language')}</dt>
 					<dd class="m-0 text-gray-800 dark:text-gray-200">
 						{#if editing === 'language'}
 							<Select
@@ -323,7 +323,7 @@
 								autofocus
 								disabled={saving}
 								value={user.language ?? 'en'}
-								aria-label={$t('common.field.language')}
+								aria-label={t('common.field.language')}
 								onchange={(e) => save({ language: (e.target as HTMLSelectElement).value })}
 								onblur={() => (editing = null)}
 							>
@@ -333,7 +333,7 @@
 							<button
 								type="button"
 								class={VALUE}
-								title={$t('tasks.details.change')}
+								title={t('tasks.details.change')}
 								onclick={() => (editing = 'language')}
 							>
 								{languageName(user.language)}
@@ -342,7 +342,7 @@
 					</dd>
 				</div>
 				<div class={ROW}>
-					<dt class={DT}>{$t('auth.profile.timezone')}</dt>
+					<dt class={DT}>{t('auth.profile.timezone')}</dt>
 					<dd class="m-0 text-gray-800 dark:text-gray-200 min-w-0">
 						{#if editing === 'timezone'}
 							<Select
@@ -351,7 +351,7 @@
 								autofocus
 								disabled={saving}
 								value={user.timezone ?? 'UTC'}
-								aria-label={$t('auth.profile.timezone')}
+								aria-label={t('auth.profile.timezone')}
 								onchange={(e) => save({ timezone: (e.target as HTMLSelectElement).value })}
 								onblur={() => (editing = null)}
 							>
@@ -363,7 +363,7 @@
 							<button
 								type="button"
 								class={VALUE}
-								title={$t('tasks.details.change')}
+								title={t('tasks.details.change')}
 								onclick={() => (editing = 'timezone')}
 							>
 								{user.timezone ?? 'UTC'}
@@ -372,7 +372,7 @@
 					</dd>
 				</div>
 				<div class={ROW}>
-					<dt class={DT}>{$t('common.field.theme')}</dt>
+					<dt class={DT}>{t('common.field.theme')}</dt>
 					<dd class="m-0 text-gray-800 dark:text-gray-200">
 						{#if editing === 'theme'}
 							<Select
@@ -381,22 +381,22 @@
 								autofocus
 								disabled={saving}
 								value={user.theme ?? 'light'}
-								aria-label={$t('common.field.theme')}
+								aria-label={t('common.field.theme')}
 								onchange={(e) => save({ theme: (e.target as HTMLSelectElement).value })}
 								onblur={() => (editing = null)}
 							>
 								{#each ['light', 'dark', 'system'] as th (th)}
-									<option value={th}>{$t(`common.theme.${th}` as MessageKey)}</option>
+									<option value={th}>{t(`common.theme.${th}` as MessageKey)}</option>
 								{/each}
 							</Select>
 						{:else}
 							<button
 								type="button"
 								class={VALUE}
-								title={$t('tasks.details.change')}
+								title={t('tasks.details.change')}
 								onclick={() => (editing = 'theme')}
 							>
-								{themeName(user.theme, $t)}
+								{themeName(user.theme, t)}
 							</button>
 						{/if}
 					</dd>
@@ -406,15 +406,15 @@
 
 		<Card class="max-w-none">
 			<h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-				{$t('settings.password.title')}
+				{t('settings.password.title')}
 			</h2>
 			<form onsubmit={savePassword} class="flex flex-col gap-4">
 				<label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
 					<input type="checkbox" bind:checked={showPasswords} class="rounded" />
-					{$t('settings.password.show')}
+					{t('settings.password.show')}
 				</label>
 				<div>
-					<Label for="old-pw" class="mb-1">{$t('settings.password.current')}</Label>
+					<Label for="old-pw" class="mb-1">{t('settings.password.current')}</Label>
 					<div class="relative">
 						<Input
 							id="old-pw"
@@ -434,8 +434,8 @@
 				</div>
 				<div>
 					<Label for="new-pw" class="mb-1">
-						{$t('settings.password.new')}
-						<span class="text-xs text-gray-500 dark:text-gray-400">{$t('settings.password.min')}</span>
+						{t('settings.password.new')}
+						<span class="text-xs text-gray-500 dark:text-gray-400">{t('settings.password.min')}</span>
 					</Label>
 					<Input
 						id="new-pw"
@@ -446,7 +446,7 @@
 					/>
 				</div>
 				<div>
-					<Label for="confirm-pw" class="mb-1">{$t('settings.password.confirm')}</Label>
+					<Label for="confirm-pw" class="mb-1">{t('settings.password.confirm')}</Label>
 					<Input
 						id="confirm-pw"
 						type={showPasswords ? 'text' : 'password'}
@@ -456,7 +456,7 @@
 				</div>
 				<div class="pt-2 border-t border-gray-100 dark:border-gray-700">
 					<Button type="submit" disabled={savingPassword}>
-						{savingPassword ? $t('settings.password.updating') : $t('settings.password.submit')}
+						{savingPassword ? t('settings.password.updating') : t('settings.password.submit')}
 					</Button>
 				</div>
 			</form>

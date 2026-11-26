@@ -1,13 +1,13 @@
 <script lang="ts">
-	import LegalPage from '$lib/components/LegalPage.svelte';
-	import { t } from '$lib/i18n';
-	import { OPERATOR_NAME, CONTACT_EMAIL, LAST_UPDATED } from '$lib/legal';
+	import LegalPage from '#lib/components/LegalPage.svelte';
+	import { t } from '#lib/i18n/index.js';
+	import { OPERATOR_NAME, CONTACT_EMAIL, LAST_UPDATED } from '#lib/legal.js';
 	const operator = OPERATOR_NAME || '[Operator name and address]';
 	const contact = CONTACT_EMAIL || '[contact email]';
 </script>
 
-<LegalPage title={$t('legal.privacy.title')}>
-	<p class="meta">{$t('legal.lastUpdated', { date: LAST_UPDATED })}</p>
+<LegalPage title={t('legal.privacy.title')}>
+	<p class="meta">{t('legal.lastUpdated', { date: LAST_UPDATED })}</p>
 
 	<p>
 		This policy explains what personal data NOAgenda ("the service") stores about you, why, and what you can

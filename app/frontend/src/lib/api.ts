@@ -1,8 +1,8 @@
 // Centralized API utility for SvelteKit frontend
 // Set your backend base URL here or use an environment variable
-import { tr } from './i18n/translate';
+import { t } from './i18n/translate';
 import { localizeServerMessage } from './i18n/server-messages';
-import { needsStepUp, requestStepUp } from './stepUp';
+import { needsStepUp, requestStepUp } from './stepUp.svelte';
 
 /** Where the admin re-enters their password (see `StepUpDialog.svelte`). */
 export const STEP_UP_PATH = '/user/step-up';
@@ -52,24 +52,24 @@ export async function apiError(res: Response, fallback?: string): Promise<ApiErr
 	let message: string;
 	switch (res.status) {
 		case 403:
-			message = isGeneric ? tr('errors.forbidden') : specific();
+			message = isGeneric ? t('errors.forbidden') : specific();
 			break;
 		case 404:
-			message = isGeneric ? tr('errors.notFound') : specific();
+			message = isGeneric ? t('errors.notFound') : specific();
 			break;
 		case 413:
-			message = isGeneric ? tr('errors.tooLarge') : specific();
+			message = isGeneric ? t('errors.tooLarge') : specific();
 			break;
 		case 429:
-			message = tr('errors.rateLimited');
+			message = t('errors.rateLimited');
 			break;
 		default:
 			message =
 				res.status >= 500
-					? tr('errors.serverError')
+					? t('errors.serverError')
 					: server
 						? specific()
-						: (fallback ?? tr('errors.requestFailed'));
+						: (fallback ?? t('errors.requestFailed'));
 	}
 	return new ApiError(message, res.status);
 }
@@ -84,7 +84,7 @@ export function sessionExpired(): Error {
 			? '/user/login'
 			: `/user/login?reason=expired&redirect=${encodeURIComponent(here)}`;
 	}
-	return new ApiError(tr('errors.sessionExpired'), 401);
+	return new ApiError(t('errors.sessionExpired'), 401);
 }
 
 const ABSOLUTE = /^https?:\/\//i;

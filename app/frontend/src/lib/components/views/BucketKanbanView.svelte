@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/confirm';
-	import type { KanbanBucket, NodeStatus, Task } from '$lib/types';
-	import { BUCKET_STATUSES, effectiveBucketId, isLastOfStatus } from '$lib/kanban';
-	import type { BucketMoveHandler } from '$lib/types-views';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
+	import type { KanbanBucket, NodeStatus, Task } from '#lib/types.js';
+	import { BUCKET_STATUSES, effectiveBucketId, isLastOfStatus } from '#lib/kanban.js';
+	import type { BucketMoveHandler } from '#lib/types-views.js';
 	import { Button, Input, Select } from 'flowbite-svelte';
-	import { t, tr, fmt, type MessageKey } from '$lib/i18n';
+	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
 
 	interface Props {
 		tasks: Task[];
@@ -26,7 +26,7 @@
 
 	// Every task shows in a column: the bucket it was placed in, or the first one of its status.
 	const columnOf = $derived(new Map(tasks.map((t) => [t.id, effectiveBucketId(t, buckets)])));
-	const statusLabel = (s: NodeStatus) => $t(`common.status.${s}` as MessageKey);
+	const statusLabel = (s: NodeStatus) => t(`common.status.${s}` as MessageKey);
 
 	let newTitle = $state('');
 	let newStatus = $state<NodeStatus>('open');
@@ -101,7 +101,7 @@
 	}
 
 	async function remove(b: KanbanBucket) {
-		if (!onDelete || !(await confirmDialog(tr('views.kanban.confirmDelete', { title: b.title })))) return;
+		if (!onDelete || !(await confirmDialog(t('views.kanban.confirmDelete', { title: b.title })))) return;
 		await run(() => onDelete(b.id));
 	}
 </script>
@@ -119,14 +119,14 @@
 			{task.title}
 		</a>
 		{#if task.dueDate}<div class="text-xs text-gray-500 dark:text-gray-400">
-				{$fmt.date(task.dueDate)}
+				{fmt.date(task.dueDate)}
 			</div>{/if}
 		<Select
 			placeholder=""
 			value={columnOf.get(task.id) ?? ''}
 			onchange={(e) => onMove(task.id, Number((e.target as HTMLSelectElement).value))}
 			class="mt-2 text-xs"
-			aria-label={$t('views.kanban.moveTo')}
+			aria-label={t('views.kanban.moveTo')}
 		>
 			{#each buckets as b (b.id)}<option value={b.id}>{b.title}</option>{/each}
 		</Select>
@@ -158,30 +158,30 @@
 								bind:value={editTitle}
 								maxlength={255}
 								required
-								aria-label={$t('views.kanban.bucketName')}
+								aria-label={t('views.kanban.bucketName')}
 							/>
 							<Input
 								size="sm"
 								type="number"
 								min="0"
 								bind:value={editLimit}
-								placeholder={$t('views.kanban.limitPlaceholder')}
-								aria-label={$t('views.kanban.limit')}
+								placeholder={t('views.kanban.limitPlaceholder')}
+								aria-label={t('views.kanban.limit')}
 							/>
 							<Select
 								size="sm"
 								placeholder=""
 								bind:value={editStatus}
 								disabled={lastOfStatus}
-								title={lastOfStatus ? tr('views.kanban.lastOfStatus') : undefined}
-								aria-label={$t('views.kanban.status')}
+								title={lastOfStatus ? t('views.kanban.lastOfStatus') : undefined}
+								aria-label={t('views.kanban.status')}
 							>
 								{#each BUCKET_STATUSES as s (s)}<option value={s}>{statusLabel(s)}</option>{/each}
 							</Select>
 							<div class="flex gap-2">
-								<Button type="submit" size="xs" disabled={busy}>{$t('common.save')}</Button>
+								<Button type="submit" size="xs" disabled={busy}>{t('common.save')}</Button>
 								<Button type="button" size="xs" color="light" onclick={() => (editingId = null)}>
-									{$t('common.cancel')}
+									{t('common.cancel')}
 								</Button>
 							</div>
 						</form>
@@ -192,7 +192,7 @@
 								class="font-normal text-xs {overLimit
 									? 'text-red-600 dark:text-red-400'
 									: 'text-gray-500 dark:text-gray-400'}"
-								title={overLimit ? tr('views.kanban.overLimit') : undefined}
+								title={overLimit ? t('views.kanban.overLimit') : undefined}
 							>
 								({bucketTasks.length}{bucket.limit != null ? ` / ${bucket.limit}` : ''})
 							</span>
@@ -207,7 +207,7 @@
 										type="button"
 										class="px-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 disabled:opacity-30"
 										disabled={busy || i === 0}
-										aria-label={$t('views.kanban.moveLeft')}
+										aria-label={t('views.kanban.moveLeft')}
 										onclick={() => run(() => onReorder(bucket.id, -1))}
 									>
 										←
@@ -216,7 +216,7 @@
 										type="button"
 										class="px-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 disabled:opacity-30"
 										disabled={busy || i === buckets.length - 1}
-										aria-label={$t('views.kanban.moveRight')}
+										aria-label={t('views.kanban.moveRight')}
 										onclick={() => run(() => onReorder(bucket.id, 1))}
 									>
 										→
@@ -228,7 +228,7 @@
 										class="px-1 text-primary-600 hover:underline"
 										onclick={() => startEdit(bucket)}
 									>
-										{$t('common.edit')}
+										{t('common.edit')}
 									</button>
 								{/if}
 								{#if onDelete}
@@ -236,10 +236,10 @@
 										type="button"
 										class="px-1 text-red-600 hover:underline disabled:opacity-30 disabled:no-underline"
 										disabled={busy || lastOfStatus}
-										title={lastOfStatus ? tr('views.kanban.lastOfStatus') : undefined}
+										title={lastOfStatus ? t('views.kanban.lastOfStatus') : undefined}
 										onclick={() => remove(bucket)}
 									>
-										{$t('common.delete')}
+										{t('common.delete')}
 									</button>
 								{/if}
 							</div>
@@ -249,7 +249,7 @@
 				<div class="board-col-body">
 					{#each bucketTasks as task (task.id)}{@render card(task)}{/each}
 					{#if !bucketTasks.length}
-						<p class="text-xs text-gray-500 dark:text-gray-400 text-center m-0">{$t('views.column.empty')}</p>
+						<p class="text-xs text-gray-500 dark:text-gray-400 text-center m-0">{t('views.column.empty')}</p>
 					{/if}
 				</div>
 			</div>
@@ -257,7 +257,7 @@
 	</div>
 {:else}
 	<div class="text-center py-10 text-gray-500 dark:text-gray-400">
-		<p>{$t('views.kanban.noBuckets')}</p>
+		<p>{t('views.kanban.noBuckets')}</p>
 	</div>
 {/if}
 
@@ -266,13 +266,13 @@
 		<Input
 			bind:value={newTitle}
 			maxlength={255}
-			placeholder={$t('views.kanban.newBucketPlaceholder')}
-			aria-label={$t('views.kanban.newBucketPlaceholder')}
+			placeholder={t('views.kanban.newBucketPlaceholder')}
+			aria-label={t('views.kanban.newBucketPlaceholder')}
 			required
 		/>
-		<Select placeholder="" bind:value={newStatus} class="w-auto" aria-label={$t('views.kanban.status')}>
+		<Select placeholder="" bind:value={newStatus} class="w-auto" aria-label={t('views.kanban.status')}>
 			{#each BUCKET_STATUSES as s (s)}<option value={s}>{statusLabel(s)}</option>{/each}
 		</Select>
-		<Button type="submit" disabled={busy || !newTitle.trim()}>{$t('views.kanban.addBucket')}</Button>
+		<Button type="submit" disabled={busy || !newTitle.trim()}>{t('views.kanban.addBucket')}</Button>
 	</form>
 {/if}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { translate } from '$lib/i18n/translate';
-import type { MessageKey, Params } from '$lib/i18n';
-import type { ActivityEntry } from '$lib/types';
+import { translate } from '#lib/i18n/translate.js';
+import type { MessageKey, Params } from '#lib/i18n/index.js';
+import type { ActivityEntry } from '#lib/types.js';
 import { changeLines, describeActivity } from './activity';
 
 const en = (key: MessageKey, params?: Params) => translate('en', key, params);

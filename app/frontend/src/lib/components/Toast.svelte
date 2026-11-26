@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
-	import { toasts, dismissToast, type ToastItem } from '$lib/toast';
+	import { t } from '#lib/i18n/index.js';
+	import { toasts, dismissToast, type ToastItem } from '#lib/toast.svelte.js';
 
 	const colorClasses: Record<ToastItem['type'], string> = {
 		success:
@@ -17,7 +17,7 @@
 </script>
 
 <div class="fixed bottom-5 right-5 z-9999 flex flex-col gap-2 items-end pointer-events-none">
-	{#each $toasts as toast (toast.id)}
+	{#each toasts as toast (toast.id)}
 		<div
 			class="pointer-events-auto flex items-center gap-3 min-w-65 max-w-sm px-4 py-3 rounded-lg border shadow-lg text-sm font-medium {colorClasses[
 				toast.type
@@ -57,7 +57,7 @@
 			<button
 				onclick={() => dismissToast(toast.id)}
 				class="shrink-0 ml-1 opacity-60 hover:opacity-100 transition-opacity bg-transparent border-0 cursor-pointer p-0 leading-none"
-				aria-label={$t('layout.toast.dismiss')}
+				aria-label={t('layout.toast.dismiss')}
 			>
 				<svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
 					<path

@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { confirmDialog } from '$lib/confirm';
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { onMount } from 'svelte';
-	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '$lib/api';
-	import { errMessage } from '$lib/errors';
-	import { showToast } from '$lib/toast';
-	import { t, tr, fmt } from '$lib/i18n';
-	import type { MessageKey } from '$lib/i18n/messages';
-	import type { TrashEntry } from '$lib/types';
-	import type { IdeaTrashEntry } from '$lib/types-misc';
+	import { apiGetAuth, apiPostAuth, apiDeleteAuth } from '#lib/api.js';
+	import { errMessage } from '#lib/errors.js';
+	import { showToast } from '#lib/toast.svelte.js';
+	import { t, fmt } from '#lib/i18n/index.js';
+	import type { MessageKey } from '#lib/i18n/messages/index.js';
+	import type { TrashEntry } from '#lib/types.js';
+	import type { IdeaTrashEntry } from '#lib/types-misc.js';
 	import { Alert, Button, Card } from 'flowbite-svelte';
 
 	let items = $state<TrashEntry[]>([]);
@@ -36,7 +36,7 @@
 			].sort((a, b) => b.deletedAt.localeCompare(a.deletedAt));
 			error = '';
 		} catch (e) {
-			error = errMessage(e, tr('trash.loadFailed'));
+			error = errMessage(e, t('trash.loadFailed'));
 		} finally {
 			loaded = true;
 		}
@@ -47,10 +47,10 @@
 		busy = entry.id;
 		try {
 			await run();
-			showToast(tr(ok), 'success');
+			showToast(t(ok), 'success');
 			await load();
 		} catch (e) {
-			showToast(errMessage(e, tr(failed)), 'error');
+			showToast(errMessage(e, t(failed)), 'error');
 		} finally {
 			busy = null;
 		}
@@ -65,7 +65,7 @@
 		);
 
 	async function purge(e: TrashEntry) {
-		if (!(await confirmDialog(tr('trash.confirmPurge', { title: e.title ?? tr('trash.untitled') })))) return;
+		if (!(await confirmDialog(t('trash.confirmPurge', { title: e.title ?? t('trash.untitled') })))) return;
 		return act(
 			e,
 			() => apiDeleteAuth(e.type === 'idea' ? `/ideas/${e.id}/trash` : `/trash/${e.id}`),
@@ -76,15 +76,15 @@
 </script>
 
 <svelte:head>
-	<title>{$t('trash.title')}</title>
+	<title>{t('trash.title')}</title>
 </svelte:head>
 
 <div class="max-w-3xl">
-	<PageHeader title={$t('trash.title')} subtitle={$t('trash.hint')} />
+	<PageHeader title={t('trash.title')} subtitle={t('trash.hint')} />
 	{#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 	<Card class="max-w-none">
 		{#if loaded && !items.length && !error}
-			<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{$t('trash.empty')}</p>
+			<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{t('trash.empty')}</p>
 		{:else}
 			<ul class="list-none p-0 m-0">
 				{#each items as e, i (e.id)}
@@ -96,31 +96,31 @@
 					>
 						<div class="min-w-0">
 							<p class="text-sm font-medium text-gray-900 dark:text-white m-0 break-words">
-								{e.title ?? $t('trash.untitled')}
+								{e.title ?? t('trash.untitled')}
 								<span class="text-xs font-normal text-gray-500 dark:text-gray-400">
-									· {$t(`trash.type.${e.type}`)}
+									· {t(`trash.type.${e.type}`)}
 								</span>
 							</p>
 							<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
 								{#if e.deletedBy.username}
-									{$t('trash.deleted', {
-										when: $fmt.dateTime(e.deletedAt),
+									{t('trash.deleted', {
+										when: fmt.dateTime(e.deletedAt),
 										who: e.deletedBy.username
 									})}
 								{:else}
-									{$t('trash.deletedAt', { when: $fmt.dateTime(e.deletedAt) })}
+									{t('trash.deletedAt', { when: fmt.dateTime(e.deletedAt) })}
 								{/if}
 							</p>
 							<p class="text-xs text-gray-500 dark:text-gray-400 m-0">
-								{$t('trash.purgeAt', { when: $fmt.dateTime(e.purgeAt) })}
+								{t('trash.purgeAt', { when: fmt.dateTime(e.purgeAt) })}
 							</p>
 						</div>
 						<div class="flex gap-2 shrink-0">
 							<Button size="xs" disabled={busy !== null} onclick={() => restore(e)}>
-								{$t('trash.restore')}
+								{t('trash.restore')}
 							</Button>
 							<Button size="xs" color="light" disabled={busy !== null} onclick={() => purge(e)}>
-								{$t('trash.purge')}
+								{t('trash.purge')}
 							</Button>
 						</div>
 					</li>

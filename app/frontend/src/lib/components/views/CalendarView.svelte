@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { apiGetAuth, apiPutAuth, MAX_PAGE_SIZE } from '$lib/api';
-	import { authSession } from '$lib/auth';
+	import { apiGetAuth, apiPutAuth, MAX_PAGE_SIZE } from '#lib/api.js';
+	import { authSession } from '#lib/auth.svelte.js';
 	import {
 		addDaysKey,
 		bucketByDay,
@@ -16,14 +16,14 @@
 		weekRow,
 		type DayKey,
 		type WeekStart
-	} from '$lib/calendar';
-	import { errMessage } from '$lib/errors';
-	import { cleanCriteria, criteriaToQuery } from '$lib/filters';
-	import { t, tr, fmt, locale } from '$lib/i18n';
-	import { taskProjectId } from '$lib/project-groups';
-	import { showToast } from '$lib/toast';
-	import type { FilterCriteria, Task } from '$lib/types';
-	import type { TaskOccurrence } from '$lib/types-task';
+	} from '#lib/calendar.js';
+	import { errMessage } from '#lib/errors.js';
+	import { cleanCriteria, criteriaToQuery } from '#lib/filters.js';
+	import { t, fmt, locale } from '#lib/i18n/index.js';
+	import { taskProjectId } from '#lib/project-groups.js';
+	import { showToast } from '#lib/toast.svelte.js';
+	import type { FilterCriteria, Task } from '#lib/types.js';
+	import type { TaskOccurrence } from '#lib/types-task.js';
 	import { Button, ButtonGroup } from 'flowbite-svelte';
 	import { isOverdue } from './util';
 
@@ -44,8 +44,8 @@
 		| { kind: 'occurrence'; id: number; date: string; occurrence: TaskOccurrence };
 
 	const MAX_CHIPS = 3;
-	const zone = $derived(effectiveZone($authSession.user?.timezone));
-	const weekStart = $derived<WeekStart>($locale === 'cs' ? 1 : 0);
+	const zone = $derived(effectiveZone(authSession.user?.timezone));
+	const weekStart = $derived<WeekStart>(locale.current === 'cs' ? 1 : 0);
 	const todayKey = $derived(dayKeyOf(new Date(), zone));
 
 	let mode = $state<'month' | 'week'>(untrack(() => initialMode));
@@ -61,10 +61,10 @@
 	const focusMonth = $derived(keyParts(focus).month);
 	const title = $derived(
 		mode === 'month'
-			? $fmt.monthYear(keyToDate(dayKey(keyParts(focus).year, keyParts(focus).month, 1)))
-			: `${$fmt.date(keyToDate(days[0]))} – ${$fmt.date(keyToDate(days[6]))}`
+			? fmt.monthYear(keyToDate(dayKey(keyParts(focus).year, keyParts(focus).month, 1)))
+			: `${fmt.date(keyToDate(days[0]))} – ${fmt.date(keyToDate(days[6]))}`
 	);
-	const headers = $derived(weekRow(todayKey, weekStart).map((k) => $fmt.weekdayShort(keyToDate(k))));
+	const headers = $derived(weekRow(todayKey, weekStart).map((k) => fmt.weekdayShort(keyToDate(k))));
 
 	// Filters other than the date range: future cycles cannot honour them, so they are left out while any apply.
 	const baseQuery = $derived(criteriaToQuery({ ...cleanCriteria(criteria ?? {}), due: undefined }));
@@ -103,7 +103,7 @@
 		} catch (e: unknown) {
 			if (seq !== loadSeq) return;
 			loadError = true;
-			showToast(errMessage(e, tr('views.calendar.loadFailed')), 'error');
+			showToast(errMessage(e, t('views.calendar.loadFailed')), 'error');
 		}
 	}
 
@@ -177,10 +177,10 @@
 		try {
 			const updated = await apiPutAuth<Task>(`/tasks/${task.id}`, rescheduled(task, key, zone));
 			tasks = tasks.map((x) => (x.id === task.id ? updated : x));
-			showToast(tr('views.calendar.moved'), 'success');
+			showToast(t('views.calendar.moved'), 'success');
 			if (updated.repeatAfter) await load(); // its future cycles moved with it
 		} catch (err: unknown) {
-			showToast(errMessage(err, tr('views.calendar.moveFailed')), 'error');
+			showToast(errMessage(err, t('views.calendar.moveFailed')), 'error');
 		}
 	}
 
@@ -190,22 +190,20 @@
 <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
 	<div class="flex items-center gap-2">
 		<ButtonGroup>
-			<Button size="xs" color="light" aria-label={$t('views.calendar.prev')} onclick={() => step(-1)}>
+			<Button size="xs" color="light" aria-label={t('views.calendar.prev')} onclick={() => step(-1)}>
 				‹
 			</Button>
-			<Button size="xs" color="light" onclick={() => (anchor = null)}>{$t('views.calendar.today')}</Button>
-			<Button size="xs" color="light" aria-label={$t('views.calendar.next')} onclick={() => step(1)}>
-				›
-			</Button>
+			<Button size="xs" color="light" onclick={() => (anchor = null)}>{t('views.calendar.today')}</Button>
+			<Button size="xs" color="light" aria-label={t('views.calendar.next')} onclick={() => step(1)}>›</Button>
 		</ButtonGroup>
 		<h2 class="text-lg font-semibold m-0 capitalize text-gray-800 dark:text-gray-100">{title}</h2>
 	</div>
 	<ButtonGroup>
 		<Button size="xs" color={mode === 'month' ? 'primary' : 'light'} onclick={() => (mode = 'month')}>
-			{$t('views.calendar.month')}
+			{t('views.calendar.month')}
 		</Button>
 		<Button size="xs" color={mode === 'week' ? 'primary' : 'light'} onclick={() => (mode = 'week')}>
-			{$t('views.calendar.week')}
+			{t('views.calendar.week')}
 		</Button>
 	</ButtonGroup>
 </div>
@@ -225,7 +223,7 @@
 			class:calendar-day-tall={mode === 'week'}
 			role="gridcell"
 			tabindex="-1"
-			aria-label={$fmt.dateLong(keyToDate(key))}
+			aria-label={fmt.dateLong(keyToDate(key))}
 			ondragover={(e) => onDragOver(e, key)}
 			ondragleave={(e) => {
 				if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) overDay = null;
@@ -256,7 +254,7 @@
 						href="/tasks/{entry.occurrence.taskId}"
 						class="calendar-task-chip calendar-task-future"
 						data-priority={entry.occurrence.priority}
-						title="{entry.occurrence.title ?? ''} — {$t('views.calendar.repeats')}"
+						title="{entry.occurrence.title ?? ''} — {t('views.calendar.repeats')}"
 					>
 						<span aria-hidden="true">↻</span>
 						{entry.occurrence.title ?? ''}
@@ -268,7 +266,7 @@
 			{/each}
 			{#if shown.length < entries.length}
 				<button type="button" class="calendar-more" onclick={() => showWeekOf(key)}>
-					{$t('views.calendar.more', { count: entries.length - shown.length })}
+					{t('views.calendar.more', { count: entries.length - shown.length })}
 				</button>
 			{/if}
 		</div>
@@ -276,6 +274,6 @@
 </div>
 
 <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
-	{filtered ? $t('views.calendar.filtersNote') : $t('views.calendar.legend')}
+	{filtered ? t('views.calendar.filtersNote') : t('views.calendar.legend')}
 </p>
-{#if loadError}<p class="text-xs text-red-600 mt-1">{$t('views.calendar.loadFailed')}</p>{/if}
+{#if loadError}<p class="text-xs text-red-600 mt-1">{t('views.calendar.loadFailed')}</p>{/if}

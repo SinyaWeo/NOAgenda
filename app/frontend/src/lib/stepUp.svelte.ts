@@ -1,7 +1,7 @@
-import { writable } from 'svelte/store';
-
 /** The open step-up prompt (rendered once by `StepUpDialog.svelte`); `resolve(true)` after a successful step-up. */
-export const pendingStepUp = writable<{ resolve: (ok: boolean) => void } | null>(null);
+export const pendingStepUp = $state<{ current: { resolve: (ok: boolean) => void } | null }>({
+	current: null
+});
 
 let inFlight: Promise<boolean> | null = null;
 
@@ -11,7 +11,7 @@ let inFlight: Promise<boolean> | null = null;
  * one prompt.
  */
 export function requestStepUp(): Promise<boolean> {
-	inFlight ??= new Promise<boolean>((resolve) => pendingStepUp.set({ resolve })).finally(() => {
+	inFlight ??= new Promise<boolean>((resolve) => (pendingStepUp.current = { resolve })).finally(() => {
 		inFlight = null;
 	});
 	return inFlight;

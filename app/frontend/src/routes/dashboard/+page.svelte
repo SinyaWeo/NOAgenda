@@ -1,28 +1,26 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { derived, writable } from 'svelte/store';
-	import { apiGetAuth, apiPostAuth, apiGet } from '$lib/api';
-	import { authSession, initializeAuth } from '$lib/auth';
+	import { apiGetAuth, apiPostAuth, apiGet } from '#lib/api.js';
+	import { authSession, initializeAuth } from '#lib/auth.svelte.js';
 	import { goto } from '$app/navigation';
 	import { Alert, Button, Card, Input, Select, Textarea } from 'flowbite-svelte';
 	import { ExclamationCircleOutline, CaretRightSolid } from 'flowbite-svelte-icons';
-	import NotesCard from '$lib/components/NotesCard.svelte';
-	import CalendarView from '$lib/components/views/CalendarView.svelte';
-	import { showToast } from '$lib/toast';
-	import { errMessage } from '$lib/errors';
-	import { t, fmt, tr } from '$lib/i18n';
-	import { MAX_TASK_TITLE, needsTextarea, taskTitles } from '$lib/quick-add';
-	import type { Project, Quote, Task } from '$lib/types';
+	import NotesCard from '#lib/components/NotesCard.svelte';
+	import CalendarView from '#lib/components/views/CalendarView.svelte';
+	import { showToast } from '#lib/toast.svelte.js';
+	import { errMessage } from '#lib/errors.js';
+	import { t, fmt } from '#lib/i18n/index.js';
+	import { MAX_TASK_TITLE, needsTextarea, taskTitles } from '#lib/quick-add.js';
+	import type { Project, Quote, Task } from '#lib/types.js';
 
-	const user = derived(authSession, ($authSession) => $authSession.user);
-	const projects = writable<Project[]>([]);
-	const allProjects = writable<Project[]>([]); // every project, for the quick-add choice
-	const projectCount = writable(0); // total, not just the few shown below
-	const error = writable('');
-	const upcomingTasks = writable<Task[]>([]);
-	const overdueTasks = writable<Task[]>([]);
-	const loading = writable(true);
-	const quote = writable<Quote | null>(null);
+	const user = $derived(authSession.user);
+	let allProjects = $state<Project[]>([]); // every project, for the quick-add choice
+	let projectCount = $state(0); // total, not just the few shown below
+	let error = $state('');
+	let upcomingTasks = $state<Task[]>([]);
+	let overdueTasks = $state<Task[]>([]);
+	let loading = $state(true);
+	let quote = $state<Quote | null>(null);
 
 	let quickText = $state('');
 	let quickProjectId = $state('');
@@ -61,7 +59,7 @@
 	}
 
 	onMount(async () => {
-		const me = $user ?? (await initializeAuth());
+		const me = user ?? (await initializeAuth());
 		if (!me) {
 			goto('/user/login');
 			return;
@@ -69,7 +67,7 @@
 		await refresh();
 		try {
 			const q = await apiGet<Quote | null>('/quotes/random');
-			quote.set(q);
+			quote = q;
 		} catch (_) {}
 	});
 
@@ -95,17 +93,16 @@
 				apiGetAuth<Task[]>(`/tasks?${overdueQuery}`),
 				apiGetAuth<Task[]>(`/tasks?${upcomingQuery}`)
 			]);
-			projectCount.set(p.length);
-			projects.set(p.slice(0, 5));
-			allProjects.set(p);
-			error.set('');
-			overdueTasks.set(overdue);
-			upcomingTasks.set(upcoming);
+			projectCount = p.length;
+			allProjects = p;
+			error = '';
+			overdueTasks = overdue;
+			upcomingTasks = upcoming;
 		} catch (e: unknown) {
 			// Do not pretend an empty dashboard: say that loading failed.
-			error.set(errMessage(e, tr('dashboard.loadFailed')));
+			error = errMessage(e, t('dashboard.loadFailed'));
 		} finally {
-			loading.set(false);
+			loading = false;
 		}
 	}
 
@@ -114,7 +111,7 @@
 		const titles = taskTitles(quickText);
 		if (!titles.length) return;
 		if (titles.some((l) => l.length > MAX_TASK_TITLE)) {
-			showToast(tr('dashboard.quickAdd.lineTooLong', { max: MAX_TASK_TITLE }), 'error');
+			showToast(t('dashboard.quickAdd.lineTooLong', { max: MAX_TASK_TITLE }), 'error');
 			return;
 		}
 		adding = true;
@@ -130,7 +127,7 @@
 			quickText = '';
 		} catch (e: unknown) {
 			quickText = titles.slice(done).join('\n');
-			showToast(errMessage(e, tr('dashboard.quickAdd.failed')), 'error');
+			showToast(errMessage(e, t('dashboard.quickAdd.failed')), 'error');
 		} finally {
 			adding = false;
 			if (done) await refresh();
@@ -148,25 +145,25 @@
 				...(quickProjectId ? { projectId: Number(quickProjectId) } : {})
 			});
 			quickText = '';
-			showToast(tr('dashboard.quickAdd.ideaAdded'));
+			showToast(t('dashboard.quickAdd.ideaAdded'));
 		} catch (e: unknown) {
-			showToast(errMessage(e, tr('dashboard.quickAdd.ideaFailed')), 'error');
+			showToast(errMessage(e, t('dashboard.quickAdd.ideaFailed')), 'error');
 		} finally {
 			adding = false;
 		}
 	}
 </script>
 
-{#if $loading}
-	<p class="text-gray-500 dark:text-gray-400">{$t('common.loading')}</p>
+{#if loading}
+	<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
 {:else}
 	<div>
-		{#if $error}<Alert color="red" class="mb-4">{$error}</Alert>{/if}
+		{#if error}<Alert color="red" class="mb-4">{error}</Alert>{/if}
 		<!-- Header row: date left, stat cards right -->
 		<div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
 			<div class="min-w-0">
 				<p class="text-gray-500 dark:text-gray-400 mt-0 mb-0">
-					{$fmt.dateLong(new Date())}
+					{fmt.dateLong(new Date())}
 				</p>
 			</div>
 
@@ -174,40 +171,40 @@
 			<div class="flex gap-3 shrink-0">
 				<Card class="p-4 text-center">
 					<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
-						{$t('dashboard.stat.projects')}
+						{t('dashboard.stat.projects')}
 					</p>
 					<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
-						{$projectCount}
+						{projectCount}
 					</p>
 				</Card>
 				<Card class="p-4 text-center">
 					<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0">
-						{$t('dashboard.stat.upcoming')}
+						{t('dashboard.stat.upcoming')}
 					</p>
 					<p class="text-2xl font-bold text-gray-900 dark:text-white mt-1 mb-0">
-						{$upcomingTasks.length}
+						{upcomingTasks.length}
 					</p>
 				</Card>
-				{#if $overdueTasks.length > 0}
+				{#if overdueTasks.length > 0}
 					<Card class="p-4 text-center border-red-300 dark:bg-gray-800 dark:border-red-700">
 						<p class="text-xs font-medium text-red-600 dark:text-red-400 uppercase tracking-wide m-0">
-							{$t('dashboard.stat.overdue')}
+							{t('dashboard.stat.overdue')}
 						</p>
 						<p class="text-2xl font-bold text-red-600 dark:text-red-400 mt-1 mb-0">
-							{$overdueTasks.length}
+							{overdueTasks.length}
 						</p>
 					</Card>
 				{/if}
 			</div>
 		</div>
 
-		{#if $quote}
+		{#if quote}
 			<blockquote
 				class="relative bg-white dark:bg-gray-800 border-l-4 border-primary-500 rounded-lg px-5 py-4 mb-6 shadow-sm"
 			>
-				<p class="text-gray-700 dark:text-gray-200 italic m-0">“{$quote.text}”</p>
-				{#if $quote.author}
-					<footer class="mt-2 text-sm text-gray-500 dark:text-gray-400">— {$quote.author}</footer>
+				<p class="text-gray-700 dark:text-gray-200 italic m-0">“{quote.text}”</p>
+				{#if quote.author}
+					<footer class="mt-2 text-sm text-gray-500 dark:text-gray-400">— {quote.author}</footer>
 				{/if}
 			</blockquote>
 		{/if}
@@ -218,10 +215,10 @@
 			<!-- Quick add: a task per line, or one idea -->
 			<Card class="max-w-none h-full lg:col-span-2">
 				<h2 class="text-base font-semibold text-gray-900 dark:text-white mb-3">
-					{$t('dashboard.quickAdd.title')}
+					{t('dashboard.quickAdd.title')}
 				</h2>
 				<p class="text-sm whitespace-pre-line text-gray-500 dark:text-gray-400 -mt-2 mb-3">
-					{$t('dashboard.quickAdd.hint')}
+					{t('dashboard.quickAdd.hint')}
 				</p>
 				<form
 					onsubmit={(e) => {
@@ -235,8 +232,8 @@
 							bind:value={quickText}
 							bind:elementRef={quickArea}
 							rows={4}
-							placeholder={$t('dashboard.quickAdd.placeholder')}
-							aria-label={$t('dashboard.quickAdd.placeholder')}
+							placeholder={t('dashboard.quickAdd.placeholder')}
+							aria-label={t('dashboard.quickAdd.placeholder')}
 							class="w-full"
 						/>
 					{:else}
@@ -245,43 +242,43 @@
 							bind:value={quickText}
 							onpaste={onQuickPaste}
 							onkeydown={onQuickKeydown}
-							placeholder={$t('dashboard.quickAdd.placeholder')}
-							aria-label={$t('dashboard.quickAdd.placeholder')}
+							placeholder={t('dashboard.quickAdd.placeholder')}
+							aria-label={t('dashboard.quickAdd.placeholder')}
 							class="w-full"
 						/>
 					{/if}
 					<Select
 						placeholder=""
 						bind:value={quickProjectId}
-						aria-label={$t('common.field.project')}
+						aria-label={t('common.field.project')}
 						class="w-full"
 					>
-						<option value="">{$t('dashboard.quickAdd.noProject')}</option>
-						{#each $allProjects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
+						<option value="">{t('dashboard.quickAdd.noProject')}</option>
+						{#each allProjects as p (p.id)}<option value={String(p.id)}>{p.name}</option>{/each}
 					</Select>
 					<div class="flex gap-2 flex-wrap">
 						<Button type="button" onclick={quickAddTasks} disabled={adding || !taskTitles(quickText).length}>
-							{adding ? $t('dashboard.quickAdd.adding') : $t('dashboard.quickAdd.addTasks')}
+							{adding ? t('dashboard.quickAdd.adding') : t('dashboard.quickAdd.addTasks')}
 						</Button>
 						<Button type="button" color="light" onclick={quickAddIdea} disabled={adding || !quickText.trim()}>
-							{$t('dashboard.quickAdd.addIdea')}
+							{t('dashboard.quickAdd.addIdea')}
 						</Button>
 					</div>
 				</form>
 			</Card>
 
-			<div class="min-w-0 {$overdueTasks.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}">
+			<div class="min-w-0 {overdueTasks.length > 0 ? 'lg:col-span-3' : 'lg:col-span-4'}">
 				<!-- Upcoming tasks -->
 				<Card class="max-w-none h-full">
 					<div class="flex justify-between items-center mb-3">
 						<h2 class="text-base font-semibold text-gray-900 dark:text-white m-0">
-							{$t('dashboard.upcomingTasks.title')}
+							{t('dashboard.upcomingTasks.title')}
 						</h2>
 						<a
 							href="/upcoming"
 							class="text-sm text-primary-600 dark:text-primary-400 no-underline hover:underline"
 						>
-							{$t('dashboard.viewAll')}
+							{t('dashboard.viewAll')}
 							<CaretRightSolid class="w-3 h-3 inline ml-0.5" />
 						</a>
 					</div>
@@ -289,15 +286,15 @@
 				</Card>
 			</div>
 			<!-- Overdue -->
-			{#if $overdueTasks.length > 0}
+			{#if overdueTasks.length > 0}
 				<Card class="max-w-none h-full border-red-300 dark:bg-gray-800 dark:border-red-700">
 					<div class="flex items-center gap-2 mb-3">
 						<ExclamationCircleOutline class="w-4 h-4 text-red-500" />
 						<h2 class="text-base font-semibold text-red-600 dark:text-red-400 m-0">
-							{$t('dashboard.overdue.title')}
+							{t('dashboard.overdue.title')}
 						</h2>
 					</div>
-					{#each $overdueTasks as task (task.id)}
+					{#each overdueTasks as task (task.id)}
 						<div
 							class="flex justify-between items-center py-1.5 border-b border-red-100 dark:border-red-800 last:border-0"
 						>
@@ -306,7 +303,7 @@
 								class="text-sm truncate text-gray-800 dark:text-gray-200 hover:underline"
 							>
 								{task.title}
-								<span class="text-xs text-red-500 shrink-0 ml-2">{$fmt.date(task.dueDate)}</span>
+								<span class="text-xs text-red-500 shrink-0 ml-2">{fmt.date(task.dueDate)}</span>
 							</a>
 						</div>
 					{/each}

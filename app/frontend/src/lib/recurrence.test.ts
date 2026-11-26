@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { readable } from 'svelte/store';
 
 const showToast = vi.fn();
-vi.mock('$lib/toast', () => ({ showToast: (...a: unknown[]) => showToast(...a) }));
-vi.mock('$lib/i18n', () => ({
-	tr: (key: string, params?: Record<string, unknown>) => `${key}:${params?.date ?? ''}`,
-	fmt: readable({ date: (d: string) => `D(${d})` })
+vi.mock('#lib/toast.svelte.js', () => ({ showToast: (...a: unknown[]) => showToast(...a) }));
+vi.mock('#lib/i18n/index.js', () => ({
+	t: (key: string, params?: Record<string, unknown>) => `${key}:${params?.date ?? ''}`,
+	fmt: { date: (d: string) => `D(${d})` }
 }));
 
 import { announceRecurrence } from './recurrence';

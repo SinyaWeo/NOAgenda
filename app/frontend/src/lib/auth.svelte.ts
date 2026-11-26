@@ -1,5 +1,6 @@
-import { get, writable } from 'svelte/store';
 import { apiFetchAuth, clearToken, endServerSession, getToken, refreshAccessToken } from './api';
+import { isLocale } from './i18n/core';
+import { setLocale } from './i18n/locale.svelte';
 import type { User } from './types';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -9,34 +10,47 @@ type AuthSession = {
 	user: User | null;
 };
 
-export const authSession = writable<AuthSession>({
+/** Who is signed in. Read `authSession.status` / `authSession.user`; change it only through this module. */
+export const authSession = $state<AuthSession>({
 	status: 'loading',
 	user: null
 });
+
+function setSession(status: AuthStatus, user: User | null): void {
+	authSession.status = status;
+	authSession.user = user;
+	// A signed-in user's saved language wins over this browser's guess.
+	if (isLocale(user?.language)) setLocale(user.language);
+}
+
+/** Change fields of the signed-in user locally (after the server accepted them). */
+export function patchCurrentUser(patch: Partial<User>): void {
+	if (authSession.user) authSession.user = { ...authSession.user, ...patch };
+}
 
 let refreshPromise: Promise<User | null> | null = null;
 
 export async function refreshCurrentUser(): Promise<User | null> {
 	// No access token (e.g. it was cleared or expired long ago): a valid refresh cookie can still restore the session.
 	if (!getToken() && !(await refreshAccessToken())) {
-		authSession.set({ status: 'unauthenticated', user: null });
+		setSession('unauthenticated', null);
 		return null;
 	}
 
-	authSession.update((s) => ({ ...s, status: 'loading' }));
+	authSession.status = 'loading';
 	refreshPromise = (async () => {
 		try {
 			const res = await apiFetchAuth('/users/me');
 			if (!res.ok) {
 				if (res.status === 401) clearToken();
-				authSession.set({ status: 'unauthenticated', user: null });
+				setSession('unauthenticated', null);
 				return null;
 			}
 			const user = await res.json();
-			authSession.set({ status: 'authenticated', user });
+			setSession('authenticated', user);
 			return user;
 		} catch (_) {
-			authSession.set({ status: 'unauthenticated', user: null });
+			setSession('unauthenticated', null);
 			return null;
 		} finally {
 			refreshPromise = null;
@@ -59,14 +73,13 @@ export async function logout(): Promise<void> {
 
 export function clearAuthSession() {
 	clearToken();
-	authSession.set({ status: 'unauthenticated', user: null });
+	setSession('unauthenticated', null);
 }
 
 export async function getCurrentUser(): Promise<User | null> {
 	if (refreshPromise) return refreshPromise;
-	const session = get(authSession);
-	if (session.status === 'authenticated' && session.user !== null) {
-		return session.user;
+	if (authSession.status === 'authenticated' && authSession.user !== null) {
+		return authSession.user;
 	}
 	return refreshCurrentUser();
 }
