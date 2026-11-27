@@ -7,7 +7,8 @@
 	import type { Project } from '#lib/types.js';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
+	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
+	import { descendantIds, projectOptions } from '#lib/project-tree.js';
 	import { showToast } from '#lib/toast.svelte.js';
 	import { singleUserMode } from '#lib/appConfig.svelte.js';
 	import { t } from '#lib/i18n/index.js';
@@ -15,14 +16,37 @@
 	let name = $state('');
 	let description = $state('');
 	let saving = $state(false);
+	/** The parent as loaded ('' = top level) and as picked now. */
+	let loadedParentId = $state('');
+	let parentId = $state('');
+	/** Every project the user can see; the picker offers those they may write to, minus this one and its subprojects. */
+	let allProjects = $state<Project[]>([]);
+	const parentOptions = $derived.by(() => {
+		const id = Number(page.params.id);
+		const below = descendantIds(allProjects, id);
+		return projectOptions(
+			allProjects.filter(
+				(p) =>
+					p.id !== id &&
+					!below.has(p.id) &&
+					(p.access === 'write' || p.access === 'admin' || String(p.id) === loadedParentId)
+			)
+		);
+	});
 
 	const pageLoad = loadOnParamChange(
 		() => page.params.id ?? '',
 		async (id, isStale) => {
-			const p = await apiGetAuth<Project>(`/projects/${id}`);
+			const [p, all] = await Promise.all([
+				apiGetAuth<Project>(`/projects/${id}`),
+				apiGetAuth<Project[]>('/nodes?type=project&includeArchived=true').catch((): Project[] => [])
+			]);
 			if (isStale()) return;
 			name = p.name ?? '';
 			description = p.description ?? '';
+			loadedParentId = p.parentId != null ? String(p.parentId) : '';
+			parentId = loadedParentId;
+			allProjects = all;
 		}
 	);
 
@@ -33,7 +57,8 @@
 		try {
 			await apiPutAuth(`/projects/${page.params.id}`, {
 				name,
-				description
+				description,
+				...(parentId !== loadedParentId ? { parentId: parentId ? Number(parentId) : null } : {})
 			});
 			showToast(t('projects.edit.saved'), 'success');
 			goto(`/projects/${page.params.id}`);
@@ -77,6 +102,18 @@
 				<Label for="proj-desc" class="mb-1">{t('common.field.description')}</Label>
 				<Textarea id="proj-desc" bind:value={description} rows={4} />
 			</div>
+			{#if parentOptions.length || parentId}
+				<div>
+					<Label for="proj-parent" class="mb-1">{t('projects.parent.label')}</Label>
+					<Select id="proj-parent" placeholder="" bind:value={parentId}>
+						<option value="">{t('projects.parent.none')}</option>
+						{#each parentOptions as o (o.id)}
+							<option value={String(o.id)}>{o.label}</option>
+						{/each}
+					</Select>
+					<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">{t('projects.parent.hint')}</p>
+				</div>
+			{/if}
 			<div class="flex gap-2">
 				<Button type="submit" disabled={saving}>
 					{saving ? t('common.saving') : t('projects.edit.saveChanges')}

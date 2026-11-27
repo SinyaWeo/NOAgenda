@@ -5,7 +5,9 @@
 	import { singleUserMode } from '#lib/appConfig.svelte.js';
 	import type { Permission, Project, Team } from '#lib/types.js';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import { projectOptions } from '#lib/project-tree.js';
 	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
 	import { showToast } from '#lib/toast.svelte.js';
 	import { t } from '#lib/i18n/index.js';
@@ -18,13 +20,23 @@
 	let teams = $state<Team[]>([]);
 	let teamId = $state('');
 	let teamPermission = $state<Permission>('write');
+	/** Projects the new one can go under (the user may write there); `?parentId=` preselects one. */
+	let parents = $state<Project[]>([]);
+	let parentId = $state(page.url.searchParams.get('parentId') ?? '');
+	const parentOptions = $derived(projectOptions(parents));
 
 	onMount(async () => {
+		try {
+			const all = await apiGetAuth<Project[]>('/nodes?type=project');
+			parents = all.filter((p) => p.access === 'write' || p.access === 'admin');
+		} catch {
+			// no parent picker: the project goes at the top level
+		}
 		if (singleUserMode.current) return;
 		try {
 			teams = await apiGetAuth<Team[]>('/teams');
-			// In just one team: that is almost always who the project is for.
-			if (teams.length === 1) teamId = String(teams[0].id);
+			// In just one team, a new top-level project is almost always for it (a subproject inherits its parent's).
+			if (teams.length === 1 && !parentId) teamId = String(teams[0].id);
 		} catch {
 			// no teams: the project is created just for the user
 		}
@@ -38,6 +50,7 @@
 			const project = await apiPostAuth<Project>('/projects', {
 				name,
 				description,
+				...(parentId ? { parentId: Number(parentId) } : {}),
 				...(teamId && !singleUserMode.current ? { teamId: Number(teamId), teamPermission } : {})
 			});
 			showToast(t('projects.create.created'), 'success');
@@ -66,6 +79,20 @@
 			<Label for="proj-desc" class="mb-1">{t('common.field.description')}</Label>
 			<Textarea id="proj-desc" bind:value={description} rows={4} />
 		</div>
+		{#if parentOptions.length}
+			<div>
+				<Label for="proj-parent" class="mb-1">{t('projects.parent.label')}</Label>
+				<Select id="proj-parent" placeholder="" bind:value={parentId}>
+					<option value="">{t('projects.parent.none')}</option>
+					{#each parentOptions as o (o.id)}
+						<option value={String(o.id)}>{o.label}</option>
+					{/each}
+				</Select>
+				{#if parentId}
+					<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">{t('projects.parent.hint')}</p>
+				{/if}
+			</div>
+		{/if}
 		{#if !singleUserMode.current && teams.length}
 			<div class="flex flex-col sm:flex-row gap-4">
 				<div class="flex-1">

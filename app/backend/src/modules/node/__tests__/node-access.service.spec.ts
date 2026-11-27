@@ -15,16 +15,32 @@ function build(nodes: N[], grants: Record<number, string[]> = {}, assigned: [num
     manager: {
       // args: [projectId, userId, projectId, userId]
       query: jest.fn(async (sql: string, args: number[]) =>
-        sql.includes('WITH RECURSIVE')
-          ? // projectIdsOf: the closest project above each start node
+        sql.includes('ownerId')
+          ? // projectAncestors: each start project and every project above it
             args.flatMap((start) => {
-              let cur = nodes.find((n) => n.id === start);
-              while (cur && cur.type !== NodeType.PROJECT) cur = nodes.find((n) => n.id === cur?.parentId);
-              return cur ? [{ start, projectId: cur.id }] : [];
+              const out: { start: number; id: number; ownerId: number | null }[] = [];
+              let cur = nodes.find((n) => n.id === start && n.type === NodeType.PROJECT);
+              while (cur) {
+                out.push({ start, id: cur.id, ownerId: cur.ownerId ?? null });
+                cur = nodes.find((n) => n.id === cur?.parentId && n.type === NodeType.PROJECT);
+              }
+              return out;
             })
-          : sql.includes('task_assignees')
-            ? assigned.filter(([t, u]) => t === args[0] && u === args[1]).map(() => ({ 1: 1 }))
-            : (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission })),
+          : sql.includes('WITH RECURSIVE')
+            ? // projectIdsOf: the closest project above each start node
+              args.flatMap((start) => {
+                let cur = nodes.find((n) => n.id === start);
+                while (cur && cur.type !== NodeType.PROJECT) cur = nodes.find((n) => n.id === cur?.parentId);
+                return cur ? [{ start, projectId: cur.id }] : [];
+              })
+            : sql.includes('task_assignees')
+              ? assigned.filter(([t, u]) => t === args[0] && u === args[1]).map(() => ({ 1: 1 }))
+              : // grants: [userId, ...projectIds]
+                args
+                  .slice(1)
+                  .flatMap((projectId) =>
+                    (grants[projectId * 1000 + args[0]] ?? []).map((permission) => ({ projectId, permission })),
+                  ),
       ),
     },
   };
@@ -33,7 +49,12 @@ function build(nodes: N[], grants: Record<number, string[]> = {}, assigned: [num
 
 const ME = 1;
 const OTHER = 2;
-const project = (id: number, ownerId: number | null): N => ({ id, type: NodeType.PROJECT, ownerId });
+const project = (id: number, ownerId: number | null, parentId: number | null = null): N => ({
+  id,
+  type: NodeType.PROJECT,
+  ownerId,
+  parentId,
+});
 const task = (id: number, parentId: number | null, createdBy: number | null): N => ({
   id,
   type: NodeType.TASK,
@@ -143,6 +164,40 @@ describe('NodeAccessService', () => {
     await expect(svc.assertCanUseAsParent(ME, 11, 11)).rejects.toBeInstanceOf(BadRequestException);
     await expect(svc.assertCanUseAsParent(ME, 12, 11)).rejects.toBeInstanceOf(BadRequestException);
     await expect(svc.assertCanUseAsParent(ME, 10, 12)).resolves.toBeUndefined();
+  });
+
+  describe('subprojects inherit access from the projects above them', () => {
+    // 10 (OTHER's, shared with me read) > 11 (OTHER's, shared with me write) > 12 (OTHER's) > task 13
+    const nodes = [project(10, OTHER), project(11, OTHER, 10), project(12, OTHER, 11), task(13, 12, OTHER)];
+    const grants = { [10 * 1000 + ME]: ['read'], [11 * 1000 + ME]: ['write'] };
+
+    it('takes the best grant on the project or any project above it', async () => {
+      const svc = build(nodes, grants);
+      expect(await svc.level(ME, 10)).toBe(Access.READ);
+      expect(await svc.level(ME, 11)).toBe(Access.WRITE);
+      expect(await svc.level(ME, 12)).toBe(Access.WRITE);
+      expect(await svc.level(ME, 13)).toBe(Access.WRITE);
+      expect(Object.fromEntries(await svc.levels(ME, [10, 11, 12, 13]))).toEqual({ 10: 1, 11: 2, 12: 2, 13: 2 });
+    });
+
+    it("owning a parent project makes you ADMIN of its subprojects, but not of the parent's parent", async () => {
+      const svc = build([project(10, OTHER), project(11, ME, 10), project(12, OTHER, 11)]);
+      expect(await svc.level(ME, 12)).toBe(Access.ADMIN);
+      expect(await svc.level(ME, 10)).toBe(Access.NONE);
+    });
+
+    it('projectPermissions names the inherited level', async () => {
+      const svc = build(nodes, grants);
+      const perms = await svc.projectPermissions(ME, [{ id: 10 }, { id: 12 }]);
+      expect(Object.fromEntries(perms)).toEqual({ 10: 'read', 12: 'write' });
+    });
+
+    it('a project can only be placed under a project', async () => {
+      const svc = build([project(10, ME), task(11, 10, ME), project(12, ME)]);
+      await expect(svc.assertCanReparent(ME, [12], 11)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(svc.assertCanReparent(ME, [12], 10)).resolves.toBeUndefined();
+      await expect(svc.assertProjectParent(null)).resolves.toBeUndefined();
+    });
   });
 
   describe('assertCanReparent', () => {

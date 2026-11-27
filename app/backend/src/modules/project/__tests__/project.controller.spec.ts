@@ -28,6 +28,8 @@ describe('ProjectController', () => {
             assertAdmin: jest.fn(),
             assertCanModify: jest.fn(),
             assertCanUseAsParent: jest.fn(),
+            assertProjectParent: jest.fn(),
+            assertCanReparent: jest.fn(),
             sanitize: jest.fn((x) => x),
             assertProject: jest.fn(),
             projectPermissions: jest.fn(async () => new Map([[4, 'admin']])),
@@ -79,5 +81,13 @@ describe('ProjectController', () => {
     await controller.create({ name: 'P' }, req);
     expect(teams.canUseTeam).not.toHaveBeenCalled();
     expect(teams.add).not.toHaveBeenCalled();
+  });
+
+  it('create under a parent checks that the parent is a project the caller can write to', async () => {
+    const access = (controller as unknown as { access: Record<string, jest.Mock> }).access;
+    await controller.create({ name: 'Sub', parentId: 4 }, req);
+    expect(access.assertCanUseAsParent).toHaveBeenCalledWith(7, 4);
+    expect(access.assertProjectParent).toHaveBeenCalledWith(4);
+    expect(service.create).toHaveBeenCalledWith({ name: 'Sub', parentId: 4, ownerId: 7 }, 7);
   });
 });

@@ -61,6 +61,7 @@ export class ProjectController {
     const data = normalizeParentRefs(this.access.sanitize(rest));
     delete data.type;
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
+    await this.access.assertProjectParent(data.parentId); // a subproject goes under a project, never a task
     // Sharing with a team at creation: checked before anything is created.
     if (teamId !== undefined) {
       if (await this.appSettings.singleUserMode()) throw new ForbiddenException(NOT_IN_SINGLE_USER_MODE);
@@ -80,7 +81,12 @@ export class ProjectController {
     const safeBody = normalizeParentRefs(this.access.sanitize(body));
     delete safeBody.type;
     if (safeBody.parentId !== undefined && safeBody.parentId !== project.parentId) {
-      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, project.id);
+      // Only the owner moves a project (checked above); the new parent must be a project they can write to.
+      await this.access.assertCanReparent(
+        req.user.userId,
+        [project.id],
+        safeBody.parentId === null ? null : Number(safeBody.parentId),
+      );
     }
     const updated = await this.projectService.update(id, safeBody, req.user.userId);
     if (!updated) throw new NotFoundException();

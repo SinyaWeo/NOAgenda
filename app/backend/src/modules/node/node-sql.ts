@@ -104,6 +104,34 @@ export async function projectIdsOf(q: SqlRunner, ids: number[]): Promise<Map<num
   return out;
 }
 
+/**
+ * Each given project and every project above it (a subproject inherits its parents' grants), with
+ * their owners. The walk climbs only through projects: a project is never placed under a task.
+ * Sees trashed rows too (a trashed subtree keeps its shape, and restoring it checks the old access).
+ */
+export async function projectAncestors(
+  q: SqlRunner,
+  ids: number[],
+): Promise<{ start: number; id: number; ownerId: number | null }[]> {
+  const out: { start: number; id: number; ownerId: number | null }[] = [];
+  for (const part of chunks(ids)) {
+    const rows = await q<{ start: number; id: number; ownerId: number | null }>(
+      `WITH RECURSIVE up (start, id, parentId, ownerId, depth) AS (
+         SELECT n.id, n.id, n.parentId, n.ownerId, 0 FROM nodes n WHERE n.type = 'project' AND n.id IN (${marks(part.length)})
+         UNION ALL
+         SELECT u.start, p.id, p.parentId, p.ownerId, u.depth + 1 FROM up u JOIN nodes p ON p.id = u.parentId
+          WHERE p.type = 'project' AND u.depth < ${MAX_TREE_DEPTH}
+       )
+       SELECT start, id, ownerId FROM up`,
+      part,
+    );
+    for (const r of rows) {
+      out.push({ start: Number(r.start), id: Number(r.id), ownerId: r.ownerId == null ? null : Number(r.ownerId) });
+    }
+  }
+  return out;
+}
+
 export interface RelativeReminderRow {
   id: number;
   daysBefore: number;

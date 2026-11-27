@@ -4,7 +4,7 @@ import { In, Repository } from 'typeorm';
 import { Node, NodeType } from './node.entity';
 import { Permission } from '../project-user/project-user.entity';
 import { sqlRunner } from '../../common/sql';
-import { projectIdsOf } from './node-sql';
+import { projectAncestors, projectIdsOf } from './node-sql';
 
 /** Access levels, ordered. */
 export enum Access {
@@ -49,7 +49,9 @@ const PROTECTED_NODE_FIELDS = [
  * Single source of truth for "who may do what to a node (project or task)".
  *
  * - A project: owner => ADMIN; otherwise the best permission granted through
- *   `project_users` or through a team (`project_teams` + `team_members`).
+ *   `project_users` or through a team (`project_teams` + `team_members`). A subproject inherits:
+ *   what the user has on any project above it counts too (owning a parent => ADMIN), so sharing
+ *   a project shares its subprojects, and a subproject can add grants but never take them away.
  * - A task inside a project: exactly the access the user has on that project
  *   (being the task's creator adds nothing, so removing someone from a project
  *   also removes their access to what they created there).
@@ -78,7 +80,7 @@ export class NodeAccessService {
     // to personal tasks whose chain verifiably ends at a root without a project.
     let cur: Node | null = start;
     for (let depth = 0; cur && depth < MAX_DEPTH; depth++) {
-      if (cur.type === NodeType.PROJECT) return this.projectLevel(userId, cur);
+      if (cur.type === NodeType.PROJECT) return (await this.projectLevels(userId, [cur.id])).get(cur.id) ?? Access.NONE;
       if (cur.parentId == null) {
         if (start.type !== NodeType.TASK) return Access.NONE;
         if (start.createdBy != null && start.createdBy === userId) return Access.ADMIN;
@@ -105,11 +107,7 @@ export class NodeAccessService {
       live.map((n) => n.id),
     );
     const projectIds = [...new Set(projectOf.values())];
-    const projects = projectIds.length
-      ? await this.nodeRepository.find({ where: { id: In(projectIds) }, select: { id: true, ownerId: true } })
-      : [];
-    const byProject = new Map<number, Access>();
-    for (const p of projects) byProject.set(p.id, await this.projectLevel(userId, p));
+    const byProject = await this.projectLevels(userId, projectIds);
     for (const n of live) {
       const pid = projectOf.get(n.id);
       out.set(n.id, pid != null ? (byProject.get(pid) ?? Access.NONE) : await this.level(userId, n.id));
@@ -131,29 +129,48 @@ export class NodeAccessService {
    */
   async projectPermissions(userId: number, projects: ProjectRef[]): Promise<Map<number, Permission>> {
     const out = new Map<number, Permission>();
-    await Promise.all(
-      projects.map(async (p) => {
-        const name = permissionName(await this.projectLevel(userId, p));
-        if (name) out.set(p.id, name);
-      }),
+    const levels = await this.projectLevels(
+      userId,
+      projects.map((p) => p.id),
     );
+    for (const [id, level] of levels) {
+      const name = permissionName(level);
+      if (name) out.set(id, name);
+    }
     return out;
   }
 
-  private async projectLevel(userId: number, project: ProjectRef): Promise<Access> {
-    if (project.ownerId != null && project.ownerId === userId) return Access.ADMIN;
-
-    const rows: { permission: string }[] = await this.nodeRepository.manager.query(
-      `SELECT permission FROM project_users WHERE projectId = ? AND userId = ?
-       UNION ALL
-       SELECT pt.permission FROM project_teams pt
-         JOIN team_members tm ON tm.teamId = pt.teamId
-        WHERE pt.projectId = ? AND tm.userId = ?`,
-      [project.id, userId, project.id, userId],
-    );
-    let best = Access.NONE;
-    for (const r of rows) best = Math.max(best, PERMISSION_LEVEL[r.permission] ?? Access.NONE) as Access;
-    return best;
+  /**
+   * The user's level on each project: the best of what they own or were granted (directly or through a
+   * team) on the project itself or on any project above it. Two queries, whatever the number of projects.
+   */
+  private async projectLevels(userId: number, projectIds: number[]): Promise<Map<number, Access>> {
+    const out = new Map<number, Access>(projectIds.map((id) => [id, Access.NONE]));
+    if (!projectIds.length) return out;
+    const q = sqlRunner(this.nodeRepository.manager);
+    const chain = await projectAncestors(q, [...new Set(projectIds)]);
+    const related = [...new Set(chain.map((r) => r.id))];
+    const granted = new Map<number, Access>();
+    if (related.length) {
+      const rows = await q<{ projectId: number; permission: string }>(
+        `SELECT g.projectId, g.permission FROM (
+           SELECT projectId, userId, permission FROM project_users
+           UNION ALL
+           SELECT pt.projectId, tm.userId, pt.permission FROM project_teams pt JOIN team_members tm ON tm.teamId = pt.teamId
+         ) g
+         WHERE g.userId = ? AND g.projectId IN (${related.map(() => '?').join(',')})`,
+        [userId, ...related],
+      );
+      for (const r of rows) {
+        const level = PERMISSION_LEVEL[r.permission] ?? Access.NONE;
+        granted.set(Number(r.projectId), Math.max(granted.get(Number(r.projectId)) ?? Access.NONE, level) as Access);
+      }
+    }
+    for (const r of chain) {
+      const level = r.ownerId != null && r.ownerId === userId ? Access.ADMIN : (granted.get(r.id) ?? Access.NONE);
+      out.set(r.start, Math.max(out.get(r.start) ?? Access.NONE, level) as Access);
+    }
+    return out;
   }
 
   /** Access to a node in the trash: what the user had before it was deleted (it is still hidden from `assert`). */
@@ -221,6 +238,8 @@ export class NodeAccessService {
    */
   async assertCanReparent(userId: number, nodeIds: number[], parentId: number | null): Promise<void> {
     if (parentId !== null) await this.assertWrite(userId, Number(parentId));
+    const moving = await this.nodeRepository.find({ where: { id: In(nodeIds) }, select: { id: true, type: true } });
+    if (moving.some((n) => n.type === NodeType.PROJECT)) await this.assertProjectParent(parentId);
     for (const id of nodeIds) if (parentId !== null) await this.assertNoCycle(id, Number(parentId));
     const projects = await projectIdsOf(
       sqlRunner(this.nodeRepository.manager),
@@ -231,6 +250,17 @@ export class NodeAccessService {
       const current = projects.get(id);
       if (current === undefined && current !== target) await this.assert(userId, id, Access.ADMIN);
     }
+  }
+
+  /** A project goes at the top level or under another project, never under a task (400 otherwise). */
+  async assertProjectParent(parentId: number | null | undefined): Promise<void> {
+    if (parentId === null || parentId === undefined) return;
+    const parent = await this.nodeRepository.findOne({
+      where: { id: Number(parentId) },
+      select: { id: true, type: true },
+    });
+    if (parent?.type !== NodeType.PROJECT)
+      throw new BadRequestException('A project can only be placed under a project');
   }
 
   /**

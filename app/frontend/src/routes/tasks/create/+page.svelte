@@ -11,6 +11,7 @@
 	import { showToast } from '#lib/toast.svelte.js';
 	import { errMessage } from '#lib/errors.js';
 	import type { Project, Task, UserSummary } from '#lib/types.js';
+	import { projectOptions } from '#lib/project-tree.js';
 
 	let title = $state('');
 	let description = $state('');
@@ -114,7 +115,7 @@
 			<Label for="task-project" class="mb-1">{t('common.field.project')}</Label>
 			<Select placeholder="" id="task-project" bind:value={projectId}>
 				<option value={undefined}>{t('tasks.form.noProject')}</option>
-				{#each projects as p (p.id)}<option value={p.id}>{p.name ?? p.title}</option>{/each}
+				{#each projectOptions(projects) as o (o.id)}<option value={o.id}>{o.label}</option>{/each}
 			</Select>
 		</div>
 		{#if assignable.length > 1}

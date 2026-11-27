@@ -7,6 +7,7 @@
 	import { errMessage } from '#lib/errors.js';
 	import { cleanCriteria, criteriaToQuery, describeCriteria, needsClientDueFilter } from '#lib/filters.js';
 	import { loadProjectNames } from '#lib/project-names.js';
+	import { projectOptions as treeOptions } from '#lib/project-tree.js';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { showToast } from '#lib/toast.svelte.js';
@@ -488,7 +489,9 @@
 				>
 					<option value="">{t('views.bulk.moveTo')}</option>
 					<option value="none">{t('tasks.details.noProject')}</option>
-					{#each moveTargets as p (p.id)}<option value={String(p.id)}>{p.name ?? p.title}</option>{/each}
+					{#each treeOptions(moveTargets) as o (o.id)}<option value={String(o.id)}>
+							{o.label}
+						</option>{/each}
 				</Select>
 				<Button size="xs" color="light" onclick={() => (selected = [])}>{t('common.clear')}</Button>
 			{/if}

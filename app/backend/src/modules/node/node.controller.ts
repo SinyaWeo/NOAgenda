@@ -84,6 +84,7 @@ export class NodeController {
     }
     const data: Partial<Node> = normalizeParentRefs(this.access.sanitize(body));
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
+    if (body.type === NodeType.PROJECT) await this.access.assertProjectParent(data.parentId);
     if (body.type === NodeType.PROJECT) {
       data.ownerId = req.user.userId;
     } else {

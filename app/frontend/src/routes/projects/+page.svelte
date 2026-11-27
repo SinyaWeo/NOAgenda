@@ -7,11 +7,21 @@
 	import { Alert, Button, Card, Progressbar } from 'flowbite-svelte';
 	import { t } from '#lib/i18n/index.js';
 	import { FolderOutline, PlusOutline } from 'flowbite-svelte-icons';
+	import { projectTree, type ProjectTreeRow } from '#lib/project-tree.js';
 
 	let projects = $state<Project[]>([]);
 	let taskStats = $state<Record<number, { total: number; done: number }>>({});
 	let loading = $state(true);
 	let error = $state('');
+	/** Top-level projects as cards, each with its subprojects (any depth, in tree order) listed inside. */
+	const groups = $derived.by(() => {
+		const out: { project: Project; below: ProjectTreeRow[] }[] = [];
+		for (const row of projectTree(projects)) {
+			if (row.depth === 0) out.push({ project: row.project, below: [] });
+			else out[out.length - 1]?.below.push(row);
+		}
+		return out;
+	});
 
 	onMount(async () => {
 		try {
@@ -41,7 +51,7 @@
 	<Alert color="red">{error}</Alert>
 {:else if projects.length}
 	<div class="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4 items-stretch">
-		{#each projects as project (project.id)}
+		{#each groups as { project, below } (project.id)}
 			<Card class="flex flex-col gap-2 h-full">
 				<div class="flex items-start gap-2">
 					<div class="flex-1 min-w-0">
@@ -75,6 +85,29 @@
 							size="h-1.5"
 							color="indigo"
 						/>
+					</div>
+				{/if}
+				{#if below.length}
+					<div>
+						<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide m-0 mb-1">
+							{t('projects.sub.title')}
+						</p>
+						<ul class="m-0 p-0 list-none flex flex-col gap-0.5">
+							{#each below as row (row.project.id)}
+								<li class="text-sm truncate" style:padding-left="{(row.depth - 1) * 0.75}rem">
+									<a
+										href="/projects/{row.project.id}"
+										class="text-gray-700 dark:text-gray-300 hover:underline"
+									>
+										<span aria-hidden="true" class="text-gray-400">└</span>
+										{row.project.name ?? row.project.title}
+									</a>
+									{#if row.project.isArchived}<span class="text-xs tone-gray">
+											{t('projects.archived')}
+										</span>{/if}
+								</li>
+							{/each}
+						</ul>
 					</div>
 				{/if}
 				<div class="flex items-center gap-3 mt-auto pt-2 border-t border-gray-100 dark:border-gray-700">

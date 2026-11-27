@@ -18,6 +18,7 @@
 	import MindmapView from '#lib/components/views/MindmapView.svelte';
 	import { showToast } from '#lib/toast.svelte.js';
 	import { singleUserMode } from '#lib/appConfig.svelte.js';
+	import { ancestors } from '#lib/project-tree.js';
 	import { announceRecurrence } from '#lib/recurrence.js';
 	import { errMessage } from '#lib/errors.js';
 	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
@@ -52,6 +53,11 @@
 	let project = $state<Project | null>(null);
 	let tasks = $state<Task[]>([]);
 	let buckets = $state<KanbanBucket[]>([]);
+	/** Every project the user can see: for the parent breadcrumb and the subproject list. */
+	let allProjects = $state<Project[]>([]);
+	const parents = $derived(project ? ancestors(allProjects, project.id) : []);
+	const subprojects = $derived(project ? allProjects.filter((p) => p.parentId === project?.id) : []);
+	const canWrite = $derived(project?.access === 'write' || project?.access === 'admin');
 	/** Project managers arrange the board; everyone else gets it read-only. */
 	const canManageBuckets = $derived(project?.access === 'admin');
 	let newTaskTitle = $state('');
@@ -69,15 +75,17 @@
 
 	async function loadProject(id: string, isStale: () => boolean) {
 		newTaskTitle = '';
-		const [p, t, b] = await Promise.all([
+		const [p, t, b, all] = await Promise.all([
 			apiGetAuth<Project>(`/projects/${id}`),
 			apiGetAuth<Task[]>(`/tasks?projectId=${id}`),
-			apiGetAuth<KanbanBucket[]>(`/projects/${id}/buckets`).catch((): KanbanBucket[] => [])
+			apiGetAuth<KanbanBucket[]>(`/projects/${id}/buckets`).catch((): KanbanBucket[] => []),
+			apiGetAuth<Project[]>('/projects').catch((): Project[] => [])
 		]);
 		if (isStale()) return; // navigated to another project meanwhile
 		project = p;
 		tasks = t;
 		buckets = b;
+		allProjects = all;
 	}
 
 	/** Tasks saved elsewhere on the page (the Gantt chart): put the new versions in place. */
@@ -176,6 +184,20 @@
 {:else if project}
 	<div>
 		<div class="mb-6">
+			{#if parents.length}
+				<nav aria-label={t('projects.breadcrumb')} class="mb-1">
+					<ol
+						class="flex flex-wrap items-center gap-1 m-0 p-0 list-none text-sm text-gray-500 dark:text-gray-400"
+					>
+						{#each parents as parent (parent.id)}
+							<li class="flex items-center gap-1">
+								<a href="/projects/{parent.id}" class="hover:underline">{parent.name ?? parent.title}</a>
+								<span aria-hidden="true">›</span>
+							</li>
+						{/each}
+					</ol>
+				</nav>
+			{/if}
 			<div class="flex items-center gap-3 flex-wrap">
 				<h1 class="text-2xl font-bold text-gray-900 dark:text-white m-0">
 					{project.name ?? project.title}
@@ -196,6 +218,29 @@
 					{project.description}
 				</p>{/if}
 		</div>
+
+		{#if subprojects.length || canWrite}
+			<div class="flex flex-wrap items-center gap-2 mb-6 text-sm">
+				<span class="font-medium text-gray-700 dark:text-gray-300">{t('projects.sub.title')}:</span>
+				{#each subprojects as sub (sub.id)}
+					<a
+						href="/projects/{sub.id}"
+						class="text-primary-600 dark:text-primary-400 hover:underline {sub.isArchived
+							? 'opacity-60'
+							: ''}"
+					>
+						{sub.name ?? sub.title}
+					</a>
+				{:else}
+					<span class="text-gray-500 dark:text-gray-400">{t('projects.sub.empty')}</span>
+				{/each}
+				{#if canWrite}
+					<Button href="/projects/new?parentId={project.id}" color="light" size="xs">
+						{t('projects.sub.new')}
+					</Button>
+				{/if}
+			</div>
+		{/if}
 
 		<form onsubmit={quickAdd} class="flex gap-2 mb-6 w-full md:w-1/2">
 			<Input

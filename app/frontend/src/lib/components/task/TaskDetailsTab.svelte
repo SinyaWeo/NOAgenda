@@ -16,6 +16,7 @@
 	import { userTimeZone } from '#lib/auth.svelte.js';
 	import { apiGetAuth } from '#lib/api.js';
 	import { showToast } from '#lib/toast.svelte.js';
+	import { projectOptions } from '#lib/project-tree.js';
 	import RepeatHistory from './RepeatHistory.svelte';
 	import RepeatFields from './RepeatFields.svelte';
 	import InlineText from '#lib/components/InlineText.svelte';
@@ -300,8 +301,8 @@
 										{currentProject.name ?? currentProject.title}
 									</option>
 								{/if}
-								{#each targets ?? [] as p (p.id)}
-									<option value={String(p.id)}>{p.name ?? p.title}</option>
+								{#each projectOptions(targets ?? []) as o (o.id)}
+									<option value={String(o.id)}>{o.label}</option>
 								{/each}
 							</Select>
 							<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">
