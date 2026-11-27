@@ -18,5 +18,19 @@
   "invite": {
     "subject": "Pozvánka do aplikace {app}",
     "body": "Dobrý den, {username},\n\nsprávce pro vás založil účet v aplikaci {app}. Otevřete tento odkaz do 72 hodin, zvolte si heslo a účet aktivujte:\n\n{link}\n\nPokud jste pozvánku nečekali, můžete tuto zprávu ignorovat."
+  },
+  "mfa": {
+    "enabled": {
+      "subject": "Dvoufázové ověření je pro váš účet {app} zapnuté",
+      "body": "Dobrý den, {username},\n\npro váš účet v aplikaci {app} bylo právě zapnuto dvoufázové ověření. Přihlášení teď vyžaduje i kód z ověřovací aplikace a vaše ostatní relace byly odhlášeny.\n\nPokud jste to nebyli vy, ihned si obnovte heslo a kontaktujte správce."
+    },
+    "disabled": {
+      "subject": "Dvoufázové ověření je pro váš účet {app} vypnuté",
+      "body": "Dobrý den, {username},\n\npro váš účet v aplikaci {app} bylo právě vypnuto dvoufázové ověření. K přihlášení opět stačí heslo a vaše ostatní relace byly odhlášeny.\n\nPokud jste to nebyli vy, ihned si obnovte heslo a kontaktujte správce."
+    },
+    "reset": {
+      "subject": "Správce vypnul dvoufázové ověření pro váš účet {app}",
+      "body": "Dobrý den, {username},\n\nsprávce vypnul dvoufázové ověření pro váš účet v aplikaci {app}, například protože jste ztratili telefon. Znovu si ho můžete nastavit v nastavení účtu.\n\nPokud jste o to nežádali, ihned kontaktujte správce."
+    }
   }
 }

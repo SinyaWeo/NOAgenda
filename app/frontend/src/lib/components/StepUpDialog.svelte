@@ -7,6 +7,8 @@
 	import { pendingStepUp } from '#lib/stepUp.svelte.js';
 
 	let password = $state('');
+	/** With 2FA on, the server wants a code from the authenticator app instead of the password. */
+	const useCode = $derived(!!authSession.user?.totpEnabledAt);
 	let error = $state('');
 	let busy = $state(false);
 
@@ -31,7 +33,7 @@
 		busy = true;
 		error = '';
 		try {
-			await apiPostAuth(STEP_UP_PATH, { password });
+			await apiPostAuth(STEP_UP_PATH, useCode ? { code: password } : { password });
 			password = '';
 			finish(true);
 		} catch (err: unknown) {
@@ -43,7 +45,7 @@
 </script>
 
 <Modal
-	title={t('auth.stepUp.title')}
+	title={useCode ? t('auth.stepUp.codeTitle') : t('auth.stepUp.title')}
 	{open}
 	oncancel={(ev: Event) => {
 		ev.preventDefault();
@@ -53,7 +55,9 @@
 	outsideclose
 >
 	<form onsubmit={submit} class="space-y-3">
-		<p class="text-sm text-gray-600 dark:text-gray-300 m-0">{t('auth.stepUp.text')}</p>
+		<p class="text-sm text-gray-600 dark:text-gray-300 m-0">
+			{useCode ? t('auth.stepUp.codeText') : t('auth.stepUp.text')}
+		</p>
 		{#if error}
 			<Alert color="red">{error}</Alert>
 		{/if}
@@ -67,18 +71,34 @@
 			tabindex="-1"
 			aria-hidden="true"
 		/>
-		<div>
-			<Label for="step-up-password" class="mb-1">{t('common.field.password')}</Label>
-			<Input
-				id="step-up-password"
-				type="password"
-				autocomplete="current-password"
-				bind:value={password}
-				disabled={busy}
-				data-autofocus
-				required
-			/>
-		</div>
+		{#if useCode}
+			<div>
+				<Label for="step-up-code" class="mb-1">{t('auth.mfa.code')}</Label>
+				<Input
+					id="step-up-code"
+					inputmode="numeric"
+					autocomplete="one-time-code"
+					maxlength={7}
+					bind:value={password}
+					disabled={busy}
+					data-autofocus
+					required
+				/>
+			</div>
+		{:else}
+			<div>
+				<Label for="step-up-password" class="mb-1">{t('common.field.password')}</Label>
+				<Input
+					id="step-up-password"
+					type="password"
+					autocomplete="current-password"
+					bind:value={password}
+					disabled={busy}
+					data-autofocus
+					required
+				/>
+			</div>
+		{/if}
 		<div class="flex justify-end gap-2">
 			<Button color="light" type="button" onclick={() => finish(false)} disabled={busy}>
 				{t('common.cancel')}

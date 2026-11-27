@@ -1,5 +1,6 @@
 import { Entity, Column } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
+import { encryptedColumn } from '@common/secret-box';
 import { UserRole } from './user-role.enum';
 
 @Entity('users')
@@ -60,4 +61,23 @@ export class User extends BaseEntity {
 
   @Column({ nullable: true, type: 'datetime' })
   deletionScheduledAt?: Date;
+
+  /**
+   * Two-factor authentication (modules/mfa). The authenticator secret is encrypted at rest and, like the
+   * replay counter and the recovery-code hashes, never selected unless MfaService asks for it.
+   */
+  @Column({ type: 'text', nullable: true, select: false, transformer: encryptedColumn('users.totpSecret') })
+  totpSecret?: string | null;
+
+  /** When 2FA was switched on; null = off (a secret without this is a setup not confirmed yet). */
+  @Column({ nullable: true, type: 'datetime' })
+  totpEnabledAt?: Date | null;
+
+  /** The last time step whose code was accepted: a code is good once only. */
+  @Column({ nullable: true, type: 'int', select: false })
+  totpLastStep?: number | null;
+
+  /** Keyed hashes (HMAC with a key from SECRETS_KEY, see SecretBox.mac) of the unused recovery codes, as a JSON array. */
+  @Column({ nullable: true, type: 'text', select: false })
+  totpRecoveryCodes?: string | null;
 }

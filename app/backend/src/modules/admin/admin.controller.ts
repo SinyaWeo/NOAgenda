@@ -37,6 +37,8 @@ import { ProjectTransferService } from './project-transfer.service';
 import { AdminCreateUserDto } from './dto/create-user.dto';
 import { AuthService } from '../auth/auth.service';
 import { randomToken } from '../../common/tokens';
+import { MfaService } from '../mfa/mfa.service';
+import { NotInDemoGuard } from '../../common/guards/not-in-demo.guard';
 
 /** What an admin learns after sending an invite. `inviteLink` only when mail could not deliver it. */
 export interface InviteResult {
@@ -57,6 +59,7 @@ export class AdminController {
     private readonly activity: ActivityService,
     private readonly transfers: ProjectTransferService,
     private readonly auth: AuthService,
+    private readonly mfa: MfaService,
   ) {}
 
   private async invite(user: User): Promise<InviteResult> {
@@ -140,6 +143,22 @@ export class AdminController {
     // End every live session right away; API tokens and JWTs are also refused while locked.
     if (locked) await this.sessions.revokeAllForUser(userId);
     return omit(user, 'password');
+  }
+
+  /**
+   * Switch off a user's two-factor authentication (lost phone and recovery codes). They are told by email;
+   * if 2FA is required for them they must set it up again at their next sign-in.
+   */
+  @Post('users/:id/mfa/reset')
+  @UseGuards(NotInDemoGuard)
+  @HttpCode(204)
+  async resetMfa(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
+    const userId = Number(id);
+    if (req.user.userId === userId) {
+      throw new ForbiddenException('Change your own two-factor authentication in your account settings');
+    }
+    if (!(await this.userService.findById(userId))) throw new NotFoundException();
+    await this.mfa.adminReset(userId);
   }
 
   /** The projects a user owns (trashed ones included): what deleting them would delete or hand over. */

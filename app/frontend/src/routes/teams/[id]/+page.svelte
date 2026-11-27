@@ -44,6 +44,12 @@
 	{#if team.description}<p class="text-gray-500 dark:text-gray-400 mb-4">
 			{team.description}
 		</p>{/if}
+	{#if team.requireMfa}<p
+			class="text-sm text-gray-500 dark:text-gray-400 mb-4"
+			data-testid="team-mfa-required"
+		>
+			{t('teams.detail.mfaRequired')}
+		</p>{/if}
 
 	<Card class="mb-6">
 		<div class="flex items-center justify-between mb-3">

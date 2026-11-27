@@ -8,6 +8,7 @@
 		UserCircleOutline,
 		ApiKeyOutline,
 		DesktopPcOutline,
+		ShieldCheckOutline,
 		LinkOutline,
 		BellRingOutline,
 		ArrowDownToBracketOutline,
@@ -29,6 +30,12 @@
 			icon: ApiKeyOutline,
 			labelKey: 'settings.section.apiTokens',
 			descKey: 'settings.section.apiTokens.desc'
+		},
+		{
+			href: '/user/settings/security',
+			icon: ShieldCheckOutline,
+			labelKey: 'settings.section.security',
+			descKey: 'settings.section.security.desc'
 		},
 		{
 			href: '/user/settings/sessions',

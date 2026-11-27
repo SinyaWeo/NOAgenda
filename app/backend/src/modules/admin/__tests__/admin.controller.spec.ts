@@ -12,6 +12,7 @@ import { TeamRole } from '../../team-member/team-member.entity';
 import { asMock, authReq, invalid } from '../../../common/__tests__/test-utils';
 import type { TransferredProject } from '../../account/account.service';
 import type { ProjectTransferService } from '../project-transfer.service';
+import type { MfaService } from '../../mfa/mfa.service';
 import type { AuthService } from '../../auth/auth.service';
 
 function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin', password: 'HASH' }) {
@@ -52,6 +53,7 @@ function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin',
   const teams = { findAllWithMembers: jest.fn(async () => [{ id: 7, members: [] }]) };
   const teamMembers = { setRole: jest.fn(async (_t: number, id: number, role: TeamRole) => ({ id, role })) };
   const activity = { admin: jest.fn(async () => ({ items: [], next: null })) };
+  const mfa = { adminReset: jest.fn(async () => undefined) };
   return {
     activity,
     ctrl: new AdminController(
@@ -63,7 +65,9 @@ function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin',
       asMock<ActivityService>(activity),
       asMock<ProjectTransferService>(transfers),
       asMock<AuthService>(auth),
+      asMock<MfaService>(mfa),
     ),
+    mfa,
     auth,
     transfers,
     users,
@@ -152,6 +156,21 @@ describe('AdminController', () => {
   it('404 when the user does not exist', async () => {
     const { ctrl } = build(null);
     await expect(ctrl.updateRole(99, UserRole.USER, req)).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  describe('2FA reset', () => {
+    it("switches off another user's 2FA", async () => {
+      const { ctrl, mfa } = build();
+      await ctrl.resetMfa(invalid<number>('2'), req);
+      expect(mfa.adminReset).toHaveBeenCalledWith(2);
+    });
+
+    it('not your own (that goes through your settings), and 404 for an unknown user', async () => {
+      const { ctrl, mfa } = build();
+      await expect(ctrl.resetMfa(1, req)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(ctrl.resetMfa(99, req)).rejects.toBeInstanceOf(NotFoundException);
+      expect(mfa.adminReset).not.toHaveBeenCalled();
+    });
   });
 
   describe('lock / delete', () => {

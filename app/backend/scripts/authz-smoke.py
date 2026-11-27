@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Authorization smoke test for the NOAgenda API (142 checks, 126 without SQL_CMD).
+Authorization smoke test for the NOAgenda API (2FA included; see the summary line for the count).
 
 Registers three throwaway users (alice, bob, carol) and verifies that one user
 cannot read or change another user's projects/tasks/comments/attachments/
@@ -22,7 +22,7 @@ Usage:  BASE_URL=http://127.0.0.1:3000 [SQL_CMD=...] python3 scripts/authz-smoke
         (self-signed HTTPS, e.g. a local Caddy: add AUTHZ_INSECURE=1)
 """
 import json, sys, urllib.parse, urllib.request, urllib.error
-import os, ssl, subprocess, time
+import os, ssl, subprocess, time, hmac, hashlib, base64, struct
 B = os.environ.get('BASE_URL', 'http://127.0.0.1:3000')
 CTX = ssl._create_unverified_context() if os.environ.get('AUTHZ_INSECURE') == '1' else None
 results = []
@@ -45,6 +45,20 @@ def check(name, got, expect):
     exact = isinstance(got, (list, tuple))  # compare lists/tuples whole; a scalar may match any of several answers
     ok = got in expect if isinstance(expect, (list, tuple, set)) and not exact else got == expect
     results.append(ok); print(('PASS ' if ok else 'FAIL ') + name + f'  (got {got}, want {expect})')
+
+def totp(secret, ahead=0):
+    """The authenticator-app code for now (+`ahead` 30-second steps), RFC 6238 with SHA-1."""
+    key = base64.b32decode(secret + '=' * (-len(secret) % 8))
+    mac = hmac.new(key, struct.pack('>Q', int(time.time()) // 30 + ahead), hashlib.sha1).digest()
+    o = mac[-1] & 15
+    return str((struct.unpack('>I', mac[o:o + 4])[0] & 0x7fffffff) % 1000000).zfill(6)
+
+def enroll(tok, password='password123'):
+    """Switch 2FA on for the token's account; returns (secret, recovery codes, the code used)."""
+    s, st = call('POST', '/user/mfa/setup', {'password': password}, tok); assert s == 200, (s, st)
+    code = totp(st['secret'])
+    s, en = call('POST', '/user/mfa/enable', {'code': code}, tok); assert s == 200, (s, en)
+    return st['secret'], en['recoveryCodes'], code
 
 def user(n):
     s, u = call('POST', '/users', {'username': n, 'email': n + '@example.com', 'password': 'password123'})
@@ -289,6 +303,41 @@ s, got = acts(A, f'projectId={pid}'); check('a deleted task stays in the project
 s, _ = acts(A, f'nodeId={gone["id"]}'); check('the deleted task itself is gone (404)', s, [403, 404])
 s, _ = acts(E, f'projectId={pid}'); check('the deletion is still hidden from a stranger', s, [403, 404])
 
+# --- 7. two-factor authentication (TOTP): setup, two-step sign-in, replay, recovery codes, API tokens
+gid, G = user('gina')
+s, st = call('GET', '/user/mfa', None, G); check('2FA starts off', (s, st.get('enabled'), st.get('required')), (200, False, False))
+s, _ = call('POST', '/user/mfa/setup', {'password': 'wrong-password'}, G); check('2FA setup needs the right password', s, 400)
+s, st = call('POST', '/user/mfa/setup', {'password': 'password123'}, G); gsecret = st['secret']
+check('setup returns a secret and an otpauth URI', (s, st['uri'].startswith('otpauth://totp/')), (200, True))
+s, _ = call('POST', '/auth/login', {'username': 'gina', 'password': 'password123'})
+check('a setup that is not confirmed yet does not change sign-in', (s, 'access_token' in _), (200, True))
+s, _ = call('POST', '/user/mfa/enable', {'code': '000000'}, G); check('a wrong code does not switch 2FA on', s, 400)
+used = totp(gsecret)
+s, en = call('POST', '/user/mfa/enable', {'code': used}, G); grec = en['recoveryCodes']
+check('the first code switches 2FA on and returns 10 recovery codes', (s, len(grec)), (200, 10))
+s, _ = call('GET', '/projects', None, G); check('the session that switched it on keeps working', s, 200)
+s, l = call('POST', '/auth/login', {'username': 'gina', 'password': 'password123'})
+check('the password alone now yields only a challenge', (s, l.get('mfaRequired'), 'access_token' in l), (200, True, False))
+challenge = l['mfaToken']
+s, _ = call('GET', '/projects', None, challenge); check('the challenge is not an access token', s, 401)
+s, _ = call('POST', '/auth/login/code', {'mfaToken': challenge, 'code': '000000'}); check('a wrong code is refused', s, 401)
+s, _ = call('POST', '/auth/login/code', {'mfaToken': challenge, 'code': used}); check('a code that was already used is refused (replay)', s, 401)
+s, _ = call('POST', '/auth/login/code', {'mfaToken': G, 'code': totp(gsecret, 1)}); check('an access token is not a challenge', s, 401)
+s, r = call('POST', '/auth/login/code', {'mfaToken': challenge, 'code': totp(gsecret, 1)})
+check('challenge + a fresh code signs in', (s, 'access_token' in r), (200, True))
+G2 = r['access_token']
+s, l = call('POST', '/auth/login', {'username': 'gina', 'password': 'password123'})
+s, r = call('POST', '/auth/login/code', {'mfaToken': l['mfaToken'], 'code': grec[0].upper()}); check('a recovery code signs in', s, 200)
+s, l = call('POST', '/auth/login', {'username': 'gina', 'password': 'password123'})
+s, _ = call('POST', '/auth/login/code', {'mfaToken': l['mfaToken'], 'code': grec[0]}); check('a recovery code works only once', s, 401)
+s, st = call('GET', '/user/mfa', None, G2); check('one recovery code is used up', st.get('recoveryCodesLeft'), 9)
+s, me = call('GET', '/users/me', None, G2); check('/users/me shows 2FA on', (s, bool(me.get('totpEnabledAt'))), (200, True))
+s, tok = call('POST', '/tokens', {'name': 'gina script', 'scope': 'write'}, G2)
+s, _ = call('GET', '/user/mfa', None, tok['rawToken']); check('an API token cannot reach the 2FA settings', s, 403)
+s, _ = call('POST', '/user/mfa/disable', {'password': 'password123', 'code': '000000'}, G2); check('switching off needs a right code', s, 400)
+s, _ = call('POST', '/user/mfa/disable', {'password': 'password123', 'code': grec[1]}, G2); check('gina switches 2FA off (recovery code)', s, 204)
+s, l = call('POST', '/auth/login', {'username': 'gina', 'password': 'password123'}); check('sign-in is one step again', (s, 'access_token' in l), (200, True))
+
 if SQL:
     did, D = user('dave')
     subprocess.run(SQL, shell=True, input="UPDATE users SET role='admin' WHERE username='dave';", text=True, check=True, capture_output=True)
@@ -392,6 +441,34 @@ if SQL:
     time.sleep(1)
     s, r = call('GET', f'/admin/activity?projectId={fp["id"]}&action=project.owner_changed', None, D)
     check('the transfer is in the audit trail', (s, [e['changes']['owner'] for e in r['items']]), (200, [{'from': 'frank', 'to': 'dave'}]))
+
+    # 2FA requirements: per team (a manager with 2FA sets it) and for all admins (admin setting).
+    s, _ = call('PATCH', '/admin/settings', {'requireAdminMfa': 'true'}, D); check('requiring admin 2FA needs 2FA on your own account', s, 400)
+    s, _ = call('PUT', f'/teams/{tm}', {'requireMfa': True}, A); check('a manager without 2FA cannot require it from the team', s, 400)
+    dsecret, drec, _ = enroll(D)
+    stored = subprocess.run(SQL, shell=True, input="SELECT totpSecret FROM users WHERE username='dave';", text=True, capture_output=True).stdout
+    check('the 2FA secret is stored encrypted', ('enc:v1:' in stored, dsecret in stored), (True, False))
+    stored = subprocess.run(SQL, shell=True, input="SELECT totpRecoveryCodes FROM users WHERE username='dave';", text=True, capture_output=True).stdout
+    check('recovery codes are stored as keyed hashes only', (stored.count('mac:v1:'), any(c.replace('-', '') in stored for c in drec)), (10, False))
+    s, _ = call('PUT', f'/teams/{tm}', {'requireMfa': True}, D); check('dave (2FA on, manager of every team) requires 2FA in the team', s, 200)
+    s, me = call('GET', '/users/me', None, A); check('alice (a member) is told to set up 2FA', (s, me.get('mfaEnrollmentRequired')), (200, True))
+    s, r = call('GET', '/projects', None, A); check('until then everything else is refused', (s, r.get('code')), (403, 'MFA_ENROLLMENT_REQUIRED'))
+    s, _ = call('GET', '/projects', None, E); check('a user outside the team is not affected', s, 200)
+    asecret, arec, _ = enroll(A)
+    s, _ = call('GET', '/projects', None, A); check('after setting it up alice works again', s, 200)
+    s, _ = call('POST', '/user/mfa/disable', {'password': 'password123', 'code': arec[0]}, A); check('a required 2FA cannot be switched off', s, 403)
+    s, _ = call('POST', f'/admin/users/{aid}/mfa/reset', None, E); check('a normal user cannot reset 2FA', s, 403)
+    s, _ = call('POST', f'/admin/users/{did}/mfa/reset', None, D); check('the admin cannot reset their own 2FA there', s, 403)
+    s, _ = call('POST', f'/admin/users/{aid}/mfa/reset', None, D); check("the admin resets alice's 2FA (lost phone)", s, 204)
+    s, r = call('GET', '/projects', None, A); check('...and alice must set it up again', (s, r.get('code')), (403, 'MFA_ENROLLMENT_REQUIRED'))
+    s, _ = call('PUT', f'/teams/{tm}', {'requireMfa': False}, D); check('the requirement is switched off', s, 200)
+    s, _ = call('GET', '/projects', None, A); check('alice works without 2FA again', s, 200)
+    s, _ = call('PATCH', '/admin/settings', {'requireAdminMfa': 'true'}, D); check('dave requires 2FA from all admins', s, 200)
+    s, _ = call('POST', '/user/step-up', {'password': 'password123'}, D); check('with 2FA on, the password alone does not step up', s, 400)
+    s, _ = call('POST', '/user/step-up', {'code': totp(dsecret, 1)}, D); check('a code from the app steps up', s, 200)
+    s, _ = call('POST', '/user/mfa/disable', {'password': 'password123', 'code': drec[0]}, D); check('an admin cannot switch off 2FA while admins must use it', s, 403)
+    s, _ = call('PATCH', '/admin/settings', {'requireAdminMfa': 'false'}, D); check('the admin requirement is switched off', s, 200)
+    s, _ = call('POST', '/user/mfa/disable', {'password': 'password123', 'code': drec[1]}, D); check('dave switches his 2FA off', s, 204)
 
     # Single-user mode. Destructive (every other account is deleted), so it runs last.
     s, r = call('GET', '/admin/single-user', None, D); check('single-user mode starts off', (s, r.get('enabled')), (200, False))

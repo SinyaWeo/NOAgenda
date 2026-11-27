@@ -16,6 +16,10 @@ export interface User {
 	invitedAt?: string | null;
 	isDeletionRequested: boolean;
 	deletionScheduledAt?: string;
+	/** When two-factor authentication was switched on; null/absent = off. */
+	totpEnabledAt?: string | null;
+	/** `/users/me` only: the account must set up 2FA before it can use the app. */
+	mfaEnrollmentRequired?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }
@@ -40,6 +44,8 @@ export interface Team {
 	name: string;
 	description?: string;
 	ownerId?: number;
+	/** Members must use two-factor authentication. */
+	requireMfa?: boolean;
 	createdAt: string;
 	updatedAt: string;
 }

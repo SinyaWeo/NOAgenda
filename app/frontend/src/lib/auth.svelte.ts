@@ -2,6 +2,7 @@ import { apiFetchAuth, clearToken, endServerSession, getToken, refreshAccessToke
 import { effectiveZone } from './calendar';
 import { isLocale } from './i18n/core';
 import { setLocale } from './i18n/locale.svelte';
+import { mfaGate } from './mfa.svelte';
 import type { User } from './types';
 
 type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -20,6 +21,7 @@ export const authSession = $state<AuthSession>({
 function setSession(status: AuthStatus, user: User | null): void {
 	authSession.status = status;
 	authSession.user = user;
+	mfaGate.current = user?.mfaEnrollmentRequired === true;
 	// A signed-in user's saved language wins over this browser's guess.
 	if (isLocale(user?.language)) setLocale(user.language);
 }

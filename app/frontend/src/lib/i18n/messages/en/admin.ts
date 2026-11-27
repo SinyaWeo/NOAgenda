@@ -163,5 +163,14 @@ export const messages = {
 	'admin.singleUser.confirm': 'Switch irreversibly',
 	'admin.settings.appName': 'App Name',
 	'admin.settings.allowRegistration': 'Allow new user registration',
-	'admin.settings.save': 'Save Settings'
+	'admin.settings.save': 'Save Settings',
+	'admin.settings.requireAdminMfa': 'Administrators must use two-factor authentication',
+	'admin.settings.requireAdminMfaHint':
+		'Turn it on for your own account first. Admins without it are asked to set it up before they can do anything else.',
+	'admin.users.badge.mfa': '2FA',
+	'admin.users.mfaResetTip': 'Switch off two-factor authentication',
+	'admin.users.mfaResetConfirm':
+		'Switch off two-factor authentication for {username}? Do this only when they lost their phone and recovery codes. They will be told by email.',
+	'admin.users.mfaReset': 'Two-factor authentication is off for {username}',
+	'admin.users.mfaResetFailed': 'Could not switch off two-factor authentication for {username}: {reason}'
 } as const;

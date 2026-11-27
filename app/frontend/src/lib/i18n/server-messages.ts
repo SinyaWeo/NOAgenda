@@ -77,7 +77,17 @@ const EXACT: Record<string, MessageKey> = {
 	'Unknown kanban bucket': 'errors.server.unknownBucket',
 	'The status does not match the kanban bucket': 'errors.server.bucketStatusMismatch',
 	'Set a due date first': 'errors.server.noDueDate',
-	'Give either a reminder date or days before the due date': 'errors.server.reminderKind'
+	'Give either a reminder date or days before the due date': 'errors.server.reminderKind',
+	'Invalid code': 'errors.server.invalidCode',
+	'The sign-in has expired, please enter your password again': 'errors.server.mfaChallengeExpired',
+	'Set up two-factor authentication first': 'errors.server.mfaEnrollmentRequired',
+	'Two-factor authentication is already on': 'errors.server.mfaAlreadyOn',
+	'Two-factor authentication is not on': 'errors.server.mfaNotOn',
+	'Start the setup first': 'errors.server.mfaStartFirst',
+	'Two-factor authentication is required for your account': 'errors.server.mfaRequired',
+	'Turn on two-factor authentication for your own account first': 'errors.server.mfaOwnFirst',
+	'Change your own two-factor authentication in your account settings': 'errors.server.mfaOwnReset',
+	'This action is disabled on the demo': 'errors.server.demoDisabled'
 };
 
 /** class-validator messages: "<field> must be ...". The field name stays as the API calls it. */

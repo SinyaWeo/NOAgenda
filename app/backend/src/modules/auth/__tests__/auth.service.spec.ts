@@ -16,6 +16,7 @@ import type { PasswordResetToken } from '../password-reset-token.entity';
 import type { SessionService } from '../../session/session.service';
 import type { EmailVerificationService } from '../../email-verification/email-verification.service';
 import type { MailService } from '../../mail/mail.service';
+import type { MfaService } from '../../mfa/mfa.service';
 import { asMock } from '../../../common/__tests__/test-utils';
 
 jest.mock('../../../common/password');
@@ -32,7 +33,7 @@ const USER = {
   lockedUntil: undefined as Date | undefined,
 };
 
-type TestUser = typeof USER & { language?: string };
+type TestUser = typeof USER & { language?: string; totpEnabledAt?: Date | null; isLocked?: boolean };
 
 function build(over: { user?: TestUser | null; verificationRequired?: boolean } = {}) {
   const user: TestUser | null = over.user === undefined ? { ...USER } : over.user;
@@ -47,8 +48,12 @@ function build(over: { user?: TestUser | null; verificationRequired?: boolean } 
     markInvited: jest.fn(async () => undefined),
   };
   const jwt = {
-    sign: jest.fn(() => 'jwt'),
+    sign: jest.fn((_payload: Record<string, unknown>, _opts?: unknown) => 'jwt'),
     decode: jest.fn(() => ({ iat: 100, exp: 1000 })),
+    verify: jest.fn((_token: string): Record<string, unknown> => ({ sub: 7, purpose: 'mfa-login' })),
+  };
+  const mfa = {
+    verify: jest.fn(async (_id: number, _code: string, _opts?: unknown): Promise<string | null> => 'totp'),
   };
   const resets = {
     delete: jest.fn(async () => ({ affected: 1 })),
@@ -79,8 +84,9 @@ function build(over: { user?: TestUser | null; verificationRequired?: boolean } 
     asMock<EmailVerificationService>(verification),
     asMock<MailService>(mail),
     realTranslator(),
+    asMock<MfaService>(mfa),
   );
-  return { svc, users, jwt, resets, sessions, mail };
+  return { svc, users, jwt, resets, sessions, mail, mfa };
 }
 
 beforeEach(() => {
@@ -208,7 +214,7 @@ describe('AuthService.stepUp', () => {
   it('elevates this session for STEP_UP_MINUTES after the right password', async () => {
     const { svc, sessions } = build();
     const before = Date.now();
-    const { elevatedUntil } = await svc.stepUp(WHO, 'pw', '1.2.3.4');
+    const { elevatedUntil } = await svc.stepUp(WHO, { password: 'pw' }, '1.2.3.4');
     const minutes = (elevatedUntil.getTime() - before) / 60_000;
     expect(minutes).toBeGreaterThan(STEP_UP_MINUTES - 0.01);
     expect(minutes).toBeLessThan(STEP_UP_MINUTES + 0.01);
@@ -219,23 +225,103 @@ describe('AuthService.stepUp', () => {
   it('refuses a wrong password without elevating', async () => {
     const { svc, sessions } = build();
     pw.verifyPassword.mockResolvedValue(false);
-    await expect(svc.stepUp(WHO, 'nope', '1.2.3.4')).rejects.toThrow(BadRequestException);
+    await expect(svc.stepUp(WHO, { password: 'nope' }, '1.2.3.4')).rejects.toThrow(BadRequestException);
     expect(sessions.elevate).not.toHaveBeenCalled();
   });
 
   it('wrong passwords lock the address out, even before a correct one', async () => {
     const { svc } = build();
     pw.verifyPassword.mockResolvedValue(false);
-    for (let i = 0; i < MAX_FAILED_LOGINS; i++) await expect(svc.stepUp(WHO, 'nope', '1.2.3.4')).rejects.toThrow();
+    for (let i = 0; i < MAX_FAILED_LOGINS; i++)
+      await expect(svc.stepUp(WHO, { password: 'nope' }, '1.2.3.4')).rejects.toThrow();
     pw.verifyPassword.mockResolvedValue(true);
-    await expect(svc.stepUp(WHO, 'pw', '1.2.3.4')).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
+    await expect(svc.stepUp(WHO, { password: 'pw' }, '1.2.3.4')).rejects.toMatchObject({
+      status: HttpStatus.TOO_MANY_REQUESTS,
+    });
     // shared with sign-in: the same address cannot log in to that account either
     await expect(svc.login('ann', 'pw', { ip: '1.2.3.4' })).rejects.toThrow(UnauthorizedException);
   });
 
   it('needs a session (an API token cannot step up)', async () => {
     const { svc, sessions } = build();
-    await expect(svc.stepUp({ userId: 7, username: 'ann' }, 'pw')).rejects.toThrow(ForbiddenException);
+    await expect(svc.stepUp({ userId: 7, username: 'ann' }, { password: 'pw' })).rejects.toThrow(ForbiddenException);
+    expect(sessions.elevate).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService with two-factor authentication', () => {
+  const MFA_USER = { ...USER, totpEnabledAt: new Date('2026-01-01') };
+  const WHO = { userId: 7, username: 'ann', sessionId: 55 };
+
+  it('a right password only yields a short-lived challenge, no session', async () => {
+    const { svc, sessions, jwt } = build({ user: { ...MFA_USER } });
+    const res = await svc.login('ann', 'pw', { ip: '1.2.3.4' });
+    expect(res).toEqual({ mfaRequired: true, mfaToken: 'jwt' });
+    expect(sessions.create).not.toHaveBeenCalled();
+    expect(jwt.sign).toHaveBeenCalledWith({ sub: 7, purpose: 'mfa-login' }, { expiresIn: '5m' });
+  });
+
+  it('a wrong password never reaches the code step', async () => {
+    const { svc, jwt } = build({ user: { ...MFA_USER } });
+    pw.verifyPassword.mockResolvedValue(false);
+    await expect(svc.login('ann', 'nope')).rejects.toThrow(UnauthorizedException);
+    expect(jwt.sign).not.toHaveBeenCalled();
+  });
+
+  it('the challenge plus a valid code opens the session', async () => {
+    const { svc, sessions, mfa } = build({ user: { ...MFA_USER } });
+    const res = await svc.loginWithCode('challenge', '123456', { ip: '1.2.3.4' });
+    expect(mfa.verify).toHaveBeenCalledWith(7, '123456');
+    expect(sessions.create).toHaveBeenCalledWith(7, { ip: '1.2.3.4' });
+    expect(res).toEqual({ access_token: 'jwt', expires_in: 900, refreshToken: 'rt' });
+  });
+
+  it('refuses a token made for something else (e.g. an access token)', async () => {
+    const { svc, jwt, sessions } = build({ user: { ...MFA_USER } });
+    jwt.verify.mockReturnValue({ sub: 7, sid: 55 });
+    await expect(svc.loginWithCode('access', '123456')).rejects.toThrow(UnauthorizedException);
+    expect(sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses an expired or forged challenge', async () => {
+    const { svc, jwt } = build({ user: { ...MFA_USER } });
+    jwt.verify.mockImplementation(() => {
+      throw new Error('jwt expired');
+    });
+    await expect(svc.loginWithCode('old', '123456')).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('wrong codes count toward both lockouts and then block even a right code', async () => {
+    const { svc, mfa, users, sessions } = build({ user: { ...MFA_USER } });
+    mfa.verify.mockResolvedValue(null);
+    for (let i = 0; i < MAX_FAILED_LOGINS; i++) {
+      await expect(svc.loginWithCode('c', '000000', { ip: '1.2.3.4' })).rejects.toThrow(UnauthorizedException);
+    }
+    expect(users.recordFailedLogin).toHaveBeenCalledTimes(MAX_FAILED_LOGINS);
+    mfa.verify.mockResolvedValue('totp');
+    await expect(svc.loginWithCode('c', '123456', { ip: '1.2.3.4' })).rejects.toThrow(UnauthorizedException);
+    expect(sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('a locked account cannot finish signing in', async () => {
+    const { svc, sessions } = build({ user: { ...MFA_USER, isLocked: true } });
+    await expect(svc.loginWithCode('c', '123456')).rejects.toThrow(UnauthorizedException);
+    expect(sessions.create).not.toHaveBeenCalled();
+  });
+
+  it('step-up takes a code from the app, not the password and not a recovery code', async () => {
+    const { svc, sessions, mfa } = build({ user: { ...MFA_USER } });
+    await expect(svc.stepUp(WHO, { password: 'pw' })).rejects.toThrow(BadRequestException);
+    expect(sessions.elevate).not.toHaveBeenCalled();
+    await svc.stepUp(WHO, { code: '123456' });
+    expect(mfa.verify).toHaveBeenCalledWith(7, '123456', { allowRecovery: false });
+    expect(sessions.elevate).toHaveBeenCalled();
+  });
+
+  it('step-up with a wrong code is refused', async () => {
+    const { svc, sessions, mfa } = build({ user: { ...MFA_USER } });
+    mfa.verify.mockResolvedValue(null);
+    await expect(svc.stepUp(WHO, { code: '000000' })).rejects.toThrow(BadRequestException);
     expect(sessions.elevate).not.toHaveBeenCalled();
   });
 });

@@ -41,5 +41,9 @@ export const messages = {
 	'teams.edit.deleteTitle': 'Delete Team',
 	'teams.edit.deleteDesc':
 		'Permanently removes this team and all its members. Projects shared with it are no longer shared with them.',
-	'teams.edit.confirmDelete': 'Delete this team?'
+	'teams.edit.confirmDelete': 'Delete this team?',
+	'teams.edit.requireMfa': 'Members must use two-factor authentication',
+	'teams.edit.requireMfaHint':
+		'Turn it on for your own account first. Members without it are asked to set it up before they can continue.',
+	'teams.detail.mfaRequired': 'Two-factor authentication is required for members of this team.'
 } as const;

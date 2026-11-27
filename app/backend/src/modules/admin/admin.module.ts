@@ -8,6 +8,7 @@ import { ActivityModule } from '../activity/activity.module';
 import { TeamMemberModule } from '../team-member/team-member.module';
 import { NotificationModule } from '../notification/notification.module';
 import { AuthModule } from '../auth/auth.module';
+import { MfaModule } from '../mfa/mfa.module';
 import { ProjectTransferService } from './project-transfer.service';
 
 @Module({
@@ -20,6 +21,7 @@ import { ProjectTransferService } from './project-transfer.service';
     ActivityModule,
     NotificationModule,
     AuthModule,
+    MfaModule,
   ],
   controllers: [AdminController],
   providers: [ProjectTransferService],

@@ -23,6 +23,8 @@ import { EmailVerificationService } from '../email-verification/email-verificati
 import { assertMayRegister, adminAllowsRegistration } from './registration';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { Public } from '../../common/decorators/public.decorator';
+import { AllowWithoutMfa } from '../../common/decorators/allow-without-mfa.decorator';
+import { isDemoMode } from '../../common/demo-users';
 
 /** Registrations per hour per IP. Raised only for automated tests (the smoke scripts register many users). */
 const registrationLimit = Number(process.env.REGISTRATION_RATE_LIMIT || 10);
@@ -57,11 +59,13 @@ export class UserController {
   }
 
   // Must be registered before :id to avoid route conflict
+  /** `mfaEnrollmentRequired`: the account must set up 2FA before it can use anything else (MfaEnrollmentGuard). */
   @Get('me')
-  async getMe(@Request() req: AuthRequest): Promise<Omit<User, 'password'>> {
+  @AllowWithoutMfa()
+  async getMe(@Request() req: AuthRequest): Promise<Omit<User, 'password'> & { mfaEnrollmentRequired: boolean }> {
     const user = await this.userService.findById(req.user.userId);
     if (!user) throw new NotFoundException();
-    return this.strip(user);
+    return { ...this.strip(user), mfaEnrollmentRequired: !!req.user.mfaMissing && !isDemoMode() };
   }
 
   @Public() // registration

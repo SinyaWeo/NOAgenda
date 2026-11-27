@@ -7,6 +7,7 @@ import { isEncrypted, SecretBox } from './secret-box';
  */
 export const ENCRYPTED_COLUMNS: readonly EncryptedColumn[] = [
   { table: 'webhook', column: 'secret', context: 'webhook.secret' },
+  { table: 'users', column: 'totpSecret', context: 'users.totpSecret' },
 ];
 
 /**

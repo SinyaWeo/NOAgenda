@@ -5,7 +5,7 @@
 	import { loadOnParamChange } from '#lib/param-loader.svelte.js';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
+	import { Alert, Button, Card, Input, Label, Select, Textarea, Toggle } from 'flowbite-svelte';
 	import { ExclamationCircleOutline } from 'flowbite-svelte-icons';
 	import UserPicker from '#lib/components/UserPicker.svelte';
 	import { errMessage } from '#lib/errors.js';
@@ -18,6 +18,7 @@
 	let members = $state<TeamMember[]>([]);
 	let name = $state('');
 	let description = $state('');
+	let requireMfa = $state(false);
 	let saving = $state(false);
 	const canManage = $derived(canManageTeam(authSession.user, members));
 	const admin = $derived(isAdmin(authSession.user));
@@ -38,6 +39,7 @@
 		if (isStale()) return;
 		name = t.name ?? '';
 		description = t.description ?? '';
+		requireMfa = t.requireMfa === true;
 		members = m;
 	}
 
@@ -49,7 +51,8 @@
 		try {
 			await apiPutAuth(`/teams/${page.params.id}`, {
 				name,
-				description
+				description,
+				requireMfa
 			});
 			goto(`/teams/${page.params.id}`);
 		} catch (e: unknown) {
@@ -127,6 +130,13 @@
 			<div>
 				<Label for="team-desc" class="mb-1">{t('common.field.description')}</Label>
 				<Textarea id="team-desc" bind:value={description} rows={3} />
+			</div>
+			<div>
+				<div class="flex items-center gap-3">
+					<Toggle bind:checked={requireMfa} data-testid="team-require-mfa" />
+					<span class="text-sm text-gray-700 dark:text-gray-300">{t('teams.edit.requireMfa')}</span>
+				</div>
+				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">{t('teams.edit.requireMfaHint')}</p>
 			</div>
 			<div class="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
 				<Button type="submit" disabled={saving}>

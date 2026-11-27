@@ -94,8 +94,15 @@ describe('ApiTokenService', () => {
         role: 'user',
         tokenId: 8,
         scope: 'write',
+        mfaMissing: false,
       });
       expect(repo.update).toHaveBeenCalledWith(8, { lastUsedAt: expect.any(Date) });
+    });
+
+    it('says when the user must set up 2FA first (MySQL answers 1/0, or "1" as text)', async () => {
+      const { svc, repo } = build();
+      repo.manager.query.mockResolvedValue([{ ...row, mfaMissing: '1' }]);
+      expect(await svc.authenticate('noa_abc')).toMatchObject({ mfaMissing: true });
     });
 
     it('throttles lastUsedAt updates to once a minute', async () => {

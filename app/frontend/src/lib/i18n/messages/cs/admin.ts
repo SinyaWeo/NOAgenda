@@ -176,5 +176,14 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.singleUser.confirm': 'Nevratně přepnout',
 	'admin.settings.appName': 'Název aplikace',
 	'admin.settings.allowRegistration': 'Povolit registraci nových uživatelů',
-	'admin.settings.save': 'Uložit nastavení'
+	'admin.settings.save': 'Uložit nastavení',
+	'admin.settings.requireAdminMfa': 'Správci musí používat dvoufázové ověření',
+	'admin.settings.requireAdminMfaHint':
+		'Nejdřív si ho zapněte na svém účtu. Správci bez něj budou muset dvoufázové ověření nastavit, než budou moci pokračovat.',
+	'admin.users.badge.mfa': '2FA',
+	'admin.users.mfaResetTip': 'Vypnout dvoufázové ověření',
+	'admin.users.mfaResetConfirm':
+		'Vypnout dvoufázové ověření uživateli {username}? Udělejte to jen tehdy, když ztratil telefon i záložní kódy. Dostane o tom e-mail.',
+	'admin.users.mfaReset': 'Dvoufázové ověření uživatele {username} je vypnuté',
+	'admin.users.mfaResetFailed': 'Dvoufázové ověření uživatele {username} se nepodařilo vypnout: {reason}'
 };

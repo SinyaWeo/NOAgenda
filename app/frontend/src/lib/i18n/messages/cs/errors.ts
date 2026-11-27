@@ -96,5 +96,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'errors.validation.timezone': '{field}: zadejte platné časové pásmo, např. Europe/Prague',
 	'errors.validation.oneOf': '{field}: povolené hodnoty jsou {values}',
 	'errors.validation.date': '{field}: zadejte platné datum',
-	'errors.validation.unknownField': 'Pole {field} není povoleno'
+	'errors.validation.unknownField': 'Pole {field} není povoleno',
+	'errors.server.invalidCode': 'Neplatný kód',
+	'errors.server.mfaChallengeExpired': 'Přihlášení vypršelo, zadejte prosím znovu heslo',
+	'errors.server.mfaEnrollmentRequired': 'Nejprve si nastavte dvoufázové ověření',
+	'errors.server.mfaAlreadyOn': 'Dvoufázové ověření už je zapnuté',
+	'errors.server.mfaNotOn': 'Dvoufázové ověření není zapnuté',
+	'errors.server.mfaStartFirst': 'Nejprve začněte nastavení',
+	'errors.server.mfaRequired': 'Pro váš účet je dvoufázové ověření povinné',
+	'errors.server.mfaOwnFirst': 'Nejprve si zapněte dvoufázové ověření na svém účtu',
+	'errors.server.mfaOwnReset': 'Své vlastní dvoufázové ověření změníte v nastavení účtu',
+	'errors.server.demoDisabled': 'V ukázkové verzi je tato akce vypnutá'
 };

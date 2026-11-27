@@ -91,5 +91,15 @@ export const messages = {
 	'errors.validation.timezone': '{field} must be a valid time zone such as Europe/Prague',
 	'errors.validation.oneOf': '{field} must be one of: {values}',
 	'errors.validation.date': '{field} must be a valid date',
-	'errors.validation.unknownField': 'The field {field} is not allowed'
+	'errors.validation.unknownField': 'The field {field} is not allowed',
+	'errors.server.invalidCode': 'Invalid code',
+	'errors.server.mfaChallengeExpired': 'The sign-in has expired, please enter your password again',
+	'errors.server.mfaEnrollmentRequired': 'Set up two-factor authentication first',
+	'errors.server.mfaAlreadyOn': 'Two-factor authentication is already on',
+	'errors.server.mfaNotOn': 'Two-factor authentication is not on',
+	'errors.server.mfaStartFirst': 'Start the setup first',
+	'errors.server.mfaRequired': 'Two-factor authentication is required for your account',
+	'errors.server.mfaOwnFirst': 'Turn on two-factor authentication for your own account first',
+	'errors.server.mfaOwnReset': 'Change your own two-factor authentication in your account settings',
+	'errors.server.demoDisabled': 'This action is disabled on the demo'
 } as const;

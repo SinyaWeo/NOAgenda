@@ -15,8 +15,8 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
-import { AuthService, AuthResult } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { AuthService, AuthResult, MfaChallenge } from './auth.service';
+import { LoginCodeDto, LoginDto } from './dto/login.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyEmailDto, ResendVerificationDto } from './dto/email-verification.dto';
@@ -87,7 +87,8 @@ export class AuthController {
     if (allowed && origin && origin !== allowed) throw new ForbiddenException('Cross-origin request refused');
   }
 
-  private respond(res: Response, result: AuthResult) {
+  private respond(res: Response, result: AuthResult | MfaChallenge) {
+    if ('mfaRequired' in result) return { mfaRequired: true, mfaToken: result.mfaToken };
     if (result.refreshToken) this.setRefreshCookie(res, result.refreshToken);
     return { access_token: result.access_token, expires_in: result.expires_in };
   }
@@ -106,6 +107,7 @@ export class AuthController {
       termsAcceptanceRequired: process.env.REQUIRE_TERMS_ACCEPTANCE === 'true',
       registrationEnabled: policy.enabled,
       inviteRequired: policy.inviteRequired,
+      demoMode: isDemoMode(),
       ...(isDemoMode() ? { demoUsers: demoUserList() } : {}),
     };
   }
@@ -124,6 +126,23 @@ export class AuthController {
           .slice(0, 64);
         this.logger.warn(`Failed login for "${user}" from ${req.ip}`);
       }
+      throw err;
+    }
+  }
+
+  /** Second step of signing in when the account has 2FA on: the token from `login` plus a code. */
+  @Post('login/code')
+  @Throttle({ default: { ttl: 60000, limit: loginLimit } })
+  @HttpCode(HttpStatus.OK)
+  async loginWithCode(
+    @Body() body: LoginCodeDto,
+    @Request() req: AuthRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    try {
+      return this.respond(res, await this.authService.loginWithCode(body.mfaToken, body.code, this.meta(req)));
+    } catch (err) {
+      if (err instanceof UnauthorizedException) this.logger.warn(`Failed 2FA code from ${req.ip}`);
       throw err;
     }
   }

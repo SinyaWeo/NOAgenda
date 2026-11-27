@@ -52,6 +52,7 @@ describe('public routes (everything else needs a session or API token)', () => {
       'POST /auth/email/resend',
       'POST /auth/email/verify',
       'POST /auth/login',
+      'POST /auth/login/code',
       'POST /auth/logout',
       'POST /auth/password/reset',
       'POST /auth/password/token',

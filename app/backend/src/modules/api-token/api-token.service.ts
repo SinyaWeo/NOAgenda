@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ApiToken } from './api-token.entity';
 import { randomToken, sha256 } from '../../common/tokens';
+import { mfaMissingSql } from '../mfa/mfa-policy';
 
 /** Prefix that distinguishes API tokens from JWTs in the Authorization header. */
 export const API_TOKEN_PREFIX = 'noa_';
@@ -13,6 +14,8 @@ export interface ApiTokenUser {
   role: string;
   tokenId: number;
   scope: 'read' | 'write';
+  /** Must use two-factor authentication and has not set it up. */
+  mfaMissing: boolean;
 }
 
 @Injectable()
@@ -52,12 +55,14 @@ export class ApiTokenService {
   /** Resolve a raw `noa_...` token to its user, or null if unknown/expired. */
   async authenticate(raw: string): Promise<ApiTokenUser | null> {
     if (!raw.startsWith(API_TOKEN_PREFIX)) return null;
-    const rows: (ApiTokenUser & { lastUsedAt: Date | null })[] = await this.repo.manager.query(
-      `SELECT u.id AS id, u.username AS username, u.role AS role, t.id AS tokenId, t.scope AS scope, t.lastUsedAt AS lastUsedAt
+    const rows: (Omit<ApiTokenUser, 'mfaMissing'> & { lastUsedAt: Date | null; mfaMissing: unknown })[] =
+      await this.repo.manager.query(
+        `SELECT u.id AS id, u.username AS username, u.role AS role, t.id AS tokenId, t.scope AS scope,
+                t.lastUsedAt AS lastUsedAt, ${mfaMissingSql('u')} AS mfaMissing
          FROM api_tokens t JOIN users u ON u.id = t.userId
         WHERE t.token = ? AND u.isLocked = 0 AND (t.expiresAt IS NULL OR t.expiresAt > ?)`,
-      [sha256(raw), new Date()],
-    );
+        [sha256(raw), new Date()],
+      );
     const row = rows[0];
     if (!row) return null;
     // Record usage at most once a minute to keep reads cheap.
@@ -70,6 +75,7 @@ export class ApiTokenService {
       role: row.role,
       tokenId: row.tokenId,
       scope: row.scope === 'write' ? 'write' : 'read',
+      mfaMissing: Number(row.mfaMissing) === 1,
     };
   }
 }

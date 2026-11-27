@@ -92,6 +92,18 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 ```
 (`--demote <username>` reverses it.) The user must log in again to get a token carrying the new role.
 
+### Two-factor authentication
+Every user can switch on two-factor authentication (an authenticator app, plus 10 single-use recovery codes) under
+*Settings → Two-factor authentication*. The secret is encrypted at rest with `SECRETS_KEY`. An admin can require it
+from all admins (*Admin → Settings*), and a team manager from their team's members (team settings); both need 2FA on
+their own account first. Anyone it is required from and who has not set it up can only set it up until they do.
+An admin switches off a user's 2FA (lost phone and recovery codes) in *Admin → Users*. If the only admin is locked
+out, do it from the server:
+```bash
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production \
+  exec backend node dist/scripts/reset-mfa.js <username>
+```
+
 ### Behind an existing Apache (ports 80/443 already in use)
 If the server already runs Apache (or nginx) on 80/443, keep it as the public HTTPS front door and let it proxy
 to Caddy on loopback. Traffic: browser -(https)-> Apache -> Caddy `127.0.0.1:8080` -> backend/frontend.
@@ -176,7 +188,8 @@ Do this one instance at a time, because the old Caddy still holds the ports unti
 For a demo that visitors can try without signing up, add to its env file:
 
 - `DEMO_MODE=true`: the login page lists the example users (with password and role: app admin, team manager or team member), and the password, email and
-  account-deletion endpoints are disabled so visitors cannot lock each other out. Attachment and avatar uploads are
+  account-deletion endpoints are disabled so visitors cannot lock each other out (so is setting up two-factor
+  authentication, and no 2FA requirement is enforced). Attachment and avatar uploads are
   disabled too (HTTP 403), so the public demo cannot be used to store files.
 - `REGISTRATION_ENABLED=false` and an empty `SMTP_HOST`.
 
@@ -271,6 +284,10 @@ docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.producti
 # 3. remove ",<old>" from SECRETS_KEY and restart the backend again
 ```
 If a value is encrypted with a key that is no longer listed, the backend says which key id it needs.
+2FA recovery codes are stored as keyed hashes (HMAC with a key derived from `SECRETS_KEY`), which step 2 cannot
+rewrite: codes made before the rotation stop working once the old key is removed in step 3. Users with 2FA should make
+new recovery codes (Settings → Two-factor authentication) while both keys are listed; their authenticator app is not
+affected (its secret is re-encrypted in step 2).
 `docker/verify-backup.sh` reports how many stored secrets a backup holds and whether any are still plain text.
 
 **Upgrading an existing instance to this version:** add `SECRETS_KEY` to `docker/.env.production` first (the stack

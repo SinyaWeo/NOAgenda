@@ -15,4 +15,8 @@ export class Team extends BaseEntity {
   @ForeignKey(() => User, { name: 'FK_teams_ownerId', onDelete: 'SET NULL' })
   @Column({ nullable: true, type: 'int' })
   ownerId?: number;
+
+  /** Members must use two-factor authentication (set by a team manager). */
+  @Column({ default: false })
+  requireMfa!: boolean;
 }

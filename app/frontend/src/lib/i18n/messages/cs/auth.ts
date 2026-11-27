@@ -206,5 +206,18 @@ export const messages: Record<keyof typeof en, Message> = {
 		'Přechod z vlastního CSS na Flowbite Svelte, Material ikony a první základní funkce.',
 	'auth.about.timeline.start.title': 'První commit',
 	'auth.about.timeline.start.body':
-		'Projekt začíná: backendové moduly, společná základní entita a zjednodušené skripty start/stop.'
+		'Projekt začíná: backendové moduly, společná základní entita a zjednodušené skripty start/stop.',
+	'auth.stepUp.codeTitle': 'Potvrďte, že jste to vy',
+	'auth.stepUp.codeText':
+		'Změny v administraci vyžadují kód z ověřovací aplikace. Na tomto zařízení se na něj chvíli nebudeme ptát znovu.',
+	'auth.mfa.title': 'Dvoufázové ověření',
+	'auth.mfa.prompt': 'Zadejte šestimístný kód z ověřovací aplikace.',
+	'auth.mfa.recoveryPrompt': 'Zadejte jeden ze záložních kódů. Každý kód platí jen jednou.',
+	'auth.mfa.code': 'Ověřovací kód',
+	'auth.mfa.recoveryCode': 'Záložní kód',
+	'auth.mfa.verify': 'Ověřit',
+	'auth.mfa.verifying': 'Ověřuji…',
+	'auth.mfa.useRecovery': 'Ztratili jste telefon? Použijte záložní kód',
+	'auth.mfa.useApp': 'Použít kód z ověřovací aplikace',
+	'auth.mfa.back': 'Zpět na přihlášení'
 };

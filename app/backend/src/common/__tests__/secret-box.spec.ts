@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes } from 'crypto';
 import {
   SecretBox,
   encryptedColumn,
@@ -165,5 +165,40 @@ describe('the app-wide SecretBox and the TypeORM transformers', () => {
     const two = encryptedJsonFields('plugin.config', ['a', 'b']);
     const s = two.to({ a: 'A', b: 'B' }) as Record<string, string>;
     expect(() => two.from({ a: s.b, b: s.a })).toThrow(/Cannot read plugin\.config\.a/);
+  });
+});
+
+describe('SecretBox.mac (keyed hashes)', () => {
+  const k1 = { id: 'k1', key: Buffer.alloc(32, 1) };
+  const k2 = { id: 'k2', key: Buffer.alloc(32, 2) };
+
+  it('matches the same value and context only', () => {
+    const box = new SecretBox([k1]);
+    const h = box.mac('abcde12345', 'users.totpRecoveryCodes');
+    expect(h).toMatch(/^mac:v1:k1:[0-9a-f]{64}$/);
+    expect(box.macMatches(h, 'abcde12345', 'users.totpRecoveryCodes')).toBe(true);
+    expect(box.macMatches(h, 'abcde12346', 'users.totpRecoveryCodes')).toBe(false);
+    expect(box.macMatches(h, 'abcde12345', 'other.context')).toBe(false);
+  });
+
+  it('is deterministic per key, but not a plain SHA-256 and different with another key', () => {
+    const a = new SecretBox([k1]).mac('v', 'c');
+    expect(new SecretBox([k1]).mac('v', 'c')).toBe(a);
+    expect(a).not.toContain(createHash('sha256').update('v').digest('hex'));
+    expect(new SecretBox([k2]).mac('v', 'c').split(':')[3]).not.toBe(a.split(':')[3]);
+  });
+
+  it('after key rotation old hashes still match while the old key is listed, and not once it is gone', () => {
+    const old = new SecretBox([k1]).mac('v', 'c');
+    expect(new SecretBox([k2, k1]).macMatches(old, 'v', 'c')).toBe(true);
+    expect(new SecretBox([k2, k1]).mac('v', 'c').startsWith('mac:v1:k2:')).toBe(true);
+    expect(new SecretBox([k2]).macMatches(old, 'v', 'c')).toBe(false);
+  });
+
+  it('never matches malformed or encrypted values', () => {
+    const box = new SecretBox([k1]);
+    for (const bad of ['', 'mac:v1:k1', 'mac:v2:k1:00', 'mac:v1:k1:zz', box.encrypt('v', 'c')]) {
+      expect(box.macMatches(bad, 'v', 'c')).toBe(false);
+    }
   });
 });

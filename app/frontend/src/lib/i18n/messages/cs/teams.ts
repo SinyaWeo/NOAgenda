@@ -49,5 +49,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'teams.edit.deleteTitle': 'Smazat tým',
 	'teams.edit.deleteDesc':
 		'Trvale odstraní tento tým i všechny jeho členy. Projekty sdílené s týmem přestanou být sdílené.',
-	'teams.edit.confirmDelete': 'Smazat tento tým?'
+	'teams.edit.confirmDelete': 'Smazat tento tým?',
+	'teams.edit.requireMfa': 'Členové musí používat dvoufázové ověření',
+	'teams.edit.requireMfaHint':
+		'Nejdřív si ho zapněte na svém účtu. Členové bez něj ho budou muset nastavit, než budou moci pokračovat.',
+	'teams.detail.mfaRequired': 'Členové tohoto týmu musí používat dvoufázové ověření.'
 };

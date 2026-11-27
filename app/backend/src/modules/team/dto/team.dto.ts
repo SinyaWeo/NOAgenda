@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class CreateTeamDto {
   @IsString()
@@ -13,6 +13,11 @@ export class CreateTeamDto {
 }
 
 export class UpdateTeamDto {
+  /** Members must use two-factor authentication. Switching it on needs 2FA on your own account first. */
+  @IsOptional()
+  @IsBoolean()
+  requireMfa?: boolean;
+
   @IsOptional()
   @IsString()
   @IsNotEmpty()

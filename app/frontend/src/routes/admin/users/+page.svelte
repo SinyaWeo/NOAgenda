@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { singleUserMode } from '#lib/appConfig.svelte.js';
+	import { demoMode, singleUserMode } from '#lib/appConfig.svelte.js';
+	import { confirmDialog } from '#lib/confirm.svelte.js';
 	import PageHeader from '#lib/components/PageHeader.svelte';
 	import DeleteUserDialog from '#lib/components/DeleteUserDialog.svelte';
 	import AddUserDialog from '#lib/components/AddUserDialog.svelte';
@@ -26,6 +27,7 @@
 		FolderOpenSolid,
 		LockSolid,
 		LockOpenSolid,
+		ShieldSolid,
 		TrashBinSolid,
 		UserAddSolid
 	} from 'flowbite-svelte-icons';
@@ -121,6 +123,29 @@
 		}
 	}
 
+	/** Lost phone and recovery codes: switch the user's 2FA off so they can sign in with the password. */
+	async function resetMfa(user: User) {
+		if (
+			!(await confirmDialog(t('admin.users.mfaResetConfirm', { username: user.username }), {
+				confirmLabel: t('admin.users.mfaResetTip')
+			}))
+		)
+			return;
+		saving = user.id;
+		try {
+			await apiPostAuth(`/admin/users/${user.id}/mfa/reset`, {});
+			users = users.map((u) => (u.id === user.id ? { ...u, totpEnabledAt: null } : u));
+			showToast(t('admin.users.mfaReset', { username: user.username }));
+		} catch (e: unknown) {
+			error = t('admin.users.mfaResetFailed', {
+				username: user.username,
+				reason: errMessage(e, t('admin.users.unknownError'))
+			});
+		} finally {
+			saving = null;
+		}
+	}
+
 	function userDeleted(user: User) {
 		deleting = null;
 		users = users.filter((u) => u.id !== user.id);
@@ -178,6 +203,9 @@
 						{#if invitePending(u)}<span class="ml-1 text-xs font-medium tone-yellow">
 								{t('admin.users.badge.invited')}
 							</span>{/if}
+						{#if u.totpEnabledAt}<span class="ml-1 text-xs font-medium tone-green" data-mfa="on">
+								{t('admin.users.badge.mfa')}
+							</span>{/if}
 					</TableBodyCell>
 					<TableBodyCell>
 						{fmt.date(u.createdAt)}
@@ -218,6 +246,17 @@
 									onclick={() => resendInvite(u)}
 								>
 									<EnvelopeSolid class="w-4 h-4" />
+								</Button>{/if}
+							{#if u.totpEnabledAt && !isSelf && !demoMode.current}<Button
+									size="xs"
+									color="alternative"
+									class="p-2"
+									title={t('admin.users.mfaResetTip')}
+									aria-label={t('admin.users.mfaResetTip')}
+									disabled={saving === u.id}
+									onclick={() => resetMfa(u)}
+								>
+									<ShieldSolid class="w-4 h-4" />
 								</Button>{/if}
 							<Button
 								size="xs"

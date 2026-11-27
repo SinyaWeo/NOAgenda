@@ -204,5 +204,18 @@ export const messages = {
 		'Migration from custom CSS to Flowbite Svelte, Material icons and the first basic functionality.',
 	'auth.about.timeline.start.title': 'First commit',
 	'auth.about.timeline.start.body':
-		'The project begins: backend modules, a shared base entity and simplified start/stop scripts.'
+		'The project begins: backend modules, a shared base entity and simplified start/stop scripts.',
+	'auth.stepUp.codeTitle': 'Confirm it is you',
+	'auth.stepUp.codeText':
+		'Admin changes need a code from your authenticator app. You will not be asked again for a while on this device.',
+	'auth.mfa.title': 'Two-factor authentication',
+	'auth.mfa.prompt': 'Enter the 6-digit code from your authenticator app.',
+	'auth.mfa.recoveryPrompt': 'Enter one of your recovery codes. Each code works only once.',
+	'auth.mfa.code': 'Authentication code',
+	'auth.mfa.recoveryCode': 'Recovery code',
+	'auth.mfa.verify': 'Verify',
+	'auth.mfa.verifying': 'Verifying…',
+	'auth.mfa.useRecovery': 'Lost your phone? Use a recovery code',
+	'auth.mfa.useApp': 'Use a code from the authenticator app',
+	'auth.mfa.back': 'Back to sign-in'
 } as const;

@@ -138,5 +138,44 @@ export const messages: Record<keyof typeof en, Message> = {
 	'settings.deletion.confirmPassword': 'Potvrďte svým heslem',
 	'settings.deletion.cancelRequest': 'Zrušit žádost o smazání',
 	'settings.deletion.processing': 'Zpracovávám…',
-	'settings.deletion.request': 'Požádat o smazání účtu'
+	'settings.deletion.request': 'Požádat o smazání účtu',
+	'settings.section.security': 'Dvoufázové ověření',
+	'settings.section.security.desc': 'Ochrana přihlášení kódem z telefonu',
+	'settings.security.title': 'Dvoufázové ověření',
+	'settings.security.intro':
+		'Se zapnutým dvoufázovým ověřením potřebujete k přihlášení heslo a kód z ověřovací aplikace v telefonu (například Google Authenticator, Microsoft Authenticator, 1Password nebo Aegis).',
+	'settings.security.statusOn': 'Zapnuto od {date}',
+	'settings.security.statusOff': 'Vypnuto',
+	'settings.security.required':
+		'Dvoufázové ověření pro váš účet vyžaduje správce nebo některý z vašich týmů, proto ho nelze vypnout.',
+	'settings.security.demo': 'V ukázkové verzi nelze dvoufázové ověření nastavit: její účty jsou sdílené.',
+	'settings.security.recoveryLeft': 'Nepoužité záložní kódy: {count}',
+	'settings.security.recoveryLow': 'Docházejí vám záložní kódy. Vytvořte si nové.',
+	'settings.security.start': 'Nastavit dvoufázové ověření',
+	'settings.security.passwordStep': 'Pro začátek zadejte své heslo.',
+	'settings.security.continue': 'Pokračovat',
+	'settings.security.scan':
+		'Naskenujte tento QR kód ověřovací aplikací a zadejte šestimístný kód, který zobrazí.',
+	'settings.security.manual': 'Nejde naskenovat? Zadejte do aplikace tento klíč:',
+	'settings.security.qrLabel': 'QR kód pro ověřovací aplikaci',
+	'settings.security.enable': 'Zapnout',
+	'settings.security.enabled': 'Dvoufázové ověření je zapnuté. Vaše ostatní relace byly odhlášeny.',
+	'settings.security.codesTitle': 'Vaše záložní kódy',
+	'settings.security.codesText':
+		'Uložte si je na bezpečné místo, například do správce hesel. Pokud ztratíte telefon, každý kód vás jednou přihlásí. Znovu už se nezobrazí.',
+	'settings.security.copy': 'Kopírovat',
+	'settings.security.copied': 'Záložní kódy zkopírovány',
+	'settings.security.download': 'Stáhnout',
+	'settings.security.saved': 'Mám je uložené',
+	'settings.security.regenerate': 'Vytvořit nové záložní kódy',
+	'settings.security.regenerateText':
+		'Zadejte kód z ověřovací aplikace. Staré záložní kódy přestanou platit.',
+	'settings.security.disable': 'Vypnout',
+	'settings.security.disableText': 'Zadejte heslo a kód z ověřovací aplikace (nebo záložní kód).',
+	'settings.security.disabled': 'Dvoufázové ověření je vypnuté.',
+	'settings.security.gateTitle': 'Nastavte si dvoufázové ověření',
+	'settings.security.gateText':
+		'Váš účet musí používat dvoufázové ověření (vyžaduje ho správce nebo některý z vašich týmů). Pro pokračování si ho nastavte.',
+	'settings.security.signOut': 'Odhlásit se',
+	'settings.security.fileHeading': 'Záložní kódy {app} pro {username}'
 };

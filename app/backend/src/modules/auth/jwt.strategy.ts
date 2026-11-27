@@ -35,6 +35,7 @@ class JwtOrApiTokenStrategy extends Strategy {
                 apiTokenId: u.tokenId,
                 apiTokenScope: u.scope,
                 viaApiToken: true,
+                mfaMissing: u.mfaMissing,
               })
             : this.fail('Invalid API token', 401),
         )
@@ -68,6 +69,12 @@ export class JwtStrategy extends PassportStrategy(JwtOrApiTokenStrategy, 'jwt') 
     if (!payload?.sub || !payload?.sid) throw new UnauthorizedException();
     const user = await this.sessions.findUserForSession(payload.sid, payload.sub);
     if (!user) throw new UnauthorizedException();
-    return { userId: user.id, username: user.username, role: user.role as UserRole, sessionId: payload.sid };
+    return {
+      userId: user.id,
+      username: user.username,
+      role: user.role as UserRole,
+      sessionId: payload.sid,
+      mfaMissing: user.mfaMissing,
+    };
   }
 }

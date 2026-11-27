@@ -6,13 +6,17 @@ import { apiFetch } from './api';
  */
 export const singleUserMode = $state<{ current: boolean }>({ current: false });
 
+/** The public demo (`DEMO_MODE=true`): shared accounts, so account-security changes are off. `demoMode.current`. */
+export const demoMode = $state<{ current: boolean }>({ current: false });
+
 /** Load the public instance settings the whole app needs. Failure keeps the defaults. */
 export async function loadAppConfig(): Promise<void> {
 	try {
 		const res = await apiFetch('/auth/config');
 		if (!res.ok) return;
-		const cfg: { singleUserMode?: boolean } = await res.json();
+		const cfg: { singleUserMode?: boolean; demoMode?: boolean } = await res.json();
 		singleUserMode.current = cfg.singleUserMode === true;
+		demoMode.current = cfg.demoMode === true;
 	} catch {
 		// keep the defaults
 	}

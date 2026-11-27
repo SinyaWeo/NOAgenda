@@ -10,6 +10,8 @@ export interface AuthUser {
   apiTokenId?: number;
   apiTokenScope?: string;
   viaApiToken?: boolean;
+  /** Must use two-factor authentication and has not set it up (see MfaEnrollmentGuard). */
+  mfaMissing?: boolean;
 }
 
 /** An express request that has passed the global JWT guard. */

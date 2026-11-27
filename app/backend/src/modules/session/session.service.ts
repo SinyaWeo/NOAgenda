@@ -10,6 +10,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, Not } from 'typeorm';
 import { UserSession } from './session.entity';
 import { randomToken, sha256 } from '../../common/tokens';
+import { mfaMissingSql } from '../mfa/mfa-policy';
 
 const REFRESH_TTL_DAYS = Number(process.env.REFRESH_TOKEN_TTL_DAYS || 30);
 /** A just-rotated token presented again within this window is a parallel request (two tabs), not theft. */
@@ -34,6 +35,8 @@ export interface SessionUser {
   id: number;
   username: string;
   role: string;
+  /** Must use two-factor authentication and has not set it up. */
+  mfaMissing: boolean;
 }
 
 /**
@@ -144,13 +147,14 @@ export class SessionService implements OnModuleInit, OnModuleDestroy {
 
   /** Resolve a live session to its user (one query). Used on every authenticated request. */
   async findUserForSession(sessionId: number, userId: number): Promise<SessionUser | null> {
-    const rows: SessionUser[] = await this.repo.manager.query(
-      `SELECT u.id AS id, u.username AS username, u.role AS role
+    const rows: (Omit<SessionUser, 'mfaMissing'> & { mfaMissing: unknown })[] = await this.repo.manager.query(
+      `SELECT u.id AS id, u.username AS username, u.role AS role, ${mfaMissingSql('u')} AS mfaMissing
          FROM user_sessions s JOIN users u ON u.id = s.userId
         WHERE s.id = ? AND s.userId = ? AND u.isLocked = 0 AND (s.expiresAt IS NULL OR s.expiresAt > ?)`,
       [sessionId, userId, new Date()],
     );
-    return rows[0] ?? null;
+    const row = rows[0];
+    return row ? { ...row, mfaMissing: Number(row.mfaMissing) === 1 } : null;
   }
 
   /** Allow admin changes from this session until `until` (after the password was re-entered). */

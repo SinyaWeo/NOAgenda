@@ -133,5 +133,46 @@ export const messages = {
 	'settings.deletion.confirmPassword': 'Confirm with your password',
 	'settings.deletion.cancelRequest': 'Cancel Deletion Request',
 	'settings.deletion.processing': 'Processing…',
-	'settings.deletion.request': 'Request Account Deletion'
+	'settings.deletion.request': 'Request Account Deletion',
+	'settings.section.security': 'Two-factor authentication',
+	'settings.section.security.desc': 'Protect sign-in with a code from your phone',
+	'settings.security.title': 'Two-factor authentication',
+	'settings.security.intro':
+		'With two-factor authentication on, signing in needs your password and a code from an authenticator app on your phone (for example Google Authenticator, Microsoft Authenticator, 1Password or Aegis).',
+	'settings.security.statusOn': 'On since {date}',
+	'settings.security.statusOff': 'Off',
+	'settings.security.required':
+		'Two-factor authentication is required for your account by an administrator or one of your teams, so it cannot be switched off.',
+	'settings.security.demo':
+		'Two-factor authentication cannot be set up on the demo: its accounts are shared.',
+	'settings.security.recoveryLeft': 'Unused recovery codes: {count}',
+	'settings.security.recoveryLow': 'You are running out of recovery codes. Make new ones.',
+	'settings.security.start': 'Set up two-factor authentication',
+	'settings.security.passwordStep': 'Enter your password to start.',
+	'settings.security.continue': 'Continue',
+	'settings.security.scan':
+		'Scan this QR code with your authenticator app, then enter the 6-digit code it shows.',
+	'settings.security.manual': 'Cannot scan it? Enter this key in the app instead:',
+	'settings.security.qrLabel': 'QR code for the authenticator app',
+	'settings.security.enable': 'Turn on',
+	'settings.security.enabled': 'Two-factor authentication is on. Your other sessions were signed out.',
+	'settings.security.codesTitle': 'Your recovery codes',
+	'settings.security.codesText':
+		'Keep these somewhere safe, for example in a password manager. If you lose your phone, each code lets you sign in once. They will not be shown again.',
+	'settings.security.copy': 'Copy',
+	'settings.security.copied': 'Recovery codes copied',
+	'settings.security.download': 'Download',
+	'settings.security.saved': 'I have saved them',
+	'settings.security.regenerate': 'Make new recovery codes',
+	'settings.security.regenerateText':
+		'Enter a code from your authenticator app. Your old recovery codes stop working.',
+	'settings.security.disable': 'Turn off',
+	'settings.security.disableText':
+		'Enter your password and a code from your authenticator app (or a recovery code).',
+	'settings.security.disabled': 'Two-factor authentication is off.',
+	'settings.security.gateTitle': 'Set up two-factor authentication',
+	'settings.security.gateText':
+		'Your account must use two-factor authentication (required by an administrator or one of your teams). Set it up to continue.',
+	'settings.security.signOut': 'Sign out',
+	'settings.security.fileHeading': '{app} recovery codes for {username}'
 } as const;

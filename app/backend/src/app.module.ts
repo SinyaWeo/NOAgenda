@@ -5,6 +5,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { StepUpGuard } from './common/guards/step-up.guard';
+import { MfaEnrollmentGuard } from './common/guards/mfa-enrollment.guard';
+import { MfaModule } from './modules/mfa/mfa.module';
 import { SingleUserModeGuard } from './common/guards/single-user-mode.guard';
 import { join } from 'path';
 import { APP_FILTER } from '@nestjs/core';
@@ -80,6 +82,7 @@ import { MailModule } from './modules/mail/mail.module';
     }),
     UserModule,
     AuthModule,
+    MfaModule,
     ProjectModule,
     TaskModule,
     TeamModule,
@@ -122,6 +125,8 @@ import { MailModule } from './modules/mail/mail.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Default-deny: every route needs a session or API token unless it is marked @Public().
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    // Who must use 2FA and has not set it up can only set it up (@AllowWithoutMfa routes).
+    { provide: APP_GUARD, useClass: MfaEnrollmentGuard },
     // Admin changes need a recent password re-entry (runs after JwtAuthGuard, so the user is known).
     { provide: APP_GUARD, useClass: StepUpGuard },
     // Teams, sharing and user pickers are off in single-user mode (@MultiUserOnly).

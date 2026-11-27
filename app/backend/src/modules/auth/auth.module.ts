@@ -7,6 +7,7 @@ import { SessionModule } from '../session/session.module';
 import { ApiTokenModule } from '../api-token/api-token.module';
 import { EmailVerificationModule } from '../email-verification/email-verification.module';
 import { AppSettingsModule } from '../app-settings/app-settings.module';
+import { MfaModule } from '../mfa/mfa.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { StepUpController } from './step-up.controller';
@@ -20,6 +21,7 @@ import { PasswordResetToken } from './password-reset-token.entity';
     ApiTokenModule,
     EmailVerificationModule,
     AppSettingsModule,
+    MfaModule,
     PassportModule,
     TypeOrmModule.forFeature([PasswordResetToken]),
     JwtModule.registerAsync({

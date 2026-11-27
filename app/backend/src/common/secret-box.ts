@@ -1,4 +1,12 @@
-import { createCipheriv, createDecipheriv, createHash, hkdfSync, randomBytes } from 'crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  hkdfSync,
+  randomBytes,
+  timingSafeEqual,
+} from 'crypto';
 import { Logger } from '@nestjs/common';
 import type { ValueTransformer } from 'typeorm';
 
@@ -21,6 +29,8 @@ import type { ValueTransformer } from 'typeorm';
  */
 
 const PREFIX = 'enc';
+/** Prefix of keyed hashes (`mac`), so they cannot be mistaken for encrypted values. */
+const MAC_PREFIX = 'mac';
 const VERSION = 'v1';
 const NONCE_BYTES = 12;
 const TAG_BYTES = 16;
@@ -67,10 +77,15 @@ export function isEncrypted(value: string | null | undefined): boolean {
 
 export class SecretBox {
   private readonly byId: Map<string, Buffer>;
+  /** Per key: a separate key for `mac`, derived with HKDF so hashing never uses the encryption key itself. */
+  private readonly macKeys: Map<string, Buffer>;
 
   constructor(private readonly keys: SecretKey[]) {
     if (!keys.length) throw new Error('SecretBox needs at least one key.');
     this.byId = new Map(keys.map((k) => [k.id, k.key]));
+    this.macKeys = new Map(
+      keys.map((k) => [k.id, Buffer.from(hkdfSync('sha256', k.key, 'noagenda', 'keyed hash v1', KEY_BYTES))]),
+    );
   }
 
   /** The id of the key new values are encrypted with. */
@@ -119,6 +134,36 @@ export class SecretBox {
     } catch {
       throw new Error('Encrypted value failed authentication (wrong key, wrong column, or altered).');
     }
+  }
+
+  /**
+   * Keyed one-way hash (HMAC-SHA256) for short secrets that are only ever compared, never read back (e.g.
+   * 2FA recovery codes): unlike a plain SHA-256, a stolen database alone does not allow guessing them
+   * offline. Stored form: `mac:v1:<key id>:<hex>`, made with the current key; `context` separates uses.
+   */
+  mac(value: string, context: string): string {
+    const id = this.keys[0].id;
+    return `${MAC_PREFIX}:${VERSION}:${id}:${this.macHex(id, value, context)}`;
+  }
+
+  /**
+   * Whether `value` hashes to `stored` (constant time). Hashes made with an older key still match while
+   * that key is in SECRETS_KEY; with the key gone (or a malformed value) nothing matches.
+   */
+  macMatches(stored: string, value: string, context: string): boolean {
+    const parts = stored.split(':');
+    if (parts.length !== 4 || parts[0] !== MAC_PREFIX || parts[1] !== VERSION) return false;
+    const expected = this.macHex(parts[2], value, context);
+    if (expected === null) return false;
+    const a = Buffer.from(expected, 'hex');
+    const b = Buffer.from(parts[3], 'hex');
+    return a.length === b.length && timingSafeEqual(a, b);
+  }
+
+  private macHex(id: string, value: string, context: string): string | null {
+    const key = this.macKeys.get(id);
+    if (!key) return null;
+    return createHmac('sha256', key).update(`${context}|${value}`, 'utf8').digest('hex');
   }
 
   /** True when the value should be (re-)encrypted: plain text, or made with an older key. */

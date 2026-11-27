@@ -3,6 +3,7 @@
 import { t } from './i18n/translate';
 import { localizeServerMessage } from './i18n/server-messages';
 import { needsStepUp, requestStepUp } from './stepUp.svelte';
+import { mfaGate, needsMfaEnrollment } from './mfa.svelte';
 
 /** Where the admin re-enters their password (see `StepUpDialog.svelte`). */
 export const STEP_UP_PATH = '/user/step-up';
@@ -241,6 +242,8 @@ export async function apiFetchAuth(path: string, options: RequestInit = {}) {
 	if (res.status === 401 && !isAuthEndpoint && (await refreshAccessToken())) res = await send();
 	// An admin change needs the password again (step-up): ask for it, then send the request once more.
 	if (path !== STEP_UP_PATH && (await needsStepUp(res)) && (await requestStepUp())) res = await send();
+	// The account must set up 2FA first (e.g. a team just started requiring it): show the setup instead.
+	if (await needsMfaEnrollment(res)) mfaGate.current = true;
 	return res;
 }
 

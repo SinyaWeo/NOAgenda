@@ -5,6 +5,7 @@
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n/index.js';
 	import { apiGetAuth, apiPatchAuth } from '#lib/api.js';
+	import { errMessage } from '#lib/errors.js';
 	import { Alert, Button, Input, Label, Toggle } from 'flowbite-svelte';
 
 	let error = $state('');
@@ -13,6 +14,7 @@
 
 	let appName = $state('');
 	let allowRegistration = $state(true);
+	let requireAdminMfa = $state(false);
 
 	// The notice has two inline <code> names; the translation holds placeholders, split here so word order can differ.
 	const ENABLED = '\u0001';
@@ -26,6 +28,7 @@
 			const data = await apiGetAuth<Record<string, string>>('/admin/settings');
 			appName = data['appName'] ?? DEFAULT_APP_NAME;
 			allowRegistration = (data['allowRegistration'] ?? 'true') === 'true';
+			requireAdminMfa = data['requireAdminMfa'] === 'true';
 		} catch (_) {
 			error = t('admin.settings.loadFailed');
 		}
@@ -38,12 +41,13 @@
 		try {
 			await apiPatchAuth('/admin/settings', {
 				appName,
-				allowRegistration: String(allowRegistration)
+				allowRegistration: String(allowRegistration),
+				requireAdminMfa: String(requireAdminMfa)
 			});
 			sharedAppName.current = appName.trim() || DEFAULT_APP_NAME;
 			success = t('admin.settings.saved');
-		} catch (_) {
-			error = t('admin.settings.saveFailed');
+		} catch (e: unknown) {
+			error = errMessage(e, t('admin.settings.saveFailed'));
 		} finally {
 			saving = false;
 		}
@@ -83,6 +87,15 @@
 		<div class="flex items-center gap-3">
 			<Toggle bind:checked={allowRegistration} />
 			<span class="text-sm text-gray-700 dark:text-gray-300">{t('admin.settings.allowRegistration')}</span>
+		</div>
+		<div>
+			<div class="flex items-center gap-3">
+				<Toggle bind:checked={requireAdminMfa} data-testid="require-admin-mfa" />
+				<span class="text-sm text-gray-700 dark:text-gray-300">{t('admin.settings.requireAdminMfa')}</span>
+			</div>
+			<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">
+				{t('admin.settings.requireAdminMfaHint')}
+			</p>
 		</div>
 		<Button type="submit" disabled={saving}>
 			{saving ? t('common.saving') : t('admin.settings.save')}

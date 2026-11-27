@@ -18,6 +18,7 @@ import { Translator } from '../../i18n/translator.service';
 import { hashPassword, needsRehash, verifyPassword } from '../../common/password';
 import { randomToken, sha256 } from '../../common/tokens';
 import { LoginThrottle } from '../../common/login-throttle';
+import { MfaService } from '../mfa/mfa.service';
 
 /** Wrong passwords from ONE address for ONE account before that address is locked out. */
 export const MAX_FAILED_LOGINS = Number(process.env.MAX_FAILED_LOGINS || 5);
@@ -30,6 +31,11 @@ export const INVITE_TTL_MS = 72 * 60 * 60 * 1000;
 /** How long a step-up (password re-entered) allows admin changes from that session. */
 export const STEP_UP_MINUTES = Number(process.env.ADMIN_STEP_UP_MINUTES || 15);
 
+/** How long the password step of a sign-in stays good while the user looks up their 2FA code. */
+const MFA_CHALLENGE_TTL = '5m';
+/** The `purpose` claim of the short-lived token that links the password step to the code step. */
+const MFA_PURPOSE = 'mfa-login';
+
 /** Same text for unknown user, wrong password and locked account, so none can be told apart. */
 const INVALID_CREDENTIALS = 'Invalid credentials, or the account is temporarily locked';
 
@@ -38,6 +44,13 @@ export interface AuthResult {
   expires_in: number;
   /** Set (and to be placed in the httpOnly cookie) unless the request lost a benign refresh race. */
   refreshToken: string | null;
+}
+
+/** The password was right, and the account has 2FA on: the code is asked for next (`loginWithCode`). */
+export interface MfaChallenge {
+  mfaRequired: true;
+  /** Short-lived proof of the password step; sent back with the code. */
+  mfaToken: string;
 }
 
 @Injectable()
@@ -53,6 +66,7 @@ export class AuthService {
     private readonly emailVerification: EmailVerificationService,
     private readonly mail: MailService,
     private readonly translator: Translator,
+    private readonly mfa: MfaService,
   ) {}
 
   private signAccessToken(user: { id: number; username: string; role: string }, sessionId: number) {
@@ -62,7 +76,7 @@ export class AuthService {
     return { access_token, expires_in: exp - iat };
   }
 
-  async login(username: string, password: string, meta: SessionMeta = {}): Promise<AuthResult> {
+  async login(username: string, password: string, meta: SessionMeta = {}): Promise<AuthResult | MfaChallenge> {
     const user = await this.userService.findByUsername(username);
 
     // Always do one bcrypt comparison, user or no user, so timing does not reveal which usernames exist.
@@ -106,18 +120,60 @@ export class AuthService {
     }
     if (user.failedLoginAttempts || user.lockedUntil) await this.userService.resetLoginState(user.id);
 
+    if (user.totpEnabledAt) {
+      // No session yet: only a short-lived token that says "the password was right" for this account.
+      const mfaToken = this.jwtService.sign({ sub: user.id, purpose: MFA_PURPOSE }, { expiresIn: MFA_CHALLENGE_TTL });
+      return { mfaRequired: true, mfaToken };
+    }
+
     const { session, refreshToken } = await this.sessions.create(user.id, meta);
     return { ...this.signAccessToken(user, session.id), refreshToken };
   }
 
   /**
-   * Step-up login: the signed-in user re-enters their password, and their current session may then make
-   * admin changes for STEP_UP_MINUTES. Wrong passwords count toward the same per-address lockout as
-   * sign-in, so this cannot be used to guess a password faster.
+   * Second step of signing in to an account with 2FA: the token from the password step plus a code from
+   * the authenticator app or a recovery code. Wrong codes count toward the same per-address and per-account
+   * lockouts as wrong passwords.
+   */
+  async loginWithCode(mfaToken: string, code: string, meta: SessionMeta = {}): Promise<AuthResult> {
+    let userId: number;
+    try {
+      const payload = this.jwtService.verify<{ sub?: unknown; purpose?: unknown }>(mfaToken);
+      if (payload.purpose !== MFA_PURPOSE || typeof payload.sub !== 'number') throw new Error('wrong token');
+      userId = payload.sub;
+    } catch {
+      throw new UnauthorizedException('The sign-in has expired, please enter your password again');
+    }
+    const user = await this.userService.findById(userId);
+    if (!user || user.isLocked) throw new UnauthorizedException(INVALID_CREDENTIALS);
+    if (this.throttle.isLocked(user.username, meta.ip)) throw new UnauthorizedException(INVALID_CREDENTIALS);
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+    if (!(await this.mfa.verify(user.id, code))) {
+      this.throttle.recordFailure(user.username, meta.ip);
+      await this.userService.recordFailedLogin(
+        user.id,
+        ACCOUNT_LOCK_THRESHOLD,
+        new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000),
+      );
+      throw new UnauthorizedException('Invalid code');
+    }
+    this.throttle.clear(user.username, meta.ip);
+    if (user.failedLoginAttempts || user.lockedUntil) await this.userService.resetLoginState(user.id);
+    const { session, refreshToken } = await this.sessions.create(user.id, meta);
+    return { ...this.signAccessToken(user, session.id), refreshToken };
+  }
+
+  /**
+   * Step-up login: the signed-in user re-enters their password, or, with 2FA on, gives a code from the
+   * authenticator app instead, and their current session may then make admin changes for STEP_UP_MINUTES.
+   * Wrong answers count toward the same per-address lockout as sign-in, so this cannot be used to guess
+   * faster.
    */
   async stepUp(
     who: { userId: number; username: string; sessionId?: number },
-    password: string,
+    proof: { password?: string; code?: string },
     ip?: string,
   ): Promise<{ elevatedUntil: Date }> {
     if (!who.sessionId) throw new ForbiddenException('Step-up needs a signed-in session');
@@ -125,7 +181,14 @@ export class AuthService {
       throw new HttpException('Too many failed attempts, try again later', HttpStatus.TOO_MANY_REQUESTS);
     }
     const user = await this.userService.findById(who.userId);
-    if (!user || !(await verifyPassword(password, user.password))) {
+    if (!user) throw new BadRequestException('Incorrect password');
+    if (user.totpEnabledAt) {
+      // The code is the stronger proof: with 2FA on, a password alone does not elevate.
+      if (!proof.code || !(await this.mfa.verify(user.id, proof.code, { allowRecovery: false }))) {
+        this.throttle.recordFailure(who.username, ip);
+        throw new BadRequestException('Invalid code');
+      }
+    } else if (!proof.password || !(await verifyPassword(proof.password, user.password))) {
       this.throttle.recordFailure(who.username, ip);
       throw new BadRequestException('Incorrect password');
     }

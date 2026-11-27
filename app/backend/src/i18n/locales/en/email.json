@@ -18,5 +18,19 @@
   "invite": {
     "subject": "You have been invited to {app}",
     "body": "Hi {username},\n\nan administrator created a {app} account for you. Open this link within 72 hours to choose your password and activate the account:\n\n{link}\n\nIf you were not expecting this, you can ignore this message."
+  },
+  "mfa": {
+    "enabled": {
+      "subject": "Two-factor authentication is on for your {app} account",
+      "body": "Hi {username},\n\ntwo-factor authentication was just switched on for your {app} account. Signing in now also needs a code from your authenticator app, and your other sessions were signed out.\n\nIf you did not do this, reset your password right away and contact your administrator."
+    },
+    "disabled": {
+      "subject": "Two-factor authentication is off for your {app} account",
+      "body": "Hi {username},\n\ntwo-factor authentication was just switched off for your {app} account. Signing in needs only your password again, and your other sessions were signed out.\n\nIf you did not do this, reset your password right away and contact your administrator."
+    },
+    "reset": {
+      "subject": "An administrator switched off two-factor authentication for your {app} account",
+      "body": "Hi {username},\n\nan administrator switched off two-factor authentication for your {app} account, for example because you lost your phone. You can set it up again in your account settings.\n\nIf you did not ask for this, contact your administrator right away."
+    }
   }
 }

@@ -1,6 +1,8 @@
 <script lang="ts">
 	import ConfirmDialog from '#lib/components/ConfirmDialog.svelte';
 	import StepUpDialog from '#lib/components/StepUpDialog.svelte';
+	import MfaEnrollGate from '#lib/components/mfa/MfaEnrollGate.svelte';
+	import { mfaGate } from '#lib/mfa.svelte.js';
 	import { appName, loadAppName } from '#lib/appName.svelte.js';
 	import { isMultiUserPage, loadAppConfig, singleUserMode } from '#lib/appConfig.svelte.js';
 	import '../assets/app.css';
@@ -157,7 +159,10 @@
 </svelte:head>
 
 <ThemeProvider theme={{ card: { base: 'p-5' } }}>
-	{#if user !== null}
+	{#if user !== null && mfaGate.current}
+		<!-- 2FA is required for this account and not set up yet: nothing else works until it is. -->
+		<MfaEnrollGate onlogout={logout} />
+	{:else if user !== null}
 		<a
 			href="#main-content"
 			class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-500 focus:bg-white focus:text-primary-700 focus:px-3 focus:py-2 focus:rounded focus:shadow"

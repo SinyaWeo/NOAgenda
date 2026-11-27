@@ -14,6 +14,6 @@ export class StepUpController {
   @Post()
   @HttpCode(HttpStatus.OK)
   async stepUp(@Body() body: StepUpDto, @Request() req: AuthRequest): Promise<{ elevatedUntil: Date }> {
-    return this.authService.stepUp(req.user, body.password, req.ip);
+    return this.authService.stepUp(req.user, { password: body.password, code: body.code }, req.ip);
   }
 }
