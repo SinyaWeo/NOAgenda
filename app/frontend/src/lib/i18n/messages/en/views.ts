@@ -78,9 +78,9 @@ export const messages = {
 	'views.gantt.barEditable':
 		'{title}, {dates}. Arrow keys move it, Shift with arrow keys changes the due date, Enter opens it.',
 	'views.gantt.linkHandle': 'Link a task that has to wait for “{title}”',
-	'views.gantt.dependency': '“{from}” has to be finished before “{to}” starts',
-	'views.gantt.dependencyBroken': '“{from}” has to be finished before “{to}” starts (not the case now)',
-	'views.gantt.removeDependency': 'Remove dependency',
+	'views.dependency.dependency': '“{from}” has to be finished before “{to}” starts',
+	'views.dependency.dependencyBroken': '“{from}” has to be finished before “{to}” starts (not the case now)',
+	'views.dependency.removeDependency': 'Remove dependency',
 	'views.gantt.moved': 'Moved “{title}”',
 	'views.gantt.movedWithDependents': {
 		one: 'Moved “{title}” and {count} task waiting for it',
@@ -90,14 +90,14 @@ export const messages = {
 	'views.gantt.undo': 'Undo',
 	'views.gantt.undone': 'Dates restored',
 	'views.gantt.saveFailed': 'Could not save the new dates.',
-	'views.gantt.linked': '“{to}” now waits for “{from}”',
-	'views.gantt.linkSelf': 'A task cannot wait for itself.',
-	'views.gantt.linkExists': 'These tasks are already linked.',
-	'views.gantt.linkCycle': 'That would make the tasks wait for each other in a loop.',
-	'views.gantt.linkFailed': 'Could not add the dependency.',
-	'views.gantt.unlinked': 'Dependency removed',
-	'views.gantt.unlinkFailed': 'Could not remove the dependency.',
-	'views.gantt.loadFailed': 'Could not load the dependencies.',
+	'views.dependency.linked': '“{to}” now waits for “{from}”',
+	'views.dependency.linkSelf': 'A task cannot wait for itself.',
+	'views.dependency.linkExists': 'These tasks are already linked.',
+	'views.dependency.linkCycle': 'That would make the tasks wait for each other in a loop.',
+	'views.dependency.linkFailed': 'Could not add the dependency.',
+	'views.dependency.unlinked': 'Dependency removed',
+	'views.dependency.unlinkFailed': 'Could not remove the dependency.',
+	'views.dependency.loadFailed': 'Could not load the dependencies.',
 	'views.column.empty': 'Empty',
 	'views.bulk.select': 'Select "{title}"',
 	'views.bulk.selectAll': 'Select all',
@@ -125,11 +125,15 @@ export const messages = {
 
 	'views.mindmap.pageTitle': 'MindMap | {app}',
 	'views.mindmap.title': 'MindMap',
-	'views.mindmap.subtitle': 'All projects and tasks · Drag onto another node to reparent',
+	'views.mindmap.subtitle':
+		'All projects and tasks · Drag onto another node to reparent · Drag from the dot under a task to another task to make it wait',
 	'views.mindmap.noProjects': 'No projects yet.',
 	'views.mindmap.createProject': 'Create a project to get started',
 	'views.mindmap.nodeFallback': 'Node {id}',
-	'views.mindmap.hint': 'Drag onto another node to reparent',
+	'views.mindmap.hint':
+		'Drag a node onto another one to move it under it. Drag from the dot under a task onto another task to make that task wait for it; click a dashed arrow to remove it.',
+	'views.mindmap.linkReadOnly': 'You cannot edit “{title}”, so no task can be made to wait for it.',
+	'views.mindmap.linkTasksOnly': 'Only tasks can wait for each other.',
 	'views.mindmap.noTasks': 'No tasks in this project to show in the MindMap.',
 	'views.mindmap.readOnlyTarget': '{project} is read-only for you, nothing can be moved into it'
 } as const;

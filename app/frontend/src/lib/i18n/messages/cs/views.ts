@@ -81,9 +81,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'views.gantt.barEditable':
 		'{title}, {dates}. Šipky jej posunou, Shift se šipkami mění termín, Enter jej otevře.',
 	'views.gantt.linkHandle': 'Propojit úkol, který musí počkat na „{title}“',
-	'views.gantt.dependency': '„{from}“ musí být hotový, než začne „{to}“',
-	'views.gantt.dependencyBroken': '„{from}“ musí být hotový, než začne „{to}“ (teď to neplatí)',
-	'views.gantt.removeDependency': 'Odebrat závislost',
+	'views.dependency.dependency': '„{from}“ musí být hotový, než začne „{to}“',
+	'views.dependency.dependencyBroken': '„{from}“ musí být hotový, než začne „{to}“ (teď to neplatí)',
+	'views.dependency.removeDependency': 'Odebrat závislost',
 	'views.gantt.moved': 'Úkol „{title}“ byl přesunut',
 	'views.gantt.movedWithDependents': {
 		one: 'Přesunut úkol „{title}“ a {count} úkol, který na něj čeká',
@@ -95,14 +95,14 @@ export const messages: Record<keyof typeof en, Message> = {
 	'views.gantt.undo': 'Vrátit',
 	'views.gantt.undone': 'Data byla obnovena',
 	'views.gantt.saveFailed': 'Nová data se nepodařilo uložit.',
-	'views.gantt.linked': '„{to}“ teď čeká na „{from}“',
-	'views.gantt.linkSelf': 'Úkol nemůže čekat sám na sebe.',
-	'views.gantt.linkExists': 'Tyto úkoly už jsou propojené.',
-	'views.gantt.linkCycle': 'Úkoly by na sebe čekaly dokola.',
-	'views.gantt.linkFailed': 'Závislost se nepodařilo přidat.',
-	'views.gantt.unlinked': 'Závislost byla odebrána',
-	'views.gantt.unlinkFailed': 'Závislost se nepodařilo odebrat.',
-	'views.gantt.loadFailed': 'Závislosti se nepodařilo načíst.',
+	'views.dependency.linked': '„{to}“ teď čeká na „{from}“',
+	'views.dependency.linkSelf': 'Úkol nemůže čekat sám na sebe.',
+	'views.dependency.linkExists': 'Tyto úkoly už jsou propojené.',
+	'views.dependency.linkCycle': 'Úkoly by na sebe čekaly dokola.',
+	'views.dependency.linkFailed': 'Závislost se nepodařilo přidat.',
+	'views.dependency.unlinked': 'Závislost byla odebrána',
+	'views.dependency.unlinkFailed': 'Závislost se nepodařilo odebrat.',
+	'views.dependency.loadFailed': 'Závislosti se nepodařilo načíst.',
 	'views.column.empty': 'Prázdné',
 	'views.bulk.select': 'Vybrat „{title}“',
 	'views.bulk.selectAll': 'Vybrat vše',
@@ -130,11 +130,15 @@ export const messages: Record<keyof typeof en, Message> = {
 
 	'views.mindmap.pageTitle': 'Myšlenková mapa | {app}',
 	'views.mindmap.title': 'Myšlenková mapa',
-	'views.mindmap.subtitle': 'Všechny projekty a úkoly · Přetažením na jiný uzel změníte nadřazenou položku',
+	'views.mindmap.subtitle':
+		'Všechny projekty a úkoly · Přetažením na jiný uzel změníte nadřazenou položku · Tažením z tečky pod úkolem na jiný úkol jej necháte čekat',
 	'views.mindmap.noProjects': 'Zatím žádné projekty.',
 	'views.mindmap.createProject': 'Začněte vytvořením projektu',
 	'views.mindmap.nodeFallback': 'Uzel {id}',
-	'views.mindmap.hint': 'Přetažením na jiný uzel změníte nadřazenou položku',
+	'views.mindmap.hint':
+		'Uzel přesunete pod jiný tak, že jej na něj přetáhnete. Tažením z tečky pod úkolem na jiný úkol necháte tento úkol na ten první čekat; přerušovanou šipku odeberete kliknutím.',
+	'views.mindmap.linkReadOnly': 'Úkol „{title}“ nemůžete upravovat, takže na něj nemůže žádný úkol čekat.',
+	'views.mindmap.linkTasksOnly': 'Čekat na sebe mohou jen úkoly.',
 	'views.mindmap.noTasks': 'V tomto projektu nejsou žádné úkoly k zobrazení v myšlenkové mapě.',
 	'views.mindmap.readOnlyTarget': 'Projekt {project} máte jen pro čtení, nelze do něj nic přesunout'
 };

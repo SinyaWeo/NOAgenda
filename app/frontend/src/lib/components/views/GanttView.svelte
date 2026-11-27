@@ -5,7 +5,17 @@
 	import { isOverdue } from './util';
 	import { taskProjectId } from '#lib/project-groups.js';
 	import { t, locale } from '#lib/i18n/index.js';
-	import { apiDeleteAuth, apiGetAuth, apiPostAuth, MAX_PAGE_SIZE } from '#lib/api.js';
+	import { apiPostAuth } from '#lib/api.js';
+	import {
+		addDependency,
+		dependencyKey,
+		EMPTY_DEPENDENCIES,
+		linkProblem,
+		loadDependencies,
+		removeDependency,
+		type DependencyData,
+		type TaskDependency
+	} from '#lib/dependencies.js';
 	import { userTimeZone } from '#lib/auth.svelte.js';
 	import { errMessage } from '#lib/errors.js';
 	import { dismissToast, showToast } from '#lib/toast.svelte.js';
@@ -24,11 +34,8 @@
 		dragSpan,
 		spanOf,
 		violated,
-		wouldCycle,
 		type DateChange,
 		type DragMode,
-		type GanttData,
-		type GanttDependency,
 		type Span
 	} from '#lib/gantt.js';
 
@@ -77,27 +84,26 @@
 	const baseSpans = $derived(new Map(rows.map((r) => [r.task.id, r.span])));
 	const taskById = $derived(new Map(rows.map((r) => [r.task.id, r.task])));
 
-	// ---- dependencies and permissions (GET /gantt)
-	let gantt = $state<GanttData>({ dependencies: [], editable: [] });
+	// ---- dependencies and permissions (GET /dependencies)
+	let gantt = $state<DependencyData>(EMPTY_DEPENDENCIES);
 	const idsKey = $derived(
 		rows
 			.map((r) => r.task.id)
 			.sort((a, b) => a - b)
-			.slice(0, MAX_PAGE_SIZE)
 			.join(',')
 	);
 	let loadSeq = 0;
 	async function loadGantt(ids: string) {
 		const seq = ++loadSeq;
 		if (!ids) {
-			gantt = { dependencies: [], editable: [] };
+			gantt = EMPTY_DEPENDENCIES;
 			return;
 		}
 		try {
-			const data = await apiGetAuth<GanttData>(`/gantt?taskIds=${ids}`);
+			const data = await loadDependencies(ids.split(',').map(Number));
 			if (seq === loadSeq) gantt = data;
 		} catch (e: unknown) {
-			if (seq === loadSeq) showToast(errMessage(e, t('views.gantt.loadFailed')), 'error');
+			if (seq === loadSeq) showToast(errMessage(e, t('views.dependency.loadFailed')), 'error');
 		}
 	}
 	$effect(() => {
@@ -191,7 +197,6 @@
 		return { left, right: left + w, width: w, top, mid: top + ROW / 2 };
 	}
 
-	const depKey = (d: GanttDependency) => `${d.fromId}>${d.toId}`;
 	const arrows = $derived(
 		deps.map((d) => {
 			const a = box(d.fromId);
@@ -206,12 +211,12 @@
 			const broken = violated(spanFor(d.fromId) as Span, spanFor(d.toId) as Span);
 			return {
 				dep: d,
-				key: depKey(d),
+				key: dependencyKey(d),
 				path,
 				broken,
 				handle: { x: x1 + g, y: (a.mid + b.mid) / 2 },
 				removable: d.rows.every((r) => editable.has(r.taskId)),
-				label: t(broken ? 'views.gantt.dependencyBroken' : 'views.gantt.dependency', {
+				label: t(broken ? 'views.dependency.dependencyBroken' : 'views.dependency.dependency', {
 					from: taskById.get(d.fromId)?.title ?? '',
 					to: taskById.get(d.toId)?.title ?? ''
 				})
@@ -375,36 +380,32 @@
 	}
 
 	async function connect(fromId: number, toId: number) {
-		if (deps.some((d) => d.fromId === fromId && d.toId === toId)) {
-			showToast(t('views.gantt.linkExists'), 'info');
-			return;
-		}
-		if (wouldCycle(gantt.dependencies, fromId, toId)) {
-			showToast(t('views.gantt.linkCycle'), 'error');
+		const problem = linkProblem(gantt, fromId, toId);
+		if (problem) {
+			showToast(t(problem), problem === 'views.dependency.linkCycle' ? 'error' : 'info');
 			return;
 		}
 		try {
-			await apiPostAuth(`/tasks/${fromId}/relations`, { relatedTaskId: toId, kind: 'blocks' });
+			await addDependency(fromId, toId);
 			showToast(
-				t('views.gantt.linked', {
+				t('views.dependency.linked', {
 					from: taskById.get(fromId)?.title ?? '',
 					to: taskById.get(toId)?.title ?? ''
 				})
 			);
 		} catch (e: unknown) {
-			showToast(errMessage(e, t('views.gantt.linkFailed')), 'error');
+			showToast(errMessage(e, t('views.dependency.linkFailed')), 'error');
 		}
 		await loadGantt(idsKey);
 	}
 
-	async function unlink(d: GanttDependency) {
+	async function unlink(d: TaskDependency) {
 		try {
-			for (const r of d.rows)
-				await apiDeleteAuth(`/tasks/${r.taskId}/relations/${r.kind}/${r.relatedTaskId}`);
+			await removeDependency(d);
 			selected = null;
-			showToast(t('views.gantt.unlinked'));
+			showToast(t('views.dependency.unlinked'));
 		} catch (e: unknown) {
-			showToast(errMessage(e, t('views.gantt.unlinkFailed')), 'error');
+			showToast(errMessage(e, t('views.dependency.unlinkFailed')), 'error');
 		}
 		await loadGantt(idsKey);
 	}
@@ -685,7 +686,7 @@
 						onclick={() => selectedArrow && unlink(selectedArrow.dep)}
 					>
 						<CloseOutline class="w-3.5 h-3.5" />
-						{t('views.gantt.removeDependency')}
+						{t('views.dependency.removeDependency')}
 					</button>
 				{/if}
 

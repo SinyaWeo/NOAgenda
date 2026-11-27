@@ -1,17 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-	cascade,
-	datesFor,
-	dragSpan,
-	spanOf,
-	violated,
-	wouldCycle,
-	type GanttDependency,
-	type Span
-} from './gantt';
+import { cascade, datesFor, dragSpan, spanOf, violated, type Span } from './gantt';
+import { linkProblem, wouldCycle, type TaskDependency } from './dependencies';
 
 const TZ = 'Europe/Prague';
-const dep = (fromId: number, toId: number): GanttDependency => ({
+const dep = (fromId: number, toId: number): TaskDependency => ({
 	fromId,
 	toId,
 	rows: [{ taskId: fromId, kind: 'blocks', relatedTaskId: toId }]
@@ -139,5 +131,13 @@ describe('violated and wouldCycle', () => {
 		expect(wouldCycle(deps, 2, 1)).toBe(true);
 		expect(wouldCycle(deps, 1, 3)).toBe(false);
 		expect(wouldCycle(deps, 4, 4)).toBe(true);
+	});
+
+	it('linkProblem names why a link is refused', () => {
+		const data = { dependencies: [dep(1, 2), dep(2, 3)], editable: [1, 2, 3] };
+		expect(linkProblem(data, 1, 1)).toBe('views.dependency.linkSelf');
+		expect(linkProblem(data, 1, 2)).toBe('views.dependency.linkExists');
+		expect(linkProblem(data, 3, 1)).toBe('views.dependency.linkCycle');
+		expect(linkProblem(data, 1, 3)).toBeNull();
 	});
 });

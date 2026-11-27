@@ -43,11 +43,14 @@ export class TaskRelationService {
     return orConflict(this.repo.save(relation), 'These tasks are already related that way');
   }
 
-  /** `blocks` / `blocked_by` relations whose two tasks are both among `ids`. */
-  async dependenciesAmong(ids: number[]): Promise<TaskRelation[]> {
+  /** `blocks` / `blocked_by` relations with at least one of their two tasks among `ids`. */
+  async dependenciesTouching(ids: number[]): Promise<TaskRelation[]> {
     if (!ids.length) return [];
     return this.repo.find({
-      where: { node: { id: In(ids) }, relatedNode: { id: In(ids) }, kind: In(DEPENDENCY_KINDS) },
+      where: [
+        { node: { id: In(ids) }, kind: In(DEPENDENCY_KINDS) },
+        { relatedNode: { id: In(ids) }, kind: In(DEPENDENCY_KINDS) },
+      ],
       relations: { node: true, relatedNode: true },
     });
   }

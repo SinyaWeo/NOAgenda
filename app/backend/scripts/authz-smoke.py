@@ -125,17 +125,17 @@ s, mine = call('GET', OCC, None, A); check('alice sees future cycles', (s, len([
 s, theirs = call('GET', OCC, None, Bt); check('bob sees no cycles of alice\'s project', (s, [o for o in theirs if o['taskId'] == rt['id']]), (200, []))
 s, _ = call('GET', '/tasks/occurrences?from=2026-01-01T00:00:00.000Z&to=2027-01-01T00:00:00.000Z', None, A); check('occurrence range is capped', s, 400)
 
-# --- 3c. Gantt: dependencies and rescheduling follow the same rules
+# --- 3c. Dependencies (Gantt, mind map) and rescheduling follow the same rules
 s, g2 = call('POST', '/tasks', {'title': 'after secret', 'projectId': pid, 'startDate': '2026-03-02T11:00:00.000Z', 'dueDate': '2026-03-04T11:00:00.000Z'}, A)
 gid = g2['id']
 s, _ = call('POST', f'/tasks/{tid}/relations', {'relatedTaskId': gid, 'kind': 'blocks'}, A); check('alice adds a dependency', s, 201)
 s, _ = call('POST', f'/tasks/{gid}/relations', {'relatedTaskId': tid, 'kind': 'blocks'}, A); check('a dependency loop is refused', s, 400)
 s, _ = call('POST', f'/tasks/{tid}/relations', {'relatedTaskId': gid, 'kind': 'blocked_by'}, A); check('the loop is refused in the other spelling too', s, 400)
-GANTT = f'/gantt?taskIds={tid},{gid}'
-s, gd = call('GET', GANTT, None, A)
+DEPS = f'/dependencies?taskIds={tid},{gid}'
+s, gd = call('GET', DEPS, None, A)
 check('alice sees the arrow and may edit both', (s, [(d['fromId'], d['toId']) for d in gd['dependencies']], sorted(gd['editable'])), (200, [(tid, gid)], sorted([tid, gid])))
-s, gd = call('GET', GANTT, None, Bt); check('bob sees no arrows and edits nothing in alice\'s project', (s, gd['dependencies'], gd['editable']), (200, [], []))
-s, _ = call('GET', '/gantt?taskIds=abc', None, A); check('gantt ids are validated', s, 400)
+s, gd = call('GET', DEPS, None, Bt); check('bob sees no arrows and edits nothing in alice\'s project', (s, gd['dependencies'], gd['editable']), (200, [], []))
+s, _ = call('GET', '/dependencies?taskIds=abc', None, A); check('dependency ids are validated', s, 400)
 SCHED = {'changes': [{'id': gid, 'startDate': '2026-03-05T11:00:00.000Z', 'dueDate': '2026-03-07T11:00:00.000Z'}]}
 s, _ = call('POST', '/tasks/schedule', SCHED, Bt); check('bob cannot reschedule alice\'s task', s, 403)
 s, _ = call('POST', '/tasks/schedule', {'changes': [{'id': gid, 'startDate': '2026-03-09T11:00:00.000Z', 'dueDate': '2026-03-07T11:00:00.000Z'}]}, A); check('a start after the due date is refused', s, 400)
@@ -147,7 +147,7 @@ s, _ = call('GET', f'/tasks/{tid}', None, Bt); check('bob(read) can read task', 
 s, _ = call('GET', f'/nodes/{pid}/tree', None, Bt); check('bob(read) can read tree', s, 200)
 s, shared = call('GET', OCC, None, Bt); check('bob(read) sees the shared cycles', (s, len([o for o in shared if o['taskId'] == rt['id']])), (200, 3))
 s, _ = call('PUT', f'/tasks/{tid}', {'title': 'x'}, Bt); check('bob(read) cannot edit', s, 403)
-s, gd = call('GET', GANTT, None, Bt); check('bob(read) sees the arrow but may not edit', (s, len(gd['dependencies']), gd['editable']), (200, 1, []))
+s, gd = call('GET', DEPS, None, Bt); check('bob(read) sees the arrow but may not edit', (s, len(gd['dependencies']), gd['editable']), (200, 1, []))
 s, _ = call('POST', '/tasks/schedule', SCHED, Bt); check('bob(read) cannot reschedule', s, 403)
 s, _ = call('POST', '/comments', {'content': 'hi', 'taskId': tid}, Bt); check('bob(read) cannot comment', s, 403)
 s, _ = call('GET', f'/webhooks?projectId={pid}', None, Bt); check('bob(read) cannot list webhooks', s, 403)
@@ -158,7 +158,7 @@ s, _ = call('PUT', f'/projects/{pid}/buckets/{bks[0]["id"]}', {'title': 'x'}, Bt
 s, _ = call('GET', f'/projects/{pid}/buckets', None, C); check('carol cannot read buckets', s, 403)
 s, _ = call('PUT', f'/projects/{pid}/users/{bid}', {'permission': 'write'}, A); check('alice upgrades bob to write', s, [200, 204])
 s, r = call('PUT', f'/tasks/{tid}', {'title': 'edited by bob'}, Bt); check('bob(write) can edit', s, 200)
-s, gd = call('GET', GANTT, None, Bt); check('bob(write) may edit both bars', (s, sorted(gd['editable'])), (200, sorted([tid, gid])))
+s, gd = call('GET', DEPS, None, Bt); check('bob(write) may edit both bars', (s, sorted(gd['editable'])), (200, sorted([tid, gid])))
 s, _ = call('POST', '/tasks/schedule', SCHED, Bt); check('bob(write) can reschedule', s, 200)
 s, _ = call('POST', f'/projects/{pid}/buckets', {'title': 'x', 'status': 'open'}, Bt); check('bob(write) cannot add buckets', s, 403)
 s, r = call('PUT', f'/tasks/{tid}', {'bucketId': bks[0]['id']}, Bt); check('bob(write) can move a task between buckets', s, 200)

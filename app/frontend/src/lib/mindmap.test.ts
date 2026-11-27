@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { Node } from '@xyflow/svelte';
-import { canDropOn, canMove, findDropTarget, permissionOf, projectOf } from './mindmap';
+import {
+	canDropOn,
+	canMove,
+	canRemove,
+	dependencyEdges,
+	dependencyOfEdge,
+	findDropTarget,
+	isDependencyEdge,
+	permissionOf,
+	projectOf
+} from './mindmap';
 import type { Node as AppNode, Permission } from './types';
 
 const node = (id: string, x: number, y: number, w = 100, h = 40): Node =>
@@ -67,5 +77,40 @@ describe('permissions in the mind map', () => {
 		expect(levels.map((p) => canMove({ type: 'project' }, p))).toEqual([false, false, false, true]);
 		expect(levels.map((p) => canMove({ type: 'task' }, p))).toEqual([false, false, true, true]);
 		expect(levels.map(canDropOn)).toEqual([false, false, true, true]);
+	});
+});
+
+describe('dependency edges', () => {
+	const dep = (fromId: number, toId: number, taskId = fromId) => ({
+		fromId,
+		toId,
+		rows: [{ taskId, kind: 'blocks' as const, relatedTaskId: taskId === fromId ? toId : fromId }]
+	});
+	const data = { dependencies: [dep(1, 2), dep(2, 3, 3), dep(1, 9)], editable: [1, 2] };
+	const edges = dependencyEdges(data, new Set([1, 2, 3]), {
+		broken: (d) => d.toId === 3,
+		label: (d) => `${d.fromId} before ${d.toId}`
+	});
+
+	it('draws only dependencies between nodes on the map, from the task that comes first', () => {
+		expect(edges.map((e) => [e.id, e.source, e.target])).toEqual([
+			['dep-1>2', '1', '2'],
+			['dep-2>3', '2', '3']
+		]);
+		expect(edges.every(isDependencyEdge)).toBe(true);
+		expect(isDependencyEdge({ id: 'e-1-2' })).toBe(false);
+	});
+
+	it('marks broken ones and lets the user delete only what they may change', () => {
+		expect(edges[0]).toMatchObject({ class: 'dep-edge', deletable: true, ariaLabel: '1 before 2' });
+		// 2 -> 3 is stored on task 3, which the user cannot edit
+		expect(edges[1]).toMatchObject({ class: 'dep-edge dep-broken', deletable: false });
+		expect(canRemove(dep(2, 3, 3), new Set([2]))).toBe(false);
+	});
+
+	it('finds the dependency behind an edge', () => {
+		expect(dependencyOfEdge('dep-2>3', data)?.toId).toBe(3);
+		expect(dependencyOfEdge('e-2-3', data)).toBeNull();
+		expect(dependencyOfEdge('dep-7>8', data)).toBeNull();
 	});
 });

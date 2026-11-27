@@ -218,11 +218,16 @@ describe('TaskRelationService', () => {
       expect(await svc.wouldCreateCycle(3, 1)).toBe(false);
     });
 
-    it('dependenciesAmong asks only for dependency kinds between the given tasks', async () => {
-      graph([rel(1, RelationKind.BLOCKS, 2), rel(1, RelationKind.RELATED, 2), rel(1, RelationKind.BLOCKS, 9)]);
-      const rows = await svc.dependenciesAmong([1, 2]);
-      expect(rows).toEqual([rel(1, RelationKind.BLOCKS, 2)]);
-      expect(await svc.dependenciesAmong([])).toEqual([]);
+    it('dependenciesTouching finds dependency kinds with either end among the given tasks', async () => {
+      graph([
+        rel(1, RelationKind.BLOCKS, 2),
+        rel(1, RelationKind.RELATED, 2),
+        rel(7, RelationKind.BLOCKED_BY, 1),
+        rel(8, RelationKind.BLOCKS, 9),
+      ]);
+      const rows = await svc.dependenciesTouching([1]);
+      expect(rows).toEqual([rel(1, RelationKind.BLOCKS, 2), rel(7, RelationKind.BLOCKED_BY, 1)]);
+      expect(await svc.dependenciesTouching([])).toEqual([]);
     });
   });
 });

@@ -1,5 +1,5 @@
 import { addDaysKey, dayKeyOf, diffDaysKey, moveToDay, noonOn, type DayKey } from '#lib/calendar.js';
-import type { RelationKind } from '#lib/types.js';
+import type { TaskDependency } from '#lib/dependencies.js';
 
 /**
  * Gantt scheduling logic, kept free of the DOM so it can be tested. Everything works in calendar days
@@ -7,20 +7,6 @@ import type { RelationKind } from '#lib/types.js';
  *
  * A dependency A -> B means "B cannot start before A is finished": B has to start on a later day than A ends.
  */
-
-/** One arrow, as GET /gantt returns it. */
-export interface GanttDependency {
-	fromId: number;
-	toId: number;
-	/** The relation rows behind it; removing the arrow removes all of them. */
-	rows: { taskId: number; kind: RelationKind; relatedTaskId: number }[];
-}
-
-export interface GanttData {
-	dependencies: GanttDependency[];
-	/** Tasks the signed-in user may move and link. */
-	editable: number[];
-}
 
 /** The days a bar covers, both ends included. */
 export interface Span {
@@ -108,7 +94,7 @@ export interface CascadeResult {
  */
 export function cascade(
 	spans: ReadonlyMap<number, Span>,
-	dependencies: readonly GanttDependency[],
+	dependencies: readonly TaskDependency[],
 	changed: ReadonlyMap<number, Span>,
 	editable: ReadonlySet<number>
 ): CascadeResult {
@@ -138,23 +124,4 @@ export function cascade(
 /** True when B starts on or before the day A ends (the arrow is drawn in red). */
 export function violated(from: Span, to: Span): boolean {
 	return to.start <= from.end;
-}
-
-/** Would adding "from -> to" make a loop with the dependencies we know? (The server checks again.) */
-export function wouldCycle(dependencies: readonly GanttDependency[], fromId: number, toId: number): boolean {
-	if (fromId === toId) return true;
-	const seen = new Set([toId]);
-	const queue = [toId];
-	while (queue.length) {
-		const cur = queue.shift() as number;
-		for (const d of dependencies) {
-			if (d.fromId !== cur) continue;
-			if (d.toId === fromId) return true;
-			if (!seen.has(d.toId)) {
-				seen.add(d.toId);
-				queue.push(d.toId);
-			}
-		}
-	}
-	return false;
 }

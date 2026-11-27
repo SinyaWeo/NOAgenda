@@ -1,4 +1,5 @@
-import type { Node as FlowNode } from '@xyflow/svelte';
+import type { Edge, Node as FlowNode } from '@xyflow/svelte';
+import { dependencyKey, type DependencyData, type TaskDependency } from './dependencies';
 import type { Node as AppNode, Permission } from './types';
 
 export const NODE_W = 170;
@@ -132,4 +133,57 @@ export function canMove(node: Pick<AppNode, 'type'>, permission: Permission | nu
 /** Something can be placed under a node only with write access to it. */
 export function canDropOn(permission: Permission | null): boolean {
 	return permission === 'write' || permission === 'admin';
+}
+
+/** Mind map edges that stand for dependencies (not for the tree) have ids starting with this. */
+export const DEPENDENCY_EDGE = 'dep-';
+export const isDependencyEdge = (e: Pick<Edge, 'id'>) => e.id.startsWith(DEPENDENCY_EDGE);
+
+/** The dependency a mind map edge stands for, if it is a dependency edge. */
+export function dependencyOfEdge(edgeId: string, data: DependencyData): TaskDependency | null {
+	if (!edgeId.startsWith(DEPENDENCY_EDGE)) return null;
+	const key = edgeId.slice(DEPENDENCY_EDGE.length);
+	return data.dependencies.find((d) => dependencyKey(d) === key) ?? null;
+}
+
+/** May the user remove this dependency? They need write access to every task the relation rows hang on. */
+export function canRemove(d: TaskDependency, editable: ReadonlySet<number>): boolean {
+	return d.rows.every((r) => editable.has(r.taskId));
+}
+
+/**
+ * Edges for the dependencies between nodes on the map: dashed arrows from the task that has to finish first
+ * to the task that waits (styled by `.dep-edge` in app.css; `.dep-broken` when the dates contradict it).
+ * Only the user's removable ones can be deleted; tree edges stay untouchable.
+ */
+export function dependencyEdges(
+	data: DependencyData,
+	shown: ReadonlySet<number>,
+	opts: { broken: (d: TaskDependency) => boolean; label: (d: TaskDependency) => string }
+): Edge[] {
+	const editable = new Set(data.editable);
+	return data.dependencies
+		.filter((d) => shown.has(d.fromId) && shown.has(d.toId))
+		.map((d) => {
+			const broken = opts.broken(d);
+			return {
+				id: DEPENDENCY_EDGE + dependencyKey(d),
+				source: String(d.fromId),
+				target: String(d.toId),
+				class: broken ? 'dep-edge dep-broken' : 'dep-edge',
+				markerEnd: {
+					type: 'arrowclosed',
+					color: broken ? '#ef4444' : '#3b82f6',
+					// In pixels, so the arrowhead keeps its size when a selected edge gets a thicker line.
+					markerUnits: 'userSpaceOnUse',
+					width: 28,
+					height: 28
+				},
+				selectable: true,
+				focusable: true,
+				deletable: canRemove(d, editable),
+				ariaLabel: opts.label(d),
+				zIndex: 1
+			} satisfies Edge;
+		});
 }
