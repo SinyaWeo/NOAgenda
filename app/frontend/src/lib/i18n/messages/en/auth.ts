@@ -102,6 +102,9 @@ export const messages = {
 	'auth.about.terms': 'Terms of Service',
 	'auth.about.privacy': 'Privacy Policy',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.twoFactor.title': 'Two-factor authentication',
+	'auth.about.timeline.twoFactor.body':
+		'Protect sign-in with a code from an authenticator app, plus one-time recovery codes for a lost phone (Settings → Two-factor authentication). Admins can require it from all admins, team managers from their team; admin changes are then confirmed with a code instead of the password.',
 	'auth.about.timeline.subprojects.title': 'Subprojects',
 	'auth.about.timeline.subprojects.body':
 		'A project can sit under another project. Pick the parent when creating a project or in its settings; the project page shows the parent path and its subprojects, and the project list shows them as a tree. Everyone with access to a project also gets access to its subprojects.',

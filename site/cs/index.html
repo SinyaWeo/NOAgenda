@@ -211,11 +211,17 @@
 						<ul class="checks">
 							<li>Krátkodobé JWT přístupové tokeny a rotující refresh cookies</li>
 							<li>Zakázané trasy ve výchozím stavu, omezení počtu požadavků a zamykání účtů</li>
-							<li>Změny v administraci vyžadují znovu zadat heslo</li>
+							<li>
+								Dvoufázové ověření přes ověřovací aplikaci a jednorázové záložní kódy; správci i týmy ho mohou
+								vyžadovat
+							</li>
+							<li>Změny v administraci vyžadují znovu zadat heslo (nebo kód 2FA)</li>
 							<li>
 								Ověření e-mailu, změna e-mailu až po potvrzení z nové adresy a smazání účtu s ochrannou lhůtou
 							</li>
-							<li>Tajné klíče webhooků a pluginů šifrované v databázi, po uložení se už nezobrazí</li>
+							<li>
+								Tajné klíče webhooků, pluginů a 2FA šifrované v databázi, po uložení se už nezobrazí
+							</li>
 							<li>Zabezpečené kontejnery za Caddy s automatickým HTTPS</li>
 							<li>
 								K dispozici v češtině a angličtině. E-maily a upozornění používají jazyk uložený u každého

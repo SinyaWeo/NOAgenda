@@ -209,12 +209,18 @@
 						<ul class="checks">
 							<li>Short-lived JWT access tokens with rotating refresh cookies</li>
 							<li>Default-deny routes, rate limiting and account lockout</li>
-							<li>Admin changes need the password re-entered</li>
+							<li>
+								Two-factor authentication with an authenticator app and one-time recovery codes; admins and
+								teams can require it
+							</li>
+							<li>Admin changes need the password (or a 2FA code) re-entered</li>
 							<li>
 								Email verification, email changes confirmed from the new address, and account deletion with a
 								grace period
 							</li>
-							<li>Webhook and plugin secrets encrypted at rest, never shown again once saved</li>
+							<li>
+								Webhook and plugin secrets and 2FA keys encrypted at rest, never shown again once saved
+							</li>
 							<li>Hardened containers behind Caddy with automatic HTTPS</li>
 							<li>
 								Available in English and Czech. Emails and notifications use each user's saved language.

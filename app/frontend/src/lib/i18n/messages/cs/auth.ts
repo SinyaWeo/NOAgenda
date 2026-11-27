@@ -104,6 +104,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.terms': 'Podmínky používání',
 	'auth.about.privacy': 'Zásady ochrany osobních údajů',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.twoFactor.title': 'Dvoufázové ověření',
+	'auth.about.timeline.twoFactor.body':
+		'Přihlášení chráněné kódem z ověřovací aplikace a jednorázové záložní kódy pro případ ztráty telefonu (Nastavení → Dvoufázové ověření). Správce ho může vyžadovat od všech správců, manažer týmu od členů týmu; změny v administraci se pak potvrzují kódem místo hesla.',
 	'auth.about.timeline.subprojects.title': 'Podprojekty',
 	'auth.about.timeline.subprojects.body':
 		'Projekt může patřit pod jiný projekt. Nadřazený projekt vyberete při založení projektu nebo v jeho nastavení; stránka projektu ukazuje cestu k nadřazeným projektům i podprojekty a seznam projektů je zobrazuje jako strom. Kdo má přístup k projektu, má přístup i k jeho podprojektům.',
