@@ -1,4 +1,5 @@
-import { validateJwtSecret } from '../env-check';
+import { randomBytes } from 'crypto';
+import { validateJwtSecret, validateSecretsKey } from '../env-check';
 
 describe('validateJwtSecret', () => {
   it('requires a secret everywhere', () => {
@@ -19,5 +20,24 @@ describe('validateJwtSecret', () => {
   });
   it('accepts a real random secret in production', () => {
     expect(() => validateJwtSecret('q7Zk2mXv9LpR4tYw8NbC1dFhJ6sGaE3uVoQ5xTn0KiM=', true)).not.toThrow();
+  });
+});
+
+describe('validateSecretsKey', () => {
+  const key = randomBytes(32).toString('base64');
+  it('is required in production', () => {
+    expect(() => validateSecretsKey(undefined, true)).toThrow(/required in production/);
+    expect(() => validateSecretsKey('', true)).toThrow(/required in production/);
+  });
+  it('may be missing outside production (a development key is derived)', () => {
+    expect(() => validateSecretsKey(undefined, false)).not.toThrow();
+  });
+  it('rejects a malformed key everywhere', () => {
+    expect(() => validateSecretsKey('change_me', false)).toThrow(/32-byte/);
+    expect(() => validateSecretsKey(randomBytes(24).toString('base64'), true)).toThrow(/32-byte/);
+  });
+  it('accepts one key, or a list for rotation', () => {
+    expect(() => validateSecretsKey(key, true)).not.toThrow();
+    expect(() => validateSecretsKey(`${randomBytes(32).toString('base64')},${key}`, true)).not.toThrow();
   });
 });

@@ -5,13 +5,14 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { NumericParamPipe } from './common/numeric-param.pipe';
-import { validateJwtSecret } from './common/env-check';
+import { validateJwtSecret, validateSecretsKey } from './common/env-check';
 import { join } from 'path';
 
 async function bootstrap() {
   const isProd = process.env.NODE_ENV === 'production';
 
   validateJwtSecret(process.env.JWT_SECRET, isProd);
+  validateSecretsKey(process.env.SECRETS_KEY, isProd);
   if (isProd && !process.env.CORS_ORIGIN) {
     throw new Error('CORS_ORIGIN must be set in production.');
   }

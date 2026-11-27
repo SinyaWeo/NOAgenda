@@ -39,7 +39,7 @@ docker compose -f docker/docker-compose.edge.yml --env-file docker/.env.edge up 
 
 # 2. The instance
 cp docker/.env.production.example docker/.env.production
-$EDITOR docker/.env.production      # DOMAIN, INSTANCE + the three secrets (see comments in the file)
+$EDITOR docker/.env.production      # DOMAIN, INSTANCE + the four secrets (see comments in the file)
 chmod 600 docker/.env.production
 
 # 3. Tell Caddy which hostname belongs to it (file name = INSTANCE; see docker/sites/example.caddy.example)
@@ -146,7 +146,7 @@ Example with two instances (replace `example.net` with your domain):
 | `app.example.net` | `app` | `noagenda-app` | `docker/app.env` | `docker/sites/app.caddy` |
 | `demo.example.net` | `demo` | `noagenda-demo` | `docker/demo.env` | `docker/sites/demo.caddy` |
 
-Each env file has its own `INSTANCE`, `DOMAIN`, `JWT_SECRET` and `MYSQL_*` values (behind Apache also `TRUST_PROXY=2`).
+Each env file has its own `INSTANCE`, `DOMAIN`, `JWT_SECRET`, `SECRETS_KEY` and `MYSQL_*` values (behind Apache also `TRUST_PROXY=2`).
 **`INSTANCE` must differ between instances**: Caddy finds an instance as `<INSTANCE>-backend`, so a duplicate would send
 requests to the wrong database. Each site file is
 ```
@@ -252,6 +252,32 @@ docker/restore.sh /var/backups/noagenda/db-<ts>.sql.gz /var/backups/noagenda/upl
 ```
 Test a restore on a scratch machine before you need it.
 
+### Secrets at rest and `SECRETS_KEY`
+Secrets the app has to read back (webhook signing secrets, later plugin credentials such as a bot token) are stored
+encrypted with AES-256-GCM under `SECRETS_KEY`; passwords and tokens are hashed and need no key. The key lives only in
+`docker/.env.production`, **not in the database and so not in any backup**: a stolen dump reveals none of these secrets,
+and a dump restored without its key has unreadable ones (webhooks then fail to load until the key is put back or
+their secrets are re-entered). So:
+- keep a copy of the env file (with the key) in a password manager, apart from the backup files and their remote copy;
+- restore a backup with the `SECRETS_KEY` that was in use when it was taken (after a rotation, keep the old key listed
+  until no backup you might restore is older than the rotation, or restore and then re-encrypt, see below).
+
+**Rotating the key** (yearly, or at once if it may have leaked):
+```bash
+# 1. new key first, old key after it:  SECRETS_KEY=<new>,<old>
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production up -d backend
+# 2. rewrite every stored secret with the new key (safe to repeat)
+docker compose -f docker/docker-compose.prod.yml --env-file docker/.env.production exec backend node dist/scripts/reencrypt-secrets.js
+# 3. remove ",<old>" from SECRETS_KEY and restart the backend again
+```
+If a value is encrypted with a key that is no longer listed, the backend says which key id it needs.
+`docker/verify-backup.sh` reports how many stored secrets a backup holds and whether any are still plain text.
+
+**Upgrading an existing instance to this version:** add `SECRETS_KEY` to `docker/.env.production` first (the stack
+refuses to start without it). The `EncryptWebhookSecrets` migration then encrypts the existing webhook secrets on
+start. Backups taken before that still hold them as plain text until they age out. Reverting that migration refuses
+unless `SECRETS_ROLLBACK_DECRYPT=true` is set, so secrets are never written back in clear by accident.
+
 ## Legal pages (Terms of Service and Privacy Policy)
 The app ships `/terms` and `/privacy` pages and a required "I agree" box on registration (the acceptance time
 is stored on the user). The texts are **templates written for what this app actually does**: they are not legal
@@ -324,6 +350,7 @@ advice, so have them reviewed before you accept real users.
 | `INSTANCE` | `.env.production` | Required. Short name, unique on the host; Caddy reaches the instance as `<INSTANCE>-backend` / `-frontend` |
 | `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` | `.env.production` | Required, strong random values |
 | `JWT_SECRET` | `.env.production` | Required, **>= 32 chars** (backend refuses to start otherwise) |
+| `SECRETS_KEY` | `.env.production` | Required in production: `openssl rand -base64 32`. Encrypts secrets stored in the database; comma-separated list during a rotation, newest first. Not in backups: keep a copy apart (see "Secrets at rest") |
 | `PUBLIC_ORIGIN` | optional | Only for a non-default origin, e.g. a non-standard port |
 | `DB_SYNCHRONIZE` / `DB_MIGRATIONS_RUN` | backend | Defaults: sync off + migrations on in production |
 | `TRUST_PROXY` | `.env.production` | Reverse-proxy hops in front of the backend so rate limits see real client IPs. Default 1 (Caddy); use 2 for Apache -> Caddy |

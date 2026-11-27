@@ -11,6 +11,9 @@
 #                       successful backup and <url>/fail after a failed one. If the pings stop, you are
 #                       alerted that backups are no longer running.
 # Cron example (daily 03:15):  15 3 * * * /opt/noagenda/docker/backup.sh /var/backups/noagenda
+#
+# The dump does NOT contain SECRETS_KEY (it lives in the env file), so the webhook secrets in it are unreadable on
+# their own. Keep a copy of docker/.env.production apart from these backups: a restore needs the same key.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-$HERE/docker-compose.prod.yml}"

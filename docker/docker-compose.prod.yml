@@ -72,6 +72,7 @@ services:
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_DATABASE: ${MYSQL_DATABASE:-noagenda}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required (>= 32 chars)}
+      SECRETS_KEY: ${SECRETS_KEY:?SECRETS_KEY is required (openssl rand -base64 32)}
       CORS_ORIGIN: ${PUBLIC_ORIGIN:-https://${DOMAIN}}
       # Number of proxies in front of the backend: 1 = Caddy only; 2 = Apache -> Caddy.
       TRUST_PROXY: ${TRUST_PROXY:-1}

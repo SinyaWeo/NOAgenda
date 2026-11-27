@@ -74,6 +74,8 @@ jobs:
       DB_PASSWORD: ci-root-password
       DB_DATABASE: noagenda_ci
       JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      # CI-only key (public on purpose): exercises secrets-at-rest encryption with a real SECRETS_KEY.
+      SECRETS_KEY: Y2ktb25seS1rZXktY2ktb25seS1rZXktY2ktb25seSE=
       CORS_ORIGIN: http://localhost:5173
       PORT: 3000
       LOGIN_RATE_LIMIT: 100
@@ -130,6 +132,8 @@ jobs:
       DB_PASSWORD: ci-root-password
       DB_DATABASE: noagenda_ci
       JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      # CI-only key (public on purpose): exercises secrets-at-rest encryption with a real SECRETS_KEY.
+      SECRETS_KEY: Y2ktb25seS1rZXktY2ktb25seS1rZXktY2ktb25seSE=
       CORS_ORIGIN: http://localhost:5173
       PORT: 3000
       LOGIN_RATE_LIMIT: 100
@@ -226,6 +230,8 @@ jobs:
       DB_PASSWORD: ci-root-password
       DB_DATABASE: noagenda_ci
       JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      # CI-only key (public on purpose): exercises secrets-at-rest encryption with a real SECRETS_KEY.
+      SECRETS_KEY: Y2ktb25seS1rZXktY2ktb25seS1rZXktY2ktb25seSE=
       CORS_ORIGIN: http://localhost:5173
       PORT: 3000
       LOGIN_RATE_LIMIT: 100
@@ -279,6 +285,8 @@ jobs:
       DB_PASSWORD: ci-root-password
       DB_DATABASE: noagenda_ci
       JWT_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      # CI-only key (public on purpose): exercises secrets-at-rest encryption with a real SECRETS_KEY.
+      SECRETS_KEY: Y2ktb25seS1rZXktY2ktb25seS1rZXktY2ktb25seSE=
       CORS_ORIGIN: http://localhost:5173
       PORT: 3000
       SMTP_HOST: 127.0.0.1
@@ -338,6 +346,6 @@ jobs:
           docker build --build-arg VITE_API_BASE=/api -t noagenda-frontend app/frontend
       - name: Validate production compose file
         run: |
-          INSTANCE=app DOMAIN=example.com MYSQL_ROOT_PASSWORD=x MYSQL_PASSWORD=y JWT_SECRET=z \
+          INSTANCE=app DOMAIN=example.com MYSQL_ROOT_PASSWORD=x MYSQL_PASSWORD=y JWT_SECRET=z SECRETS_KEY=k \
             docker compose -f docker/docker-compose.prod.yml config -q
           docker compose -f docker/docker-compose.edge.yml config -q

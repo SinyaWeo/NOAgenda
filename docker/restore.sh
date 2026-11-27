@@ -4,6 +4,10 @@
 #   docker/restore.sh <db-*.sql.gz> [uploads-*.tar.gz]
 #
 # Env: ENV_FILE, COMPOSE_FILE, COMPOSE_PROJECT, ASSUME_YES=1 (skip the prompt).
+#
+# Secrets in the database (webhook signing secrets) are encrypted with SECRETS_KEY, which is not in the backup.
+# The env file must hold the key that was in use when the backup was taken (after a rotation: still list the old
+# key, then run reencrypt-secrets.js). Otherwise those secrets cannot be read and have to be re-entered.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-$HERE/docker-compose.prod.yml}"
@@ -30,3 +34,4 @@ if [ -n "$UPLOADS" ]; then
 fi
 "${DC[@]}" start backend frontend
 echo "Restore complete."
+echo "Note: stored secrets need the SECRETS_KEY that was in use when this backup was taken (see DEPLOYMENT.md)."

@@ -63,15 +63,19 @@ cp docker/.env.production.example docker/.env.production && chmod 600 docker/.en
 openssl rand -base64 24    # MYSQL_ROOT_PASSWORD
 openssl rand -base64 24    # MYSQL_PASSWORD
 openssl rand -hex 48       # JWT_SECRET
+openssl rand -base64 32    # SECRETS_KEY (each instance gets its own)
 ```
 
 - [ ] On a shared server set `BIND_ADDR=127.0.0.1`, `HTTP_PORT=8080`, `HTTPS_PORT=8443` in `docker/.env.edge`, use
       `http://<your domain>` in `docker/sites/<instance>.caddy`, and set `TRUST_PROXY=2` in the instance env file (see the example files). `PUBLIC_ORIGIN` stays `https://<domain>`.
-- [ ] Fill in `DOMAIN`, the three secrets, SMTP (section 3), `OPERATOR_NAME`, `CONTACT_EMAIL`, `REQUIRE_TERMS_ACCEPTANCE=true`.
+- [ ] Fill in `DOMAIN`, the four secrets, SMTP (section 3), `OPERATOR_NAME`, `CONTACT_EMAIL`, `REQUIRE_TERMS_ACCEPTANCE=true`.
 - [ ] **Save the file in a password manager.** Gotchas:
   - The two database passwords are only applied the *first* time the database volume is created. Editing them later
     does **not** change the database password.
   - Changing `JWT_SECRET` later signs every user out (harmless, but know it).
+  - `SECRETS_KEY` encrypts the webhook signing secrets stored in the database. It is **not** in the backups (on
+    purpose: a stolen backup then reveals nothing), so losing it means those secrets must be re-entered. Never just
+    replace it: rotate it (see the table at the end).
   - `OPERATOR_NAME`/`CONTACT_EMAIL` are baked into the frontend image. With CI images, set them as GitHub repository
     *variables* (same names), re-run the Release workflow, then `docker/deploy.sh`. When building on the server,
     re-run `up -d --build` instead.
@@ -134,6 +138,8 @@ An untested backup is a hope, not a backup.
       `BACKUP_RCLONE_REMOTE=<remote>:<bucket>/noagenda` to the cron line: `backup.sh` then copies each backup there itself
       (a failed copy counts as a failed backup). Set retention on the remote (bucket lifecycle rule). A provider snapshot also
       works. Protect the copy: it contains everyone's data.
+- [ ] **Keep `SECRETS_KEY` apart from the backups**: in the password manager with the env file, not next to the
+      backup files or in the same remote. A restored database needs the key it was backed up with.
 - [ ] **Get alerted when backups stop**: create a check at healthchecks.io (or Uptime Kuma) and set
       `BACKUP_PING_URL=https://hc-ping.com/<uuid>` in the cron line. The script pings on success and `/fail` on failure.
 - [ ] **Prove a backup restores**, without touching production:
@@ -174,6 +180,7 @@ An untested backup is a hope, not a backup.
 | A user asks for their data / deletion | They can do both themselves in Settings (export, delete account with a 7-day grace period) |
 | Stop sign-ups quickly | Set `REGISTRATION_ENABLED=false`, redeploy the backend: `up -d backend` |
 | Rotate the JWT secret | Change `JWT_SECRET`, `up -d backend`. Everyone is signed out once |
+| Rotate the secrets key | Set `SECRETS_KEY=<new>,<old>` (new first), `up -d backend`, then `... exec backend node dist/scripts/reencrypt-secrets.js`, then remove `,<old>` and `up -d backend` again. Never drop the old key before the re-encrypt step |
 | Change a database password | Changing the env file is not enough: `ALTER USER` inside MariaDB, then update the env file |
 
 ## What is verified for you, and what is not

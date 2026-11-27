@@ -56,6 +56,38 @@ check_config() {
   if [ -z "$v" ]; then fail "JWT_SECRET is empty"
   elif weak "$v" || [ "${#v}" -lt 32 ]; then fail "JWT_SECRET is weak or shorter than 32 chars (use 'openssl rand -hex 48')"
   else pass "JWT_SECRET is set (${#v} chars)"; fi
+  v="$(val SECRETS_KEY)"
+  if [ -z "$v" ]; then fail "SECRETS_KEY is empty (generate one: openssl rand -base64 32)"
+  else
+    local bad=0 n=0 k
+    IFS=',' read -ra keys <<< "$v"
+    for k in "${keys[@]}"; do
+      k="${k// /}"; [ -z "$k" ] && continue; n=$((n + 1))
+      [ "$(printf '%s' "$k" | base64 -d 2>/dev/null | wc -c)" -eq 32 ] || bad=1
+    done
+    if [ "$bad" -eq 1 ]; then fail "SECRETS_KEY must be base64 32-byte keys (openssl rand -base64 32), comma-separated"
+    elif [ "$n" -gt 1 ]; then warn "SECRETS_KEY lists $n keys: finish the rotation (reencrypt-secrets) and drop the old ones"
+    else pass "SECRETS_KEY is set"; fi
+    [ "$v" = "$(val JWT_SECRET)" ] && fail "SECRETS_KEY must differ from JWT_SECRET"
+  fi
+
+  # Every instance has its own secrets: another instance's env file next to this one must not share them,
+  # or a leak (or a copied backup) of one instance would expose the other.
+  local other shared mine theirs
+  for other in "$(dirname "$file")"/.env.production* "$(dirname "$file")"/*.env; do
+    [ -f "$other" ] || continue
+    [ "$(realpath "$other")" = "$(realpath "$file")" ] && continue
+    case "$other" in *.example) continue ;; esac
+    grep -qE '^INSTANCE=' "$other" || continue   # not an instance env file (.env.edge, ...)
+    shared=""
+    [ -n "$(val JWT_SECRET)" ] && [ "$(val JWT_SECRET)" = "$(grep -E '^JWT_SECRET=' "$other" | tail -1 | cut -d= -f2-)" ] && shared="JWT_SECRET"
+    theirs="$(grep -E '^SECRETS_KEY=' "$other" | tail -1 | cut -d= -f2- | tr -d ' "'"'"'')"
+    for mine in $(val SECRETS_KEY | tr -d ' ' | tr ',' ' '); do
+      case ",$theirs," in *",$mine,"*) shared="${shared:+$shared and }SECRETS_KEY" ; break ;; esac
+    done
+    if [ -n "$shared" ]; then fail "$shared is the same as in $(basename "$other"): every instance needs its own"
+    else pass "secrets differ from $(basename "$other")"; fi
+  done
   if [ -n "$(val MYSQL_ROOT_PASSWORD)" ] && [ -n "$(val MYSQL_PASSWORD)" ]; then
     [ "$(val MYSQL_ROOT_PASSWORD)" != "$(val MYSQL_PASSWORD)" ] && pass "database root and app passwords differ" || fail "MYSQL_ROOT_PASSWORD and MYSQL_PASSWORD are identical"
   fi

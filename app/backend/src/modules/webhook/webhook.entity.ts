@@ -1,5 +1,6 @@
 import { Entity, Column, Index, ForeignKey } from 'typeorm';
 import { BaseEntity } from '@common/base.entity';
+import { encryptedColumn } from '@common/secret-box';
 import { Node } from '../node/node.entity';
 import { User } from '../user/user.entity';
 
@@ -11,7 +12,8 @@ export class Webhook extends BaseEntity {
   @Column()
   event!: string;
 
-  @Column({ nullable: true })
+  /** HMAC signing secret. Encrypted at rest (it must be readable to sign deliveries, so it cannot be hashed). */
+  @Column({ type: 'text', nullable: true, transformer: encryptedColumn('webhook.secret') })
   secret?: string;
 
   @Column({ default: true })

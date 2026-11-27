@@ -25,6 +25,7 @@ PUBLIC_ORIGIN=https://localhost:${HTTPS_PORT}
 MYSQL_ROOT_PASSWORD=$(openssl rand -hex 12)
 MYSQL_PASSWORD=$(openssl rand -hex 12)
 JWT_SECRET=$(openssl rand -hex 48)
+SECRETS_KEY=$(openssl rand -base64 32)
 OPERATOR_NAME=Example Ltd, Prague
 CONTACT_EMAIL=privacy@example.test
 REQUIRE_TERMS_ACCEPTANCE=true

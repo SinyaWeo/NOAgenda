@@ -51,6 +51,11 @@ newest_user="$(q 'SELECT IFNULL(MAX(createdAt), "none") FROM users')"
 
 echo "  tables: $tables | users: $users | projects+tasks: $nodes | migrations applied: $migs (latest: $latest)"
 echo "  newest account created: $newest_user"
+# Secrets at rest: the backup holds them encrypted with SECRETS_KEY (not included). Older dumps may hold plain text.
+secrets_enc="$(q "SELECT COUNT(*) FROM webhook WHERE secret LIKE 'enc:%'")"
+secrets_plain="$(q "SELECT COUNT(*) FROM webhook WHERE secret IS NOT NULL AND secret <> '' AND secret NOT LIKE 'enc:%'")"
+echo "  webhook secrets: $secrets_enc encrypted (need SECRETS_KEY, kept outside this backup), $secrets_plain plain text"
+[ "$secrets_plain" -eq 0 ] || echo "  WARN: $secrets_plain webhook secret(s) in plain text: taken before the encryption migration ran?"
 
 status=0
 [ "$tables" -ge 25 ] || { echo "FAIL: only $tables tables restored (expected 25+)"; status=1; }

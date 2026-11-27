@@ -121,6 +121,14 @@ s, wh, _ = call('POST', '/webhooks', {'url': 'https://hooks.example.com/x', 'pro
 check('webhook without an event is accepted and defaults to all events', (s, wh.get('event')), (201, '*'))
 s, _, _ = call('POST', '/webhooks', {'url': 'javascript:alert(1)', 'projectId': pid}, A); check('non-http webhook url rejected', s, 400)
 s, _, _ = call('POST', '/webhooks', {'url': 'ftp://x.example/', 'projectId': pid}, A); check('ftp webhook url rejected', s, 400)
+# The signing secret is write-only in the API and encrypted at rest (SECRETS_KEY).
+s, sw, _ = call('POST', '/webhooks', {'url': 'https://hooks.example.com/signed', 'projectId': pid, 'secret': 'smoke-signing-secret'}, A)
+check('a webhook secret is never returned, only whether one is set', (s, 'secret' in sw, sw.get('hasSecret')), (201, False, True))
+s, _, _ = call('PUT', f'/webhooks/{sw["id"]}', {'secret': 'rotated-signing-secret'}, A); check('a webhook secret can be replaced', s, 200)
+if SQL:
+    stored = sql(f'SELECT secret FROM webhook WHERE id = {sw["id"]};')
+    check('the stored webhook secret is encrypted, not plain text',
+          (stored.startswith('enc:v1:'), 'signing-secret' in stored), (True, False))
 s, _, _ = call('POST', f'/tasks/{t1["id"]}/reminders', {'reminderDate': 'soon'}, A); check('bad reminder date rejected', s, 400)
 s, rt, _ = call('POST', '/tasks', {'title': 'Relative reminders', 'project': {'id': pid}}, A)
 s, sub, _ = call('POST', '/tasks', {'title': 'Nested subtask', 'parentTaskId': rt['id']}, A)
