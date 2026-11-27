@@ -73,7 +73,7 @@ export const messages = {
 	'settings.sessions.revoke': 'Revoke',
 	'settings.sessions.empty': 'No active sessions.',
 
-	'settings.avatar.hint': 'JPG, PNG, GIF or WebP. Max 5 MB.',
+	'settings.avatar.hint': 'Click the photo to change it. JPG, PNG, GIF or WebP, max 5 MB.',
 	'settings.avatar.upload': 'Upload new photo',
 	'settings.avatar.failed': 'Upload failed',
 	'settings.avatar.done': 'Avatar updated.',

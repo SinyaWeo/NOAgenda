@@ -75,7 +75,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'settings.sessions.revoke': 'Odhlásit',
 	'settings.sessions.empty': 'Žádná aktivní přihlášení.',
 
-	'settings.avatar.hint': 'JPG, PNG, GIF nebo WebP. Nejvýše 5 MB.',
+	'settings.avatar.hint': 'Fotku změníte kliknutím na ni. JPG, PNG, GIF nebo WebP, nejvýše 5 MB.',
 	'settings.avatar.upload': 'Nahrát novou fotografii',
 	'settings.avatar.failed': 'Nahrání se nezdařilo',
 	'settings.avatar.done': 'Avatar byl změněn.',

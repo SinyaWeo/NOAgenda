@@ -8,7 +8,8 @@
 	import type { MessageKey } from '#lib/i18n/index.js';
 	import { timeZoneOptions } from '#lib/timezones.js';
 	import { Alert, Button, Card, Input, Label, Select } from 'flowbite-svelte';
-	import { EyeOutline, EyeSlashOutline } from 'flowbite-svelte-icons';
+	import { CameraPhotoOutline } from 'flowbite-svelte-icons';
+	import EditableValue from '#lib/components/EditableValue.svelte';
 	import type { User } from '#lib/types.js';
 	import type { AvatarSettings } from '#lib/types-misc.js';
 
@@ -33,8 +34,6 @@
 	let showPasswords = $state(false);
 	let savingPassword = $state(false);
 
-	const VALUE =
-		'text-sm text-left cursor-pointer bg-transparent border-0 p-0 hover:underline focus:outline-none focus-visible:underline';
 	const ROW = 'flex justify-between items-center gap-4 py-2.5 text-sm';
 	const DT = 'font-medium text-gray-500 dark:text-gray-400';
 	const PANEL =
@@ -214,7 +213,10 @@
 	<div class="flex flex-col gap-4 max-w-xl">
 		<Card class="max-w-none">
 			<div class="flex flex-col items-center gap-3 mb-6">
-				<label class="rounded-full cursor-pointer" title={t('settings.avatar.upload')}>
+				<label
+					class="relative rounded-full cursor-pointer focus-within:ring-2 focus-within:ring-primary-500 focus-within:ring-offset-2 dark:focus-within:ring-offset-gray-800"
+					title={t('settings.avatar.upload')}
+				>
 					{#if user.avatarUrl}
 						<img
 							src={resolveUrl(user.avatarUrl)}
@@ -228,10 +230,16 @@
 							{getInitials(user)}
 						</div>
 					{/if}
+					<span
+						class="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow-sm flex items-center justify-center text-gray-600 dark:text-gray-300"
+						aria-hidden="true"
+					>
+						<CameraPhotoOutline class="w-4 h-4" />
+					</span>
 					<span class="sr-only">{t('settings.avatar.upload')}</span>
 					<input type="file" accept="image/*" onchange={uploadAvatar} class="sr-only" />
 				</label>
-				<p class="text-xs text-gray-500 dark:text-gray-400 m-0">{t('settings.avatar.hint')}</p>
+				<p class="text-xs text-center text-gray-500 dark:text-gray-400 m-0">{t('settings.avatar.hint')}</p>
 				<div class="text-center w-full">
 					{#if editing === 'name'}
 						<form onsubmit={saveName}>
@@ -247,14 +255,9 @@
 						</form>
 					{:else}
 						<h2 class="text-xl font-bold text-gray-900 dark:text-white m-0">
-							<button
-								type="button"
-								class="{VALUE} text-xl font-bold"
-								title={t('tasks.details.change')}
-								onclick={editName}
-							>
+							<EditableValue size="lg" title={t('tasks.details.change')} onclick={editName}>
 								{user.name || user.username}
-							</button>
+							</EditableValue>
 						</h2>
 					{/if}
 					<p class="text-sm text-gray-500 dark:text-gray-400 m-0">@{user.username}</p>
@@ -265,15 +268,13 @@
 					<div class="flex justify-between items-center gap-4">
 						<dt class={DT}>{t('common.field.email')}</dt>
 						<dd class="m-0 text-gray-800 dark:text-gray-200 min-w-0 break-all">
-							<button
-								type="button"
-								class={VALUE}
+							<EditableValue
 								title={t('tasks.details.change')}
 								aria-expanded={editing === 'email'}
 								onclick={toggleEmail}
 							>
 								{user.email ?? '—'}
-							</button>
+							</EditableValue>
 						</dd>
 					</div>
 					{#if pendingEmail}
@@ -330,14 +331,9 @@
 								{#each LOCALES as l (l.code)}<option value={l.code}>{l.label}</option>{/each}
 							</Select>
 						{:else}
-							<button
-								type="button"
-								class={VALUE}
-								title={t('tasks.details.change')}
-								onclick={() => (editing = 'language')}
-							>
+							<EditableValue title={t('tasks.details.change')} onclick={() => (editing = 'language')}>
 								{languageName(user.language)}
-							</button>
+							</EditableValue>
 						{/if}
 					</dd>
 				</div>
@@ -360,14 +356,9 @@
 								{/each}
 							</Select>
 						{:else}
-							<button
-								type="button"
-								class={VALUE}
-								title={t('tasks.details.change')}
-								onclick={() => (editing = 'timezone')}
-							>
+							<EditableValue title={t('tasks.details.change')} onclick={() => (editing = 'timezone')}>
 								{user.timezone ?? 'UTC'}
-							</button>
+							</EditableValue>
 						{/if}
 					</dd>
 				</div>
@@ -390,14 +381,9 @@
 								{/each}
 							</Select>
 						{:else}
-							<button
-								type="button"
-								class={VALUE}
-								title={t('tasks.details.change')}
-								onclick={() => (editing = 'theme')}
-							>
+							<EditableValue title={t('tasks.details.change')} onclick={() => (editing = 'theme')}>
 								{themeName(user.theme, t)}
-							</button>
+							</EditableValue>
 						{/if}
 					</dd>
 				</div>
@@ -415,22 +401,7 @@
 				</label>
 				<div>
 					<Label for="old-pw" class="mb-1">{t('settings.password.current')}</Label>
-					<div class="relative">
-						<Input
-							id="old-pw"
-							type={showPasswords ? 'text' : 'password'}
-							bind:value={oldPassword}
-							required
-							class="pr-10"
-						/>
-						<button
-							type="button"
-							onclick={() => (showPasswords = !showPasswords)}
-							class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 dark:text-gray-400 hover:text-gray-600"
-						>
-							{#if showPasswords}<EyeSlashOutline class="w-4 h-4" />{:else}<EyeOutline class="w-4 h-4" />{/if}
-						</button>
-					</div>
+					<Input id="old-pw" type={showPasswords ? 'text' : 'password'} bind:value={oldPassword} required />
 				</div>
 				<div>
 					<Label for="new-pw" class="mb-1">

@@ -16,6 +16,7 @@
 	import RepeatHistory from './RepeatHistory.svelte';
 	import RepeatFields from './RepeatFields.svelte';
 	import InlineText from '#lib/components/InlineText.svelte';
+	import EditableValue from '#lib/components/EditableValue.svelte';
 	import TaskWorkItems from './TaskWorkItems.svelte';
 	import TaskReminderEditor, { type NewReminder } from './TaskReminderEditor.svelte';
 	import { EditOutline, PaperClipOutline } from 'flowbite-svelte-icons';
@@ -133,9 +134,6 @@
 	const PANEL_BOX =
 		'mt-2 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40';
 	const PANEL = `${PANEL_BOX} flex flex-col gap-2`;
-
-	const VALUE =
-		'text-sm text-left cursor-pointer bg-transparent border-0 p-0 hover:underline focus:outline-none focus-visible:underline';
 
 	const overdue = $derived(!!task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done');
 
@@ -269,15 +267,14 @@
 							{/each}
 						</Select>
 					{:else}
-						<button
-							type="button"
-							class="{VALUE} font-semibold"
+						<EditableValue
+							class="font-semibold"
 							data-status={task.status ?? 'open'}
 							title={t('tasks.details.change')}
 							onclick={() => (editing = 'status')}
 						>
 							{t(`common.status.${task.status ?? 'open'}` as MessageKey)}
-						</button>
+						</EditableValue>
 					{/if}
 				</dd>
 			</div>
@@ -303,15 +300,14 @@
 								</option>{/each}
 						</Select>
 					{:else}
-						<button
-							type="button"
-							class="{VALUE} {task.priority ? 'font-semibold' : 'text-gray-500 dark:text-gray-400 italic'}"
+						<EditableValue
+							class={task.priority ? 'font-semibold' : 'text-gray-500 dark:text-gray-400 italic'}
 							data-priority={task.priority || undefined}
 							title={t('tasks.details.change')}
 							onclick={() => (editing = 'priority')}
 						>
 							{task.priority ? t(`common.priority.${task.priority}` as MessageKey) : t('views.notSet')}
-						</button>
+						</EditableValue>
 					{/if}
 				</dd>
 			</div>
@@ -321,13 +317,12 @@
 				<div>
 					<dt class={LABEL}>{t(d.label)}</dt>
 					<dd class="m-0">
-						<button
-							type="button"
-							class="{VALUE} {late
+						<EditableValue
+							class={late
 								? 'font-semibold'
 								: value
 									? 'text-gray-900 dark:text-white'
-									: 'text-gray-500 dark:text-gray-400 italic'}"
+									: 'text-gray-500 dark:text-gray-400 italic'}
 							data-status={late ? 'overdue' : undefined}
 							title={t('tasks.details.change')}
 							aria-expanded={editing === d.field}
@@ -335,7 +330,7 @@
 						>
 							{value ? fmt.date(value) : t('views.notSet')}
 							{#if late}· {t('tasks.details.overdue')}{/if}
-						</button>
+						</EditableValue>
 						{#if editing === d.field}
 							<div
 								class="mt-2 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/40 flex flex-col gap-2"
@@ -382,13 +377,14 @@
 			<div>
 				<dt class={LABEL}>{t('tasks.details.labels')}</dt>
 				<dd class="m-0">
-					<button
-						type="button"
-						class="{VALUE} flex flex-wrap gap-x-3 gap-y-1 {taskLabels.length
+					<EditableValue
+						class={taskLabels.length
 							? 'text-gray-900 dark:text-white'
-							: 'text-gray-500 dark:text-gray-400 italic'}"
+							: 'text-gray-500 dark:text-gray-400 italic'}
 						title={t('tasks.details.change')}
 						aria-expanded={editing === 'labels'}
+						contentClass="flex flex-wrap gap-x-3 gap-y-1"
+						pencilInside
 						onclick={() => (editing = editing === 'labels' ? null : 'labels')}
 					>
 						{#each taskLabels as tl (tl.id)}
@@ -399,7 +395,7 @@
 						{:else}
 							{t('common.none')}
 						{/each}
-					</button>
+					</EditableValue>
 					{#if editing === 'labels'}
 						<div class={PANEL}>
 							{#if labelChoices.length}
@@ -460,16 +456,15 @@
 								{#each assignable as u (u.id)}<option value={u.id}>{u.name || u.username}</option>{/each}
 							</Select>
 						{:else if canAssign}
-							<button
-								type="button"
-								class="{VALUE} {assignees.length
+							<EditableValue
+								class={assignees.length
 									? 'text-gray-900 dark:text-white'
-									: 'text-gray-500 dark:text-gray-400 italic'}"
+									: 'text-gray-500 dark:text-gray-400 italic'}
 								title={t('tasks.details.change')}
 								onclick={() => (editing = 'assignee')}
 							>
 								{assigneeNames || t('tasks.details.unassigned')}
-							</button>
+							</EditableValue>
 						{:else}
 							<span class="text-sm text-gray-900 dark:text-white">{assigneeNames}</span>
 						{/if}
@@ -479,28 +474,27 @@
 			<div>
 				<dt class={LABEL}>{t('tasks.repeat.summaryLabel')}</dt>
 				<dd class="m-0">
-					<button
-						type="button"
-						class="{VALUE} {repeatSummary
+					<EditableValue
+						class={repeatSummary
 							? 'text-gray-900 dark:text-white'
-							: 'text-gray-500 dark:text-gray-400 italic'}"
+							: 'text-gray-500 dark:text-gray-400 italic'}
 						title={t('tasks.details.editRepeat')}
 						onclick={openRepeat}
 					>
 						{repeatSummary || t('tasks.repeat.kind.none')}
-					</button>
+					</EditableValue>
 				</dd>
 			</div>
 			<div>
 				<dt class={LABEL}>{t('tasks.reminders.title')}</dt>
 				<dd class="m-0">
-					<button
-						type="button"
-						class="{VALUE} flex flex-col gap-1 {reminders.length
+					<EditableValue
+						class={reminders.length
 							? 'text-gray-900 dark:text-white'
-							: 'text-gray-500 dark:text-gray-400 italic'}"
+							: 'text-gray-500 dark:text-gray-400 italic'}
 						title={t('tasks.details.change')}
 						aria-expanded={editing === 'reminders'}
+						contentClass="flex flex-col gap-1"
 						onclick={() => (editing = editing === 'reminders' ? null : 'reminders')}
 					>
 						{#each reminders as rem (rem.id)}
@@ -508,7 +502,7 @@
 						{:else}
 							{t('common.none')}
 						{/each}
-					</button>
+					</EditableValue>
 					{#if editing === 'reminders'}
 						<div class={PANEL}>
 							<TaskReminderEditor
@@ -530,16 +524,17 @@
 			<div>
 				<dt class="{LABEL} flex items-center gap-1">
 					{t('tasks.attachments.title')}
-					<button
-						type="button"
-						class="p-0.5 rounded bg-transparent border-0 cursor-pointer text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
-						aria-label={t('tasks.attachments.edit')}
-						title={t('tasks.attachments.edit')}
-						aria-expanded={editing === 'attachments'}
-						onclick={() => (editing = editing === 'attachments' ? null : 'attachments')}
-					>
-						<EditOutline class="w-3.5 h-3.5" />
-					</button>
+					<!-- With no attachments the "None" value below carries the pencil. -->
+					{#if attachments.length}<button
+							type="button"
+							class="p-0.5 rounded bg-transparent border-0 cursor-pointer text-gray-500 hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+							aria-label={t('tasks.attachments.edit')}
+							title={t('tasks.attachments.edit')}
+							aria-expanded={editing === 'attachments'}
+							onclick={() => (editing = editing === 'attachments' ? null : 'attachments')}
+						>
+							<EditOutline class="w-3.5 h-3.5" />
+						</button>{/if}
 				</dt>
 				<dd class="m-0">
 					{#if attachments.length}
@@ -569,14 +564,13 @@
 							{/each}
 						</ul>
 					{:else}
-						<button
-							type="button"
-							class="{VALUE} text-gray-500 dark:text-gray-400 italic"
+						<EditableValue
+							class="text-gray-500 dark:text-gray-400 italic"
 							title={t('tasks.details.change')}
 							onclick={() => (editing = editing === 'attachments' ? null : 'attachments')}
 						>
 							{t('common.none')}
-						</button>
+						</EditableValue>
 					{/if}
 					{#if editing === 'attachments'}
 						<div class="{PANEL_BOX} flex flex-wrap items-center gap-2">
