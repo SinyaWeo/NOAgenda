@@ -15,6 +15,11 @@ export const messages = {
 	'projects.create.submitting': 'Creating…',
 	'projects.create.created': 'Project created!',
 	'projects.create.failed': 'Failed to create project',
+	'projects.create.team': 'Share with team',
+	'projects.create.noTeam': 'No team (only me)',
+	'projects.create.teamPermission': 'Team permission',
+	'projects.create.teamHint':
+		'Members of the team will see the project. You can change sharing later under Share.',
 
 	'projects.edit.title': 'Edit Project',
 	'projects.edit.saveChanges': 'Save Changes',
@@ -67,6 +72,8 @@ export const messages = {
 	'projects.delete.submitting': 'Deleting…',
 
 	'projects.share.title': 'Share Project',
+	'projects.share.link': 'Share',
+	'projects.share.desc': 'Let other users or whole teams see and edit this project.',
 	'projects.share.users': 'Users',
 	'projects.share.addUserLabel': 'Add a user',
 	'projects.share.permission': 'Permission',

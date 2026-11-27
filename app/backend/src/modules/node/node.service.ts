@@ -282,6 +282,35 @@ export class NodeService {
     return { ...data, status: bucket.status };
   }
 
+  /**
+   * After a move, tasks below the moved nodes may still sit in buckets of the project they left:
+   * take them out of any bucket that is not one of their (new) project's.
+   */
+  private async releaseForeignSubtreeBuckets(m: EntityManager, rootIds: number[]): Promise<void> {
+    const below = (await subtreeIds(sqlRunner(m), rootIds, 'live')).filter((id) => !rootIds.includes(id));
+    if (!below.length) return;
+    const projects = await projectIdsOf(sqlRunner(m), below);
+    const byProject = new Map<number | null, number[]>();
+    for (const id of below) {
+      const p = projects.get(id) ?? null;
+      byProject.set(p, [...(byProject.get(p) ?? []), id]);
+    }
+    for (const [projectId, ids] of byProject) {
+      const qb = m
+        .createQueryBuilder()
+        .update(Node)
+        .set({ bucketId: null })
+        .where({ id: In(ids) })
+        .andWhere('bucketId IS NOT NULL');
+      if (projectId !== null) {
+        qb.andWhere('bucketId NOT IN (SELECT b.id FROM kanban_buckets b WHERE b.projectId = :projectId)', {
+          projectId,
+        });
+      }
+      await qb.execute();
+    }
+  }
+
   /** Tasks whose status no longer matches their bucket's leave it (they show in the first bucket of their status). */
   private async releaseMismatchedBuckets(m: EntityManager, ids: number[]): Promise<void> {
     if (!ids.length) return;
@@ -320,6 +349,9 @@ export class NodeService {
     }
     await this.nodeRepository.update(id, change);
     if (change.status !== undefined) await this.releaseMismatchedBuckets(m, [id]);
+    if (existing && change.parentId !== undefined && change.parentId !== existing.parentId) {
+      await this.releaseForeignSubtreeBuckets(m, [id]);
+    }
     if (completed) await this.recordCompletion(m, completed, data, actorId);
     if (cycled && existing) {
       await this.rearmReminders(m, [id], shiftMs);
@@ -441,6 +473,7 @@ export class NodeService {
       const resetting = repeating.filter((n) => cycles.has(n.id) && this.resetsSubtasks(n, data)).map((n) => n.id);
       if (resetting.length) await this.reopenSubtasks(m, resetting);
       if (data.status !== undefined) await this.releaseMismatchedBuckets(m, ids);
+      if (data.parentId !== undefined) await this.releaseForeignSubtreeBuckets(m, ids);
       if (data.dueDate !== undefined || cycles.size) {
         await this.realignRelativeReminders(m, data.dueDate !== undefined ? ids : [...cycles.keys()]);
       }
@@ -498,6 +531,7 @@ export class NodeService {
   async move(id: number, parentId: number | null, actorId?: number): Promise<Node | null> {
     const before = await this.nodeRepository.findOne({ where: { id }, select: { id: true, parentId: true } });
     await this.nodeRepository.update(id, { parentId, bucketId: null }); // null = top level; a bucket belongs to the old project
+    await this.releaseForeignSubtreeBuckets(this.nodeRepository.manager, [id]);
     const node = await this.findById(id);
     if (node) {
       const changes = { parentId: { from: before?.parentId ?? null, to: parentId } };

@@ -3,6 +3,7 @@
 	import type {
 		Attachment,
 		Label,
+		Project,
 		Reminder,
 		Task,
 		TaskAssignee,
@@ -13,6 +14,8 @@
 	import { describeRepeat, emptyRepeat, formFromTask, repeatPayload, type RepeatForm } from '#lib/repeat.js';
 	import { dateInputToIso, isoToDateInput } from '#lib/dates.js';
 	import { userTimeZone } from '#lib/auth.svelte.js';
+	import { apiGetAuth } from '#lib/api.js';
+	import { showToast } from '#lib/toast.svelte.js';
 	import RepeatHistory from './RepeatHistory.svelte';
 	import RepeatFields from './RepeatFields.svelte';
 	import InlineText from '#lib/components/InlineText.svelte';
@@ -81,6 +84,7 @@
 
 	/** The field whose editor is open (only one at a time); null: all show their value. */
 	let editing = $state<
+		| 'project'
 		| 'status'
 		| 'priority'
 		| 'startDate'
@@ -91,6 +95,36 @@
 		| 'attachments'
 		| null
 	>(null);
+	/** A top-level task (personal or directly in a project) can change project; a subtask moves with its parent. */
+	const movable = $derived(!task.parent || task.parent.type === 'project');
+	const currentProject = $derived(task.parent?.type === 'project' ? task.parent : null);
+	/** Projects the task can move to (the user may write there); loaded when the picker opens. */
+	let targets = $state<Project[] | null>(null);
+
+	async function openProjectPicker() {
+		if (!targets) {
+			try {
+				const all = await apiGetAuth<Project[]>('/nodes?type=project');
+				targets = all.filter((p) => p.access === 'write' || p.access === 'admin');
+			} catch {
+				targets = [];
+			}
+		}
+		editing = 'project';
+	}
+
+	async function moveTo(value: string) {
+		const parentId = value ? Number(value) : null;
+		if (parentId === (currentProject?.id ?? null)) {
+			editing = null;
+			return;
+		}
+		if (await onUpdate({ parentId })) {
+			editing = null;
+			showToast(t('tasks.details.moved'), 'success');
+		}
+	}
+
 	let repeatOpen = $state(false);
 	let repeatForm = $state<RepeatForm>(emptyRepeat());
 	let savingRepeat = $state(false);
@@ -246,6 +280,47 @@
 		<dl
 			class="md:w-60 shrink-0 m-0 flex flex-col gap-4 border-t pt-6 md:border-t-0 md:pt-0 md:border-l md:pl-6 border-gray-100 dark:border-gray-700"
 		>
+			{#if movable}
+				<div>
+					<dt class={LABEL}>{t('tasks.details.project')}</dt>
+					<dd class="m-0">
+						{#if editing === 'project'}
+							<Select
+								placeholder=""
+								size="sm"
+								autofocus
+								value={currentProject ? String(currentProject.id) : ''}
+								aria-label={t('tasks.details.project')}
+								onchange={(e) => moveTo((e.target as HTMLSelectElement).value)}
+								onblur={() => (editing = null)}
+							>
+								<option value="">{t('tasks.details.noProject')}</option>
+								{#if currentProject && !targets?.some((p) => p.id === currentProject.id)}
+									<option value={String(currentProject.id)}>
+										{currentProject.name ?? currentProject.title}
+									</option>
+								{/if}
+								{#each targets ?? [] as p (p.id)}
+									<option value={String(p.id)}>{p.name ?? p.title}</option>
+								{/each}
+							</Select>
+							<p class="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-0">
+								{t('tasks.details.projectHint')}
+							</p>
+						{:else}
+							<EditableValue
+								class={currentProject ? 'font-semibold' : 'text-gray-500 dark:text-gray-400 italic'}
+								title={t('tasks.details.change')}
+								onclick={openProjectPicker}
+							>
+								{currentProject
+									? (currentProject.name ?? currentProject.title)
+									: t('tasks.details.noProject')}
+							</EditableValue>
+						{/if}
+					</dd>
+				</div>
+			{/if}
 			<div>
 				<dt class={LABEL}>{t('common.field.status')}</dt>
 				<dd class="m-0">

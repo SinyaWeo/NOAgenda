@@ -74,7 +74,7 @@ describe('ProjectTeamController', () => {
       update: jest.fn(),
       remove: jest.fn(),
     };
-    controller = new ProjectTeamController(asMock(service), asMock({}), asMock(access));
+    controller = new ProjectTeamController(asMock(service), asMock(access));
   });
 
   it('list requires READ', async () => {

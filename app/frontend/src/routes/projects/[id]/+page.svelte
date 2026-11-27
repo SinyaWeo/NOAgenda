@@ -8,7 +8,8 @@
 		CheckCircleOutline,
 		ClockOutline,
 		CogOutline,
-		ExclamationCircleOutline
+		ExclamationCircleOutline,
+		ShareNodesOutline
 	} from 'flowbite-svelte-icons';
 	import BucketKanbanView from '#lib/components/views/BucketKanbanView.svelte';
 	import TableView from '#lib/components/views/TableView.svelte';
@@ -16,6 +17,7 @@
 	import CalendarView from '#lib/components/views/CalendarView.svelte';
 	import MindmapView from '#lib/components/views/MindmapView.svelte';
 	import { showToast } from '#lib/toast.svelte.js';
+	import { singleUserMode } from '#lib/appConfig.svelte.js';
 	import { announceRecurrence } from '#lib/recurrence.js';
 	import { errMessage } from '#lib/errors.js';
 	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
@@ -184,6 +186,11 @@
 				<Button href="/projects/{project.id}/settings/activity" color="light" size="sm">
 					<ClockOutline class="w-4 h-4 mr-1" />{t('activity.project.link')}
 				</Button>
+				{#if !singleUserMode.current && project.access === 'admin'}
+					<Button href="/projects/{project.id}/settings/share" color="light" size="sm">
+						<ShareNodesOutline class="w-4 h-4 mr-1" />{t('projects.share.link')}
+					</Button>
+				{/if}
 			</div>
 			{#if project.description}<p class="text-gray-500 dark:text-gray-400 mt-1 mb-0">
 					{project.description}

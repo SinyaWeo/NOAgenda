@@ -12,7 +12,7 @@
 	import { showToast } from '#lib/toast.svelte.js';
 	import { announceRecurrence } from '#lib/recurrence.js';
 	import { t, type MessageKey } from '#lib/i18n/index.js';
-	import type { FilterCriteria, NodeStatus, SavedFilter, Task } from '#lib/types.js';
+	import type { FilterCriteria, NodeStatus, Project, SavedFilter, Task } from '#lib/types.js';
 	import type { KanbanColumn, ProjectOption, TaskViewMode } from '#lib/types-views.js';
 	import TaskListView from '#lib/components/views/TaskListView.svelte';
 	import StatusKanbanView from '#lib/components/views/StatusKanbanView.svelte';
@@ -30,6 +30,8 @@
 
 	let tasks = $state<Task[]>([]);
 	let projectNames = $state<Record<number, string>>({});
+	/** Projects the selected tasks can be moved to (the user may write there). */
+	let moveTargets = $state<Project[]>([]);
 	let loading = $state(true);
 	let error = $state('');
 	let sort = $state('createdAt');
@@ -145,7 +147,7 @@
 	}
 
 	/** Apply one change to every selected task, then reload (a repeating task may have moved on, etc.). */
-	async function bulkUpdate(data: { status?: NodeStatus; priority?: number }) {
+	async function bulkUpdate(data: { status?: NodeStatus; priority?: number; parentId?: number | null }) {
 		if (!selected.length || bulkBusy) return;
 		bulkBusy = true;
 		const count = selected.length;
@@ -208,6 +210,12 @@
 		}
 		void loadProjectNames().then((n) => (projectNames = n));
 		void ensureFilters();
+		try {
+			const all = await apiGetAuth<Project[]>('/nodes?type=project');
+			moveTargets = all.filter((p) => p.access === 'write' || p.access === 'admin');
+		} catch {
+			// moving is optional: the select just offers "no project"
+		}
 	});
 
 	function chooseSavedFilter(id: string) {
@@ -464,6 +472,23 @@
 					{#each [1, 2, 3, 4, 5] as p (p)}<option value={p}>
 							{t(`common.priority.${p}` as MessageKey)}
 						</option>{/each}
+				</Select>
+				<Select
+					placeholder=""
+					size="sm"
+					class="w-auto"
+					disabled={bulkBusy}
+					value=""
+					aria-label={t('views.bulk.moveTo')}
+					onchange={(e) => {
+						const el = e.target as HTMLSelectElement;
+						if (el.value) void bulkUpdate({ parentId: el.value === 'none' ? null : Number(el.value) });
+						el.value = '';
+					}}
+				>
+					<option value="">{t('views.bulk.moveTo')}</option>
+					<option value="none">{t('tasks.details.noProject')}</option>
+					{#each moveTargets as p (p.id)}<option value={String(p.id)}>{p.name ?? p.title}</option>{/each}
 				</Select>
 				<Button size="xs" color="light" onclick={() => (selected = [])}>{t('common.clear')}</Button>
 			{/if}

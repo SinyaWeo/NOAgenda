@@ -141,8 +141,7 @@ export class TaskController {
     const data = this.taskService.normalizeTaskPayload(this.access.sanitize(body.data ?? {}));
     delete data.type;
     if (data.parentId !== undefined) {
-      await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
-      for (const id of ids) await this.access.assertNoCycle(id, Number(data.parentId));
+      await this.access.assertCanReparent(req.user.userId, ids, data.parentId === null ? null : Number(data.parentId));
     }
     return this.taskService.bulkUpdate(ids, data, req.user.userId);
   }
@@ -176,7 +175,11 @@ export class TaskController {
     const safeBody = this.taskService.normalizeTaskPayload(this.access.sanitize(body));
     delete safeBody.type;
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
-      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, existing.id);
+      await this.access.assertCanReparent(
+        req.user.userId,
+        [existing.id],
+        safeBody.parentId === null ? null : Number(safeBody.parentId),
+      );
     }
     const task = await this.taskService.update(id, safeBody, req.user.userId);
     if (!task) throw new NotFoundException();

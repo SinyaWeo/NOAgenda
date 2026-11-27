@@ -100,7 +100,11 @@ export class NodeController {
     const safeBody: Partial<Node> = normalizeParentRefs(this.access.sanitize(body));
     delete safeBody.type; // a node's type is immutable
     if (safeBody.parentId !== undefined && safeBody.parentId !== existing.parentId) {
-      await this.access.assertCanUseAsParent(req.user.userId, safeBody.parentId, existing.id);
+      await this.access.assertCanReparent(
+        req.user.userId,
+        [existing.id],
+        safeBody.parentId === null ? null : Number(safeBody.parentId),
+      );
     }
     const node = await this.nodeService.update(Number(id), safeBody, req.user.userId);
     if (!node) throw new NotFoundException();
@@ -125,7 +129,7 @@ export class NodeController {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
-    await this.access.assertCanUseAsParent(req.user.userId, body.parentId, existing.id);
+    await this.access.assertCanReparent(req.user.userId, [existing.id], body.parentId ?? null);
     const node = await this.nodeService.move(Number(id), body.parentId ?? null, req.user.userId);
     if (!node) throw new NotFoundException();
     return node;

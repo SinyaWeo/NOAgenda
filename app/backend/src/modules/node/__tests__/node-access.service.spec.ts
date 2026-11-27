@@ -145,6 +145,35 @@ describe('NodeAccessService', () => {
     await expect(svc.assertCanUseAsParent(ME, 10, 12)).resolves.toBeUndefined();
   });
 
+  describe('assertCanReparent', () => {
+    // 10: my project; 20: OTHER's project where I may write; 11: my personal task; 12: OTHER's personal task assigned to me
+    const nodes = [project(10, ME), project(20, OTHER), task(11, null, ME), task(12, null, OTHER), task(21, 20, OTHER)];
+    const grants = { [20 * 1000 + ME]: ['write'] };
+    const assigned: [number, number][] = [[12, ME]];
+
+    it('lets the creator move a personal task into a writable project and back', async () => {
+      const svc = build(nodes, grants, assigned);
+      await expect(svc.assertCanReparent(ME, [11], 20)).resolves.toBeUndefined();
+      await expect(svc.assertCanReparent(ME, [11], null)).resolves.toBeUndefined();
+    });
+
+    it("refuses an assignee moving someone else's personal task into a project", async () => {
+      const svc = build(nodes, grants, assigned);
+      await expect(svc.assertCanReparent(ME, [12], 10)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('allows moving a project task between projects with write on the target', async () => {
+      const svc = build(nodes, grants, assigned);
+      await expect(svc.assertCanReparent(ME, [21], 10)).resolves.toBeUndefined();
+    });
+
+    it('refuses a target project without write access and a move under a descendant', async () => {
+      const svc = build([...nodes, task(13, 11, ME)], { [20 * 1000 + ME]: ['read'] }, assigned);
+      await expect(svc.assertCanReparent(ME, [11], 20)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(svc.assertCanReparent(ME, [11], 13)).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
   it('rejects a parent chain that already loops', async () => {
     const svc = build([task(11, 12, ME), task(12, 11, ME), task(13, null, ME)]);
     await expect(svc.assertNoCycle(13, 11)).rejects.toBeInstanceOf(BadRequestException);

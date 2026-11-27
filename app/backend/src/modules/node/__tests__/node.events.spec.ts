@@ -37,7 +37,7 @@ function build(stored: Node[]) {
     findOne: jest.fn(async ({ where }: { where: { id: number } }) => byId.get(where.id) ?? null),
     find: jest.fn(async () => stored),
     manager: {
-      query: jest.fn(),
+      query: jest.fn(async () => []),
       createQueryBuilder: jest.fn(chain),
       transaction: jest.fn(async (fn: (m: object) => unknown) =>
         fn({ query: jest.fn(async () => []), getRepository: () => repo, createQueryBuilder: chain }),

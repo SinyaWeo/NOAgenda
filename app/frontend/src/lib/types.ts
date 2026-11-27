@@ -26,6 +26,15 @@ export interface InviteResult {
 	inviteLink?: string;
 }
 
+/** A project shared with a team (GET /teams/:id/projects): the team's permission and the caller's own. */
+export interface TeamProject {
+	id: number;
+	name: string;
+	isArchived: boolean;
+	permission: Permission;
+	access: Permission;
+}
+
 export interface Team {
 	id: number;
 	name: string;

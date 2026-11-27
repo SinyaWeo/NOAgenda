@@ -156,4 +156,16 @@ describe('NodeService relative reminders', () => {
     await svc.update(5, { title: 'x' });
     expect(nodeRepo.manager.query.mock.calls.some(([sql]) => String(sql).includes('task_reminders'))).toBe(false);
   });
+
+  it('moving a task also takes its subtasks out of buckets of the project they left', async () => {
+    const { svc, nodeRepo, qb } = build([project, other, task(), task({ id: 6, parentId: 5 })]);
+    nodeRepo.manager.query.mockImplementation(async (sql?: string, params?: unknown[]): Promise<unknown[]> => {
+      if (String(sql).includes('WITH RECURSIVE')) return (params ?? []).map((start) => ({ start, projectId: 20 }));
+      if (String(sql).includes('parentId IN')) return (params ?? []).includes(5) ? [{ id: 6 }] : [];
+      return [];
+    });
+    await svc.move(5, 20);
+    expect(qb.where).toHaveBeenCalledWith({ id: expect.objectContaining({ value: [6] }) });
+    expect(qb.andWhere).toHaveBeenCalledWith(expect.stringContaining('kanban_buckets'), { projectId: 20 });
+  });
 });

@@ -20,6 +20,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import { NodeStatus, NodeType, RepeatMode } from '../node.entity';
+import { Permission } from '../../project-user/project-user.entity';
 
 /** `{ id: 5 }` reference, the shape the UI uses for `project`. */
 export class IdRefDto {
@@ -156,6 +157,17 @@ export class ProjectCreateDto extends NodeCommonDto {
   @IsNotEmpty()
   @MaxLength(255)
   name!: string;
+
+  /** Share the new project with this team right away (the caller must belong to it). */
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  teamId?: number;
+
+  /** The team's permission on the new project (default: write). */
+  @IsOptional()
+  @IsEnum(Permission)
+  teamPermission?: Permission;
 }
 
 export class ProjectUpdateDto extends NodeCommonDto {

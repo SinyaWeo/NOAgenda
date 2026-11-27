@@ -17,6 +17,11 @@ export const messages = {
 	'teams.memberFallback': 'Member #{id}',
 	'teams.members': 'Members',
 	'teams.noMembers': 'No members yet.',
+	'teams.projects.title': 'Projects',
+	'teams.projects.empty':
+		'No projects are shared with this team yet. Open a project and use Share to add the team, or pick the team when creating a project.',
+	'teams.projects.newProject': 'New project',
+	'teams.projects.archived': 'archived',
 
 	'teams.create.title': 'New Team',
 	'teams.create.submit': 'Create Team',

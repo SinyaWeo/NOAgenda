@@ -104,6 +104,7 @@ export const messages = {
 	'views.bulk.selected': '{count} selected',
 	'views.bulk.setStatus': 'Set status…',
 	'views.bulk.setPriority': 'Set priority…',
+	'views.bulk.moveTo': 'Move to project…',
 	'views.bulk.done': '{count} tasks updated',
 	'views.bulk.failed': 'Could not update the selected tasks',
 	'views.kanban.noBuckets': 'No buckets yet. Add the first one below.',

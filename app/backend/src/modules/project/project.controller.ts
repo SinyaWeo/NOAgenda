@@ -19,12 +19,17 @@ import { Permission } from '../project-user/project-user.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { normalizeParentRefs } from '../node/node-payload';
 import { ProjectCreateDto, ProjectUpdateDto } from '../node/dto/node.dto';
+import { ProjectTeamService } from '../project-team/project-team.service';
+import { AppSettingsService } from '../app-settings/app-settings.service';
+import { NOT_IN_SINGLE_USER_MODE } from '../../common/guards/single-user-mode.guard';
 
 @Controller('projects')
 export class ProjectController {
   constructor(
     private readonly projectService: ProjectService,
     private readonly access: NodeAccessService,
+    private readonly projectTeams: ProjectTeamService,
+    private readonly appSettings: AppSettingsService,
   ) {}
 
   @Get()
@@ -52,10 +57,18 @@ export class ProjectController {
   @Post()
   async create(@Body() body: ProjectCreateDto, @Request() req: AuthRequest): Promise<Node> {
     // sanitize() strips id/ownerId/etc. so a client cannot overwrite someone else's node.
-    const data = normalizeParentRefs(this.access.sanitize(body));
+    const { teamId, teamPermission, ...rest } = body;
+    const data = normalizeParentRefs(this.access.sanitize(rest));
     delete data.type;
     await this.access.assertCanUseAsParent(req.user.userId, data.parentId);
-    return this.projectService.create({ ...data, ownerId: req.user.userId }, req.user.userId);
+    // Sharing with a team at creation: checked before anything is created.
+    if (teamId !== undefined) {
+      if (await this.appSettings.singleUserMode()) throw new ForbiddenException(NOT_IN_SINGLE_USER_MODE);
+      if (!(await this.projectTeams.canUseTeam(req.user.userId, teamId))) throw new ForbiddenException();
+    }
+    const project = await this.projectService.create({ ...data, ownerId: req.user.userId }, req.user.userId);
+    if (teamId !== undefined) await this.projectTeams.add(project.id, teamId, teamPermission ?? Permission.WRITE);
+    return project;
   }
 
   @Put(':id')

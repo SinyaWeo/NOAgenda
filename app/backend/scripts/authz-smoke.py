@@ -201,6 +201,18 @@ s, other = call('POST', '/teams', {'name': 'Carol team'}, C); check('carol creat
 s, _ = call('PUT', f'/teams/{tm}', {'name': 'x'}, C); check("another team's manager cannot edit this team", s, 403)
 s, _ = call('POST', '/team-members', {'teamId': tm, 'userId': cid}, C); check("another team's manager cannot add to this team", s, 403)
 s, _ = call('PUT', f'/teams/{tm}', {'description': 'edited by its manager'}, A); check('manager edits their own team', s, 200)
+
+# --- 5a. a project shared with a team at creation; moving a personal task into a project
+s, _ = call('POST', '/projects', {'name': 'x', 'teamId': tm}, C); check('carol cannot create a project shared with a team she is not in', s, 403)
+s, tp = call('POST', '/projects', {'name': 'Team project', 'teamId': tm}, A); check('alice creates a project shared with her team', s, 201)
+s, lst = call('GET', '/projects', None, Bt); check('a team member sees the team project', tp['id'] in [p['id'] for p in lst], True)
+s, tps = call('GET', f'/teams/{tm}/projects', None, Bt); check('a team member lists the team projects', (s, [p['permission'] for p in tps if p['id'] == tp['id']]), (200, ['write']))
+s, _ = call('GET', f'/teams/{tm}/projects', None, C); check('an outsider cannot list the team projects', s, 403)
+s, mine = call('POST', '/tasks', {'title': 'personal', 'assigneeId': bid}, A); check('alice creates a personal task for bob', s, 201)
+s, _ = call('PUT', f"/tasks/{mine['id']}", {'parentId': tp['id']}, Bt); check("an assignee cannot move the creator's personal task into a project", s, 403)
+s, _ = call('PATCH', f"/nodes/{mine['id']}/move", {'parentId': tp['id']}, Bt); check('nor through /nodes/:id/move', s, 403)
+s, _ = call('PUT', f"/tasks/{mine['id']}", {'parentId': pid}, A); check('the creator moves the personal task into a project', s, 200)
+s, _ = call('PUT', f"/tasks/{mine['id']}", {'parentId': None}, A); check('and back out of it', s, 200)
 s, _ = call('DELETE', f'/team-members/{team_role(A, tm, "alice")["id"]}', None, A); check('a manager cannot remove a manager (not even themselves)', s, 403)
 s, _ = call('PATCH', f'/admin/teams/{tm}/members/{team_role(A, tm, "bob")["id"]}/role', {'role': 'manager'}, A)
 check('a manager cannot appoint managers', s, 403)

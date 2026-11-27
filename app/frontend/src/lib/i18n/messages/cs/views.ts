@@ -109,6 +109,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'views.bulk.selected': 'Vybráno: {count}',
 	'views.bulk.setStatus': 'Nastavit stav…',
 	'views.bulk.setPriority': 'Nastavit prioritu…',
+	'views.bulk.moveTo': 'Přesunout do projektu…',
 	'views.bulk.done': 'Upraveno úkolů: {count}',
 	'views.bulk.failed': 'Vybrané úkoly se nepodařilo upravit',
 	'views.kanban.noBuckets': 'Zatím žádné sloupce. Přidejte první níže.',

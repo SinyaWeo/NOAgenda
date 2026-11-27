@@ -213,6 +213,27 @@ export class NodeAccessService {
   }
 
   /**
+   * Check the caller may move existing node(s) under `parentId` (null = top level). Besides
+   * `assertCanUseAsParent` (write on the target, no cycle): taking a personal task out of
+   * personal space (into a project) needs ADMIN on it, i.e. only its creator may, since the
+   * move replaces creator/assignee access with the project's grants. Moves within or between
+   * projects keep needing only WRITE (checked by the caller via `assertCanModify`/`assertWrite`).
+   */
+  async assertCanReparent(userId: number, nodeIds: number[], parentId: number | null): Promise<void> {
+    if (parentId !== null) await this.assertWrite(userId, Number(parentId));
+    for (const id of nodeIds) if (parentId !== null) await this.assertNoCycle(id, Number(parentId));
+    const projects = await projectIdsOf(
+      sqlRunner(this.nodeRepository.manager),
+      parentId === null ? nodeIds : [...nodeIds, Number(parentId)],
+    );
+    const target = parentId === null ? undefined : projects.get(Number(parentId));
+    for (const id of nodeIds) {
+      const current = projects.get(id);
+      if (current === undefined && current !== target) await this.assert(userId, id, Access.ADMIN);
+    }
+  }
+
+  /**
    * Reject a re-parenting that would make a node its own ancestor (or that sits
    * deeper than access checks can follow). Walks up from the new parent.
    */

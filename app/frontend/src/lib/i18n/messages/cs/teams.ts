@@ -25,6 +25,11 @@ export const messages: Record<keyof typeof en, Message> = {
 	'teams.memberFallback': 'Člen č. {id}',
 	'teams.members': 'Členové',
 	'teams.noMembers': 'Zatím žádní členové.',
+	'teams.projects.title': 'Projekty',
+	'teams.projects.empty':
+		'S tímto týmem zatím není sdílen žádný projekt. Otevřete projekt a přidejte tým přes Sdílet, nebo tým vyberte při vytváření projektu.',
+	'teams.projects.newProject': 'Nový projekt',
+	'teams.projects.archived': 'archivováno',
 
 	'teams.create.title': 'Nový tým',
 	'teams.create.submit': 'Vytvořit tým',

@@ -23,6 +23,10 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.create.submitting': 'Vytvářím…',
 	'projects.create.created': 'Projekt byl vytvořen!',
 	'projects.create.failed': 'Projekt se nepodařilo vytvořit',
+	'projects.create.team': 'Sdílet s týmem',
+	'projects.create.noTeam': 'Bez týmu (jen já)',
+	'projects.create.teamPermission': 'Oprávnění týmu',
+	'projects.create.teamHint': 'Členové týmu projekt uvidí. Sdílení můžete později změnit v části Sdílet.',
 
 	'projects.edit.title': 'Upravit projekt',
 	'projects.edit.saveChanges': 'Uložit změny',
@@ -72,6 +76,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.delete.submitting': 'Mažu…',
 
 	'projects.share.title': 'Sdílení projektu',
+	'projects.share.link': 'Sdílet',
+	'projects.share.desc': 'Umožněte dalším uživatelům nebo celým týmům vidět a upravovat tento projekt.',
 	'projects.share.users': 'Uživatelé',
 	'projects.share.addUserLabel': 'Přidat uživatele',
 	'projects.share.permission': 'Oprávnění',

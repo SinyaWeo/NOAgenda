@@ -9,6 +9,7 @@
 	import { page } from '$app/state';
 	import { Alert, Button, Card, Input, Label, Textarea } from 'flowbite-svelte';
 	import { showToast } from '#lib/toast.svelte.js';
+	import { singleUserMode } from '#lib/appConfig.svelte.js';
 	import { t } from '#lib/i18n/index.js';
 
 	let name = $state('');
@@ -84,6 +85,20 @@
 			</div>
 		</form>
 	</Card>
+
+	{#if !singleUserMode.current}
+		<Card class="max-w-xl mb-6">
+			<div class="flex items-center justify-between gap-4">
+				<div>
+					<p class="font-medium text-gray-900 dark:text-white m-0">{t('projects.share.title')}</p>
+					<p class="text-sm text-gray-500 dark:text-gray-400 m-0">{t('projects.share.desc')}</p>
+				</div>
+				<Button href="/projects/{page.params.id}/settings/share" size="sm" color="light">
+					{t('projects.share.link')}
+				</Button>
+			</div>
+		</Card>
+	{/if}
 
 	<div class="border border-red-300 dark:border-red-700 rounded-lg p-4 max-w-xl">
 		<h2 class="text-base font-semibold text-red-600 dark:text-red-400 mb-3">

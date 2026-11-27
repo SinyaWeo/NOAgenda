@@ -4,7 +4,6 @@ import { Controller, Get, Post, Put, Delete, Param, Body, Request, ForbiddenExce
 import { AddProjectTeamDto, SetPermissionDto } from '../project-user/dto/project-sharing.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { ProjectTeamService } from './project-team.service';
-import { ProjectService } from '../project/project.service';
 import { ProjectTeam } from './project-team.entity';
 
 @MultiUserOnly()
@@ -12,7 +11,6 @@ import { ProjectTeam } from './project-team.entity';
 export class ProjectTeamController {
   constructor(
     private readonly projectTeamService: ProjectTeamService,
-    private readonly projectService: ProjectService,
     private readonly access: NodeAccessService,
   ) {}
 

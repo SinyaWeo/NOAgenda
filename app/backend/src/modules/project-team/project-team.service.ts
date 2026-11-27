@@ -16,6 +16,12 @@ export class ProjectTeamService {
     return this.repo.find({ where: { project: { id: projectId } }, relations: { team: true, project: true } });
   }
 
+  /** The live projects shared with a team, each with the team's permission on it. */
+  async findProjectsOfTeam(teamId: number): Promise<ProjectTeam[]> {
+    const rows = await this.repo.find({ where: { team: { id: teamId } }, relations: { project: true } });
+    return rows.filter((r) => r.project && !r.project.deletedAt);
+  }
+
   /** True when the user owns the team or is one of its members. */
   async canUseTeam(userId: number, teamId: number): Promise<boolean> {
     const rows: unknown[] = await this.repo.manager.query(
