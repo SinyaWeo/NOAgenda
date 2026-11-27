@@ -129,6 +129,14 @@ describe('NodeService kanban buckets', () => {
   });
 });
 
+describe('NodeService.duplicate attribution', () => {
+  it('a copy of a shared project is owned and created by whoever copies it, not by the original author', async () => {
+    const { svc, nodeRepo } = build([{ ...project, ownerId: 3, createdBy: 3 } as Node]);
+    await svc.duplicate(10, 8);
+    expect(nodeRepo.save).toHaveBeenCalledWith(expect.objectContaining({ name: 'P (copy)', ownerId: 8, createdBy: 8 }));
+  });
+});
+
 describe('NodeService relative reminders', () => {
   it('a new due date recalculates reminders set relative to it, in their creator’s time zone', async () => {
     const { svc, nodeRepo } = build([project, task({ dueDate: new Date('2030-01-01T11:00:00Z') })]);

@@ -161,6 +161,7 @@ export class NodeController {
     const existing = await this.nodeService.findById(Number(id));
     if (!existing) throw new NotFoundException();
     await this.access.assertCanModify(req.user.userId, existing);
+    await this.access.assertCanRemove(req.user.userId, existing);
     return this.nodeService.remove(Number(id), req.user.userId);
   }
 }

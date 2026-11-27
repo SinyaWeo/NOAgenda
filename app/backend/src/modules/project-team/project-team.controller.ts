@@ -16,7 +16,7 @@ export class ProjectTeamController {
 
   @Get()
   async findAll(@Param('projectId') projectId: number, @Request() req: AuthRequest): Promise<ProjectTeam[]> {
-    await this.access.assertProject(req.user.userId, Number(projectId), Access.READ);
+    await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectTeamService.findByProject(projectId);
   }
 

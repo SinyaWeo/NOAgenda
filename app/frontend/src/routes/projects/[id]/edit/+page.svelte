@@ -19,6 +19,10 @@
 	/** The parent as loaded ('' = top level) and as picked now. */
 	let loadedParentId = $state('');
 	let parentId = $state('');
+	/** Deleting and moving are for the owner (or an owner above); a Manager may only edit. */
+	let canRemove = $state(false);
+	/** Sharing is managed (and the share list seen) by Managers and owners only. */
+	let canShare = $state(false);
 	/** Every project the user can see; the picker offers those they may write to, minus this one and its subprojects. */
 	let allProjects = $state<Project[]>([]);
 	const parentOptions = $derived.by(() => {
@@ -46,6 +50,8 @@
 			description = p.description ?? '';
 			loadedParentId = p.parentId != null ? String(p.parentId) : '';
 			parentId = loadedParentId;
+			canRemove = p.canRemove === true;
+			canShare = p.access === 'admin';
 			allProjects = all;
 		}
 	);
@@ -102,7 +108,7 @@
 				<Label for="proj-desc" class="mb-1">{t('common.field.description')}</Label>
 				<Textarea id="proj-desc" bind:value={description} rows={4} />
 			</div>
-			{#if parentOptions.length || parentId}
+			{#if canRemove && (parentOptions.length || parentId)}
 				<div>
 					<Label for="proj-parent" class="mb-1">{t('projects.parent.label')}</Label>
 					<Select id="proj-parent" placeholder="" bind:value={parentId}>
@@ -123,7 +129,7 @@
 		</form>
 	</Card>
 
-	{#if !singleUserMode.current}
+	{#if !singleUserMode.current && canShare}
 		<Card class="max-w-xl mb-6">
 			<div class="flex items-center justify-between gap-4">
 				<div>
@@ -166,17 +172,19 @@
 					{t('projects.edit.duplicate')}
 				</Button>
 			</div>
-			<div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
-				<div>
-					<p class="font-medium text-red-600 dark:text-red-400 m-0">
-						{t('projects.edit.deleteTitle')}
-					</p>
-					<p class="text-sm text-gray-500 dark:text-gray-400 m-0">
-						{t('projects.edit.deleteDesc')}
-					</p>
+			{#if canRemove}
+				<div class="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-3">
+					<div>
+						<p class="font-medium text-red-600 dark:text-red-400 m-0">
+							{t('projects.edit.deleteTitle')}
+						</p>
+						<p class="text-sm text-gray-500 dark:text-gray-400 m-0">
+							{t('projects.edit.deleteDesc')}
+						</p>
+					</div>
+					<Button size="sm" color="red" onclick={handleDelete}>{t('common.delete')}</Button>
 				</div>
-				<Button size="sm" color="red" onclick={handleDelete}>{t('common.delete')}</Button>
-			</div>
+			{/if}
 		</div>
 	</div>
 {/if}

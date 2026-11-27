@@ -674,7 +674,8 @@ export class NodeService {
         name: original.name ? `${original.name}${suffix}` : undefined,
         title: original.title ? `${original.title}${suffix}` : undefined,
         ownerId: original.type === NodeType.PROJECT ? userId : original.ownerId,
-        createdBy: original.type === NodeType.TASK ? userId : original.createdBy,
+        // The copy is made by the caller: keeping the original's author would credit them with it.
+        createdBy: userId,
       },
       userId,
     );

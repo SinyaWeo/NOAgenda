@@ -3,6 +3,7 @@ export const messages = {
 	'projects.title': 'Projects',
 	'projects.new': 'New Project',
 	'projects.loading': 'Loading projects...',
+	'projects.ownedBy': 'Owner: {name}',
 	'projects.archived': 'Archived',
 	'projects.taskStats': { one: '{done} / {count} tasks', other: '{done} / {count} tasks' },
 	'projects.open': 'Open',

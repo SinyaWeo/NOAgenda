@@ -28,13 +28,15 @@ export class NodeTrashController {
   /** Delete a trashed task or project for good. */
   @Delete(':id')
   async purge(@Param('id', ParseIntPipe) id: number, @Request() req: AuthRequest): Promise<void> {
-    await this.assertMayManage(id, req.user.userId);
+    const node = await this.assertMayManage(id, req.user.userId);
+    await this.access.assertCanRemove(req.user.userId, node);
     await this.nodes.purge(id);
   }
 
-  private async assertMayManage(id: number, userId: number): Promise<void> {
+  private async assertMayManage(id: number, userId: number): Promise<Node> {
     const node = await this.nodes.findTrashed(id);
     if (!node) throw new NotFoundException();
     await this.access.assertTrashed(userId, node);
+    return node;
   }
 }

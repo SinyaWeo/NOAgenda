@@ -208,11 +208,31 @@ export class NodeAccessService {
   }
 
   /**
-   * Needed access to modify/delete/archive a node: ADMIN for a project (owner),
-   * WRITE for a task.
+   * Needed access to modify/archive a node: ADMIN for a project (owner, ancestor owner or a
+   * Manager grant), WRITE for a task. Deleting and moving a project need more: `assertCanRemove`,
+   * `assertCanReparent`.
    */
   async assertCanModify(userId: number, node: Node): Promise<void> {
     await this.assert(userId, node.id, node.type === NodeType.PROJECT ? Access.ADMIN : Access.WRITE);
+  }
+
+  /**
+   * Whether the user owns the project or any project above it. Owner-only actions on a project
+   * (delete, purge, move) need this: a "Manager" (`admin`) grant may edit, archive and share a
+   * project, but not destroy it or take it into another tree. Sees trashed rows too.
+   */
+  async ownsProjectTree(userId: number, projectId: number): Promise<boolean> {
+    const chain = await projectAncestors(sqlRunner(this.nodeRepository.manager), [projectId]);
+    return chain.some((r) => r.ownerId != null && r.ownerId === userId);
+  }
+
+  /**
+   * Needed access to delete a node (or purge it from the trash): for a project, owning it or a
+   * project above it; for a task, the same as `assertCanModify` (call that, or `assertTrashed`, first).
+   */
+  async assertCanRemove(userId: number, node: Pick<Node, 'id' | 'type'>): Promise<void> {
+    if (node.type === NodeType.PROJECT && !(await this.ownsProjectTree(userId, node.id)))
+      throw new ForbiddenException();
   }
 
   /**
@@ -235,19 +255,23 @@ export class NodeAccessService {
    * personal space (into a project) needs ADMIN on it, i.e. only its creator may, since the
    * move replaces creator/assignee access with the project's grants. Moves within or between
    * projects keep needing only WRITE (checked by the caller via `assertCanModify`/`assertWrite`).
+   * Moving a project needs ownership of it or of a project above it (`ownsProjectTree`): its new
+   * parent's owner gains ADMIN over it, so a Manager grant must not be able to carry it off.
    */
   async assertCanReparent(userId: number, nodeIds: number[], parentId: number | null): Promise<void> {
     if (parentId !== null) await this.assertWrite(userId, Number(parentId));
     const moving = await this.nodeRepository.find({ where: { id: In(nodeIds) }, select: { id: true, type: true } });
-    if (moving.some((n) => n.type === NodeType.PROJECT)) await this.assertProjectParent(parentId);
+    const projects = moving.filter((n) => n.type === NodeType.PROJECT);
+    if (projects.length) await this.assertProjectParent(parentId);
+    for (const p of projects) if (!(await this.ownsProjectTree(userId, p.id))) throw new ForbiddenException();
     for (const id of nodeIds) if (parentId !== null) await this.assertNoCycle(id, Number(parentId));
-    const projects = await projectIdsOf(
+    const projectOf = await projectIdsOf(
       sqlRunner(this.nodeRepository.manager),
       parentId === null ? nodeIds : [...nodeIds, Number(parentId)],
     );
-    const target = parentId === null ? undefined : projects.get(Number(parentId));
+    const target = parentId === null ? undefined : projectOf.get(Number(parentId));
     for (const id of nodeIds) {
-      const current = projects.get(id);
+      const current = projectOf.get(id);
       if (current === undefined && current !== target) await this.assert(userId, id, Access.ADMIN);
     }
   }

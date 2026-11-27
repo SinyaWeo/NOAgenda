@@ -22,7 +22,7 @@ export class ProjectUserController {
 
   @Get()
   async findAll(@Param('projectId') projectId: number, @Request() req: AuthRequest): Promise<ProjectUser[]> {
-    await this.access.assertProject(req.user.userId, Number(projectId), Access.READ);
+    await this.access.assertProject(req.user.userId, Number(projectId), Access.ADMIN);
     return this.projectUserService.findByProject(projectId);
   }
 

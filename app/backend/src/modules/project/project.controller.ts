@@ -22,6 +22,13 @@ import { ProjectCreateDto, ProjectUpdateDto } from '../node/dto/node.dto';
 import { ProjectTeamService } from '../project-team/project-team.service';
 import { AppSettingsService } from '../app-settings/app-settings.service';
 import { NOT_IN_SINGLE_USER_MODE } from '../../common/guards/single-user-mode.guard';
+import { UserService } from '../user/user.service';
+import type { User } from '../user/user.entity';
+
+/** Who owns a project, as shown to the people it is shared with. */
+type OwnerSummary = Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>;
+/** A project as returned to the caller: their permission, and the owner when it is someone else. */
+type ProjectView = Node & { access?: Permission; canRemove?: boolean; owner?: OwnerSummary };
 
 @Controller('projects')
 export class ProjectController {
@@ -30,11 +37,27 @@ export class ProjectController {
     private readonly access: NodeAccessService,
     private readonly projectTeams: ProjectTeamService,
     private readonly appSettings: AppSettingsService,
+    private readonly users: UserService,
   ) {}
 
+  /**
+   * Name the owner on every project the caller does not own, so a project shared with them cannot pass
+   * for someone else's (e.g. a copy renamed to match the team's original).
+   */
+  private async withOwners(projects: ProjectView[], userId: number): Promise<ProjectView[]> {
+    const foreign = projects.filter((p) => p.ownerId != null && p.ownerId !== userId);
+    const owners = await this.users.summaries(foreign.map((p) => p.ownerId as number));
+    for (const p of foreign) p.owner = owners.get(p.ownerId as number);
+    return projects;
+  }
+
   @Get()
-  async findAll(@Request() req: AuthRequest, @Query('includeArchived') includeArchived?: string): Promise<Node[]> {
-    return this.projectService.findAll(req.user.userId, includeArchived === 'true');
+  async findAll(
+    @Request() req: AuthRequest,
+    @Query('includeArchived') includeArchived?: string,
+  ): Promise<ProjectView[]> {
+    const projects = await this.projectService.findAll(req.user.userId, includeArchived === 'true');
+    return this.withOwners(projects, req.user.userId);
   }
 
   @Get('stats')
@@ -45,13 +68,15 @@ export class ProjectController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node & { access?: Permission }> {
+  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<ProjectView> {
     await this.access.assertProject(req.user.userId, Number(id), Access.READ);
-    const project: (Node & { access?: Permission }) | null = await this.projectService.findById(id);
+    const project: ProjectView | null = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
     // The caller's permission decides what the UI offers (e.g. managing Kanban buckets).
     project.access = (await this.access.projectPermissions(req.user.userId, [project])).get(project.id);
-    return project;
+    // Deleting and moving a project are for its owner (or an owner above it), not for a Manager grant.
+    project.canRemove = await this.access.ownsProjectTree(req.user.userId, project.id);
+    return (await this.withOwners([project], req.user.userId))[0];
   }
 
   @Post()
@@ -76,12 +101,12 @@ export class ProjectController {
   async update(@Param('id') id: number, @Body() body: ProjectUpdateDto, @Request() req: AuthRequest): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
-    if (project.ownerId !== req.user.userId) throw new ForbiddenException();
+    // Same rules as PUT /nodes/:id: a Manager may edit; moving needs ownership (assertCanReparent).
+    await this.access.assertCanModify(req.user.userId, project);
     // Prevent mass-assignment of ownership/identity fields
     const safeBody = normalizeParentRefs(this.access.sanitize(body));
     delete safeBody.type;
     if (safeBody.parentId !== undefined && safeBody.parentId !== project.parentId) {
-      // Only the owner moves a project (checked above); the new parent must be a project they can write to.
       await this.access.assertCanReparent(
         req.user.userId,
         [project.id],
@@ -109,7 +134,8 @@ export class ProjectController {
   async remove(@Param('id') id: number, @Request() req: AuthRequest): Promise<void> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
-    if (project.ownerId !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertCanModify(req.user.userId, project);
+    await this.access.assertCanRemove(req.user.userId, project);
     return this.projectService.remove(id, req.user.userId);
   }
 
@@ -117,7 +143,7 @@ export class ProjectController {
   async archive(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
-    if (project.ownerId !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertCanModify(req.user.userId, project);
     const updated = await this.projectService.archive(id, req.user.userId);
     if (!updated) throw new NotFoundException();
     return updated;
@@ -127,7 +153,7 @@ export class ProjectController {
   async unarchive(@Param('id') id: number, @Request() req: AuthRequest): Promise<Node> {
     const project = await this.projectService.findById(id);
     if (!project) throw new NotFoundException();
-    if (project.ownerId !== req.user.userId) throw new ForbiddenException();
+    await this.access.assertCanModify(req.user.userId, project);
     const updated = await this.projectService.unarchive(id, req.user.userId);
     if (!updated) throw new NotFoundException();
     return updated;

@@ -6,6 +6,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.title': 'Projekty',
 	'projects.new': 'Nový projekt',
 	'projects.loading': 'Načítání projektů…',
+	'projects.ownedBy': 'Vlastník: {name}',
 	'projects.archived': 'Archivovaný',
 	'projects.taskStats': {
 		one: '{done} / {count} úkol',

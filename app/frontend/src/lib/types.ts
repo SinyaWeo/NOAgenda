@@ -102,6 +102,10 @@ export interface Node {
 	bucketId?: number | null;
 	/** Projects from GET /nodes and GET /nodes/:id: the current user's own permission on them. */
 	access?: Permission;
+	/** Whether the caller may delete or move the project (its owner, or the owner of a project above it). */
+	canRemove?: boolean;
+	/** Projects from GET /projects and /projects/:id: who owns it, when that is not the current user. */
+	owner?: UserSummary;
 	/** Present on GET /tasks/:id and GET /nodes/:id. */
 	parent?: Node | null;
 	children?: Node[];

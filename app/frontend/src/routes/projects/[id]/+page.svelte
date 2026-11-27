@@ -214,6 +214,9 @@
 					</Button>
 				{/if}
 			</div>
+			{#if project.owner}<p class="text-sm text-gray-500 dark:text-gray-400 mt-1 mb-0">
+					{t('projects.ownedBy', { name: project.owner.name || project.owner.username })}
+				</p>{/if}
 			{#if project.description}<p class="text-gray-500 dark:text-gray-400 mt-1 mb-0">
 					{project.description}
 				</p>{/if}

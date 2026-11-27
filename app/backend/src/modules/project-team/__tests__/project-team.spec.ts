@@ -77,9 +77,9 @@ describe('ProjectTeamController', () => {
     controller = new ProjectTeamController(asMock(service), asMock(access));
   });
 
-  it('list requires READ', async () => {
+  it('list requires ADMIN (readers do not see who else has access)', async () => {
     await controller.findAll(3, req);
-    expect(access.assertProject).toHaveBeenCalledWith(7, 3, Access.READ);
+    expect(access.assertProject).toHaveBeenCalledWith(7, 3, Access.ADMIN);
   });
 
   it('add/update/remove require ADMIN', async () => {

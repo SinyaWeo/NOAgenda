@@ -192,6 +192,41 @@ s, _ = call('GET', f'/tasks/{tid}', None, C); check('carol still locked out', s,
 s, _ = call('GET', COMP, None, C); check('carol cannot read completion history', s, [403, 404])
 s, _ = call('POST', '/reactions', {'entityType': 'weird', 'entityId': tid, 'reaction': 'x'}, A); check('reaction bad entityType rejected', s, 400)
 
+# --- 4b. a project Manager (admin grant) edits, archives and shares, but cannot delete, purge or move the
+#         project (or a subproject) on any path; a reader does not see who else has access
+s, mp = call('POST', '/projects', {'name': 'Managed'}, A); mpid = mp['id']
+s, ms = call('POST', '/projects', {'name': 'Managed sub', 'parentId': mpid}, A); msid = ms['id']
+s, bq = call('POST', '/projects', {'name': 'Bob own'}, Bt); bqid = bq['id']
+s, _ = call('POST', f'/projects/{mpid}/users', {'userId': bid, 'permission': 'admin'}, A); check('alice makes bob manager of a project', s, [200, 201])
+s, _ = call('POST', f'/projects/{mpid}/users', {'userId': cid, 'permission': 'read'}, A); check('alice shares it read with carol', s, [200, 201])
+s, _ = call('GET', f'/projects/{mpid}/users', None, C); check('a reader cannot list who else has access', s, 403)
+s, _ = call('GET', f'/projects/{mpid}/teams', None, C); check('a reader cannot list the teams it is shared with', s, 403)
+s, _ = call('GET', f'/projects/{mpid}/users', None, Bt); check('the manager lists the members', s, 200)
+s, p = call('GET', f'/projects/{mpid}', None, Bt); check('the manager is told they cannot delete or move it', (s, p.get('canRemove')), (200, False))
+s, p = call('GET', f'/projects/{mpid}', None, A); check('the owner is told they can', (s, p.get('canRemove')), (200, True))
+s, _ = call('PUT', f'/projects/{mpid}', {'name': 'Managed (renamed)'}, Bt); check('the manager renames it (/projects)', s, 200)
+s, _ = call('PUT', f'/nodes/{mpid}', {'description': 'edited'}, Bt); check('the manager edits it (/nodes)', s, 200)
+s, _ = call('PATCH', f'/projects/{mpid}/archive', None, Bt); check('the manager archives it (/projects)', s, 200)
+s, _ = call('PATCH', f'/nodes/{mpid}/unarchive', None, Bt); check('the manager unarchives it (/nodes)', s, 200)
+s, _ = call('DELETE', f'/projects/{mpid}', None, Bt); check('the manager cannot delete it (/projects)', s, 403)
+s, _ = call('DELETE', f'/nodes/{mpid}', None, Bt); check('the manager cannot delete it (/nodes)', s, 403)
+s, _ = call('DELETE', f'/nodes/{msid}', None, Bt); check('the manager cannot delete a subproject either', s, 403)
+s, _ = call('PATCH', f'/nodes/{mpid}/move', {'parentId': bqid}, Bt); check('the manager cannot move it under their own project (move)', s, 403)
+s, _ = call('PUT', f'/nodes/{mpid}', {'parentId': bqid}, Bt); check('the manager cannot move it under their own project (/nodes)', s, 403)
+s, _ = call('PUT', f'/projects/{mpid}', {'parentId': bqid}, Bt); check('the manager cannot move it under their own project (/projects)', s, 403)
+s, _ = call('PATCH', f'/nodes/{msid}/move', {'parentId': None}, Bt); check('the manager cannot pull a subproject out to the top level', s, 403)
+s, _ = call('DELETE', f'/nodes/{msid}', None, A); check('the owner deletes the subproject', s, [200, 204])
+s, _ = call('DELETE', f'/trash/{msid}', None, Bt); check('the manager cannot purge it from the trash', s, 403)
+s, _ = call('DELETE', f'/trash/{msid}', None, A); check('the owner purges it', s, [200, 204])
+s, lst = call('GET', '/projects', None, C)
+check('a reader sees who owns a shared project', next((p.get('owner') or {}).get('username') for p in lst if p['id'] == mpid), 'alice')
+s, lst = call('GET', '/projects', None, A); check('no owner label on your own projects', 'owner' in next(p for p in lst if p['id'] == mpid), False)
+s, cp = call('PUT', f'/projects/{mpid}/duplicate', None, C)
+check('a reader\'s copy is theirs: owned and created by them, not shared, no owner label', (s, cp['ownerId'] == cid, cp.get('createdBy') == cid), (200, True, True))
+s, _ = call('GET', f'/projects/{cp["id"]}', None, A); check('the original owner does not get the copy', s, 403)
+s, _ = call('DELETE', f'/projects/{cp["id"]}', None, C); check('the reader deletes their copy', s, [200, 204])
+s, _ = call('DELETE', f'/projects/{mpid}', None, A); check('the owner deletes the project', s, [200, 204])
+
 # --- 5. team roles: manager (own team only) / member / outsider / app admin
 def team_role(tok, team_id, username):
     s, ms = call('GET', f'/team-members?teamId={team_id}', None, tok)
@@ -326,6 +361,8 @@ s, _ = call('POST', '/auth/login/code', {'mfaToken': G, 'code': totp(gsecret, 1)
 s, r = call('POST', '/auth/login/code', {'mfaToken': challenge, 'code': totp(gsecret, 1)})
 check('challenge + a fresh code signs in', (s, 'access_token' in r), (200, True))
 G2 = r['access_token']
+s, r = call('POST', '/auth/login/code', {'mfaToken': challenge, 'code': totp(gsecret, -1)})
+check('a challenge opens one session only', (s, 'expired' in str(r)), (401, True))
 s, l = call('POST', '/auth/login', {'username': 'gina', 'password': 'password123'})
 s, r = call('POST', '/auth/login/code', {'mfaToken': l['mfaToken'], 'code': grec[0].upper()}); check('a recovery code signs in', s, 200)
 s, l = call('POST', '/auth/login', {'username': 'gina', 'password': 'password123'})

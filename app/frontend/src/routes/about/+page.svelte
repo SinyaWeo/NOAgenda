@@ -76,23 +76,25 @@
 		<p class="text-gray-500 dark:text-gray-400">{t('common.loading')}</p>
 	{/if}
 
-	<h2 class="text-xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
-		{t('auth.about.timeline.heading')}
-	</h2>
-	<ol class="relative border-s border-gray-200 dark:border-gray-700 ms-2">
-		{#each TIMELINE as entry (entry.id)}
-			<li class="mb-8 ms-6">
-				<span
-					class="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-300 dark:border-gray-900 dark:bg-gray-600"
-				></span>
-				<time class="text-sm text-gray-500 dark:text-gray-400">{fmt.date(entry.date)}</time>
-				<h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-					{t(`auth.about.timeline.${entry.id}.title` as 'auth.about.license')}
-				</h3>
-				<p class="text-gray-600 dark:text-gray-400">
-					{t(`auth.about.timeline.${entry.id}.body` as 'auth.about.license')}
-				</p>
-			</li>
-		{/each}
-	</ol>
+	{#if TIMELINE.length}
+		<h2 class="text-xl font-bold text-gray-900 dark:text-white mt-10 mb-4">
+			{t('auth.about.timeline.heading')}
+		</h2>
+		<ol class="relative border-s border-gray-200 dark:border-gray-700 ms-2">
+			{#each TIMELINE as entry (entry.id)}
+				<li class="mb-8 ms-6">
+					<span
+						class="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full border border-white bg-gray-300 dark:border-gray-900 dark:bg-gray-600"
+					></span>
+					<time class="text-sm text-gray-500 dark:text-gray-400">{fmt.date(entry.date)}</time>
+					<h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+						{t(`auth.about.timeline.${entry.id}.title` as 'auth.about.license')}
+					</h3>
+					<p class="text-gray-600 dark:text-gray-400">
+						{t(`auth.about.timeline.${entry.id}.body` as 'auth.about.license')}
+					</p>
+				</li>
+			{/each}
+		</ol>
+	{/if}
 </div>

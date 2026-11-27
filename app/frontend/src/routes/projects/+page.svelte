@@ -61,6 +61,9 @@
 						>
 							{project.name ?? project.title}
 						</a>
+						{#if project.owner}<p class="text-xs text-gray-500 dark:text-gray-400 m-0 truncate">
+								{t('projects.ownedBy', { name: project.owner.name || project.owner.username })}
+							</p>{/if}
 						{#if project.description}<p class="text-sm text-gray-500 dark:text-gray-400 m-0 truncate">
 								{project.description}
 							</p>{/if}
@@ -102,6 +105,13 @@
 										<span aria-hidden="true" class="text-gray-400">└</span>
 										{row.project.name ?? row.project.title}
 									</a>
+									{#if row.project.owner && row.project.owner.id !== project.owner?.id}<span
+											class="text-xs text-gray-500 dark:text-gray-400"
+										>
+											· {t('projects.ownedBy', {
+												name: row.project.owner.name || row.project.owner.username
+											})}
+										</span>{/if}
 									{#if row.project.isArchived}<span class="text-xs tone-gray">
 											{t('projects.archived')}
 										</span>{/if}

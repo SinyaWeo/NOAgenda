@@ -32,6 +32,17 @@ export class UserService {
     return new Map(rows.map((u) => [u.id, u.language ?? null]));
   }
 
+  /** Public fields (id, username, display name, avatar) of the given users, by id; unknown ids are left out. */
+  async summaries(ids: number[]): Promise<Map<number, Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>>> {
+    const unique = [...new Set(ids)];
+    if (!unique.length) return new Map();
+    const rows = await this.userRepository.find({
+      where: { id: In(unique) },
+      select: { id: true, username: true, name: true, avatarUrl: true },
+    });
+    return new Map(rows.map((u) => [u.id, { id: u.id, username: u.username, name: u.name, avatarUrl: u.avatarUrl }]));
+  }
+
   /** Public fields of users whose username or display name contains `q` (the caller is left out). */
   async search(q: string, exceptUserId: number): Promise<Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>[]> {
     const like = `%${q.replace(/[\\%_]/g, (c) => '\\' + c)}%`;

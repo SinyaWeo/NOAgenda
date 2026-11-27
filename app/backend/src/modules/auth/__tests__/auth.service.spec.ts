@@ -50,7 +50,7 @@ function build(over: { user?: TestUser | null; verificationRequired?: boolean } 
   const jwt = {
     sign: jest.fn((_payload: Record<string, unknown>, _opts?: unknown) => 'jwt'),
     decode: jest.fn(() => ({ iat: 100, exp: 1000 })),
-    verify: jest.fn((_token: string): Record<string, unknown> => ({ sub: 7, purpose: 'mfa-login' })),
+    verify: jest.fn((_token: string): Record<string, unknown> => ({ sub: 7, purpose: 'mfa-login', jti: 'c1' })),
   };
   const mfa = {
     verify: jest.fn(async (_id: number, _code: string, _opts?: unknown): Promise<string | null> => 'totp'),
@@ -258,7 +258,10 @@ describe('AuthService with two-factor authentication', () => {
     const res = await svc.login('ann', 'pw', { ip: '1.2.3.4' });
     expect(res).toEqual({ mfaRequired: true, mfaToken: 'jwt' });
     expect(sessions.create).not.toHaveBeenCalled();
-    expect(jwt.sign).toHaveBeenCalledWith({ sub: 7, purpose: 'mfa-login' }, { expiresIn: '5m' });
+    expect(jwt.sign).toHaveBeenCalledWith(
+      { sub: 7, purpose: 'mfa-login', jti: expect.stringMatching(/^[0-9a-f]{32}$/) },
+      { expiresIn: '5m' },
+    );
   });
 
   it('a wrong password never reaches the code step', async () => {
@@ -274,6 +277,28 @@ describe('AuthService with two-factor authentication', () => {
     expect(mfa.verify).toHaveBeenCalledWith(7, '123456');
     expect(sessions.create).toHaveBeenCalledWith(7, { ip: '1.2.3.4' });
     expect(res).toEqual({ access_token: 'jwt', expires_in: 900, refreshToken: 'rt' });
+  });
+
+  it('a challenge opens one session only', async () => {
+    const { svc, sessions } = build({ user: { ...MFA_USER } });
+    await svc.loginWithCode('challenge', '123456', { ip: '1.2.3.4' });
+    await expect(svc.loginWithCode('challenge', '654321', { ip: '1.2.3.4' })).rejects.toThrow(UnauthorizedException);
+    expect(sessions.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('a wrong code does not use up the challenge', async () => {
+    const { svc, mfa, sessions } = build({ user: { ...MFA_USER } });
+    mfa.verify.mockResolvedValueOnce(null);
+    await expect(svc.loginWithCode('challenge', '000000')).rejects.toThrow(UnauthorizedException);
+    await svc.loginWithCode('challenge', '123456');
+    expect(sessions.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a challenge without an id', async () => {
+    const { svc, jwt, sessions } = build({ user: { ...MFA_USER } });
+    jwt.verify.mockReturnValue({ sub: 7, purpose: 'mfa-login' });
+    await expect(svc.loginWithCode('old-style', '123456')).rejects.toThrow(UnauthorizedException);
+    expect(sessions.create).not.toHaveBeenCalled();
   });
 
   it('refuses a token made for something else (e.g. an access token)', async () => {

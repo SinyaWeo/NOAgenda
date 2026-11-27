@@ -35,6 +35,8 @@ export const STEP_UP_MINUTES = Number(process.env.ADMIN_STEP_UP_MINUTES || 15);
 const MFA_CHALLENGE_TTL = '5m';
 /** The `purpose` claim of the short-lived token that links the password step to the code step. */
 const MFA_PURPOSE = 'mfa-login';
+/** Keep a used challenge's id at least as long as the challenge itself could still verify. */
+const MFA_CHALLENGE_TTL_MS = 5 * 60 * 1000;
 
 /** Same text for unknown user, wrong password and locked account, so none can be told apart. */
 const INVALID_CREDENTIALS = 'Invalid credentials, or the account is temporarily locked';
@@ -56,6 +58,8 @@ export interface MfaChallenge {
 @Injectable()
 export class AuthService {
   private readonly throttle = new LoginThrottle(MAX_FAILED_LOGINS, LOCKOUT_MINUTES * 60 * 1000);
+  /** Ids (`jti`) of 2FA challenges that already opened a session, with when they may be forgotten. */
+  private readonly usedChallenges = new Map<string, number>();
 
   constructor(
     private readonly userService: UserService,
@@ -122,7 +126,10 @@ export class AuthService {
 
     if (user.totpEnabledAt) {
       // No session yet: only a short-lived token that says "the password was right" for this account.
-      const mfaToken = this.jwtService.sign({ sub: user.id, purpose: MFA_PURPOSE }, { expiresIn: MFA_CHALLENGE_TTL });
+      const mfaToken = this.jwtService.sign(
+        { sub: user.id, purpose: MFA_PURPOSE, jti: randomToken(16) },
+        { expiresIn: MFA_CHALLENGE_TTL },
+      );
       return { mfaRequired: true, mfaToken };
     }
 
@@ -133,17 +140,23 @@ export class AuthService {
   /**
    * Second step of signing in to an account with 2FA: the token from the password step plus a code from
    * the authenticator app or a recovery code. Wrong codes count toward the same per-address and per-account
-   * lockouts as wrong passwords.
+   * lockouts as wrong passwords. A challenge opens one session only: once used, the password is needed again.
    */
   async loginWithCode(mfaToken: string, code: string, meta: SessionMeta = {}): Promise<AuthResult> {
+    const expired = () => new UnauthorizedException('The sign-in has expired, please enter your password again');
     let userId: number;
+    let jti: string;
     try {
-      const payload = this.jwtService.verify<{ sub?: unknown; purpose?: unknown }>(mfaToken);
-      if (payload.purpose !== MFA_PURPOSE || typeof payload.sub !== 'number') throw new Error('wrong token');
+      const payload = this.jwtService.verify<{ sub?: unknown; purpose?: unknown; jti?: unknown }>(mfaToken);
+      if (payload.purpose !== MFA_PURPOSE || typeof payload.sub !== 'number' || typeof payload.jti !== 'string')
+        throw new Error('wrong token');
       userId = payload.sub;
+      jti = payload.jti;
     } catch {
-      throw new UnauthorizedException('The sign-in has expired, please enter your password again');
+      throw expired();
     }
+    this.forgetOldChallenges();
+    if (this.usedChallenges.has(jti)) throw expired();
     const user = await this.userService.findById(userId);
     if (!user || user.isLocked) throw new UnauthorizedException(INVALID_CREDENTIALS);
     if (this.throttle.isLocked(user.username, meta.ip)) throw new UnauthorizedException(INVALID_CREDENTIALS);
@@ -159,10 +172,18 @@ export class AuthService {
       );
       throw new UnauthorizedException('Invalid code');
     }
+    // Checked again after the awaits above: two requests with the same challenge must not both pass.
+    if (this.usedChallenges.has(jti)) throw expired();
+    this.usedChallenges.set(jti, Date.now() + MFA_CHALLENGE_TTL_MS);
     this.throttle.clear(user.username, meta.ip);
     if (user.failedLoginAttempts || user.lockedUntil) await this.userService.resetLoginState(user.id);
     const { session, refreshToken } = await this.sessions.create(user.id, meta);
     return { ...this.signAccessToken(user, session.id), refreshToken };
+  }
+
+  private forgetOldChallenges(): void {
+    const now = Date.now();
+    for (const [jti, until] of this.usedChallenges) if (until <= now) this.usedChallenges.delete(jti);
   }
 
   /**

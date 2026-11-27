@@ -229,6 +229,43 @@ describe('NodeAccessService', () => {
     });
   });
 
+  describe('a Manager grant edits a project but cannot delete or move it', () => {
+    // 10: OTHER's project, I am Manager (admin) there; 11: OTHER's subproject of it; 30: my own project
+    const nodes = [project(10, OTHER), project(11, OTHER, 10), project(30, ME), project(31, OTHER, 30)];
+    const grants = { [10 * 1000 + ME]: ['admin'] };
+
+    it('may modify, but not remove', async () => {
+      const svc = build(nodes, grants);
+      await expect(svc.assertCanModify(ME, { id: 10, type: NodeType.PROJECT } as never)).resolves.toBeUndefined();
+      await expect(svc.assertCanRemove(ME, { id: 10, type: NodeType.PROJECT })).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      await expect(svc.assertCanRemove(ME, { id: 11, type: NodeType.PROJECT })).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+
+    it('cannot carry the project (or a subproject) into a tree they own, or out to the top level', async () => {
+      const svc = build(nodes, grants);
+      await expect(svc.assertCanReparent(ME, [10], 30)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(svc.assertCanReparent(ME, [11], 30)).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(svc.assertCanReparent(ME, [11], null)).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('the owner of the project, or of a project above it, may remove and move it', async () => {
+      const svc = build(nodes, grants);
+      await expect(svc.assertCanRemove(ME, { id: 30, type: NodeType.PROJECT })).resolves.toBeUndefined();
+      await expect(svc.assertCanRemove(ME, { id: 31, type: NodeType.PROJECT })).resolves.toBeUndefined();
+      await expect(svc.assertCanReparent(ME, [31], null)).resolves.toBeUndefined();
+      expect(await svc.ownsProjectTree(OTHER, 30)).toBe(false);
+    });
+
+    it('a task is removed with plain write access', async () => {
+      const svc = build(nodes, grants);
+      await expect(svc.assertCanRemove(ME, { id: 99, type: NodeType.TASK })).resolves.toBeUndefined();
+    });
+  });
+
   it('rejects a parent chain that already loops', async () => {
     const svc = build([task(11, 12, ME), task(12, 11, ME), task(13, null, ME)]);
     await expect(svc.assertNoCycle(13, 11)).rejects.toBeInstanceOf(BadRequestException);
