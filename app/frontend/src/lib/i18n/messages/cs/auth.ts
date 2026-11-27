@@ -104,6 +104,21 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.terms': 'Podmínky používání',
 	'auth.about.privacy': 'Zásady ochrany osobních údajů',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.chatChannels.title': 'Upozornění do vašeho chatu',
+	'auth.about.timeline.chatChannels.body':
+		'Vestavěné pluginy, které zapíná administrátor. První z nich posílá vaše upozornění do vašeho kanálu ve Slacku, Discordu, Microsoft Teams nebo Mattermostu; které druhy, zvolíte v Nastavení → Kanály upozornění.',
+	'auth.about.timeline.dependencies.title': 'Návaznosti úkolů v Ganttově diagramu a myšlenkové mapě',
+	'auth.about.timeline.dependencies.body':
+		'Přetažením pruhů v Ganttově diagramu změníte termíny a tažením z tečky na konci pruhu nastavíte, že jiný úkol na něj čeká; čekající úkoly se posunou s ním a posun lze vrátit. Myšlenková mapa ukazuje stejné vazby a umí je přidat i odebrat.',
+	'auth.about.timeline.secretsEncrypted.title': 'Tajné klíče šifrované v databázi',
+	'auth.about.timeline.secretsEncrypted.body':
+		'Podpisové klíče webhooků a přístupové údaje pluginů se ukládají do databáze zašifrované a po uložení se už nikdy nezobrazí.',
+	'auth.about.timeline.inviteUsers.title': 'Administrátor přidává uživatele',
+	'auth.about.timeline.inviteUsers.body':
+		'Administrátor může založit účet a poslat pozvánku; nový uživatel si do 72 hodin přes odkaz zvolí heslo. Když e‑mail není nastaven, dostane odkaz administrátor a předá ho sám.',
+	'auth.about.timeline.repeatSubtasks.title': 'Opakované úkoly si mohou podúkoly nechat',
+	'auth.about.timeline.repeatSubtasks.body':
+		'Odškrtnutí podúkolů v každém novém cyklu je nyní volitelné. Data se vždy zobrazují a počítají v časovém pásmu z vašeho profilu, takže pásmo prohlížeče už den splatnosti neposune.',
 	'auth.about.timeline.svelte5.title': 'Aktuální kód Svelte 5 všude',
 	'auth.about.timeline.svelte5.body':
 		'Celé rozhraní nyní používá runy Svelte 5 a konvence SvelteKit 3 a kontrola kódu odmítá zastaralá API. Na obrazovce se nic nemění, kód se ale snáze udržuje.',

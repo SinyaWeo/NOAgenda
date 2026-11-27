@@ -102,6 +102,21 @@ export const messages = {
 	'auth.about.terms': 'Terms of Service',
 	'auth.about.privacy': 'Privacy Policy',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.chatChannels.title': 'Notifications in your chat',
+	'auth.about.timeline.chatChannels.body':
+		'Built-in plugins, switched on by an admin. The first one sends your notifications to your own Slack, Discord, Microsoft Teams or Mattermost channel; choose which kinds in Settings → Notification channels.',
+	'auth.about.timeline.dependencies.title': 'Task dependencies on the Gantt chart and mind map',
+	'auth.about.timeline.dependencies.body':
+		'Drag bars on the Gantt chart to change dates and drag from a bar’s dot to make another task wait for it; tasks that wait move along, and a move can be undone. The mind map draws the same links and lets you add or remove them.',
+	'auth.about.timeline.secretsEncrypted.title': 'Secrets encrypted at rest',
+	'auth.about.timeline.secretsEncrypted.body':
+		'Webhook signing secrets and plugin credentials are stored encrypted in the database and are never shown again once saved.',
+	'auth.about.timeline.inviteUsers.title': 'Admins add users',
+	'auth.about.timeline.inviteUsers.body':
+		'An admin can create an account and send an invitation; the new user picks a password from the link within 72 hours. Without email set up, the admin gets the link to pass on.',
+	'auth.about.timeline.repeatSubtasks.title': 'Repeating tasks keep their subtasks if you want',
+	'auth.about.timeline.repeatSubtasks.body':
+		'Unticking subtasks for each new cycle is now a choice. Dates are always shown and worked out in the time zone from your profile, so the browser’s zone no longer shifts a due day.',
 	'auth.about.timeline.svelte5.title': 'Current Svelte 5 code throughout',
 	'auth.about.timeline.svelte5.body':
 		'The whole interface now uses Svelte 5 runes and SvelteKit 3 conventions, and code checks reject deprecated APIs. Nothing changes on screen; the code is simpler to maintain.',
