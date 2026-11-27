@@ -26,6 +26,7 @@ export const messages = {
 	'errors.server.ownerInactive': 'The new owner must be an active user',
 	'errors.server.resetTokenInvalid': 'This password reset link is invalid or has expired',
 	'errors.server.verifyTokenInvalid': 'This verification link is invalid or has expired',
+	'errors.server.noPendingInvite': 'This user has no pending invitation',
 	'errors.server.sessionInvalid': 'Your sign-in is no longer valid. Please sign in again.',
 	'errors.server.sessionExpired': 'Your session has expired',
 	'errors.server.ownRole': 'You cannot change your own role',

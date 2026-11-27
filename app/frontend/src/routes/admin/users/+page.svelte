@@ -2,11 +2,12 @@
 	import { singleUserMode } from '#lib/appConfig.svelte.js';
 	import PageHeader from '#lib/components/PageHeader.svelte';
 	import DeleteUserDialog from '#lib/components/DeleteUserDialog.svelte';
+	import AddUserDialog from '#lib/components/AddUserDialog.svelte';
 	import UserProjectsDialog from '#lib/components/UserProjectsDialog.svelte';
 	import { errMessage } from '#lib/errors.js';
 	import { onMount } from 'svelte';
 	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
-	import { apiGetAuth, apiPatchAuth } from '#lib/api.js';
+	import { apiGetAuth, apiPatchAuth, apiPostAuth } from '#lib/api.js';
 	import { showToast } from '#lib/toast.svelte.js';
 	import { authSession } from '#lib/auth.svelte.js';
 	import {
@@ -20,8 +21,15 @@
 		TableHead,
 		TableHeadCell
 	} from 'flowbite-svelte';
-	import { FolderOpenSolid, LockSolid, LockOpenSolid, TrashBinSolid } from 'flowbite-svelte-icons';
-	import type { User } from '#lib/types.js';
+	import {
+		EnvelopeSolid,
+		FolderOpenSolid,
+		LockSolid,
+		LockOpenSolid,
+		TrashBinSolid,
+		UserAddSolid
+	} from 'flowbite-svelte-icons';
+	import type { InviteResult, User } from '#lib/types.js';
 
 	const currentUser = $derived(authSession.user);
 	let users = $state<User[]>([]);
@@ -31,6 +39,7 @@
 	let deleting = $state<User | null>(null);
 	/** The user whose projects dialog is open. */
 	let showingProjects = $state<User | null>(null);
+	let adding = $state(false);
 
 	onMount(async () => {
 		await loadUsers();
@@ -79,6 +88,39 @@
 		}
 	}
 
+	const invitePending = (u: User) => !!u.invitedAt && !u.isEmailConfirmed;
+
+	function userCreated(user: User, result: InviteResult) {
+		users = [...users, user];
+		if (result.inviteDelivered)
+			showToast(t('admin.users.invited', { username: user.username, email: user.email }));
+	}
+
+	async function resendInvite(user: User) {
+		saving = user.id;
+		try {
+			const res = await apiPostAuth<InviteResult>(`/admin/users/${user.id}/invite`, {});
+			users = users.map((u) => (u.id === user.id ? { ...u, invitedAt: new Date().toISOString() } : u));
+			if (!res.inviteLink) {
+				showToast(t('admin.users.resent', { email: user.email }));
+			} else {
+				try {
+					await navigator.clipboard.writeText(res.inviteLink);
+					showToast(t('admin.users.resentCopied', { username: user.username }));
+				} catch {
+					error = t('admin.users.resentLink', { username: user.username, link: res.inviteLink });
+				}
+			}
+		} catch (e: unknown) {
+			error = t('admin.users.resendFailed', {
+				username: user.username,
+				reason: errMessage(e, t('admin.users.unknownError'))
+			});
+		} finally {
+			saving = null;
+		}
+	}
+
 	function userDeleted(user: User) {
 		deleting = null;
 		users = users.filter((u) => u.id !== user.id);
@@ -96,7 +138,15 @@
 </svelte:head>
 
 <div class="max-w-6xl mx-auto">
-	<PageHeader title={t('admin.users.title')} back={{ href: '/admin', label: t('admin.back') }} />
+	<PageHeader title={t('admin.users.title')} back={{ href: '/admin', label: t('admin.back') }}>
+		{#snippet actions()}
+			{#if !singleUserMode.current}
+				<Button size="sm" data-testid="add-user" onclick={() => (adding = true)}>
+					<UserAddSolid class="w-4 h-4 mr-1" />{t('admin.users.add.button')}
+				</Button>
+			{/if}
+		{/snippet}
+	</PageHeader>
 
 	{#if error}
 		<Alert color="red" class="mb-4">{error}</Alert>
@@ -124,6 +174,9 @@
 						</span>
 						{#if u.isLocked}<span class="ml-1 text-xs font-medium tone-yellow">
 								{t('admin.users.badge.locked')}
+							</span>{/if}
+						{#if invitePending(u)}<span class="ml-1 text-xs font-medium tone-yellow">
+								{t('admin.users.badge.invited')}
 							</span>{/if}
 					</TableBodyCell>
 					<TableBodyCell>
@@ -155,6 +208,17 @@
 								>
 									<FolderOpenSolid class="w-4 h-4" />
 								</Button>{/if}
+							{#if invitePending(u) && !singleUserMode.current}<Button
+									size="xs"
+									color="alternative"
+									class="p-2"
+									title={t('admin.users.resendTip')}
+									aria-label={t('admin.users.resendTip')}
+									disabled={saving === u.id}
+									onclick={() => resendInvite(u)}
+								>
+									<EnvelopeSolid class="w-4 h-4" />
+								</Button>{/if}
 							<Button
 								size="xs"
 								color="alternative"
@@ -184,6 +248,8 @@
 		</TableBody>
 	</Table>
 </div>
+
+<AddUserDialog open={adding} onclose={() => (adding = false)} oncreated={userCreated} />
 
 <UserProjectsDialog
 	user={showingProjects}

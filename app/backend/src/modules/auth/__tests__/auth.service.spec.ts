@@ -1,6 +1,12 @@
 import { realTranslator } from '../../../i18n/__tests__/fake-i18n';
 import { BadRequestException, ForbiddenException, HttpStatus, UnauthorizedException } from '@nestjs/common';
-import { AuthService, MAX_FAILED_LOGINS, ACCOUNT_LOCK_THRESHOLD, STEP_UP_MINUTES } from '../auth.service';
+import {
+  AuthService,
+  MAX_FAILED_LOGINS,
+  ACCOUNT_LOCK_THRESHOLD,
+  STEP_UP_MINUTES,
+  INVITE_TTL_MS,
+} from '../auth.service';
 import * as password from '../../../common/password';
 import { sha256 } from '../../../common/tokens';
 import type { JwtService } from '@nestjs/jwt';
@@ -38,6 +44,7 @@ function build(over: { user?: TestUser | null; verificationRequired?: boolean } 
     resetLoginState: jest.fn(),
     setPasswordHash: jest.fn(),
     update: jest.fn(),
+    markInvited: jest.fn(async () => undefined),
   };
   const jwt = {
     sign: jest.fn(() => 'jwt'),
@@ -62,7 +69,7 @@ function build(over: { user?: TestUser | null; verificationRequired?: boolean } 
   const mail = {
     send: jest.fn(async (_mail: { subject: string; text: string }) => true),
     appName: jest.fn(async () => 'Acme'),
-    link: jest.fn((p: string, q: { token: string }) => `https://app${p}?token=${q.token}`),
+    link: jest.fn((p: string, q: Record<string, string>) => `https://app${p}?${new URLSearchParams(q)}`),
   };
   const svc = new AuthService(
     asMock<UserService>(users),
@@ -291,6 +298,41 @@ describe('AuthService password reset', () => {
     resets.findOne.mockResolvedValue({ id: 2, user: { id: 7 }, expiresAt: new Date(Date.now() - 1000) });
     await expect(svc.resetPassword('x', 'new-password-1')).rejects.toBeInstanceOf(BadRequestException);
     expect(users.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService.sendInvite', () => {
+  const invitee = { id: 9, username: 'neo', email: 'neo@example.com', language: 'cs' };
+
+  it('replaces older links, stores only a hash valid for 72 hours and marks the invite as sent', async () => {
+    const { svc, resets, users, mail } = build();
+    const before = Date.now();
+    const { delivered, link } = await svc.sendInvite(invitee);
+    expect(delivered).toBe(true);
+    expect(resets.delete).toHaveBeenCalledWith({ user: { id: 9 } });
+    const stored = resets.save.mock.calls[0][0];
+    const raw = /token=([0-9a-f]{64})/.exec(link)![1];
+    expect(link).toContain('/user/password-reset?');
+    expect(link).toContain('invite=1');
+    expect(stored.token).toBe(sha256(raw));
+    expect((stored.expiresAt as Date).getTime()).toBeGreaterThanOrEqual(before + INVITE_TTL_MS);
+    expect(users.markInvited).toHaveBeenCalledWith(9);
+    expect(mail.send.mock.calls[0][0]).toMatchObject({ to: 'neo@example.com' });
+    expect(mail.send.mock.calls[0][0].text).toContain(link);
+  });
+
+  it("is written in the invitee's language", async () => {
+    const { svc, mail } = build();
+    await svc.sendInvite(invitee);
+    expect(mail.send.mock.calls[0][0].subject).toBe('Pozvánka do aplikace Acme');
+    await svc.sendInvite({ ...invitee, language: 'en' });
+    expect(mail.send.mock.calls[1][0].subject).toBe('You have been invited to Acme');
+  });
+
+  it('reports when the mail could not be delivered', async () => {
+    const { svc, mail } = build();
+    mail.send.mockResolvedValueOnce(false);
+    expect((await svc.sendInvite(invitee)).delivered).toBe(false);
   });
 });
 

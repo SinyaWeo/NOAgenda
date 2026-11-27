@@ -12,6 +12,7 @@ import { TeamRole } from '../../team-member/team-member.entity';
 import { asMock, authReq, invalid } from '../../../common/__tests__/test-utils';
 import type { TransferredProject } from '../../account/account.service';
 import type { ProjectTransferService } from '../project-transfer.service';
+import type { AuthService } from '../../auth/auth.service';
 
 function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin', password: 'HASH' }) {
   const users = {
@@ -20,7 +21,24 @@ function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin',
     setLocked: jest.fn(async (id: number, isLocked: boolean) =>
       id === 99 ? null : { id, isLocked, password: 'HASH' },
     ),
-    findById: jest.fn(async (id: number) => (id === 99 ? null : { id, username: `user${id}`, isLocked: id === 7 })),
+    findById: jest.fn(async (id: number) =>
+      id === 99
+        ? null
+        : {
+            id,
+            username: `user${id}`,
+            email: `user${id}@example.com`,
+            isLocked: id === 7,
+            password: 'HASH',
+            // 11: an invite still pending; 12: an invited user who has activated; others signed up themselves.
+            invitedAt: id === 11 || id === 12 ? new Date() : null,
+            isEmailConfirmed: id !== 11,
+          },
+    ),
+    create: jest.fn(async (data: Record<string, unknown>) => ({ id: 11, ...data })),
+  };
+  const auth = {
+    sendInvite: jest.fn(async () => ({ delivered: true, link: 'https://app/user/password-reset?token=t&invite=1' })),
   };
   const accounts = {
     purgeUser: jest.fn(async (): Promise<TransferredProject[]> => []),
@@ -44,7 +62,9 @@ function build(setRoleResult: unknown = { id: 2, username: 'bob', role: 'admin',
       asMock<TeamMemberService>(teamMembers),
       asMock<ActivityService>(activity),
       asMock<ProjectTransferService>(transfers),
+      asMock<AuthService>(auth),
     ),
+    auth,
     transfers,
     users,
     accounts,
@@ -64,6 +84,44 @@ describe('AdminController', () => {
     const { ctrl, activity } = build();
     await ctrl.activityLog({ actorId: 3, action: 'task.deleted', before: 40, limit: 20 });
     expect(activity.admin).toHaveBeenCalledWith({ actorId: 3, action: 'task.deleted' }, 40, 20);
+  });
+
+  describe('adding a user', () => {
+    it('creates an unconfirmed account with an unknown random password and emails the invite', async () => {
+      const { ctrl, users, auth } = build();
+      const res = await ctrl.createUser({ username: ' neo ', email: 'neo@example.com', name: ' Neo ', language: 'cs' });
+      const data = users.create.mock.calls[0][0];
+      expect(data).toMatchObject({ username: 'neo', email: 'neo@example.com', name: 'Neo', language: 'cs' });
+      expect(data.isEmailConfirmed).toBe(false);
+      expect(data.password).toMatch(/^[0-9a-f]{64}$/);
+      expect(auth.sendInvite).toHaveBeenCalledWith(expect.objectContaining({ id: 11, email: 'neo@example.com' }));
+      expect(res.inviteDelivered).toBe(true);
+      expect(res.inviteLink).toBeUndefined();
+      expect((res.user as { password?: string }).password).toBeUndefined();
+    });
+
+    it('returns the activation link to the admin only when the mail could not be delivered', async () => {
+      const { ctrl, auth } = build();
+      auth.sendInvite.mockResolvedValueOnce({ delivered: false, link: 'L' });
+      expect(await ctrl.createUser({ username: 'neo', email: 'neo@example.com' })).toMatchObject({
+        inviteDelivered: false,
+        inviteLink: 'L',
+      });
+    });
+
+    it('resends a pending invite', async () => {
+      const { ctrl, auth } = build();
+      expect(await ctrl.resendInvite(invalid<number>('11'))).toEqual({ inviteDelivered: true });
+      expect(auth.sendInvite).toHaveBeenCalledWith(expect.objectContaining({ id: 11 }));
+    });
+
+    it('refuses to resend to an activated or self-registered account, 404 for an unknown one', async () => {
+      const { ctrl, auth } = build();
+      await expect(ctrl.resendInvite(12)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(ctrl.resendInvite(3)).rejects.toBeInstanceOf(BadRequestException);
+      await expect(ctrl.resendInvite(99)).rejects.toBeInstanceOf(NotFoundException);
+      expect(auth.sendInvite).not.toHaveBeenCalled();
+    });
   });
 
   it('findAllUsers delegates to findAllAdmin', async () => {

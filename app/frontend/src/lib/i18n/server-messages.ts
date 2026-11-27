@@ -27,6 +27,7 @@ const EXACT: Record<string, MessageKey> = {
 	'Step-up needs a signed-in session': 'errors.server.stepUpRequired',
 	'Invalid or expired reset token': 'errors.server.resetTokenInvalid',
 	'Invalid or expired verification link': 'errors.server.verifyTokenInvalid',
+	'This user has no pending invitation': 'errors.server.noPendingInvite',
 	'Invalid refresh token': 'errors.server.sessionInvalid',
 	'Session expired': 'errors.server.sessionExpired',
 	'No session': 'errors.server.sessionInvalid',

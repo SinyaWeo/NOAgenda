@@ -14,5 +14,9 @@
   "changed": {
     "subject": "Vaše e-mailová adresa v aplikaci {app} byla změněna",
     "body": "Dobrý den, {username},\n\nváš účet v aplikaci {app} nyní používá adresu {newEmail} místo této, takže sem už nebudeme posílat zprávy.\n\nPokud jste změnu neprovedli vy, ihned kontaktujte správce."
+  },
+  "invite": {
+    "subject": "Pozvánka do aplikace {app}",
+    "body": "Dobrý den, {username},\n\nsprávce pro vás založil účet v aplikaci {app}. Otevřete tento odkaz do 72 hodin, zvolte si heslo a účet aktivujte:\n\n{link}\n\nPokud jste pozvánku nečekali, můžete tuto zprávu ignorovat."
   }
 }

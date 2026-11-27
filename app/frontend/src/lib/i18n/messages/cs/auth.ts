@@ -71,6 +71,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.newPassword.submit': 'Obnovit heslo',
 	'auth.newPassword.submitting': 'Obnovování…',
 
+	'auth.activate.title': 'Zvolte si heslo a aktivujte svůj účet',
+	'auth.activate.success': 'Váš účet je aktivní',
+	'auth.activate.submit': 'Aktivovat účet',
+	'auth.activate.submitting': 'Aktivace…',
+	'auth.activate.incompleteLink': 'Tento aktivační odkaz je neúplný. Požádejte správce o nový.',
+	'auth.activate.failed': 'Aktivace se nezdařila',
+	'auth.activate.expired':
+		'Tento aktivační odkaz je neplatný nebo vypršel. Požádejte správce, aby vám poslal nový.',
+
 	'auth.verify.pageTitle': 'Potvrzení e‑mailu – {app}',
 	'auth.verify.title': 'Potvrďte svou e‑mailovou adresu',
 	'auth.verify.incomplete': 'Tento potvrzovací odkaz je neúplný.',

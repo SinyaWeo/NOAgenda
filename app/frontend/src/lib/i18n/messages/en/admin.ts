@@ -42,6 +42,27 @@ export const messages = {
 	'admin.users.projects.transferred': '“{project}” now belongs to {username}',
 	'admin.users.projects.noCandidates': 'There is no other active user to transfer it to.',
 	'admin.users.badge.locked': 'locked',
+
+	'admin.users.add.button': 'Add user',
+	'admin.users.add.title': 'Add user',
+	'admin.users.add.intro':
+		'The new user gets an email with a link (valid for 72 hours) to choose a password and activate the account.',
+	'admin.users.add.fullName': 'Full name (optional)',
+	'admin.users.add.submit': 'Add and send invite',
+	'admin.users.add.submitting': 'Adding…',
+	'admin.users.add.failed': 'Could not add the user.',
+	'admin.users.add.mailOff':
+		'Email is not configured on this server, so the invite was not sent. Pass this activation link to {username} yourself:',
+	'admin.users.add.copy': 'Copy link',
+	'admin.users.add.copied': 'Link copied',
+	'admin.users.invited': '{username} was added and invited ({email})',
+	'admin.users.badge.invited': 'invited',
+	'admin.users.resendTip': 'Send the invitation again',
+	'admin.users.resent': 'Invitation sent again to {email}',
+	'admin.users.resentCopied':
+		'Email is not configured: the activation link for {username} was copied to the clipboard',
+	'admin.users.resentLink': 'Email is not configured. Activation link for {username}: {link}',
+	'admin.users.resendFailed': 'Could not resend the invitation to {username}: {reason}',
 	'admin.users.locked': '{username} was locked',
 	'admin.users.unlocked': '{username} was unlocked',
 	'admin.users.deleted': '{username} was deleted',

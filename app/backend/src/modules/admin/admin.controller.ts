@@ -34,6 +34,15 @@ import type { OwnedProject } from '../node/node-sql';
 import { RemoveUserQueryDto } from './dto/remove-user.dto';
 import { TransferProjectDto } from './dto/transfer-project.dto';
 import { ProjectTransferService } from './project-transfer.service';
+import { AdminCreateUserDto } from './dto/create-user.dto';
+import { AuthService } from '../auth/auth.service';
+import { randomToken } from '../../common/tokens';
+
+/** What an admin learns after sending an invite. `inviteLink` only when mail could not deliver it. */
+export interface InviteResult {
+  inviteDelivered: boolean;
+  inviteLink?: string;
+}
 
 @Controller('admin')
 @UseGuards(RolesGuard)
@@ -47,7 +56,13 @@ export class AdminController {
     private readonly teamMembers: TeamMemberService,
     private readonly activity: ActivityService,
     private readonly transfers: ProjectTransferService,
+    private readonly auth: AuthService,
   ) {}
+
+  private async invite(user: User): Promise<InviteResult> {
+    const { delivered, link } = await this.auth.sendInvite(user);
+    return delivered ? { inviteDelivered: true } : { inviteDelivered: false, inviteLink: link };
+  }
 
   /** The whole audit trail, across all projects (including deleted ones). */
   @Get('activity')
@@ -59,6 +74,39 @@ export class AdminController {
   @Get('users')
   async findAllUsers(): Promise<Omit<User, 'password'>[]> {
     return this.userService.findAllAdmin();
+  }
+
+  /**
+   * Create an account and email it an activation link where the user chooses their password. Works
+   * while public registration is closed. The stored password is a random one nobody knows.
+   */
+  @MultiUserOnly()
+  @Post('users')
+  async createUser(@Body() body: AdminCreateUserDto): Promise<InviteResult & { user: Omit<User, 'password'> }> {
+    const user = await this.userService.create({
+      username: body.username.trim(),
+      email: body.email.trim(),
+      ...(body.name?.trim() ? { name: body.name.trim() } : {}),
+      ...(body.language ? { language: body.language } : {}),
+      password: randomToken(32),
+      isEmailConfirmed: false,
+    });
+    const result = await this.invite(user);
+    const fresh = (await this.userService.findById(user.id)) ?? user;
+    return { user: omit(fresh, 'password'), ...result };
+  }
+
+  /** Send the activation link again (the previous one stops working), while the invite is still pending. */
+  @MultiUserOnly()
+  @Post('users/:id/invite')
+  @HttpCode(200)
+  async resendInvite(@Param('id') id: number): Promise<InviteResult> {
+    const user = await this.userService.findById(Number(id));
+    if (!user) throw new NotFoundException();
+    if (!user.invitedAt || user.isEmailConfirmed) {
+      throw new BadRequestException('This user has no pending invitation');
+    }
+    return this.invite(user);
   }
 
   @Patch('users/:id/role')

@@ -69,6 +69,15 @@ export const messages = {
 	'auth.newPassword.submit': 'Reset password',
 	'auth.newPassword.submitting': 'Resetting…',
 
+	'auth.activate.title': 'Choose a password to activate your account',
+	'auth.activate.success': 'Your account is active',
+	'auth.activate.submit': 'Activate account',
+	'auth.activate.submitting': 'Activating…',
+	'auth.activate.incompleteLink': 'This activation link is incomplete. Ask your administrator for a new one.',
+	'auth.activate.failed': 'Activation failed',
+	'auth.activate.expired':
+		'This activation link is invalid or has expired. Ask your administrator to send a new one.',
+
 	'auth.verify.pageTitle': 'Confirm email – {app}',
 	'auth.verify.title': 'Confirm your email address',
 	'auth.verify.incomplete': 'This confirmation link is incomplete.',

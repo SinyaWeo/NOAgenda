@@ -45,6 +45,27 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.users.projects.transferred': '„{project}“ teď patří uživateli {username}',
 	'admin.users.projects.noCandidates': 'Není žádný jiný aktivní uživatel, na kterého by šel převést.',
 	'admin.users.badge.locked': 'zamčeno',
+
+	'admin.users.add.button': 'Přidat uživatele',
+	'admin.users.add.title': 'Přidat uživatele',
+	'admin.users.add.intro':
+		'Nový uživatel dostane e-mail s odkazem (platným 72 hodin), přes který si zvolí heslo a aktivuje účet.',
+	'admin.users.add.fullName': 'Celé jméno (nepovinné)',
+	'admin.users.add.submit': 'Přidat a poslat pozvánku',
+	'admin.users.add.submitting': 'Přidávání…',
+	'admin.users.add.failed': 'Uživatele se nepodařilo přidat.',
+	'admin.users.add.mailOff':
+		'Na tomto serveru není nastavený e-mail, takže pozvánka nebyla odeslána. Předejte uživateli {username} tento aktivační odkaz sami:',
+	'admin.users.add.copy': 'Kopírovat odkaz',
+	'admin.users.add.copied': 'Odkaz zkopírován',
+	'admin.users.invited': 'Uživatel {username} byl přidán a pozván ({email})',
+	'admin.users.badge.invited': 'pozván',
+	'admin.users.resendTip': 'Poslat pozvánku znovu',
+	'admin.users.resent': 'Pozvánka byla znovu odeslána na {email}',
+	'admin.users.resentCopied':
+		'E-mail není nastavený: aktivační odkaz pro {username} byl zkopírován do schránky',
+	'admin.users.resentLink': 'E-mail není nastavený. Aktivační odkaz pro {username}: {link}',
+	'admin.users.resendFailed': 'Pozvánku pro {username} se nepodařilo znovu odeslat: {reason}',
 	'admin.users.locked': 'Uživatel {username} byl zamknut',
 	'admin.users.unlocked': 'Uživatel {username} byl odemknut',
 	'admin.users.deleted': 'Uživatel {username} byl smazán',

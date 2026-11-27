@@ -2,7 +2,7 @@
 	import { appName } from '#lib/appName.svelte.js';
 	import Logo from '#lib/components/Logo.svelte';
 	import { errMessage } from '#lib/errors.js';
-	import { apiPost } from '#lib/api.js';
+	import { ApiError, apiPost } from '#lib/api.js';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { Alert, Button, Card, Input, Label } from 'flowbite-svelte';
@@ -15,6 +15,8 @@
 	let success = $state(false);
 	let loading = $state(false);
 	let showPassword = $state(false);
+	/** Opened from the activation email of an account an admin created (same mechanism, other wording). */
+	const invite = $derived(page.url.searchParams.get('invite') === '1');
 
 	async function handleReset(event: SubmitEvent) {
 		event.preventDefault();
@@ -27,12 +29,16 @@
 		success = false;
 		try {
 			const token = page.url.searchParams.get('token') ?? '';
-			if (!token) throw new Error(t('auth.newPassword.incompleteLink'));
+			if (!token)
+				throw new Error(t(invite ? 'auth.activate.incompleteLink' : 'auth.newPassword.incompleteLink'));
 			await apiPost('/auth/password/reset', { token, password });
 			success = true;
 			setTimeout(() => goto('/user/login'), 2000);
 		} catch (e: unknown) {
-			error = errMessage(e, t('auth.newPassword.failed'));
+			error =
+				invite && e instanceof ApiError && e.status === 400
+					? t('auth.activate.expired')
+					: errMessage(e, t(invite ? 'auth.activate.failed' : 'auth.newPassword.failed'));
 		} finally {
 			loading = false;
 		}
@@ -44,7 +50,9 @@
 		<div class="text-center mb-6">
 			<div class="flex justify-center mb-3"><Logo size={64} /></div>
 			<h1 class="brand-text text-2xl font-bold">{appName.current}</h1>
-			<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('auth.newPassword.title')}</p>
+			<p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+				{t(invite ? 'auth.activate.title' : 'auth.newPassword.title')}
+			</p>
 		</div>
 
 		{#if error}
@@ -53,7 +61,7 @@
 
 		{#if success}
 			<Alert color="green">
-				<p class="font-semibold">{t('auth.newPassword.success')}</p>
+				<p class="font-semibold">{t(invite ? 'auth.activate.success' : 'auth.newPassword.success')}</p>
 				<p class="text-sm mt-1">{t('auth.newPassword.redirecting')}</p>
 			</Alert>
 		{:else}
@@ -84,7 +92,11 @@
 					<Input id="confirm-password" type="password" bind:value={confirmPassword} required minlength={8} />
 				</div>
 				<Button type="submit" disabled={loading} class="w-full">
-					{loading ? t('auth.newPassword.submitting') : t('auth.newPassword.submit')}
+					{#if invite}
+						{loading ? t('auth.activate.submitting') : t('auth.activate.submit')}
+					{:else}
+						{loading ? t('auth.newPassword.submitting') : t('auth.newPassword.submit')}
+					{/if}
 				</Button>
 			</form>
 		{/if}

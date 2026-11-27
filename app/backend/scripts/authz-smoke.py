@@ -21,7 +21,7 @@ is promoted through the database; without it those checks are skipped.
 Usage:  BASE_URL=http://127.0.0.1:3000 [SQL_CMD=...] python3 scripts/authz-smoke.py
         (self-signed HTTPS, e.g. a local Caddy: add AUTHZ_INSECURE=1)
 """
-import json, sys, urllib.request, urllib.error
+import json, sys, urllib.parse, urllib.request, urllib.error
 import os, ssl, subprocess, time
 B = os.environ.get('BASE_URL', 'http://127.0.0.1:3000')
 CTX = ssl._create_unverified_context() if os.environ.get('AUTHZ_INSECURE') == '1' else None
@@ -59,6 +59,7 @@ aid, A = user('alice'); bid, Bt = user('bob'); cid, C = user('carol')
 s, _ = call('POST', '/user/settings/general', {'role': 'admin'}, Bt); check('role escalation rejected', s, 400)
 s, me = call('GET', '/users/me', None, Bt); check('bob is still a normal user', me['role'], 'user')
 s, _ = call('GET', '/admin/users', None, Bt); check('bob cannot use admin API', s, 403)
+s, _ = call('POST', '/admin/users', {'username': 'mallory', 'email': 'mallory@example.com'}, Bt); check('bob cannot add users', s, 403)
 s, g = call('POST', '/user/settings/general', {'theme': 'dark'}, Bt); check('valid settings accepted', s, [200, 201])
 
 # --- 2. alice's data
@@ -247,8 +248,23 @@ if SQL:
     s, _ = call('GET', '/admin/users', None, D); check('an admin reads without a step-up', s, 200)
     s, r = call('PATCH', f'/admin/teams/{tm}/members/{bm}/role', {'role': 'manager'}, D)
     check('an admin change without a step-up is refused', (s, r.get('code')), (403, 'STEP_UP_REQUIRED'))
+    s, r = call('POST', '/admin/users', {'username': 'invitee', 'email': 'invitee@example.com'}, D)
+    check('adding a user without a step-up is refused', (s, r.get('code')), (403, 'STEP_UP_REQUIRED'))
     s, _ = call('POST', '/user/step-up', {'password': 'wrong-password'}, D); check('step-up refuses a wrong password', s, 400)
     s, _ = call('POST', '/user/step-up', {'password': 'password123'}, D); check('an admin steps up', s, 200)
+    s, r = call('POST', '/admin/users', {'username': 'invitee', 'email': 'invitee@example.com', 'language': 'cs'}, D)
+    check('the admin adds a user with a pending invite', (s, r.get('user', {}).get('isEmailConfirmed'), bool(r.get('user', {}).get('invitedAt'))), (201, False, True))
+    iid = r['user']['id']
+    s, _ = call('POST', '/admin/users', {'username': 'invitee', 'email': 'other@example.com'}, D); check('a taken username is refused', s, 409)
+    s, _ = call('POST', '/admin/users', {'username': 'x', 'email': 'not-an-email'}, D); check('the new user is validated', s, 400)
+    s, _ = call('POST', '/auth/login', {'username': 'invitee', 'password': 'password123'}); check('an invited user cannot sign in before activating', s, [401, 403])
+    s, inv = call('POST', f'/admin/users/{iid}/invite', None, D); check('the admin resends a pending invite', s, 200)
+    if inv.get('inviteLink'):  # no SMTP: the admin gets the link to pass on, so the smoke test can follow it
+        tok = urllib.parse.parse_qs(urllib.parse.urlparse(inv['inviteLink']).query)['token'][0]
+        s, _ = call('POST', '/auth/password/reset', {'token': tok, 'password': 'password123'}); check('the invitee chooses a password', s, [200, 201, 204])
+        s, _ = call('POST', '/auth/login', {'username': 'invitee', 'password': 'password123'}); check('the activated invitee signs in', s, 200)
+        s, _ = call('POST', f'/admin/users/{iid}/invite', None, D); check('no invite once the account is activated', s, 400)
+    s, _ = call('POST', f'/admin/users/{did}/invite', None, D); check('no invite for an account that signed up itself', s, 400)
     s, all_teams = call('GET', '/admin/teams', None, D)
     check('app admin lists every team with members', (s, {tm, other['id']} <= {t['id'] for t in all_teams}), (200, True))
     s, _ = call('GET', f'/teams/{tm}', None, D); check('app admin can view any team', s, 200)

@@ -61,6 +61,11 @@ export class UserService {
     return this.findById(id);
   }
 
+  /** Record that an activation invite was (re)sent to an admin-created account. */
+  async markInvited(id: number): Promise<void> {
+    await this.userRepository.update(id, { invitedAt: new Date() });
+  }
+
   async countAdmins(): Promise<number> {
     return this.userRepository.count({ where: { role: UserRole.ADMIN } });
   }

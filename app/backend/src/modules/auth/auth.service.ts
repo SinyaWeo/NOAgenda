@@ -25,6 +25,8 @@ export const MAX_FAILED_LOGINS = Number(process.env.MAX_FAILED_LOGINS || 5);
 export const ACCOUNT_LOCK_THRESHOLD = Number(process.env.ACCOUNT_LOCK_THRESHOLD || 20);
 export const LOCKOUT_MINUTES = Number(process.env.LOCKOUT_MINUTES || 15);
 const RESET_TTL_MS = 60 * 60 * 1000;
+/** How long the activation link of an admin-created account stays valid. */
+export const INVITE_TTL_MS = 72 * 60 * 60 * 1000;
 /** How long a step-up (password re-entered) allows admin changes from that session. */
 export const STEP_UP_MINUTES = Number(process.env.ADMIN_STEP_UP_MINUTES || 15);
 
@@ -183,6 +185,38 @@ export class AuthService {
       subject: this.translator.t(user.language, 'email.reset.subject', args),
       text: this.translator.t(user.language, 'email.reset.body', args),
     });
+  }
+
+  /**
+   * Email the activation link of an account an admin created: the user opens it to choose a password,
+   * which also confirms the address (resetPassword). Older links stop working. Returns the link as well,
+   * so an admin can pass it on by hand when mail cannot be delivered.
+   */
+  async sendInvite(user: {
+    id: number;
+    email: string;
+    username: string;
+    language?: string | null;
+  }): Promise<{ delivered: boolean; link: string }> {
+    await this.resetTokenRepository.delete({ user: { id: user.id } });
+    const token = randomToken(32);
+    await this.resetTokenRepository.save(
+      this.resetTokenRepository.create({
+        token: sha256(token),
+        user: { id: user.id },
+        expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+      }),
+    );
+    await this.userService.markInvited(user.id);
+    const link = this.mail.link('/user/password-reset', { token, invite: '1' });
+    const app = await this.mail.appName().catch(() => 'NOAgenda');
+    const args = { app, username: user.username, link };
+    const delivered = await this.mail.send({
+      to: user.email,
+      subject: this.translator.t(user.language, 'email.invite.subject', args),
+      text: this.translator.t(user.language, 'email.invite.body', args),
+    });
+    return { delivered, link };
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {

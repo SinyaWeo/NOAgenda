@@ -12,10 +12,18 @@ export interface User {
 	avatarUrl?: string;
 	isEmailConfirmed: boolean;
 	isLocked?: boolean;
+	/** Set when an admin created the account and sent it an activation invite. */
+	invitedAt?: string | null;
 	isDeletionRequested: boolean;
 	deletionScheduledAt?: string;
 	createdAt: string;
 	updatedAt: string;
+}
+
+/** The answer to an admin sending an activation invite. `inviteLink` only when it could not be emailed. */
+export interface InviteResult {
+	inviteDelivered: boolean;
+	inviteLink?: string;
 }
 
 export interface Team {

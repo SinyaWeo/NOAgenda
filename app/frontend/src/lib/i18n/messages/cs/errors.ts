@@ -30,6 +30,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'errors.server.ownerInactive': 'Nový vlastník musí být aktivní uživatel',
 	'errors.server.resetTokenInvalid': 'Odkaz pro obnovení hesla je neplatný nebo vypršel',
 	'errors.server.verifyTokenInvalid': 'Ověřovací odkaz je neplatný nebo vypršel',
+	'errors.server.noPendingInvite': 'Tento uživatel nemá žádnou čekající pozvánku',
 	'errors.server.sessionInvalid': 'Vaše přihlášení už neplatí. Přihlaste se prosím znovu.',
 	'errors.server.sessionExpired': 'Platnost přihlášení vypršela',
 	'errors.server.ownRole': 'Vlastní roli nelze změnit',

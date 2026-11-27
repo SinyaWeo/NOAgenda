@@ -14,5 +14,9 @@
   "changed": {
     "subject": "Your {app} email address was changed",
     "body": "Hi {username},\n\nYour {app} account now uses {newEmail} instead of this address, so messages will no longer be sent here.\n\nIf you did not make this change, contact your administrator right away."
+  },
+  "invite": {
+    "subject": "You have been invited to {app}",
+    "body": "Hi {username},\n\nan administrator created a {app} account for you. Open this link within 72 hours to choose your password and activate the account:\n\n{link}\n\nIf you were not expecting this, you can ignore this message."
   }
 }

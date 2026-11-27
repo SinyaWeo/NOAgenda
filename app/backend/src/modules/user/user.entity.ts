@@ -40,6 +40,10 @@ export class User extends BaseEntity {
   @Column({ nullable: true, type: 'datetime' })
   termsAcceptedAt?: Date;
 
+  /** When an admin created the account and last sent its activation invite; null for self-registered users. */
+  @Column({ nullable: true, type: 'datetime' })
+  invitedAt?: Date | null;
+
   /** Consecutive failed logins; reset on success. Drives the account lockout. */
   @Column({ default: 0 })
   failedLoginAttempts!: number;
