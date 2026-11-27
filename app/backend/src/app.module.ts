@@ -22,6 +22,7 @@ import { NotificationModule } from './modules/notification/notification.module';
 import { AttachmentModule } from './modules/attachment/attachment.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
 import { PluginModule } from './modules/plugin/plugin.module';
+import { ChatWebhookPluginModule } from './modules/plugins/chat-webhook/chat-webhook.module';
 import { TaskAssigneeModule } from './modules/task-assignee/task-assignee.module';
 import { TaskLabelModule } from './modules/task-label/task-label.module';
 import { TaskRelationModule } from './modules/task-relation/task-relation.module';
@@ -89,6 +90,8 @@ import { MailModule } from './modules/mail/mail.module';
     AttachmentModule,
     WebhookModule,
     PluginModule,
+    // Built-in plugins (each registers itself with the PluginRegistry; off until an admin switches it on).
+    ChatWebhookPluginModule,
     TaskAssigneeModule,
     TaskLabelModule,
     TaskRelationModule,

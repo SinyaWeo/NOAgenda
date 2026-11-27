@@ -11,7 +11,9 @@ let inFlight: Promise<boolean> | null = null;
  * one prompt.
  */
 export function requestStepUp(): Promise<boolean> {
-	inFlight ??= new Promise<boolean>((resolve) => (pendingStepUp.current = { resolve })).finally(() => {
+	inFlight ??= new Promise<boolean>((resolve) => {
+		pendingStepUp.current = { resolve };
+	}).finally(() => {
 		inFlight = null;
 	});
 	return inFlight;

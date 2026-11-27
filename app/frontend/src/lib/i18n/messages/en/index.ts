@@ -9,6 +9,7 @@ import { messages as ideas } from './ideas';
 import { messages as labels } from './labels';
 import { messages as layout } from './layout';
 import { messages as legal } from './legal';
+import { messages as plugins } from './plugins';
 import { messages as projects } from './projects';
 import { messages as settings } from './settings';
 import { messages as tasks } from './tasks';
@@ -29,6 +30,7 @@ export const en = {
 	...labels,
 	...layout,
 	...legal,
+	...plugins,
 	...projects,
 	...settings,
 	...tasks,

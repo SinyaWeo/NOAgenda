@@ -14,6 +14,8 @@ export const messages = {
 	'admin.dashboard.auditHint': 'Who changed what, across all projects',
 	'admin.dashboard.settings': 'Settings',
 	'admin.dashboard.settingsHint': 'App configuration',
+	'admin.dashboard.plugins': 'Plugins',
+	'admin.dashboard.pluginsHint': 'Built-in extensions such as chat notifications',
 
 	'admin.users.pageTitle': 'Admin — Users',
 	'admin.users.title': 'Users',

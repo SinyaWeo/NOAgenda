@@ -1,53 +1,82 @@
-import { omit } from '../../common/omit';
 import type { AuthRequest } from '../../common/auth-user';
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { PluginService } from './plugin.service';
-import { Plugin } from './plugin.entity';
-import { Request } from '@nestjs/common';
-import { CreatePluginDto, UpdatePluginDto } from './dto/plugin.dto';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put, Request, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { NotInDemoGuard } from '../../common/guards/not-in-demo.guard';
 import { UserRole } from '../user/user-role.enum';
+import { UserService } from '../user/user.service';
+import { PluginService, type AdminPluginView, type UserPluginView } from './plugin.service';
+import { PluginChannelService } from './plugin-channels.service';
+import { UpdatePluginDto, UpdateUserPluginDto } from './dto/plugin.dto';
 
+/** The enabled plugins that have per-user settings (what the settings page offers). */
 @Controller('plugins')
 export class PluginController {
-  constructor(private readonly pluginService: PluginService) {}
-
-  /** `config` may hold credentials/internals: only admins see it. */
-  private view(plugin: Plugin, req: AuthRequest): Plugin {
-    if (req.user?.role === UserRole.ADMIN) return plugin;
-    return omit(plugin, 'config');
-  }
+  constructor(private readonly plugins: PluginService) {}
 
   @Get()
-  async findAll(@Request() req: AuthRequest): Promise<Plugin[]> {
-    return (await this.pluginService.findAll()).map((p) => this.view(p, req));
+  async list(): Promise<{ key: string; name: string; description: string; isChannel: boolean }[]> {
+    return this.plugins.publicList();
+  }
+}
+
+/** App admin: every built-in plugin, switched on/off and configured here. Secrets are write-only. */
+@Controller('admin/plugins')
+@UseGuards(RolesGuard)
+@Roles(UserRole.ADMIN)
+export class AdminPluginController {
+  constructor(private readonly plugins: PluginService) {}
+
+  @Get()
+  async list(): Promise<AdminPluginView[]> {
+    return this.plugins.adminList();
   }
 
-  @Get(':id')
-  async findById(@Param('id') id: number, @Request() req: AuthRequest): Promise<Plugin | null> {
-    const plugin = await this.pluginService.findById(id);
-    return plugin ? this.view(plugin, req) : null;
+  @Patch(':key')
+  @UseGuards(NotInDemoGuard)
+  async update(@Param('key') key: string, @Body() body: UpdatePluginDto): Promise<AdminPluginView> {
+    return this.plugins.adminUpdate(key, body);
+  }
+}
+
+/** The signed-in user's own plugin settings (e.g. where a notification channel delivers). */
+@Controller('user/plugins')
+export class UserPluginController {
+  constructor(
+    private readonly plugins: PluginService,
+    private readonly channels: PluginChannelService,
+    private readonly users: UserService,
+  ) {}
+
+  @Get()
+  async list(@Request() req: AuthRequest): Promise<UserPluginView[]> {
+    return this.plugins.userList(req.user.userId);
   }
 
-  @Post()
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async create(@Body() body: CreatePluginDto): Promise<Plugin> {
-    return this.pluginService.create({ ...body });
+  @Put(':key')
+  @UseGuards(NotInDemoGuard)
+  async update(
+    @Param('key') key: string,
+    @Body() body: UpdateUserPluginDto,
+    @Request() req: AuthRequest,
+  ): Promise<UserPluginView> {
+    return this.plugins.userUpdate(req.user.userId, key, body);
   }
 
-  @Put(':id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async update(@Param('id') id: number, @Body() body: UpdatePluginDto): Promise<Plugin | null> {
-    return this.pluginService.update(id, { ...body });
+  @Delete(':key')
+  @HttpCode(204)
+  async remove(@Param('key') key: string, @Request() req: AuthRequest): Promise<void> {
+    await this.plugins.userRemove(req.user.userId, key);
   }
 
-  @Delete(':id')
-  @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN)
-  async remove(@Param('id') id: number): Promise<void> {
-    return this.pluginService.remove(id);
+  /** Send a test message through the user's channel now and say what happened. */
+  @Post(':key/test')
+  @HttpCode(200)
+  @UseGuards(NotInDemoGuard)
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  async test(@Param('key') key: string, @Request() req: AuthRequest): Promise<{ ok: boolean; error: string | null }> {
+    const languages = await this.users.languagesOf([req.user.userId]);
+    return this.channels.test(req.user.userId, key, languages.get(req.user.userId) ?? null);
   }
 }

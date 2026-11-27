@@ -9,7 +9,12 @@
  * Also encrypts any value still in plain text. Safe to run any number of times.
  */
 import dataSource from '../data-source';
-import { ENCRYPTED_COLUMNS, reencryptColumn } from '../common/encrypted-columns';
+import {
+  ENCRYPTED_COLUMNS,
+  ENCRYPTED_JSON_COLUMNS,
+  reencryptColumn,
+  reencryptJsonColumn,
+} from '../common/encrypted-columns';
 import { secretBox } from '../common/secret-box';
 
 async function main() {
@@ -20,6 +25,10 @@ async function main() {
     for (const col of ENCRYPTED_COLUMNS) {
       const { updated, current } = await reencryptColumn(dataSource, col, box);
       console.log(`${col.table}.${col.column}: ${updated} re-encrypted, ${current} already current`);
+    }
+    for (const col of ENCRYPTED_JSON_COLUMNS) {
+      const { updated, current } = await reencryptJsonColumn(dataSource, col, box);
+      console.log(`${col.table}.${col.column} (secret fields): ${updated} re-encrypted, ${current} already current`);
     }
     console.log('Done. Keys other than the first in SECRETS_KEY can now be removed.');
   } finally {

@@ -1,0 +1,67 @@
+import type { Message } from '../../core';
+import type { messages as en } from '../en/plugins';
+
+// Messages for the "plugins" area. Keys are prefixed "plugins." (see ../README.md).
+export const messages: Record<keyof typeof en, Message> = {
+	'plugins.chatWebhook.name': 'Webhook do chatu',
+	'plugins.chatWebhook.description':
+		'Posílá upozornění každého uživatele do jeho vlastního chatu ve Slacku, Discordu, Microsoft Teams nebo Mattermostu.',
+	'plugins.chatWebhook.field.allowedHosts.label': 'Povolené servery chatu',
+	'plugins.chatWebhook.field.allowedHosts.help':
+		'Názvy serverů oddělené čárkami, např. hooks.slack.com, discord.com. Prázdné: povolena je jakákoli veřejná adresa.',
+	'plugins.chatWebhook.field.url.label': 'Adresa příchozího webhooku',
+	'plugins.chatWebhook.field.url.help':
+		'Ve svém kanálu ve Slacku, Discordu, Teams (Workflows) nebo Mattermostu vytvořte příchozí webhook a vložte sem jeho adresu. Kdo ji zná, může do kanálu psát, proto je uložena šifrovaně a už se nezobrazí.',
+	'plugins.chatWebhook.field.format.label': 'Chat',
+	'plugins.chatWebhook.field.format.option.auto': 'Poznat podle adresy',
+	'plugins.chatWebhook.field.format.option.slack': 'Slack',
+	'plugins.chatWebhook.field.format.option.discord': 'Discord',
+	'plugins.chatWebhook.field.format.option.teams': 'Microsoft Teams',
+	'plugins.chatWebhook.field.format.option.mattermost': 'Mattermost (nebo jiný chat kompatibilní se Slackem)',
+	'plugins.field.required': 'povinné',
+	'plugins.field.secretSet': 'Uloženo. Novou hodnotou ji nahradíte.',
+	'plugins.field.secretNotSet': 'Nenastaveno',
+	'plugins.field.secretPlaceholder': 'Vložte hodnotu',
+	'plugins.field.clearSecret': 'Odebrat uloženou hodnotu',
+	'plugins.field.secretCleared': 'Po uložení bude odebrána',
+	'plugins.save': 'Uložit',
+	'plugins.saving': 'Ukládání…',
+	'plugins.saved': 'Uloženo',
+	'plugins.loadFailed': 'Pluginy se nepodařilo načíst.',
+	'plugins.saveFailed': 'Uložení se nezdařilo.',
+	'plugins.admin.pageTitle': 'Správa — Pluginy',
+	'plugins.admin.title': 'Pluginy',
+	'plugins.admin.intro':
+		'Vestavěná rozšíření tohoto serveru. Jsou vypnutá, dokud je nezapnete; tajná nastavení se ukládají šifrovaně a už se nezobrazí.',
+	'plugins.admin.empty': 'Tato verze nemá žádné pluginy.',
+	'plugins.admin.on': 'zapnuto',
+	'plugins.admin.off': 'vypnuto',
+	'plugins.admin.switchOn': 'Zapnout',
+	'plugins.admin.switchOff': 'Vypnout',
+	'plugins.admin.switchedOn': '{name} je zapnut',
+	'plugins.admin.switchedOff': '{name} je vypnut',
+	'plugins.admin.perUser': 'Každý si jej nastaví ve svém nastavení (Nastavení → Kanály upozornění).',
+	'plugins.admin.noSettings': 'Zde není co nastavovat.',
+	'plugins.channels.pageTitle': 'Kanály upozornění',
+	'plugins.channels.title': 'Kanály upozornění',
+	'plugins.channels.intro': 'Dostávejte svá upozornění i jinam. Chodí jen vám, ve vašem jazyce.',
+	'plugins.channels.empty':
+		'Na tomto serveru nejsou dostupné žádné kanály upozornění. Správce je může zapnout.',
+	'plugins.channels.on': 'Posílat sem moje upozornění',
+	'plugins.channels.types': 'Která upozornění',
+	'plugins.channels.test': 'Poslat zkušební zprávu',
+	'plugins.channels.testing': 'Odesílání…',
+	'plugins.channels.testOk': 'Zkušební zpráva odeslána. Podívejte se do chatu.',
+	'plugins.channels.testFailed': 'Zkušební zprávu se nepodařilo doručit: {error}',
+	'plugins.channels.lastOk': 'Poslední doručení proběhlo v pořádku ({when}).',
+	'plugins.channels.lastError': 'Poslední doručení se nezdařilo ({when}): {error}',
+	'plugins.channels.disconnect': 'Odpojit',
+	'plugins.channels.confirmDisconnect': 'Odpojit {name}? Uložená adresa bude smazána.',
+	'plugins.channels.disconnected': '{name} odpojen',
+	'plugins.type.task_assigned': 'Jsem přiřazen(a) k úkolu',
+	'plugins.type.task_comment': 'Někdo okomentuje můj úkol',
+	'plugins.type.task_reminder': 'Připomínky',
+	'plugins.type.project_added': 'Jsem přidán(a) do projektu',
+	'plugins.type.project_transferred': 'Je mi předán projekt',
+	'plugins.type.project_transferred_away': 'Můj projekt je předán někomu jinému'
+};

@@ -1,5 +1,12 @@
 import { randomBytes } from 'crypto';
-import { ENCRYPTED_COLUMNS, decryptColumn, reencryptColumn, type SqlRunner } from '../encrypted-columns';
+import {
+  ENCRYPTED_COLUMNS,
+  ENCRYPTED_JSON_COLUMNS,
+  decryptColumn,
+  reencryptColumn,
+  reencryptJsonColumn,
+  type SqlRunner,
+} from '../encrypted-columns';
 import { SecretBox, isEncrypted, keyId } from '../secret-box';
 
 const key = () => {
@@ -98,5 +105,34 @@ describe('decryptColumn (explicit rollback only)', () => {
 describe('ENCRYPTED_COLUMNS', () => {
   it('lists the webhook signing secret', () => {
     expect(ENCRYPTED_COLUMNS).toContainEqual(COL);
+  });
+});
+
+describe('reencryptJsonColumn (secret fields of plugin settings)', () => {
+  it('moves encrypted fields to the current key, leaves plain fields, and is safe to repeat', async () => {
+    const oldKey = key();
+    const newKey = key();
+    const col = ENCRYPTED_JSON_COLUMNS.find((c) => c.table === 'user_plugin_settings')!;
+    const ctx = 'user_plugin_settings.chat-webhook.url';
+    const old = new SecretBox([oldKey]).encrypt('https://hooks.example/abc', ctx);
+    const rows = [{ id: 1, k: 'chat-webhook', value: JSON.stringify({ url: old, format: 'auto' }) }];
+    const db: SqlRunner = {
+      query: jest.fn(async (sql: string, params: unknown[] = []) => {
+        if (sql.startsWith('SELECT')) return rows;
+        rows[0].value = params[0] as string;
+        return {};
+      }),
+    };
+    const box = new SecretBox([newKey, oldKey]);
+    expect(await reencryptJsonColumn(db, col, box)).toEqual({ updated: 1, current: 0 });
+    const stored = JSON.parse(rows[0].value) as { url: string; format: string };
+    expect(stored.format).toBe('auto');
+    expect(stored.url.split(':')[2]).toBe(newKey.id);
+    expect(new SecretBox([newKey]).decrypt(stored.url, ctx)).toBe('https://hooks.example/abc');
+    expect(await reencryptJsonColumn(db, col, box)).toEqual({ updated: 0, current: 1 });
+  });
+
+  it('covers both plugin tables', () => {
+    expect(ENCRYPTED_JSON_COLUMNS.map((c) => c.table).sort()).toEqual(['plugin', 'user_plugin_settings']);
   });
 });

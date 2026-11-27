@@ -75,3 +75,51 @@ export interface Note {
 }
 
 export type NoteTarget = 'project' | 'task' | 'idea';
+
+/** A plugin setting as the API shows it; a secret never comes back, only whether it is set. */
+export interface PluginFieldView {
+	key: string;
+	kind: 'text' | 'secret' | 'select';
+	required?: boolean;
+	options?: string[];
+	default?: string;
+	maxLength?: number;
+	value: string | null;
+	isSet?: boolean;
+}
+
+/** GET /admin/plugins */
+export interface AdminPlugin {
+	key: string;
+	name: string;
+	description: string;
+	enabled: boolean;
+	hasUserSettings: boolean;
+	isChannel: boolean;
+	fields: PluginFieldView[];
+}
+
+/** The notification types a channel can carry (same list as the backend). */
+export const NOTIFICATION_TYPES = [
+	'task_assigned',
+	'task_comment',
+	'task_reminder',
+	'project_added',
+	'project_transferred',
+	'project_transferred_away'
+] as const;
+export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
+
+/** GET /user/plugins: the signed-in user's own settings for one enabled plugin. */
+export interface UserPlugin {
+	key: string;
+	name: string;
+	description: string;
+	isChannel: boolean;
+	configured: boolean;
+	enabled: boolean;
+	types: NotificationType[];
+	fields: PluginFieldView[];
+	lastDeliveryAt: string | null;
+	lastError: string | null;
+}

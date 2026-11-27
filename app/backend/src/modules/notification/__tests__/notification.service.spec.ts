@@ -24,7 +24,12 @@ describe('NotificationService', () => {
         { provide: Translator, useValue: realTranslator() },
         {
           provide: getRepositoryToken(Notification),
-          useValue: { find: jest.fn(), findOne: jest.fn(), create: jest.fn((x) => x), save: jest.fn(async (x) => x) },
+          useValue: {
+            find: jest.fn(),
+            findOne: jest.fn(),
+            create: jest.fn((x) => x),
+            save: jest.fn(async (x: object[]) => x.map((n, i) => ({ id: 100 + i, ...n }))),
+          },
         },
       ],
     }).compile();
@@ -87,6 +92,35 @@ describe('NotificationService', () => {
     it('never throws when saving fails', async () => {
       repo().save.mockRejectedValueOnce(new Error('db down'));
       await expect(service.notify({ ...event, recipients: [2] })).resolves.toBeUndefined();
+    });
+
+    it("tells listeners (notification channels) what was stored, in each recipient's language", async () => {
+      const seen: unknown[] = [];
+      service.onCreated((c) => seen.push(...c));
+      service.onCreated(() => {
+        throw new Error('a broken listener does not stop the others or the action');
+      });
+      await service.notify({ ...event, recipients: [2, 3] });
+      expect(seen).toEqual([
+        {
+          id: 100,
+          userId: 2,
+          type: 'task_assigned',
+          message: 'ann assigned you to "Write docs"',
+          language: 'en',
+          nodeId: 9,
+          kind: 'task',
+        },
+        {
+          id: 101,
+          userId: 3,
+          type: 'task_assigned',
+          message: 'ann vás přiřadil(a) k úkolu „Write docs“',
+          language: 'cs',
+          nodeId: 9,
+          kind: 'task',
+        },
+      ]);
     });
 
     it('keeps the fallback message within the column length', async () => {

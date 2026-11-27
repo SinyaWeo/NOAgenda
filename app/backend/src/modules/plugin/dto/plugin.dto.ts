@@ -1,41 +1,30 @@
-import { IsBoolean, IsNotEmpty, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsObject, IsOptional, IsString } from 'class-validator';
 
-export class CreatePluginDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  name!: string;
-
-  @IsString()
-  @MaxLength(255)
-  description!: string;
-
-  @IsOptional()
-  @IsBoolean()
-  enabled?: boolean;
-
-  @IsOptional()
-  @IsObject()
-  config?: Record<string, unknown>;
-}
-
+/** Admin: switch a plugin on/off and change its settings (a string sets a field, null or '' clears it). */
 export class UpdatePluginDto {
   @IsOptional()
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(255)
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  description?: string;
-
-  @IsOptional()
   @IsBoolean()
   enabled?: boolean;
 
   @IsOptional()
   @IsObject()
-  config?: Record<string, unknown>;
+  config?: Record<string, string | null>;
+}
+
+/** A user's own settings for a plugin. */
+export class UpdateUserPluginDto {
+  @IsOptional()
+  @IsBoolean()
+  enabled?: boolean;
+
+  /** Notification types this channel carries for the user. */
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  types?: string[];
+
+  @IsOptional()
+  @IsObject()
+  settings?: Record<string, string | null>;
 }

@@ -18,6 +18,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'settings.section.sessions.desc': 'Zobrazení a odhlášení zařízení',
 	'settings.section.webhooks': 'Webhooky',
 	'settings.section.webhooks.desc': 'Nastavení odchozích webhooků',
+	'settings.section.channels': 'Kanály upozornění',
+	'settings.section.channels.desc': 'Dostávejte upozornění i do chatu',
 	'settings.section.dataExport': 'Export dat',
 	'settings.section.dataExport.desc': 'Stažení vašich dat',
 	'settings.section.deletion': 'Smazání účtu',

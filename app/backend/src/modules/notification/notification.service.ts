@@ -17,11 +17,26 @@ export interface NotifyEvent {
   title: string;
 }
 
+/** A notification that was just stored, as listeners (notification channels) receive it. */
+export interface CreatedNotification {
+  id: number;
+  userId: number;
+  type: NotificationType;
+  /** Already worded in the recipient's language. */
+  message: string;
+  language: string | null;
+  nodeId: number;
+  kind: 'task' | 'project';
+}
+
+export type NotificationListener = (created: CreatedNotification[]) => void;
+
 const clip = (v: string, n: number) => (v.length > n ? v.slice(0, n - 1) + '…' : v);
 
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
+  private readonly listeners: NotificationListener[] = [];
 
   constructor(
     @InjectRepository(Notification)
@@ -40,6 +55,14 @@ export class NotificationService {
 
   async findById(id: number): Promise<Notification | null> {
     return this.notificationRepository.findOne({ where: { id }, relations: { user: true } });
+  }
+
+  /**
+   * Be told about notifications right after they are stored (e.g. to forward them to a chat). Listeners
+   * run synchronously and must hand any slow work to the background themselves; errors are logged.
+   */
+  onCreated(listener: NotificationListener): void {
+    this.listeners.push(listener);
   }
 
   async create(notification: DeepPartial<Notification>): Promise<Notification> {
@@ -63,7 +86,7 @@ export class NotificationService {
       // types from `params`, in whatever language is selected at that moment.)
       const languages = await this.users.languagesOf(ids);
       const args = { actor: clip(event.actorName ?? '', 60), title: clip(event.title, 120) };
-      await this.notificationRepository.save(
+      const saved = await this.notificationRepository.save(
         ids.map((id) =>
           this.notificationRepository.create({
             message: clip(this.translator.t(languages.get(id), `notification.${event.type}`, args), 255),
@@ -74,6 +97,22 @@ export class NotificationService {
           }),
         ),
       );
+      const created: CreatedNotification[] = saved.map((n) => ({
+        id: n.id,
+        userId: n.user.id,
+        type: event.type,
+        message: n.message,
+        language: languages.get(n.user.id) ?? null,
+        nodeId: event.nodeId,
+        kind: event.kind,
+      }));
+      for (const listener of this.listeners) {
+        try {
+          listener(created);
+        } catch (err) {
+          this.logger.warn(`A notification listener failed: ${(err as Error).message}`);
+        }
+      }
     } catch (err) {
       this.logger.warn(`Could not create a ${event.type} notification: ${(err as Error).message}`);
     }

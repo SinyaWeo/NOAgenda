@@ -4,5 +4,7 @@
   "project_added": "{actor} vás přidal(a) do projektu „{title}“",
   "project_transferred": "{actor} vás nastavil(a) jako vlastníka projektu „{title}“",
   "project_transferred_away": "{actor} převedl(a) váš projekt „{title}“ na jiného uživatele; zůstáváte jeho správcem",
-  "task_reminder": "Připomínka: „{title}“"
+  "task_reminder": "Připomínka: „{title}“",
+  "channel_test": "Toto je zkušební zpráva z aplikace {app}. Sem vám budou chodit upozornění.",
+  "open": "Otevřít v aplikaci {app}"
 }

@@ -285,6 +285,10 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
         userId,
       ]),
       webhooks: await q('SELECT id, url, event, active, projectId, createdAt FROM webhook WHERE userId = ?', [userId]),
+      notificationChannels: await q(
+        'SELECT pluginKey AS plugin, enabled, types, createdAt FROM user_plugin_settings WHERE userId = ?',
+        [userId],
+      ),
       apiTokens: await q(
         'SELECT id, name, tokenPrefix, expiresAt, lastUsedAt, createdAt FROM api_tokens WHERE userId = ?',
         [userId],
@@ -293,7 +297,7 @@ export class AccountService implements OnModuleInit, OnModuleDestroy {
         'SELECT id, userAgent, ipAddress, createdAt, lastUsedAt, expiresAt FROM user_sessions WHERE userId = ?',
         [userId],
       ),
-      note: 'Passwords, token hashes and webhook secrets are not exported. Attachment files are not included, only their metadata.',
+      note: 'Passwords, token hashes, webhook secrets and notification channel addresses are not exported. Attachment files are not included, only their metadata.',
     };
   }
 }

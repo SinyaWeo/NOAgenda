@@ -9,6 +9,7 @@
 		ApiKeyOutline,
 		DesktopPcOutline,
 		LinkOutline,
+		BellRingOutline,
 		ArrowDownToBracketOutline,
 		TrashBinOutline,
 		QuoteOutline
@@ -40,6 +41,12 @@
 			icon: LinkOutline,
 			labelKey: 'settings.section.webhooks',
 			descKey: 'settings.section.webhooks.desc'
+		},
+		{
+			href: '/user/settings/channels',
+			icon: BellRingOutline,
+			labelKey: 'settings.section.channels',
+			descKey: 'settings.section.channels.desc'
 		},
 		{
 			href: '/user/settings/data-export',

@@ -17,6 +17,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'admin.dashboard.auditHint': 'Kdo co změnil, napříč všemi projekty',
 	'admin.dashboard.settings': 'Nastavení',
 	'admin.dashboard.settingsHint': 'Konfigurace aplikace',
+	'admin.dashboard.plugins': 'Pluginy',
+	'admin.dashboard.pluginsHint': 'Vestavěná rozšíření, např. upozornění do chatu',
 
 	'admin.users.pageTitle': 'Správa — Uživatelé',
 	'admin.users.title': 'Uživatelé',

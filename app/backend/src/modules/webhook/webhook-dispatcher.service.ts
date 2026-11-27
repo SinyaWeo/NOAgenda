@@ -6,12 +6,9 @@ import { Webhook } from './webhook.entity';
 import { Node } from '../node/node.entity';
 import { Access, NodeAccessService } from '../node/node-access.service';
 import { DomainEvent, DomainEvents } from '../../common/domain-events';
-import { request as httpRequest } from 'http';
-import { request as httpsRequest } from 'https';
-import { isIP } from 'net';
-import { assertPublicHttpUrl, BLOCKED_ADDRESS, isPrivateAddress, publicLookup } from '../../common/url-guard';
+import { assertPublicHttpUrl, BLOCKED_ADDRESS } from '../../common/url-guard';
+import { safePost } from '../../common/safe-post';
 
-const TIMEOUT_MS = 5000;
 /** Waits before the 2nd and 3rd attempt. A webhook is tried three times at most. */
 const RETRY_DELAYS_MS = [2000, 10000];
 const MAX_CONCURRENT = 10;
@@ -176,30 +173,7 @@ export class WebhookDispatcher implements OnModuleInit {
    * the very DNS answer it connects to. Public so tests can replace it.
    */
   send(rawUrl: string, headers: Record<string, string>, body: string): Promise<number> {
-    const url = new URL(rawUrl);
-    // The lookup function is not consulted for IP literals, so check those here.
-    const literal = url.hostname.replace(/^\[|\]$/g, '');
-    if (process.env.WEBHOOK_ALLOW_PRIVATE !== 'true' && isIP(literal) && isPrivateAddress(literal)) {
-      return Promise.reject(Object.assign(new Error('url must point to a public address'), { code: BLOCKED_ADDRESS }));
-    }
-    const request = url.protocol === 'https:' ? httpsRequest : httpRequest;
-    return new Promise<number>((resolve, reject) => {
-      const req = request(
-        url,
-        {
-          method: 'POST',
-          headers: { ...headers, 'Content-Length': Buffer.byteLength(body) },
-          lookup: publicLookup,
-          signal: AbortSignal.timeout(TIMEOUT_MS),
-        },
-        (res) => {
-          res.resume(); // the response body is not needed
-          resolve(res.statusCode ?? 0);
-        },
-      );
-      req.on('error', reject);
-      req.end(body);
-    });
+    return safePost(rawUrl, headers, body);
   }
 
   private clip(s: string): string {

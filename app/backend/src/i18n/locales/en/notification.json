@@ -4,5 +4,7 @@
   "project_added": "{actor} added you to the project \"{title}\"",
   "project_transferred": "{actor} made you the owner of the project \"{title}\"",
   "project_transferred_away": "{actor} transferred your project \"{title}\" to another user; you stay its Manager",
-  "task_reminder": "Reminder: \"{title}\""
+  "task_reminder": "Reminder: \"{title}\"",
+  "channel_test": "This is a test message from {app}. Your notifications will arrive here.",
+  "open": "Open in {app}"
 }

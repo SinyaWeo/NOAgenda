@@ -15,6 +15,8 @@ export const messages = {
 	'settings.section.sessions.desc': 'View and revoke sessions',
 	'settings.section.webhooks': 'Webhooks',
 	'settings.section.webhooks.desc': 'Configure outgoing webhooks',
+	'settings.section.channels': 'Notification channels',
+	'settings.section.channels.desc': 'Get your notifications in a chat too',
 	'settings.section.dataExport': 'Data Export',
 	'settings.section.dataExport.desc': 'Download your data',
 	'settings.section.deletion': 'Account Deletion',

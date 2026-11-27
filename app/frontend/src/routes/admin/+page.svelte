@@ -8,7 +8,8 @@
 		UsersGroupSolid,
 		QuoteOutline,
 		CogOutline,
-		ClipboardListOutline
+		ClipboardListOutline,
+		GridPlusOutline
 	} from 'flowbite-svelte-icons';
 </script>
 
@@ -71,6 +72,19 @@
 							{t('admin.dashboard.audit')}
 						</p>
 						<p class="text-sm text-gray-500 dark:text-gray-400">{t('admin.dashboard.auditHint')}</p>
+					</div>
+				</div>
+			</Card>
+		</a>
+		<a href="/admin/plugins" class="no-underline">
+			<Card class="hover:shadow-md transition-shadow cursor-pointer h-full">
+				<div class="flex items-center gap-3">
+					<GridPlusOutline class="w-8 h-8 text-primary-600" />
+					<div>
+						<p class="font-semibold text-gray-900 dark:text-white">
+							{t('admin.dashboard.plugins')}
+						</p>
+						<p class="text-sm text-gray-500 dark:text-gray-400">{t('admin.dashboard.pluginsHint')}</p>
 					</div>
 				</div>
 			</Card>

@@ -278,6 +278,19 @@ refuses to start without it). The `EncryptWebhookSecrets` migration then encrypt
 start. Backups taken before that still hold them as plain text until they age out. Reverting that migration refuses
 unless `SECRETS_ROLLBACK_DECRYPT=true` is set, so secrets are never written back in clear by accident.
 
+## Plugins
+Plugins are built into the image (no code is downloaded or loaded from disk) and every one is **off** until an admin
+switches it on under **Admin → Plugins**. Settings are per instance; secret settings are encrypted with `SECRETS_KEY`
+(see above) and never shown again, not even to admins. Plugins cannot be switched on in the demo (`DEMO_MODE=true`).
+
+| Plugin | What it does | Admin settings |
+|---|---|---|
+| Chat webhook | Each user sends their own notifications to a Slack, Discord, Microsoft Teams (Workflows) or Mattermost incoming webhook (**Settings → Notification channels**): which notification types, a test message, and the outcome of the last delivery | Optional list of allowed chat hosts (e.g. `hooks.slack.com, discord.com`); empty allows any public address |
+
+Deliveries run in the background (3 attempts for network errors, 5xx and 429) and never delay or fail the action that
+caused the notification. Chat addresses get the same protection as webhooks: internal addresses are refused when saved
+and again right before each delivery, redirects are not followed, and `WEBHOOK_ALLOW_PRIVATE=true` lifts that on purpose.
+
 ## Legal pages (Terms of Service and Privacy Policy)
 The app ships `/terms` and `/privacy` pages and a required "I agree" box on registration (the acceptance time
 is stored on the user). The texts are **templates written for what this app actually does**: they are not legal
@@ -367,7 +380,7 @@ advice, so have them reviewed before you accept real users.
 | `DEMO_MODE` | demo instance only | `true` lists the example users on the login page and disables password, email and account-deletion changes. Never on an instance with real data |
 | `ALLOW_DEMO_SEED` | environment of `demo-reset.sh` | `true` lets `seed.js` run with `NODE_ENV=production` (set by `docker/demo-reset.sh`) |
 | `USER_STORAGE_QUOTA_MB` | backend | Attachment storage per user (default `200`) |
-| `WEBHOOK_ALLOW_PRIVATE` | backend | `true` allows webhook URLs that point at internal addresses (default off) |
+| `WEBHOOK_ALLOW_PRIVATE` | backend | `true` allows webhook and chat-webhook URLs that point at internal addresses (default off) |
 | `BACKEND_MEM_LIMIT`, `FRONTEND_MEM_LIMIT` | `.env.production` | Container memory caps (defaults `768m` / `512m`) |
 | `CADDY_MEM_LIMIT` | `.env.edge` | Memory cap of the shared Caddy (default `256m`) |
 | `IMAGE_REPO`, `IMAGE_TAG` | `.env.production` | Image name prefix (default `ghcr.io/sinyaweo/noagenda`) and tag (default `latest`; `docker/deploy.sh` manages the tag) |
