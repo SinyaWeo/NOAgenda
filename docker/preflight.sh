@@ -93,7 +93,9 @@ check_config() {
   fi
 
   # Email
-  if [ -z "$(val SMTP_HOST)" ]; then
+  if [ -z "$(val SMTP_HOST)" ] && [ "$(val DEMO_MODE)" = "true" ]; then
+    pass "SMTP_HOST is empty, as it should be for the public demo (DEMO_MODE=true)"
+  elif [ -z "$(val SMTP_HOST)" ]; then
     fail "SMTP_HOST is not set: password reset cannot send email and email verification is off"
   else
     pass "SMTP_HOST = $(val SMTP_HOST)"

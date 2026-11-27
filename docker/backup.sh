@@ -35,7 +35,10 @@ up="$BACKUP_DIR/uploads-$ts.tar.gz"
 "${DC[@]}" exec -T mariadb sh -c \
   'exec mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" --single-transaction --routines --events "$MARIADB_DATABASE"' \
   | gzip > "$db.part"
-"${DC[@]}" exec -T backend tar -C /app -czf - uploads > "$up.part"
+# A one-off container on the uploads volume, not `exec` into the running backend: the backup (and so a deploy,
+# which backs up first) must also work while the backend is down or restart-looping. Runs as the image's own
+# user, like restore.sh.
+"${DC[@]}" run --rm --no-deps -T --entrypoint sh backend -c 'tar -C /app -czf - uploads' > "$up.part"
 
 # Only keep a backup that is a valid archive and not empty.
 gzip -t "$db.part" && gzip -t "$up.part"
