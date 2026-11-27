@@ -104,6 +104,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'auth.about.terms': 'Podmínky používání',
 	'auth.about.privacy': 'Zásady ochrany osobních údajů',
 	'auth.about.timeline.heading': 'Časová osa projektu',
+	'auth.about.timeline.subprojects.title': 'Podprojekty',
+	'auth.about.timeline.subprojects.body':
+		'Projekt může patřit pod jiný projekt. Nadřazený projekt vyberete při založení projektu nebo v jeho nastavení; stránka projektu ukazuje cestu k nadřazeným projektům i podprojekty a seznam projektů je zobrazuje jako strom. Kdo má přístup k projektu, má přístup i k jeho podprojektům.',
+	'auth.about.timeline.teamProjects.title': 'Projekty pro váš tým',
+	'auth.about.timeline.teamProjects.body':
+		'Nový projekt můžete sdílet s týmem hned při založení, u každého projektu je tlačítko Sdílet a stránka týmu ukazuje projekty, které jsou s ním sdílené.',
+	'auth.about.timeline.moveTasks.title': 'Přesun úkolů mezi projekty',
+	'auth.about.timeline.moveTasks.body':
+		'Osobní úkol vložíte do projektu, přesunete do jiného nebo znovu uděláte osobním v detailu úkolu, nebo u více úkolů najednou v seznamu úkolů. Osobní úkol může do projektu přesunout jen jeho autor.',
 	'auth.about.timeline.chatChannels.title': 'Upozornění do vašeho chatu',
 	'auth.about.timeline.chatChannels.body':
 		'Vestavěné pluginy, které zapíná administrátor. První z nich posílá vaše upozornění do vašeho kanálu ve Slacku, Discordu, Microsoft Teams nebo Mattermostu; které druhy, zvolíte v Nastavení → Kanály upozornění.',

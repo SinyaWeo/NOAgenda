@@ -102,6 +102,15 @@ export const messages = {
 	'auth.about.terms': 'Terms of Service',
 	'auth.about.privacy': 'Privacy Policy',
 	'auth.about.timeline.heading': 'Project timeline',
+	'auth.about.timeline.subprojects.title': 'Subprojects',
+	'auth.about.timeline.subprojects.body':
+		'A project can sit under another project. Pick the parent when creating a project or in its settings; the project page shows the parent path and its subprojects, and the project list shows them as a tree. Everyone with access to a project also gets access to its subprojects.',
+	'auth.about.timeline.teamProjects.title': 'Projects for your team',
+	'auth.about.timeline.teamProjects.body':
+		'Share a new project with your team right when you create it, use the Share button on any project, and see the projects shared with a team on its page.',
+	'auth.about.timeline.moveTasks.title': 'Move tasks between projects',
+	'auth.about.timeline.moveTasks.body':
+		'Put a personal task into a project, move it to another project or make it personal again from the task details, or for many tasks at once from the task list. Only the creator can take a personal task into a project.',
 	'auth.about.timeline.chatChannels.title': 'Notifications in your chat',
 	'auth.about.timeline.chatChannels.body':
 		'Built-in plugins, switched on by an admin. The first one sends your notifications to your own Slack, Discord, Microsoft Teams or Mattermost channel; choose which kinds in Settings → Notification channels.',
