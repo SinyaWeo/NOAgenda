@@ -1,8 +1,10 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Node, NodeType } from './node.entity';
 import { Permission } from '../project-user/project-user.entity';
+import { sqlRunner } from '../../common/sql';
+import { projectIdsOf } from './node-sql';
 
 /** Access levels, ordered. */
 export enum Access {
@@ -86,6 +88,33 @@ export class NodeAccessService {
       cur = await this.nodeRepository.findOne({ where: { id: cur.parentId }, withDeleted });
     }
     return Access.NONE; // broken or over-deep chain: fail closed
+  }
+
+  /**
+   * `level()` for many nodes at once: nodes are grouped by their project, and each project is checked once.
+   * Personal tasks (no project above them) still go through `level()`. Unknown ids and ideas are NONE.
+   */
+  async levels(userId: number, ids: number[]): Promise<Map<number, Access>> {
+    const unique = [...new Set(ids)];
+    const out = new Map<number, Access>(unique.map((id) => [id, Access.NONE]));
+    if (!unique.length) return out;
+    const nodes = await this.nodeRepository.find({ where: { id: In(unique) }, select: { id: true, type: true } });
+    const live = nodes.filter((n) => n.type !== NodeType.IDEA);
+    const projectOf = await projectIdsOf(
+      sqlRunner(this.nodeRepository.manager),
+      live.map((n) => n.id),
+    );
+    const projectIds = [...new Set(projectOf.values())];
+    const projects = projectIds.length
+      ? await this.nodeRepository.find({ where: { id: In(projectIds) }, select: { id: true, ownerId: true } })
+      : [];
+    const byProject = new Map<number, Access>();
+    for (const p of projects) byProject.set(p.id, await this.projectLevel(userId, p));
+    for (const n of live) {
+      const pid = projectOf.get(n.id);
+      out.set(n.id, pid != null ? (byProject.get(pid) ?? Access.NONE) : await this.level(userId, n.id));
+    }
+    return out;
   }
 
   private async isAssignee(userId: number, taskId: number): Promise<boolean> {

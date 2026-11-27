@@ -112,6 +112,16 @@ export class TaskService {
     return this.nodeService.update(id, this.normalizeTaskPayload(data), actorId);
   }
 
+  /** See NodeService.reschedule; the result carries each task's project like the list does. */
+  async reschedule(
+    changes: { id: number; startDate: Date | null; dueDate: Date | null }[],
+    actorId?: number,
+  ): Promise<TaskWithProject[]> {
+    const nodes = await this.nodeService.reschedule(changes, actorId);
+    const projects = await this.nodeService.projectIdsOf(nodes.map((n) => n.id));
+    return nodes.map((n) => Object.assign(n, { projectId: projects.get(n.id) ?? null }));
+  }
+
   async duplicate(id: number, createdBy?: number): Promise<Node | null> {
     return this.nodeService.duplicate(id, createdBy ?? 0);
   }

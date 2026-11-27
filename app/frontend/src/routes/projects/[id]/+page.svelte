@@ -78,6 +78,12 @@
 		buckets = b;
 	}
 
+	/** Tasks saved elsewhere on the page (the Gantt chart): put the new versions in place. */
+	function mergeTasks(updated: Task[]) {
+		const byId = new Map(updated.map((u) => [u.id, u]));
+		tasks = tasks.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t));
+	}
+
 	const bucketsUrl = () => `/projects/${page.params.id}/buckets`;
 
 	async function moveTaskToBucket(taskId: number, bucketId: number) {
@@ -254,7 +260,7 @@
 		{:else if viewMode === 'table'}
 			<TableView tasks={filteredTasks} />
 		{:else if viewMode === 'gantt'}
-			<GanttView tasks={filteredTasks} />
+			<GanttView tasks={filteredTasks} onTasksChange={mergeTasks} />
 		{:else if viewMode === 'calendar'}
 			<CalendarView projectId={project.id} />
 		{:else if viewMode === 'mindmap'}

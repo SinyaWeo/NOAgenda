@@ -17,7 +17,12 @@ describe('TaskRelationController', () => {
   let controller: TaskRelationController;
 
   beforeEach(() => {
-    service = { findByTask: jest.fn(async () => []), create: jest.fn(async () => ({ id: 1 })), remove: jest.fn() };
+    service = {
+      findByTask: jest.fn(async () => []),
+      create: jest.fn(async () => ({ id: 1 })),
+      remove: jest.fn(),
+      wouldCreateCycle: jest.fn(async () => false),
+    };
     tasks = { findById: jest.fn(async () => ({ id: 7 })) };
     access = { assertRead: jest.fn(), assertWrite: jest.fn(), level: jest.fn(async () => Access.READ) };
     controller = new TaskRelationController(
@@ -100,6 +105,25 @@ describe('TaskRelationController', () => {
     );
   });
 
+  it('create refuses a dependency that would close a loop, in either spelling', async () => {
+    service.wouldCreateCycle.mockResolvedValue(true);
+    await expect(controller.create(7, { relatedTaskId: 8, kind: RelationKind.BLOCKS }, req)).rejects.toThrow(
+      'This dependency would create a cycle',
+    );
+    expect(service.wouldCreateCycle).toHaveBeenLastCalledWith(7, 8);
+    await expect(controller.create(7, { relatedTaskId: 8, kind: RelationKind.BLOCKED_BY }, req)).rejects.toThrow(
+      /cycle/,
+    );
+    expect(service.wouldCreateCycle).toHaveBeenLastCalledWith(8, 7);
+    expect(service.create).not.toHaveBeenCalled();
+  });
+
+  it('create does not run the cycle check for relations that do not order tasks', async () => {
+    await controller.create(7, { relatedTaskId: 8, kind: RelationKind.RELATED }, req);
+    expect(service.wouldCreateCycle).not.toHaveBeenCalled();
+    expect(service.create).toHaveBeenCalled();
+  });
+
   it('remove asserts write and passes kind and ids', async () => {
     await controller.remove(7, 8, RelationKind.BLOCKED_BY, req);
     expect(access.assertWrite).toHaveBeenCalledWith(2, 7);
@@ -150,5 +174,55 @@ describe('TaskRelationService', () => {
       Object.assign(new QueryFailedError('INSERT', [], new Error('dup')), { driverError: { code: 'ER_DUP_ENTRY' } }),
     );
     await expect(svc.create(7, 8, RelationKind.RELATED)).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  describe('dependencies', () => {
+    type Row = { node: { id: number }; relatedNode: { id: number }; kind: RelationKind };
+    const rel = (a: number, kind: RelationKind, b: number): Row => ({ node: { id: a }, relatedNode: { id: b }, kind });
+    /** A fake find() that understands the In(...) where-clauses the service uses. */
+    function graph(rows: Row[]) {
+      const ids = (v: unknown) => (v as { value: number[] }).value;
+      repo.find.mockImplementation(async ({ where }: { where: Record<string, unknown> | Record<string, unknown>[] }) =>
+        rows.filter((r) =>
+          (Array.isArray(where) ? where : [where]).some((w) => {
+            const node = w.node as { id: unknown } | undefined;
+            const related = w.relatedNode as { id: unknown } | undefined;
+            const kinds = w.kind && typeof w.kind === 'object' ? ids(w.kind) : [w.kind];
+            return (
+              (!node || ids(node.id).includes(r.node.id)) &&
+              (!related || ids(related.id).includes(r.relatedNode.id)) &&
+              kinds.includes(r.kind)
+            );
+          }),
+        ),
+      );
+    }
+
+    it('wouldCreateCycle follows blocks and blocked_by alike', async () => {
+      // 1 -> 2 (blocks), 2 -> 3 (3 blocked_by 2), 3 -> 4 (blocks); 5 is only "related" to 1.
+      graph([
+        rel(1, RelationKind.BLOCKS, 2),
+        rel(3, RelationKind.BLOCKED_BY, 2),
+        rel(3, RelationKind.BLOCKS, 4),
+        rel(5, RelationKind.RELATED, 1),
+      ]);
+      expect(await svc.wouldCreateCycle(2, 1)).toBe(true); // direct loop
+      expect(await svc.wouldCreateCycle(4, 1)).toBe(true); // 1 -> 2 -> 3 -> 4 -> 1
+      expect(await svc.wouldCreateCycle(1, 4)).toBe(false); // same direction is fine
+      expect(await svc.wouldCreateCycle(1, 5)).toBe(false); // "related" does not order tasks
+      expect(await svc.wouldCreateCycle(6, 6)).toBe(true);
+    });
+
+    it('wouldCreateCycle terminates on data that already loops', async () => {
+      graph([rel(1, RelationKind.BLOCKS, 2), rel(2, RelationKind.BLOCKS, 1)]);
+      expect(await svc.wouldCreateCycle(3, 1)).toBe(false);
+    });
+
+    it('dependenciesAmong asks only for dependency kinds between the given tasks', async () => {
+      graph([rel(1, RelationKind.BLOCKS, 2), rel(1, RelationKind.RELATED, 2), rel(1, RelationKind.BLOCKS, 9)]);
+      const rows = await svc.dependenciesAmong([1, 2]);
+      expect(rows).toEqual([rel(1, RelationKind.BLOCKS, 2)]);
+      expect(await svc.dependenciesAmong([])).toEqual([]);
+    });
   });
 });

@@ -114,6 +114,70 @@ describe('NodeService announces changes', () => {
     expect(await svc.projectIdOf(task({ id: 7, parentId: null }))).toBeNull();
   });
 
+  describe('reschedule (Gantt)', () => {
+    const d = (s: string) => new Date(s);
+    const two = () => [
+      task({ id: 5, startDate: d('2026-12-01T11:00:00Z'), dueDate: d('2026-12-03T11:00:00Z') }),
+      task({ id: 6, startDate: d('2026-12-04T11:00:00Z'), dueDate: d('2026-12-05T11:00:00Z') }),
+    ];
+
+    it('writes every task in one transaction, realigns reminders only where the due date moved, and announces each', async () => {
+      const { svc, repo, events } = build(two());
+      const inner = {
+        query: jest.fn(async (_sql: string, _params?: unknown[]) => []),
+        getRepository: () => repo,
+        createQueryBuilder: chain,
+      };
+      repo.manager.transaction.mockImplementation(async (fn: (m: object) => unknown) => fn(inner));
+      await svc.reschedule(
+        [
+          { id: 5, startDate: d('2026-12-02T11:00:00Z'), dueDate: d('2026-12-04T11:00:00Z') },
+          { id: 6, startDate: d('2026-12-05T11:00:00Z'), dueDate: d('2026-12-05T11:00:00Z') },
+        ],
+        3,
+      );
+      expect(repo.manager.transaction).toHaveBeenCalledTimes(1);
+      expect(repo.update).toHaveBeenCalledWith(5, {
+        startDate: d('2026-12-02T11:00:00Z'),
+        dueDate: d('2026-12-04T11:00:00Z'),
+      });
+      expect(repo.update).toHaveBeenCalledWith(6, expect.objectContaining({ startDate: d('2026-12-05T11:00:00Z') }));
+      // Relative reminders are looked up for task 5 only (6 kept its due date).
+      const reminderLookups = inner.query.mock.calls.filter(([sql]) => String(sql).includes('task_reminders'));
+      expect(reminderLookups.length).toBeGreaterThan(0);
+      for (const [, params] of reminderLookups) expect(params).toEqual([5]);
+      const emitted = events.emit.mock.calls.map((c) => c[0]);
+      expect(emitted.map((e) => [e.name, e.nodeId, e.actorId])).toEqual([
+        ['task.updated', 5, 3],
+        ['task.updated', 6, 3],
+      ]);
+      expect(Object.keys(emitted[0].changes).sort()).toEqual(['dueDate', 'startDate']);
+      expect(Object.keys(emitted[1].changes)).toEqual(['startDate']);
+    });
+
+    it('refuses a start after the due date, a task listed twice, or a missing task, before writing', async () => {
+      const { svc, repo } = build(two());
+      await expect(
+        svc.reschedule([{ id: 5, startDate: d('2026-12-09T11:00:00Z'), dueDate: d('2026-12-03T11:00:00Z') }]),
+      ).rejects.toThrow(/start after/);
+      await expect(
+        svc.reschedule([
+          { id: 5, startDate: null, dueDate: d('2026-12-03T11:00:00Z') },
+          { id: 5, startDate: null, dueDate: d('2026-12-04T11:00:00Z') },
+        ]),
+      ).rejects.toThrow(/only once/);
+      const { svc: one, repo: repo1 } = build([two()[0]]);
+      await expect(
+        one.reschedule([
+          { id: 5, startDate: null, dueDate: d('2026-12-03T11:00:00Z') },
+          { id: 404, startDate: null, dueDate: d('2026-12-03T11:00:00Z') },
+        ]),
+      ).rejects.toThrow(/Not Found/);
+      expect(repo.update).not.toHaveBeenCalled();
+      expect(repo1.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('repeating tasks', () => {
     const sqlCalls = (query: jest.Mock, fragment: string) =>
       query.mock.calls.filter(([sql]) => String(sql).includes(fragment)) as [string, unknown[]][];

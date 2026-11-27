@@ -17,6 +17,7 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  ValidateIf,
 } from 'class-validator';
 import { NodeStatus, NodeType, RepeatMode } from '../node.entity';
 
@@ -211,6 +212,31 @@ export class BulkTaskUpdateDto {
   @ValidateNested()
   @Type(() => TaskUpdateDto)
   data!: TaskUpdateDto;
+}
+
+/** New dates for one task (both always sent; null clears the date). */
+export class ScheduleChangeDto {
+  @IsInt()
+  @Min(1)
+  id!: number;
+
+  @ValidateIf((o: ScheduleChangeDto) => o.startDate !== null)
+  @IsDateString()
+  startDate!: string | null;
+
+  @ValidateIf((o: ScheduleChangeDto) => o.dueDate !== null)
+  @IsDateString()
+  dueDate!: string | null;
+}
+
+/** Several tasks rescheduled together (a Gantt move and the dependents it pushes), all or nothing. */
+export class ScheduleDto {
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @ValidateNested({ each: true })
+  @Type(() => ScheduleChangeDto)
+  changes!: ScheduleChangeDto[];
 }
 
 const SORT_FIELDS = ['title', 'name', 'priority', 'status', 'dueDate', 'position', 'createdAt', 'updatedAt'] as const;

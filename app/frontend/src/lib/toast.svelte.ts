@@ -1,10 +1,17 @@
 export type ToastType = 'success' | 'error' | 'info';
 
+/** A button in the toast, e.g. Undo. Running it dismisses the toast. */
+export interface ToastAction {
+	label: string;
+	run: () => void | Promise<void>;
+}
+
 export interface ToastItem {
 	id: number;
 	message: string;
 	type: ToastType;
 	duration: number;
+	action?: ToastAction;
 }
 
 let nextId = 0;
@@ -24,11 +31,22 @@ export function dismissToast(id: number): void {
 	if (index !== -1) toasts.splice(index, 1);
 }
 
-export function showToast(message: string, type: ToastType = 'success', duration = 3000): void {
+/**
+ * Show a toast and return its id (for `dismissToast`). With an `action`, the toast stays longer by default
+ * (8 s) so there is time to use it.
+ */
+export function showToast(
+	message: string,
+	type: ToastType = 'success',
+	duration?: number,
+	action?: ToastAction
+): number {
 	const id = ++nextId;
-	toasts.push({ id, message, type, duration });
+	duration ??= action ? 8000 : 3000;
+	toasts.push({ id, message, type, duration, ...(action ? { action } : {}) });
 	timers.set(
 		id,
 		setTimeout(() => dismissToast(id), duration)
 	);
+	return id;
 }

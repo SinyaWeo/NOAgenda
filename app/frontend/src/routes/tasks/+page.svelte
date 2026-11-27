@@ -292,6 +292,12 @@
 		}
 	}
 
+	/** Tasks saved from the Gantt chart (moved, resized, pushed): put the new versions in place. */
+	function mergeTasks(updated: Task[]) {
+		const byId = new Map(updated.map((u) => [u.id, u]));
+		tasks = tasks.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t));
+	}
+
 	async function updateTaskStatus(taskId: number, status: NodeStatus) {
 		try {
 			const before = tasks.find((t) => t.id === taskId)?.status;
@@ -485,7 +491,7 @@
 	<TableView {tasks} large {projectNames} />
 	{#if tasks.length}{@render pager('mt-4')}{/if}
 {:else if viewMode === 'gantt'}
-	<GanttView {tasks} large {projectNames} />
+	<GanttView {tasks} large {projectNames} onTasksChange={mergeTasks} />
 {:else if viewMode === 'calendar'}
 	<CalendarView {criteria} {projectNames} />
 {/if}

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { AddRelationDto } from '../task-assignee/dto/task-links.dto';
 import { Access, NodeAccessService } from '../node/node-access.service';
-import { TaskRelationService } from './task-relation.service';
+import { TaskRelationService, dependencyEdge } from './task-relation.service';
 import { TaskService } from '../task/task.service';
 import { TaskRelation, RelationKind } from './task-relation.entity';
 import { DomainEvents } from '../../common/domain-events';
@@ -73,6 +73,10 @@ export class TaskRelationController {
     if (!task) throw new NotFoundException();
     await this.access.assertWrite(req.user.userId, Number(taskId));
     await this.access.assertRead(req.user.userId, Number(body.relatedTaskId));
+    const edge = dependencyEdge(Number(taskId), Number(body.relatedTaskId), body.kind);
+    if (edge && (await this.taskRelationService.wouldCreateCycle(edge.fromId, edge.toId))) {
+      throw new BadRequestException('This dependency would create a cycle');
+    }
     const created = await this.taskRelationService.create(taskId, body.relatedTaskId, body.kind);
     await this.audit(task, req.user.userId, body.relatedTaskId, body.kind, true);
     return created;

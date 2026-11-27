@@ -11,6 +11,8 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  HttpCode,
+  HttpStatus,
   Request,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -29,6 +31,7 @@ import {
   TaskListQueryDto,
   TaskOccurrencesQueryDto,
   TaskPositionDto,
+  ScheduleDto,
 } from '../node/dto/node.dto';
 
 const MAX_OCCURRENCE_RANGE_MS = 100 * 24 * 3600 * 1000;
@@ -142,6 +145,27 @@ export class TaskController {
       for (const id of ids) await this.access.assertNoCycle(id, Number(data.parentId));
     }
     return this.taskService.bulkUpdate(ids, data, req.user.userId);
+  }
+
+  /**
+   * New dates for several tasks at once, all or nothing (a Gantt drag and the dependent tasks it pushes).
+   * The caller needs write access to every one of them.
+   */
+  @Post('schedule')
+  @HttpCode(HttpStatus.OK)
+  async schedule(@Body() body: ScheduleDto, @Request() req: AuthRequest): Promise<TaskWithProject[]> {
+    for (const c of body.changes) {
+      await this.requireTask(c.id);
+      await this.access.assertWrite(req.user.userId, c.id);
+    }
+    return this.taskService.reschedule(
+      body.changes.map((c) => ({
+        id: c.id,
+        startDate: c.startDate ? new Date(c.startDate) : null,
+        dueDate: c.dueDate ? new Date(c.dueDate) : null,
+      })),
+      req.user.userId,
+    );
   }
 
   @Put(':id')

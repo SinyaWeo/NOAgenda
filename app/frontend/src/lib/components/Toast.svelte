@@ -53,6 +53,20 @@
 
 			<span class="flex-1">{toast.message}</span>
 
+			{#if toast.action}
+				{@const action = toast.action}
+				<button
+					type="button"
+					class="shrink-0 bg-transparent border-0 p-0 cursor-pointer font-semibold underline underline-offset-2 hover:no-underline"
+					onclick={() => {
+						dismissToast(toast.id);
+						void action.run();
+					}}
+				>
+					{action.label}
+				</button>
+			{/if}
+
 			<!-- Close button -->
 			<button
 				onclick={() => dismissToast(toast.id)}

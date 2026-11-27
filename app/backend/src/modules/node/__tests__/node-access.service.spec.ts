@@ -8,12 +8,23 @@ type N = { id: number; type: NodeType; ownerId?: number | null; createdBy?: numb
 function build(nodes: N[], grants: Record<number, string[]> = {}, assigned: [number, number][] = []) {
   const repo = {
     findOne: jest.fn(async ({ where }: { where: { id: number } }) => nodes.find((n) => n.id === where.id) ?? null),
+    // levels(): find({ where: { id: In([...]) } })
+    find: jest.fn(async ({ where }: { where: { id: { value: number[] } } }) =>
+      nodes.filter((n) => where.id.value.includes(n.id)),
+    ),
     manager: {
       // args: [projectId, userId, projectId, userId]
       query: jest.fn(async (sql: string, args: number[]) =>
-        sql.includes('task_assignees')
-          ? assigned.filter(([t, u]) => t === args[0] && u === args[1]).map(() => ({ 1: 1 }))
-          : (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission })),
+        sql.includes('WITH RECURSIVE')
+          ? // projectIdsOf: the closest project above each start node
+            args.flatMap((start) => {
+              let cur = nodes.find((n) => n.id === start);
+              while (cur && cur.type !== NodeType.PROJECT) cur = nodes.find((n) => n.id === cur?.parentId);
+              return cur ? [{ start, projectId: cur.id }] : [];
+            })
+          : sql.includes('task_assignees')
+            ? assigned.filter(([t, u]) => t === args[0] && u === args[1]).map(() => ({ 1: 1 }))
+            : (grants[args[0] * 1000 + args[1]] ?? []).map((permission) => ({ permission })),
       ),
     },
   };
@@ -36,6 +47,31 @@ describe('NodeAccessService', () => {
     const svc = build(projects, { [20 * 1000 + ME]: ['read'], [30 * 1000 + ME]: ['read', 'write'] });
     const perms = await svc.projectPermissions(ME, projects);
     expect(Object.fromEntries(perms)).toEqual({ 10: 'admin', 20: 'read', 30: 'write' });
+  });
+
+  it('levels() agrees with level() for every node, checking each project only once', async () => {
+    const nodes = [
+      project(10, ME),
+      task(11, 10, OTHER),
+      task(12, 11, OTHER),
+      project(20, OTHER),
+      task(21, 20, OTHER),
+      project(30, OTHER),
+      task(31, 30, OTHER),
+      task(40, null, ME),
+      task(41, null, OTHER),
+      task(42, null, OTHER),
+      { id: 50, type: NodeType.IDEA, parentId: 10, createdBy: ME },
+    ];
+    const svc = build(nodes, { [20 * 1000 + ME]: ['read'], [30 * 1000 + ME]: ['write'] }, [[42, ME]]);
+    const ids = [...nodes.map((n) => n.id), 999];
+    const many = await svc.levels(ME, ids);
+    for (const id of ids) expect([id, many.get(id)]).toEqual([id, await svc.level(ME, id)]);
+    expect(Object.fromEntries(many)).toMatchObject({ 10: 3, 12: 3, 21: 1, 31: 2, 40: 3, 41: 0, 42: 2, 50: 0, 999: 0 });
+  });
+
+  it('levels() of nothing is empty', async () => {
+    expect((await build([]).levels(ME, [])).size).toBe(0);
   });
 
   it('an idea never grants access through level(), not even to its creator or a project member', async () => {

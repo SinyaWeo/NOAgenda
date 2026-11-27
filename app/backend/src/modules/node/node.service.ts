@@ -459,6 +459,42 @@ export class NodeService {
     return nodes;
   }
 
+  /**
+   * Give several nodes new start and due dates in one transaction (a Gantt move plus the dependents it pushes).
+   * Reminders set relative to a due date follow it; each change is announced like a normal edit.
+   */
+  async reschedule(
+    changes: { id: number; startDate: Date | null; dueDate: Date | null }[],
+    actorId?: number,
+  ): Promise<Node[]> {
+    const ids = changes.map((c) => c.id);
+    if (new Set(ids).size !== ids.length) throw new BadRequestException('Each task may appear only once');
+    for (const c of changes) {
+      if (c.startDate && c.dueDate && c.startDate.getTime() > c.dueDate.getTime()) {
+        throw new BadRequestException('A task cannot start after it is due');
+      }
+    }
+    const existing = await this.nodeRepository.find({ where: { id: In(ids) } });
+    if (existing.length !== ids.length) throw new NotFoundException();
+    const before = new Map(existing.map((n) => [n.id, n]));
+    const time = (d: Date | null | undefined) => (d ? new Date(d).getTime() : null);
+    await this.nodeRepository.manager.transaction(async (m) => {
+      const repo = m.getRepository(Node);
+      for (const c of changes) await repo.update(c.id, { startDate: c.startDate, dueDate: c.dueDate } as Partial<Node>);
+      const dueMoved = changes.filter((c) => time(before.get(c.id)?.dueDate) !== time(c.dueDate)).map((c) => c.id);
+      if (dueMoved.length) await this.realignRelativeReminders(m, dueMoved);
+    });
+    const nodes = await this.nodeRepository.find({ where: { id: In(ids) } });
+    for (const n of nodes) {
+      const old = before.get(n.id);
+      const c = changes.find((x) => x.id === n.id);
+      const changesOf =
+        old && c ? diffFields(old, { startDate: c.startDate, dueDate: c.dueDate } as Partial<Node>) : {};
+      this.announce('updated', n, undefined, { actorId: actorId ?? null, changes: changesOf });
+    }
+    return nodes;
+  }
+
   async move(id: number, parentId: number | null, actorId?: number): Promise<Node | null> {
     const before = await this.nodeRepository.findOne({ where: { id }, select: { id: true, parentId: true } });
     await this.nodeRepository.update(id, { parentId, bucketId: null }); // null = top level; a bucket belongs to the old project
