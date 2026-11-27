@@ -564,9 +564,12 @@
 							{/each}
 						</ul>
 					{:else}
+						<!-- With no attachments this is the way in, so it carries the same name as the pencil above. -->
 						<EditableValue
 							class="text-gray-500 dark:text-gray-400 italic"
-							title={t('tasks.details.change')}
+							title={t('tasks.attachments.edit')}
+							aria-label={t('tasks.attachments.edit')}
+							aria-expanded={editing === 'attachments'}
 							onclick={() => (editing = editing === 'attachments' ? null : 'attachments')}
 						>
 							{t('common.none')}

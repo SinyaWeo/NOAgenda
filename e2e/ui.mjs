@@ -104,7 +104,9 @@ await page.click('button[type=submit]');
 await page.waitForFunction(() => document.body.innerText.includes('Check your email'));
 ok('registration tells the user to check their email', true);
 const verifyMail = await mailText(EMAIL, 'Confirm');
-const link = verifyMail?.match(/https:\/\/localhost:8443\/user\/verify-email\?token=[0-9a-f]+/)?.[0];
+// The public origin, whatever port the stack runs on (HTTPS_PORT).
+const escaped = BASE.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const link = verifyMail?.match(new RegExp(`${escaped}/user/verify-email\\?token=[0-9a-f]+`))?.[0];
 ok('the verification email links to the public site', !!link, String(verifyMail).slice(0, 150));
 await page.goto(link);
 await page.waitForFunction(() => document.body.innerText.includes('Email confirmed') || document.body.innerText.includes('Link not valid'));

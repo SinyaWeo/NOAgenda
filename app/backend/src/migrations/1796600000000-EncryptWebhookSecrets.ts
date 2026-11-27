@@ -15,6 +15,10 @@ export class EncryptWebhookSecrets1796600000000 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE \`webhook\` MODIFY \`secret\` text NULL`);
+        // The key is only needed when there is something to encrypt: a fresh database (CI, a new install)
+        // must migrate even where SECRETS_KEY is not set yet (the backend itself refuses to start without it).
+        const [{ n }] = await queryRunner.query(`SELECT COUNT(*) AS n FROM \`webhook\` WHERE \`secret\` IS NOT NULL AND \`secret\` <> ''`);
+        if (Number(n) === 0) return;
         const col = ENCRYPTED_COLUMNS.find((c) => c.table === 'webhook' && c.column === 'secret')!;
         await reencryptColumn(queryRunner, col, secretBox());
     }
@@ -27,7 +31,8 @@ export class EncryptWebhookSecrets1796600000000 implements MigrationInterface {
             );
         }
         const col = ENCRYPTED_COLUMNS.find((c) => c.table === 'webhook' && c.column === 'secret')!;
-        const n = await decryptColumn(queryRunner, col, secretBox());
+        const [{ k }] = await queryRunner.query(`SELECT COUNT(*) AS k FROM \`webhook\` WHERE \`secret\` LIKE 'enc:%'`);
+        const n = Number(k) ? await decryptColumn(queryRunner, col, secretBox()) : 0;
         console.warn(`EncryptWebhookSecrets reverted: ${n} webhook secret(s) are plain text again.`);
         await queryRunner.query(`ALTER TABLE \`webhook\` MODIFY \`secret\` varchar(255) NULL`);
     }
