@@ -1,4 +1,5 @@
 import { apiFetchAuth, clearToken, endServerSession, getToken, refreshAccessToken } from './api';
+import { effectiveZone } from './calendar';
 import { isLocale } from './i18n/core';
 import { setLocale } from './i18n/locale.svelte';
 import type { User } from './types';
@@ -21,6 +22,11 @@ function setSession(status: AuthStatus, user: User | null): void {
 	authSession.user = user;
 	// A signed-in user's saved language wins over this browser's guess.
 	if (isLocale(user?.language)) setLocale(user.language);
+}
+
+/** The zone the signed-in user's calendar days are counted in (their profile zone; the browser's when signed out). */
+export function userTimeZone(): string {
+	return effectiveZone(authSession.user?.timezone);
 }
 
 /** Change fields of the signed-in user locally (after the server accepted them). */

@@ -199,6 +199,24 @@ describe('NodeService announces changes', () => {
       expect(params).toEqual([8, 9]);
     });
 
+    it('a task that opts out keeps its done subtasks done', async () => {
+      const { svc, repo } = build([repeating({ repeatResetSubtasks: false })]);
+      repo.manager.query = jest.fn(async (sql: string) =>
+        sql.includes('WITH RECURSIVE') ? [{ id: 8 }, { id: 9 }] : [],
+      );
+      await svc.update(5, { status: NodeStatus.DONE });
+      expect(repo.update).toHaveBeenCalledWith(5, expect.objectContaining({ status: NodeStatus.OPEN }));
+      expect(sqlCalls(repo.manager.query, 'WITH RECURSIVE')).toHaveLength(0);
+      expect(sqlCalls(repo.manager.query, 'UPDATE nodes SET status')).toHaveLength(0);
+    });
+
+    it('the opt-out saved together with the completion applies to that cycle', async () => {
+      const { svc, repo } = build([repeating()]);
+      repo.manager.query = jest.fn(async () => []);
+      await svc.update(5, { status: NodeStatus.DONE, repeatResetSubtasks: false });
+      expect(sqlCalls(repo.manager.query, 'WITH RECURSIVE')).toHaveLength(0);
+    });
+
     it('the last occurrence of a limited series is just done, and is still recorded', async () => {
       const { svc, repo } = build([repeating({ repeatCount: 1 })]);
       repo.manager.query = jest.fn(async () => []);
@@ -231,6 +249,21 @@ describe('NodeService announces changes', () => {
       );
       expect(sqlCalls(query, 'UPDATE task_reminders')).toHaveLength(1);
       expect(sqlCalls(query, 'INSERT INTO task_completions')).toHaveLength(1); // only the repeating one
+    });
+
+    it('bulk completion reopens subtasks only below the tasks that do not opt out', async () => {
+      const a = repeating({ id: 5 });
+      const b = repeating({ id: 6, repeatResetSubtasks: false });
+      const { svc, repo } = build([a, b]);
+      const query = jest.fn(async (_sql: string, _params?: unknown[]) => []);
+      repo.manager.transaction = jest.fn(async (fn: (m: object) => unknown) =>
+        fn({ query, getRepository: () => repo, createQueryBuilder: chain }),
+      );
+      await svc.updateMany([5, 6], { status: NodeStatus.DONE });
+      const lookups = sqlCalls(query, 'WITH RECURSIVE');
+      expect(lookups).toHaveLength(1);
+      expect(lookups[0][1]).toContain(5);
+      expect(lookups[0][1]).not.toContain(6);
     });
   });
 

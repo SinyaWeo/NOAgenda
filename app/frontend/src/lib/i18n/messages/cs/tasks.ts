@@ -129,8 +129,9 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.repeat.end.until': 'K datu',
 	'tasks.repeat.end.count': 'Po',
 	'tasks.repeat.occurrences': 'dalších opakováních, včetně tohoto',
+	'tasks.repeat.resetSubtasks': 'Při každém opakování odškrtnout podúkoly',
 	'tasks.repeat.hint':
-		'Když úkol označíte jako hotový, znovu se otevře s dalším termínem a s odškrtnutými podúkoly, dokud řada neskončí. Datum se počítá ve vašem časovém pásmu.',
+		'Když úkol označíte jako hotový, znovu se otevře s dalším termínem, dokud řada neskončí. Datum se počítá v časovém pásmu nastaveném ve vašem profilu.',
 	'tasks.repeat.nextCycle': 'Hotovo. Úkol se opakuje: další termín {date}.',
 	'tasks.repeat.finished': 'Hotovo. To bylo poslední opakování tohoto úkolu.',
 	'tasks.repeat.summaryLabel': 'Opakování',

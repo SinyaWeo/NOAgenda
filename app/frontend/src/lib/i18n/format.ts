@@ -28,12 +28,11 @@ function toDate(v: string | Date | null | undefined): Date | null {
 /**
  * A zone to format in, or undefined for "the browser's own".
  * - An unknown/typo'd zone must never break rendering.
- * - Every account starts with the zone 'UTC' as a database default, which nobody chose. Treating it as a
- *   real choice would show everyone's dates and reminder times shifted to UTC, so it means "not set".
- *   (People who really want UTC can pick 'Etc/UTC'.)
+ * - The saved zone is used as it is, 'UTC' included: the backend works out repeat dates in the same zone, so
+ *   both must agree on which day a date falls on. No saved zone means the browser's.
  */
 function safeZone(timeZone: string | undefined): string | undefined {
-	if (!timeZone || timeZone === 'UTC') return undefined;
+	if (!timeZone) return undefined;
 	try {
 		new Intl.DateTimeFormat('en', { timeZone });
 		return timeZone;

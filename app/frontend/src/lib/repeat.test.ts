@@ -16,29 +16,35 @@ import {
 	weekdayName
 } from './repeat';
 
+const ZONE = 'Europe/Prague';
+
 describe('repeat form', () => {
 	beforeEach(() => vi.clearAllMocks());
 
 	it('a task that does not repeat gives the empty form, and clearing sends nulls for every field', () => {
-		expect(formFromTask({ repeatAfter: null })).toEqual(emptyRepeat());
-		expect(formFromTask({ repeatAfter: 0, repeatMode: 'weekly' })).toEqual(emptyRepeat());
-		expect(repeatPayload(emptyRepeat())).toEqual({
+		expect(formFromTask({ repeatAfter: null }, ZONE)).toEqual(emptyRepeat());
+		expect(formFromTask({ repeatAfter: 0, repeatMode: 'weekly' }, ZONE)).toEqual(emptyRepeat());
+		expect(repeatPayload(emptyRepeat(), ZONE)).toEqual({
 			repeatAfter: null,
 			repeatMode: null,
 			repeatWeekdays: null,
 			repeatUntil: null,
-			repeatCount: null
+			repeatCount: null,
+			repeatResetSubtasks: true
 		});
 	});
 
 	it('reads a weekly task with an end date and writes the same rule back', () => {
-		const form = formFromTask({
-			repeatAfter: 2,
-			repeatMode: 'weekly',
-			repeatWeekdays: '5,1,3',
-			repeatUntil: new Date(2030, 11, 31, 12).toISOString(),
-			repeatCount: null
-		});
+		const form = formFromTask(
+			{
+				repeatAfter: 2,
+				repeatMode: 'weekly',
+				repeatWeekdays: '5,1,3',
+				repeatUntil: '2030-12-31T11:00:00.000Z', // noon in Prague
+				repeatCount: null
+			},
+			ZONE
+		);
 		expect(form).toMatchObject({
 			kind: 'weekly',
 			every: 2,
@@ -46,40 +52,51 @@ describe('repeat form', () => {
 			end: 'until',
 			until: '2030-12-31'
 		});
-		const payload = repeatPayload(form);
+		const payload = repeatPayload(form, ZONE);
 		expect(payload).toMatchObject({
 			repeatAfter: 2,
 			repeatMode: 'weekly',
 			repeatWeekdays: '1,3,5',
 			repeatCount: null
 		});
-		expect(new Date(payload.repeatUntil!).getFullYear()).toBe(2030);
+		expect(payload.repeatUntil).toBe('2030-12-31T11:00:00.000Z');
+	});
+
+	it('resets subtasks unless the task opts out, and sends the choice back', () => {
+		expect(formFromTask({ repeatAfter: 1 }, ZONE).resetSubtasks).toBe(true);
+		const form = formFromTask({ repeatAfter: 1, repeatResetSubtasks: false }, ZONE);
+		expect(form.resetSubtasks).toBe(false);
+		expect(repeatPayload(form, ZONE).repeatResetSubtasks).toBe(false);
+		expect(repeatPayload({ ...form, kind: 'none' }, ZONE).repeatResetSubtasks).toBe(true);
 	});
 
 	it('a count wins over an end date, and unknown or missing modes read as plain days', () => {
 		expect(
-			formFromTask({
-				repeatAfter: 3,
-				repeatMode: 'default',
-				repeatCount: 4,
-				repeatUntil: '2030-01-01T00:00:00Z'
-			})
+			formFromTask(
+				{
+					repeatAfter: 3,
+					repeatMode: 'default',
+					repeatCount: 4,
+					repeatUntil: '2030-01-01T00:00:00Z'
+				},
+				ZONE
+			)
 		).toMatchObject({
 			end: 'count',
 			count: 4
 		});
-		expect(formFromTask({ repeatAfter: 3, repeatMode: 'someday' }).kind).toBe('default');
-		expect(formFromTask({ repeatAfter: 3, repeatMode: null }).kind).toBe('default');
+		expect(formFromTask({ repeatAfter: 3, repeatMode: 'someday' }, ZONE).kind).toBe('default');
+		expect(formFromTask({ repeatAfter: 3, repeatMode: null }, ZONE).kind).toBe('default');
 	});
 
 	it('only the weekly rule sends weekdays, and the interval is a whole number of at least 1', () => {
 		const form = { ...emptyRepeat(), kind: 'monthly' as const, every: 0, weekdays: [1, 2] };
-		expect(repeatPayload(form)).toMatchObject({ repeatAfter: 1, repeatWeekdays: null });
-		expect(repeatPayload({ ...form, kind: 'weekly', every: 2.7 })).toMatchObject({
+		expect(repeatPayload(form, ZONE)).toMatchObject({ repeatAfter: 1, repeatWeekdays: null });
+		expect(repeatPayload({ ...form, kind: 'weekly', every: 2.7 }, ZONE)).toMatchObject({
 			repeatAfter: 2,
 			repeatWeekdays: '1,2'
 		});
-		expect(repeatPayload({ ...form, end: 'count', count: 0 }).repeatCount).toBe(1);
+		expect(repeatPayload({ ...form, end: 'count', count: 0 }, ZONE).repeatCount).toBe(1);
 	});
 
 	it('weekday helpers', () => {

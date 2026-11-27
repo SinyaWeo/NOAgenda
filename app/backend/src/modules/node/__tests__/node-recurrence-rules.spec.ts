@@ -76,6 +76,32 @@ describe('weekly', () => {
   });
 });
 
+describe('date-only values (noon in the profile zone) far from UTC', () => {
+  // The frontend saves a picked day as noon in the user's profile zone, so the day stays the same in that zone.
+  const KIRITIMATI = 'Pacific/Kiritimati'; // UTC+14
+  const PAGO_PAGO = 'Pacific/Pago_Pago'; // UTC-11
+
+  it('"same weekday" is the picked weekday', () => {
+    // Tue 2026-03-10 noon in Kiritimati is still Monday in UTC
+    const kiri = task({ repeatMode: RepeatMode.WEEKLY, dueDate: d('2026-03-09T22:00:00Z') });
+    expect(next(kiri, '2026-03-09T23:00:00Z', KIRITIMATI)).toBe('2026-03-16T22:00:00.000Z');
+    // Tue 2026-03-10 noon in Pago Pago is already Wednesday in UTC
+    const pago = task({ repeatMode: RepeatMode.WEEKLY, dueDate: d('2026-03-10T23:00:00Z') });
+    expect(next(pago, '2026-03-11T00:00:00Z', PAGO_PAGO)).toBe('2026-03-17T23:00:00.000Z');
+  });
+
+  it('"until" includes the picked day and not the day after', () => {
+    const due = d('2026-03-09T22:00:00Z'); // Tue 03-10 noon in Kiritimati
+    const until = (iso: string) => task({ repeatAfter: 7, dueDate: due, repeatUntil: d(iso) });
+    expect(next(until('2026-03-16T22:00:00Z'), '2026-03-09T23:00:00Z', KIRITIMATI)).toBe('2026-03-16T22:00:00.000Z');
+    expect(next(until('2026-03-15T22:00:00Z'), '2026-03-09T23:00:00Z', KIRITIMATI)).toBeUndefined();
+    const pagoDue = d('2026-03-10T23:00:00Z'); // Tue 03-10 noon in Pago Pago
+    const pago = (iso: string) => task({ repeatAfter: 7, dueDate: pagoDue, repeatUntil: d(iso) });
+    expect(next(pago('2026-03-17T23:00:00Z'), '2026-03-11T00:00:00Z', PAGO_PAGO)).toBe('2026-03-17T23:00:00.000Z');
+    expect(next(pago('2026-03-16T23:00:00Z'), '2026-03-11T00:00:00Z', PAGO_PAGO)).toBeUndefined();
+  });
+});
+
 describe('daily and monthly across clock changes', () => {
   it('every day stays at the same local hour', () => {
     const t = task({ dueDate: d('2026-03-28T08:00:00Z') }); // Sat 09:00 Prague (CET)

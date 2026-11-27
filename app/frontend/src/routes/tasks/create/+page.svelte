@@ -5,7 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { apiPostAuth, apiGetAuth } from '#lib/api.js';
-	import { getCurrentUser } from '#lib/auth.svelte.js';
+	import { getCurrentUser, userTimeZone } from '#lib/auth.svelte.js';
 	import { onMount } from 'svelte';
 	import { Alert, Button, Card, Input, Label, Select, Textarea } from 'flowbite-svelte';
 	import { showToast } from '#lib/toast.svelte.js';
@@ -61,7 +61,7 @@
 				title,
 				description,
 				...(pid ? { project: { id: pid } } : {}),
-				dueDate: dateInputToIso(dueDate) ?? undefined,
+				dueDate: dateInputToIso(dueDate, userTimeZone()) ?? undefined,
 				priority: Number(priority),
 				assigneeId
 			});

@@ -130,8 +130,9 @@ export const messages = {
 	'tasks.repeat.end.until': 'On date',
 	'tasks.repeat.end.count': 'After',
 	'tasks.repeat.occurrences': 'more times, this one included',
+	'tasks.repeat.resetSubtasks': 'Untick the subtasks for each new cycle',
 	'tasks.repeat.hint':
-		'When you mark the task done it reopens with the next due date and its subtasks unticked, until the series ends. The date is worked out in your time zone.',
+		'When you mark the task done it reopens with the next due date, until the series ends. The date is worked out in the time zone set in your profile.',
 	'tasks.repeat.nextCycle': 'Done. This task repeats: next due {date}.',
 	'tasks.repeat.finished': 'Done. That was the last occurrence of this repeating task.',
 	'tasks.repeat.summaryLabel': 'Repeats',

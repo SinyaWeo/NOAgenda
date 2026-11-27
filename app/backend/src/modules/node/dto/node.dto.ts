@@ -93,6 +93,11 @@ export class NodeCommonDto {
   @Max(100000)
   repeatCount?: number;
 
+  /** Whether a new cycle unticks the done subtasks (default true). */
+  @IsOptional()
+  @IsBoolean()
+  repeatResetSubtasks?: boolean;
+
   @IsOptional()
   @IsInt()
   @Min(1)

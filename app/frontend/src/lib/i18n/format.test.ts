@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { makeFormatters } from './format';
 
+// (this project's tsconfig has no Node types; the test runner is Node, so reach process through globalThis)
+const env = (globalThis as unknown as { process: { env: Record<string, string | undefined> } }).process.env;
+
 describe('makeFormatters', () => {
 	// 23:30 UTC on 16 Nov is already 17 Nov in Prague and still 16 Nov in Los Angeles.
 	const instant = '2026-11-16T23:30:00Z';
@@ -25,10 +28,12 @@ describe('makeFormatters', () => {
 		expect(f.number(null)).toBe('');
 	});
 
-	it("treats the account default 'UTC' as not chosen (uses the browser's zone), but honours Etc/UTC", () => {
+	it("honours a saved 'UTC' like any other zone (the backend counts days in it too)", () => {
+		env.TZ = 'Europe/Prague';
 		const f = (tz?: string) => makeFormatters('en', tz).date('2026-11-16T23:30:00Z');
-		expect(f('UTC')).toBe(f(undefined));
+		expect(f('UTC')).toBe('Nov 16, 2026');
 		expect(f('Etc/UTC')).toBe('Nov 16, 2026');
+		expect(f(undefined)).toBe('Nov 17, 2026');
 	});
 
 	it('survives an invalid time zone (falls back to the browser zone)', () => {

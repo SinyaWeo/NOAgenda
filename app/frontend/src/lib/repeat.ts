@@ -29,7 +29,15 @@ export interface RepeatForm {
 	until: string;
 	/** Occurrences left, this one included, for end = 'count'. */
 	count: number;
+	/** Whether each new cycle unticks the done subtasks. */
+	resetSubtasks: boolean;
 }
+
+/** The task fields a repeat rule is made of. */
+export type RepeatFields = Pick<
+	Task,
+	'repeatAfter' | 'repeatMode' | 'repeatWeekdays' | 'repeatUntil' | 'repeatCount' | 'repeatResetSubtasks'
+>;
 
 export const emptyRepeat = (): RepeatForm => ({
 	kind: 'none',
@@ -37,7 +45,8 @@ export const emptyRepeat = (): RepeatForm => ({
 	weekdays: [],
 	end: 'never',
 	until: '',
-	count: 5
+	count: 5,
+	resetSubtasks: true
 });
 
 function isKind(value: unknown): value is RepeatKind {
@@ -52,9 +61,8 @@ export function parseWeekdays(value: string | null | undefined): number[] {
 	return [...new Set(days)].sort((a, b) => a - b);
 }
 
-export function formFromTask(
-	task: Pick<Task, 'repeatAfter' | 'repeatMode' | 'repeatWeekdays' | 'repeatUntil' | 'repeatCount'>
-): RepeatForm {
+/** The form for a task's rule; `timeZone` is the one the end date is shown in (`userTimeZone()`). */
+export function formFromTask(task: RepeatFields, timeZone: string): RepeatForm {
 	if (!task.repeatAfter || task.repeatAfter < 1) return emptyRepeat();
 	const kind = isKind(task.repeatMode) && task.repeatMode !== 'none' ? task.repeatMode : 'default';
 	const end: RepeatEnd = task.repeatCount ? 'count' : task.repeatUntil ? 'until' : 'never';
@@ -63,20 +71,25 @@ export function formFromTask(
 		every: task.repeatAfter,
 		weekdays: parseWeekdays(task.repeatWeekdays),
 		end,
-		until: isoToDateInput(task.repeatUntil),
-		count: task.repeatCount ?? 5
+		until: isoToDateInput(task.repeatUntil, timeZone),
+		count: task.repeatCount ?? 5,
+		resetSubtasks: task.repeatResetSubtasks !== false
 	};
 }
 
-/** The API fields for a form; every one of them is sent so that clearing a rule really clears it. */
-export function repeatPayload(form: RepeatForm) {
+/**
+ * The API fields for a form; every one of them is sent so that clearing a rule really clears it.
+ * `timeZone` is the one the end date was picked in (`userTimeZone()`).
+ */
+export function repeatPayload(form: RepeatForm, timeZone: string) {
 	if (form.kind === 'none') {
 		return {
 			repeatAfter: null,
 			repeatMode: null,
 			repeatWeekdays: null,
 			repeatUntil: null,
-			repeatCount: null
+			repeatCount: null,
+			repeatResetSubtasks: true
 		};
 	}
 	return {
@@ -86,8 +99,9 @@ export function repeatPayload(form: RepeatForm) {
 			form.kind === 'weekly' && form.weekdays.length
 				? parseWeekdays(form.weekdays.join(',')).join(',')
 				: null,
-		repeatUntil: form.end === 'until' ? dateInputToIso(form.until) : null,
-		repeatCount: form.end === 'count' ? Math.max(1, Math.floor(Number(form.count) || 1)) : null
+		repeatUntil: form.end === 'until' ? dateInputToIso(form.until, timeZone) : null,
+		repeatCount: form.end === 'count' ? Math.max(1, Math.floor(Number(form.count) || 1)) : null,
+		repeatResetSubtasks: form.resetSubtasks
 	};
 }
 
@@ -105,10 +119,9 @@ export function weekdayName(day: number, style: 'short' | 'long' = 'short'): str
 }
 
 /** "Every 2 weeks on Mon, Wed - 3 occurrences left" in the current language; '' when the task does not repeat. */
-export function describeRepeat(
-	task: Pick<Task, 'repeatAfter' | 'repeatMode' | 'repeatWeekdays' | 'repeatUntil' | 'repeatCount'>
-): string {
-	const form = formFromTask(task);
+export function describeRepeat(task: RepeatFields): string {
+	// Only the rule is read here; the end date is formatted from `task.repeatUntil` itself, so any zone will do.
+	const form = formFromTask(task, 'UTC');
 	if (form.kind === 'none') return '';
 	const count = form.every;
 	let text: string;

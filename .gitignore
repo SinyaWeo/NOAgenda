@@ -3,9 +3,11 @@
 .claude
 backups/
 
-# Secrets: any docker/.env* (.env, .env.production, .env.staging, ...) except the committed examples
+# Secrets: any docker env file (.env, .env.production, app.env, demo.env, ...) except the committed examples
 docker/.env*
-!docker/.env*.example
+docker/*.env
+docker/*.env.*
+!docker/*.example
 # Per-host Caddy site files (docker/sites/*.caddy); only the example is committed
 docker/sites/*.caddy
 findings

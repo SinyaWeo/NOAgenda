@@ -1,14 +1,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { apiGetAuth, apiPutAuth, MAX_PAGE_SIZE } from '#lib/api.js';
-	import { authSession } from '#lib/auth.svelte.js';
+	import { userTimeZone } from '#lib/auth.svelte.js';
 	import {
 		addDaysKey,
 		bucketByDay,
 		dayBounds,
 		dayKey,
 		dayKeyOf,
-		effectiveZone,
 		keyParts,
 		keyToDate,
 		monthGrid,
@@ -44,7 +43,7 @@
 		| { kind: 'occurrence'; id: number; date: string; occurrence: TaskOccurrence };
 
 	const MAX_CHIPS = 3;
-	const zone = $derived(effectiveZone(authSession.user?.timezone));
+	const zone = $derived(userTimeZone());
 	const weekStart = $derived<WeekStart>(locale.current === 'cs' ? 1 : 0);
 	const todayKey = $derived(dayKeyOf(new Date(), zone));
 
@@ -216,11 +215,15 @@
 		{@const entries = byDay.get(key) ?? []}
 		{@const shown = mode === 'week' ? entries : entries.slice(0, MAX_CHIPS)}
 		<div
-			class="calendar-day"
-			class:calendar-day-other={mode === 'month' && keyParts(key).month !== focusMonth}
-			class:calendar-day-today={key === todayKey}
-			class:calendar-day-over={overDay === key}
-			class:calendar-day-tall={mode === 'week'}
+			class={[
+				'calendar-day',
+				{
+					'calendar-day-other': mode === 'month' && keyParts(key).month !== focusMonth,
+					'calendar-day-today': key === todayKey,
+					'calendar-day-over': overDay === key,
+					'calendar-day-tall': mode === 'week'
+				}
+			]}
 			role="gridcell"
 			tabindex="-1"
 			aria-label={fmt.dateLong(keyToDate(key))}
@@ -237,9 +240,13 @@
 				{#if entry.kind === 'task'}
 					<a
 						href="/tasks/{entry.task.id}"
-						class="calendar-task-chip"
-						class:calendar-task-overdue={isOverdue(entry.task)}
-						class:calendar-task-done={entry.task.status === 'done'}
+						class={[
+							'calendar-task-chip',
+							{
+								'calendar-task-overdue': isOverdue(entry.task),
+								'calendar-task-done': entry.task.status === 'done'
+							}
+						]}
 						data-status={isOverdue(entry.task) ? 'overdue' : entry.task.status}
 						data-priority={entry.task.priority}
 						draggable="true"

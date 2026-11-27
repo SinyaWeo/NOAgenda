@@ -91,6 +91,10 @@ export class Node extends BaseEntity {
   @Column({ nullable: true, type: 'int' })
   repeatCount?: number | null;
 
+  /** Whether a new cycle unticks the done subtasks (at any depth). Off for subtasks that are one-off steps. */
+  @Column({ default: true })
+  repeatResetSubtasks!: boolean;
+
   @Column({ nullable: true, type: 'datetime' })
   startDate?: Date;
 

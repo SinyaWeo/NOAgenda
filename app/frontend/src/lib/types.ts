@@ -67,6 +67,8 @@ export interface Node {
 	repeatUntil?: string | null;
 	/** Occurrences left, the current one included. */
 	repeatCount?: number | null;
+	/** Whether each new cycle unticks the done subtasks (on unless the task opts out). */
+	repeatResetSubtasks?: boolean;
 	position?: number | null;
 	isArchived?: boolean;
 	ownerId?: number | null;

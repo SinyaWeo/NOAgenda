@@ -8,6 +8,7 @@ import {
 	effectiveZone,
 	monthGrid,
 	moveToDay,
+	noonOn,
 	rescheduled,
 	weekRow
 } from './calendar';
@@ -25,9 +26,15 @@ describe('day keys', () => {
 		expect(dayKeyOf(late, 'Europe/Prague')).toBe('2026-11-17');
 		expect(dayKeyOf(late, 'America/Los_Angeles')).toBe('2026-11-16');
 	});
-	it('fall back to the browser zone for the unset default', () => {
+	it('use the saved zone, UTC included, and the browser zone when none or an unknown one is saved', () => {
 		expect(effectiveZone('Europe/Prague')).toBe('Europe/Prague');
-		expect(effectiveZone('Not/AZone')).toBe(effectiveZone('UTC'));
+		expect(effectiveZone('UTC')).toBe('UTC');
+		expect(effectiveZone('Not/AZone')).toBe(effectiveZone(null));
+		expect(effectiveZone(undefined)).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+	});
+	it('noon of a day is counted in the zone', () => {
+		expect(noonOn('2026-03-10', 'Pacific/Kiritimati').toISOString()).toBe('2026-03-09T22:00:00.000Z');
+		expect(noonOn('2026-03-29', 'Europe/Prague').toISOString()).toBe('2026-03-29T10:00:00.000Z');
 	});
 });
 

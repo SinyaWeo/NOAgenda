@@ -297,7 +297,7 @@ export class NodeService {
 
   /**
    * Completing a repeating task does not leave it done: it starts its next cycle (open again, no
-   * progress, subtasks unticked, dates and reminders moved on) until its series ends. Every completion
+   * progress, subtasks unticked unless the task opts out, dates and reminders moved on) until its series ends. Every completion
    * of a repeating task is kept in its history. Everything else is a plain update.
    * `actorId` is who saves it: the next date is worked out in their time zone.
    */
@@ -321,9 +321,9 @@ export class NodeService {
     await this.nodeRepository.update(id, change);
     if (change.status !== undefined) await this.releaseMismatchedBuckets(m, [id]);
     if (completed) await this.recordCompletion(m, completed, data, actorId);
-    if (cycled) {
+    if (cycled && existing) {
       await this.rearmReminders(m, [id], shiftMs);
-      await this.reopenSubtasks(m, [id]);
+      if (this.resetsSubtasks(existing, data)) await this.reopenSubtasks(m, [id]);
     }
     if (change.dueDate !== undefined) await this.realignRelativeReminders(m, [id]);
     const node = await this.findById(id);
@@ -341,6 +341,12 @@ export class NodeService {
       type: existing.type,
       repeatAfter: change.repeatAfter !== undefined ? change.repeatAfter : existing.repeatAfter,
     });
+  }
+
+  /** Does a new cycle of `existing` (saved with `change`) untick its done subtasks? On unless the task opts out. */
+  private resetsSubtasks(existing: Node, change: Partial<Node>): boolean {
+    const value = change.repeatResetSubtasks !== undefined ? change.repeatResetSubtasks : existing.repeatResetSubtasks;
+    return value !== false;
   }
 
   /** The time zone a user's calendar dates are counted in. */
@@ -365,7 +371,7 @@ export class NodeService {
     ]);
   }
 
-  /** A new cycle starts with a clean slate: done subtasks (at any depth) are open again. */
+  /** A new cycle starts with a clean slate: done subtasks (at any depth) are open again. Callers check `resetsSubtasks`. */
   private async reopenSubtasks(m: EntityManager, parentIds: number[]): Promise<void> {
     const q = sqlRunner(m);
     await reopen(q, await doneTaskIdsBelow(q, parentIds));
@@ -432,7 +438,8 @@ export class NodeService {
         await repo.update(id, change);
         await this.rearmReminders(m, [id], shiftMs);
       }
-      if (cycles.size) await this.reopenSubtasks(m, [...cycles.keys()]);
+      const resetting = repeating.filter((n) => cycles.has(n.id) && this.resetsSubtasks(n, data)).map((n) => n.id);
+      if (resetting.length) await this.reopenSubtasks(m, resetting);
       if (data.status !== undefined) await this.releaseMismatchedBuckets(m, ids);
       if (data.dueDate !== undefined || cycles.size) {
         await this.realignRelativeReminders(m, data.dueDate !== undefined ? ids : [...cycles.keys()]);

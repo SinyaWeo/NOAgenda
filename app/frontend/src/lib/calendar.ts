@@ -11,10 +11,13 @@ export type DayKey = string;
 /** Sunday = 0, Monday = 1. */
 export type WeekStart = 0 | 1;
 
-/** The zone to count days in: the saved one, or the browser's when none was chosen ('UTC' is the unset default). */
+/**
+ * The zone to count days in: the one saved in the profile (the backend counts repeat dates in it too, so
+ * 'UTC' really means UTC), or the browser's when none is saved or it is not a zone this browser knows.
+ */
 export function effectiveZone(timeZone?: string | null): string {
 	const browser = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-	if (!timeZone || timeZone === 'UTC') return browser;
+	if (!timeZone) return browser;
 	try {
 		new Intl.DateTimeFormat('en', { timeZone });
 		return timeZone;
@@ -98,6 +101,11 @@ function instantAt(w: Wall, timeZone: string): Date {
 	const again = guess - offsetAt(result, timeZone);
 	if (again !== result) result = again; // the guess straddled a clock change
 	return new Date(result);
+}
+
+/** Noon of a calendar day in `timeZone`: the instant a date-only value is stored as. */
+export function noonOn(key: DayKey, timeZone: string): Date {
+	return instantAt({ ...keyParts(key), hour: 12, minute: 0, second: 0 }, timeZone);
 }
 
 /** `value` moved to another calendar day, keeping its time of day in `timeZone`. */

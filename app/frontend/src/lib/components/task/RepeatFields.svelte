@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '#lib/i18n/index.js';
 	import { REPEAT_KINDS, toggleWeekday, weekdayName, type RepeatEnd, type RepeatForm } from '#lib/repeat.js';
-	import { Input, Select } from 'flowbite-svelte';
+	import { Checkbox, Input, Select } from 'flowbite-svelte';
 
 	let { form = $bindable() }: { form: RepeatForm } = $props();
 
@@ -83,6 +83,7 @@
 				<span class="text-sm text-gray-500 dark:text-gray-400">{t('tasks.repeat.occurrences')}</span>
 			{/if}
 		</div>
+		<Checkbox bind:checked={form.resetSubtasks} class="mt-3">{t('tasks.repeat.resetSubtasks')}</Checkbox>
 		<p class="text-xs text-gray-500 dark:text-gray-400 mt-3 mb-0">{t('tasks.repeat.hint')}</p>
 	{/if}
 </fieldset>

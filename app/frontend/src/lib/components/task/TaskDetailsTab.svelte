@@ -10,8 +10,9 @@
 		TaskRelation,
 		UserSummary
 	} from '#lib/types.js';
-	import { describeRepeat, formFromTask, repeatPayload, type RepeatForm } from '#lib/repeat.js';
+	import { describeRepeat, emptyRepeat, formFromTask, repeatPayload, type RepeatForm } from '#lib/repeat.js';
 	import { dateInputToIso, isoToDateInput } from '#lib/dates.js';
+	import { userTimeZone } from '#lib/auth.svelte.js';
 	import RepeatHistory from './RepeatHistory.svelte';
 	import RepeatFields from './RepeatFields.svelte';
 	import InlineText from '#lib/components/InlineText.svelte';
@@ -90,19 +91,19 @@
 		| null
 	>(null);
 	let repeatOpen = $state(false);
-	let repeatForm = $state<RepeatForm>(formFromTask({}));
+	let repeatForm = $state<RepeatForm>(emptyRepeat());
 	let savingRepeat = $state(false);
 
 	function openRepeat() {
 		editing = null;
-		repeatForm = formFromTask(task);
+		repeatForm = formFromTask(task, userTimeZone());
 		repeatOpen = true;
 	}
 
 	async function saveRepeat() {
 		savingRepeat = true;
 		try {
-			if (await onUpdate(repeatPayload(repeatForm))) repeatOpen = false;
+			if (await onUpdate(repeatPayload(repeatForm, userTimeZone()))) repeatOpen = false;
 		} finally {
 			savingRepeat = false;
 		}
@@ -110,7 +111,7 @@
 
 	/** A date was picked (or cleared): save it as that day's noon and close the editor. */
 	async function saveDate(field: 'startDate' | 'dueDate', value: string) {
-		if (await onUpdate({ [field]: dateInputToIso(value) })) editing = null;
+		if (await onUpdate({ [field]: dateInputToIso(value, userTimeZone()) })) editing = null;
 	}
 
 	function defer(days: number) {
@@ -342,7 +343,7 @@
 								<Input
 									type="date"
 									size="sm"
-									value={isoToDateInput(value)}
+									value={isoToDateInput(value, userTimeZone())}
 									aria-label={t(d.label)}
 									onchange={(e) => saveDate(d.field, (e.target as HTMLInputElement).value)}
 									{@attach showPicker}

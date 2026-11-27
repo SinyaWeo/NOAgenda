@@ -12,7 +12,8 @@
 		apiFetchAuth,
 		downloadAuthFile
 	} from '#lib/api.js';
-	import { authSession } from '#lib/auth.svelte.js';
+	import { authSession, userTimeZone } from '#lib/auth.svelte.js';
+	import { addDaysKey, dayKeyOf, moveToDay } from '#lib/calendar.js';
 	import { errMessage } from '#lib/errors.js';
 	import { loadOnParamChange } from '#lib/param-loader.svelte.js';
 	import { goto } from '$app/navigation';
@@ -269,10 +270,12 @@
 	}
 	const updatePercentDone = (value: number) => updateTask({ percentDone: value });
 	const updateStatus = (status: string) => updateTask({ status });
+	/** Move the due date (or today) by whole days in the profile zone, keeping its time of day there. */
 	function deferDueDate(days: number) {
+		const zone = userTimeZone();
 		const base = task?.dueDate ? new Date(task.dueDate) : new Date();
-		base.setDate(base.getDate() + days);
-		return updateTask({ dueDate: base.toISOString() });
+		const target = addDaysKey(dayKeyOf(base, zone), days);
+		return updateTask({ dueDate: moveToDay(base, target, zone).toISOString() });
 	}
 	async function postComment(content: string): Promise<boolean> {
 		const id = page.params.id;

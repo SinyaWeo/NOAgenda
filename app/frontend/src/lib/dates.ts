@@ -1,23 +1,24 @@
+import { dayKey, dayKeyOf, noonOn } from '#lib/calendar.js';
+
 /**
  * Date-only form fields ("2026-11-16") <-> the ISO timestamps the API stores.
  *
- * `new Date('2026-11-16')` is midnight UTC, which `toLocaleDateString()` shows as the PREVIOUS
- * day west of UTC. Use local noon instead: the same calendar day everywhere (±12h), and reading
- * it back with local date parts gives the day the user picked.
+ * A picked day is stored as noon of that day in the user's profile zone (`userTimeZone()`), and read back
+ * in the same zone. The backend works out repeat dates ("same weekday", "until") in that zone too, so
+ * both sides agree on the day even when the browser sits in a zone far away from the profile's.
  */
-export function dateInputToIso(value: string | null | undefined): string | null {
+export function dateInputToIso(value: string | null | undefined, timeZone: string): string | null {
 	if (!value) return null;
 	const [y, m, d] = value.split('-').map(Number);
 	if (!y || !m || !d) return null;
-	return new Date(y, m - 1, d, 12, 0, 0).toISOString();
+	return noonOn(dayKey(y, m, d), timeZone).toISOString();
 }
 
-export function isoToDateInput(iso: string | null | undefined): string {
+export function isoToDateInput(iso: string | null | undefined, timeZone: string): string {
 	if (!iso) return '';
 	const d = new Date(iso);
 	if (Number.isNaN(d.getTime())) return '';
-	const pad = (n: number) => String(n).padStart(2, '0');
-	return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+	return dayKeyOf(d, timeZone);
 }
 
 /** Local midnight of the calendar day `value` falls on. */
