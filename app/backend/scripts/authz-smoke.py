@@ -127,6 +127,10 @@ OCC = '/tasks/occurrences?from=2026-01-01T00:00:00.000Z&to=2026-02-01T00:00:00.0
 s, mine = call('GET', OCC, None, A); check('alice sees future cycles', (s, len([o for o in mine if o['taskId'] == rt['id']])), (200, 3))
 s, theirs = call('GET', OCC, None, Bt); check('bob sees no cycles of alice\'s project', (s, [o for o in theirs if o['taskId'] == rt['id']]), (200, []))
 s, _ = call('GET', '/tasks/occurrences?from=2026-01-01T00:00:00.000Z&to=2027-01-01T00:00:00.000Z', None, A); check('occurrence range is capped', s, 400)
+COMP = f'/tasks/{rt["id"]}/completions'
+s, _ = call('GET', COMP, None, A); check('alice reads completion history', s, 200)
+s, _ = call('GET', COMP, None, Bt); check('bob cannot read completion history of alice\'s task', s, [403, 404])
+s, _ = call('GET', '/tasks/abc/completions', None, A); check('completion history id is validated', s, 400)
 
 # --- 3c. Dependencies (Gantt, mind map) and rescheduling follow the same rules
 s, g2 = call('POST', '/tasks', {'title': 'after secret', 'projectId': pid, 'startDate': '2026-03-02T11:00:00.000Z', 'dueDate': '2026-03-04T11:00:00.000Z'}, A)
@@ -149,6 +153,7 @@ s, _ = call('POST', f'/projects/{pid}/users', {'userId': bid, 'permission': 'rea
 s, _ = call('GET', f'/tasks/{tid}', None, Bt); check('bob(read) can read task', s, 200)
 s, _ = call('GET', f'/nodes/{pid}/tree', None, Bt); check('bob(read) can read tree', s, 200)
 s, shared = call('GET', OCC, None, Bt); check('bob(read) sees the shared cycles', (s, len([o for o in shared if o['taskId'] == rt['id']])), (200, 3))
+s, _ = call('GET', COMP, None, Bt); check('bob(read) reads completion history', s, 200)
 s, _ = call('PUT', f'/tasks/{tid}', {'title': 'x'}, Bt); check('bob(read) cannot edit', s, 403)
 s, gd = call('GET', DEPS, None, Bt); check('bob(read) sees the arrow but may not edit', (s, len(gd['dependencies']), gd['editable']), (200, 1, []))
 s, _ = call('POST', '/tasks/schedule', SCHED, Bt); check('bob(read) cannot reschedule', s, 403)
@@ -170,6 +175,7 @@ s, _ = call('PUT', f'/projects/{pid}', {'name': 'hijack'}, Bt); check('bob(write
 s, _ = call('DELETE', f'/projects/{pid}', None, Bt); check('bob(write) cannot delete project', s, 403)
 s, _ = call('PUT', f'/tasks/{tid}', {'projectId': 999999}, Bt); check('cannot move task to missing project', s, [403, 404])
 s, _ = call('GET', f'/tasks/{tid}', None, C); check('carol still locked out', s, 403)
+s, _ = call('GET', COMP, None, C); check('carol cannot read completion history', s, [403, 404])
 s, _ = call('POST', '/reactions', {'entityType': 'weird', 'entityId': tid, 'reaction': 'x'}, A); check('reaction bad entityType rejected', s, 400)
 
 # --- 5. team roles: manager (own team only) / member / outsider / app admin

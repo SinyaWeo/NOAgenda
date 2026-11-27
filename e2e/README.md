@@ -15,6 +15,11 @@ Ports used on the host: 8443, 8088 (Caddy) and 8126 (mail sink UI/API); override
 - Protected pages redirect to sign-in and return you afterwards; no protected content is rendered while signed out
 - Registration (consent box), email verification link, sign-in, wrong-password message
 - Creating a project, a task with a long description, a comment, a subtask; attachment upload and authenticated download
+- A daily repeating task marked done reopens with the next due date and shows the completed cycle
+- Kanban: moving a card to another bucket (select, persists after reload) and dragging it back
+- Creating a subproject (breadcrumb and parent link), moving a task to another project
+- Sharing a project read-only with a second user; that user sees no Share/New subproject, inherits access to the
+  subproject, is refused when commenting, and gets a permission message on a project not shared with them
 - Task status change, duplicate-label error message, sessions list, data export download, account-deletion request/cancel
 - Silent refresh with an expired or missing access token (HttpOnly + Secure + SameSite=Strict cookie scoped to `/api/auth`)
 - Skip link, accessible names, page titles, 404 page, admin area hidden from non-admins, mobile drawer and no horizontal scroll

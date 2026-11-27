@@ -1,5 +1,5 @@
 # Extra services/settings layered on docker/docker-compose.prod.yml for the browser test.
-# Not for production: it adds a mail sink and relaxes the login rate limit.
+# Not for production: it adds a mail sink and relaxes the login and registration rate limits.
 services:
   mailpit:
     image: axllent/mailpit:v1.33
@@ -10,4 +10,5 @@ services:
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
       LOGIN_RATE_LIMIT: "100"
+      REGISTRATION_RATE_LIMIT: "100"   # the test registers two users per run; reruns against a KEEP=1 stack add up
       REGISTRATION_INVITE_CODE: e2e-invite-code   # soft-launch mode: registering needs this code

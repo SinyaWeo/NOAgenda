@@ -208,6 +208,134 @@ await page.click('button:has-text("+ Add Label")');
 await page.waitForFunction(() => /already exists|Failed|error/i.test(document.body.innerText));
 ok('a duplicate label gives a readable message (was a 500)', /already exists/i.test(await text()), (await text()).slice(0, 200));
 
+// ---------- core flows: repeating task, Kanban move, subproject, moving a task, sharing, read-only denials
+// Same-origin API call with the page's own token (for checks the UI does not show exactly).
+const api = (p, apiPath, method = 'GET', body) =>
+  p.evaluate(async ([apiPath, method, body]) => {
+    const r = await fetch('/api' + apiPath, {
+      method,
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + localStorage.getItem('access_token') },
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+    const t = await r.text();
+    return { status: r.status, body: t ? JSON.parse(t) : null };
+  }, [apiPath, method, body]);
+// The value button of a row in the task page's side panel ("Status", "Due Date", "Repeats", "Project").
+const field = (p, label) => p.locator('dl > div').filter({ has: p.locator('dt', { hasText: new RegExp(`^${label}$`) }) }).getByRole('button').first();
+const toast = (p, s) => p.waitForFunction((s) => [...document.querySelectorAll('[role=alert]')].some((e) => e.textContent.includes(s)), s);
+const DAY = 86400000;
+
+// Repeating task: a daily task marked done reopens with the next due date and counts the completed cycle.
+await page.goto(BASE + '/tasks/create');
+await page.fill('#task-title', 'Daily standup');
+await page.selectOption('#task-project', { label: 'UI Project' });
+await page.click('button[type=submit]');
+await page.waitForURL(/\/tasks\/\d+$/);
+const repeatUrl = page.url();
+const repeatId = repeatUrl.split('/').pop();
+await field(page, 'Due Date').click();
+await page.fill('input[aria-label="Due Date"]', '2030-01-07');
+await page.waitForFunction(() => [...document.querySelectorAll('dl dt')].some((dt) => dt.textContent.trim() === 'Due Date' && !dt.nextElementSibling.textContent.includes('Not set')));
+const due0 = (await api(page, `/tasks/${repeatId}`)).body.dueDate;
+await field(page, 'Repeats').click();
+const repeatDialog = page.getByRole('dialog');
+await repeatDialog.getByRole('combobox', { name: 'Repeat' }).selectOption('default');
+await repeatDialog.getByRole('spinbutton', { name: 'Every' }).fill('1');
+await repeatDialog.getByRole('button', { name: 'Save' }).click();
+await page.waitForFunction(() => [...document.querySelectorAll('dl dt')].some((dt) => dt.textContent.trim() === 'Repeats' && dt.nextElementSibling.textContent.includes('Every day')));
+await repeatDialog.waitFor({ state: 'hidden' });
+ok('a task can be set to repeat every day', (await api(page, `/tasks/${repeatId}`)).body.repeatAfter === 1);
+await field(page, 'Status').click();
+await page.selectOption('select[aria-label="Status"]', 'done');
+await toast(page, 'This task repeats');
+ok('marking a repeating task done says when it is due next', true);
+await page.waitForSelector('dl button[data-status="open"]');
+const due1 = (await api(page, `/tasks/${repeatId}`)).body.dueDate;
+ok('...reopens it with the due date one day later', !!due0 && Date.parse(due1) - Date.parse(due0) === DAY, `${due0} -> ${due1}`);
+await page.waitForFunction(() => document.body.innerText.includes('Completed 1 time'));
+ok('...and the completed cycle shows in its history', /completed cycles/i.test(await text()));
+
+// Kanban: move a card to another bucket with its select, then drag it back.
+await page.goto(`${BASE}/projects/${projectId}?view=kanban`);
+const card = page.getByRole('listitem').filter({ hasText: 'Daily standup' });
+await card.getByRole('combobox', { name: 'Move to bucket' }).selectOption({ label: 'In progress' });
+const inColumn = (col) => page.getByRole('group', { name: col }).getByRole('link', { name: 'Daily standup' });
+await inColumn('In progress').waitFor();
+await page.reload();
+await inColumn('In progress').waitFor();
+ok('a Kanban card moves to another bucket and stays there after reload', (await api(page, `/tasks/${repeatId}`)).body.status === 'in_progress');
+await page.getByRole('listitem').filter({ hasText: 'Daily standup' }).dragTo(page.getByRole('group', { name: 'To do' }));
+await inColumn('To do').waitFor();
+ok('a Kanban card can be dragged back to its first bucket', (await api(page, `/tasks/${repeatId}`)).body.status === 'open');
+
+// Subproject: created from the parent's page, linked both ways.
+await page.goto(`${BASE}/projects/${projectId}`);
+await page.click('a:has-text("New subproject")');
+await page.waitForURL(/\/projects\/new\?parentId=/);
+ok('"New subproject" preselects the parent', (await page.inputValue('#proj-parent')) === projectId);
+await page.fill('#proj-name', 'UI Subproject');
+await page.click('button[type=submit]');
+await page.waitForURL(/\/projects\/\d+$/);
+const subId = page.url().split('/').pop();
+await page.waitForSelector('nav[aria-label="Parent projects"]');
+ok('the subproject shows its parent in the breadcrumb', (await page.locator('nav[aria-label="Parent projects"]').innerText()).includes('UI Project'));
+await page.goto(`${BASE}/projects/${projectId}`);
+await page.waitForSelector(`a[href="/projects/${subId}"]`);
+ok('...and the parent links to the subproject', (await page.locator(`a[href="/projects/${subId}"]`).first().innerText()).includes('UI Subproject'));
+
+// Moving a task to another project from the task page.
+await page.goto(taskUrl);
+await field(page, 'Project').click();
+await page.waitForSelector(`select[aria-label="Project"] option[value="${subId}"]`, { state: 'attached' });
+await page.selectOption('select[aria-label="Project"]', subId);
+await toast(page, 'Task moved');
+ok('a task can be moved to another project', String((await api(page, `/tasks/${taskUrl.split('/').pop()}`)).body.parentId) === subId);
+
+// Sharing: a second (verified) user gets read access through the Share page.
+const USER2 = `ro${run}`, EMAIL2 = `${USER2}@example.com`;
+const reg2 = await fetch(`${BASE}/api/users`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ username: USER2, email: EMAIL2, password: PW, inviteCode: 'e2e-invite-code', acceptTerms: true }) });
+const token2 = (await mailText(EMAIL2, 'Confirm'))?.match(/verify-email\?token=([0-9a-f]+)/)?.[1];
+const ver2 = await fetch(`${BASE}/api/auth/email/verify`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token: token2 }) });
+ok('a second user registers and verifies', reg2.status === 201 && ver2.status === 204, `${reg2.status} ${ver2.status}`);
+await page.goto(`${BASE}/projects/${projectId}`);
+await page.click(`a[href="/projects/${projectId}/settings/share"]`);
+await page.waitForSelector('#project-member-picker');
+await page.fill('#project-member-picker', USER2);
+await page.locator('li[role=option]', { hasText: USER2 }).click();
+await page.selectOption('select[aria-label="Permission"]', 'read');
+await page.click('button:has-text("Add User")');
+await page.waitForSelector(`text=${USER2}`);
+const members = (await api(page, `/projects/${projectId}/users`)).body;
+ok('a project is shared read-only with another user from the Share page', JSON.stringify(members).includes(USER2) && JSON.stringify(members).includes('"read"'), JSON.stringify(members).slice(0, 200));
+const priv = (await api(page, '/projects', 'POST', { name: 'UI Private' })).body;
+
+// Read-only denials, seen by the second user in their own browser.
+const ctx2 = await browser.newContext({ ignoreHTTPSErrors: true, locale: 'en-US', timezoneId: 'Europe/Prague', viewport: { width: 1280, height: 900 } });
+const p2 = await ctx2.newPage(); watch(p2); p2.setDefaultTimeout(15000);
+await p2.goto(BASE + '/user/login');
+await p2.fill('#login-username', USER2);
+await p2.fill('#login-password', PW);
+await p2.click('button[type=submit]');
+await p2.waitForURL(/\/dashboard/);
+await p2.goto(`${BASE}/projects/${projectId}`);
+await p2.waitForSelector(`a[href="/projects/${subId}"]`);
+ok('read-only: the shared project opens', (await p2.locator('body').innerText()).includes('UI Project'));
+ok('read-only: no Share or New subproject buttons', (await p2.locator(`a[href="/projects/${projectId}/settings/share"]`).count()) === 0 && (await p2.locator('a:has-text("New subproject")').count()) === 0);
+await p2.goto(`${BASE}/projects/${subId}`);
+await p2.waitForSelector('nav[aria-label="Parent projects"]');
+ok('read-only: access is inherited by the subproject', (await p2.locator('body').innerText()).includes('UI Subproject'));
+await p2.goto(repeatUrl);
+await p2.fill('input[placeholder="Add a comment…"]', 'read-only comment');
+await p2.click('button:has-text("Post")');
+await toast(p2, 'You do not have permission to do that.');
+await p2.reload();
+await p2.waitForSelector('input[placeholder="Add a comment…"]');
+ok('read-only: commenting is refused and nothing is saved', !(await p2.locator('body').innerText()).includes('read-only comment'));
+await p2.goto(`${BASE}/projects/${priv.id}`);
+await p2.waitForFunction(() => document.body.innerText.includes('You do not have permission to do that.'));
+ok('a project that is not shared shows a permission message, not its content', !(await p2.locator('body').innerText()).includes('UI Private'));
+await ctx2.close();
+
 // ---------- sessions, export, deletion
 await page.goto(BASE + '/user/settings/sessions');
 await page.waitForFunction(() => document.body.innerText.includes('This device'));
