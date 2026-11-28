@@ -64,7 +64,7 @@
 	}
 
 	async function loadTask(id: string, isStale: () => boolean) {
-		const [t, c, a, l, att, rem, rel, sub, mine, members] = await Promise.all([
+		const [t, c, a, l, att, rem, rel, sub, mine] = await Promise.all([
 			apiGetAuth<Task>(`/tasks/${id}`),
 			apiGetAuth<Comment[]>(`/comments?taskId=${id}`),
 			// Refused in single-user mode (no assignees there): the task still loads.
@@ -74,10 +74,15 @@
 			apiGetAuth<Reminder[]>(`/tasks/${id}/reminders`).catch(() => []),
 			apiGetAuth<TaskRelation[]>(`/tasks/${id}/relations`).catch(() => []),
 			apiGetAuth<Task[]>(`/tasks?parentTaskId=${id}`).catch(() => []),
-			apiGetAuth<Label[]>('/labels').catch((): Label[] => []),
-			apiGetAuth<UserSummary[]>('/teams/assignable-users').catch((): UserSummary[] => [])
+			apiGetAuth<Label[]>('/labels').catch((): Label[] => [])
 		]);
 		if (isStale()) return; // the user already moved on to another task
+		// Assigning gives access only to a top-level personal task; anywhere else the assignee must
+		// already see the task, so the picker offers only them.
+		const members = await apiGetAuth<UserSummary[]>(
+			`/teams/assignable-users${t.parentId != null ? `?nodeId=${id}` : ''}`
+		).catch((): UserSummary[] => []);
+		if (isStale()) return;
 		task = t;
 		comments = c;
 		assignees = a;

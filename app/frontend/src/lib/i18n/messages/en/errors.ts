@@ -74,6 +74,8 @@ export const messages = {
 	'errors.server.queryTooShort': 'Type at least 3 characters to search',
 	'errors.server.lastBucketOfStatus': 'Each status needs at least one bucket',
 	'errors.server.unknownBucket': 'Unknown Kanban bucket',
+	'errors.server.outsideTeamShare':
+		'Only the project owner can share it with people outside the project’s teams',
 	'errors.server.bucketStatusMismatch': 'The status does not match the Kanban bucket',
 	'errors.server.noDueDate': 'Set a due date first',
 	'errors.server.reminderKind': 'Give either a date or days before the due date',

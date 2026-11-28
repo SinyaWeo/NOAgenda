@@ -67,7 +67,7 @@ export const messages = {
 	'tasks.relations.title': 'Related Tasks',
 	'tasks.relations.empty': 'No relations.',
 	'tasks.relations.remove': 'Remove relation',
-	'tasks.relations.idPlaceholder': 'Task ID',
+	'tasks.relations.selectPlaceholder': 'Choose a task',
 	'tasks.relations.taskFallback': 'Task #{id}',
 	'tasks.relation.related': 'related to',
 	'tasks.relation.subtaskOf': 'subtask of',

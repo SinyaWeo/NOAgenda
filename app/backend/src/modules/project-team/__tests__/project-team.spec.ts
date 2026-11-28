@@ -49,12 +49,13 @@ describe('ProjectTeamService', () => {
     expect(repo.delete).toHaveBeenCalledWith({ project: { id: 3 }, team: { id: 5 } });
   });
 
-  it('canUseTeam is true when the query returns a row, passing team then user ids', async () => {
+  it('canUseTeam is true for a member, passing team then user id (creating a team grants nothing)', async () => {
     await expect(service.canUseTeam(7, 5)).resolves.toBe(true);
-    expect(repo.manager.query).toHaveBeenCalledWith(expect.stringContaining('ownerId'), [5, 7, 7]);
+    expect(repo.manager.query).toHaveBeenCalledWith(expect.stringContaining('team_members'), [5, 7]);
+    expect(repo.manager.query).toHaveBeenCalledWith(expect.not.stringContaining('ownerId'), [5, 7]);
   });
 
-  it('canUseTeam is false when the user neither owns nor belongs to the team', async () => {
+  it('canUseTeam is false when the user does not belong to the team', async () => {
     repo.manager.query.mockResolvedValue([]);
     await expect(service.canUseTeam(7, 5)).resolves.toBe(false);
   });
@@ -63,18 +64,42 @@ describe('ProjectTeamService', () => {
 describe('ProjectTeamController', () => {
   let access: Mocks;
   let service: Mocks;
+  let nodes: Mocks;
+  let events: Mocks;
   let controller: ProjectTeamController;
 
   beforeEach(() => {
     access = { assertProject: jest.fn(async () => undefined) };
     service = {
       findByProject: jest.fn(async () => []),
+      findOne: jest.fn(async () => ({ id: 1, permission: Permission.READ, team: { id: 5, name: 'Ops' } })),
       canUseTeam: jest.fn(async () => true),
       add: jest.fn(async () => ({ id: 1 })),
       update: jest.fn(),
       remove: jest.fn(),
     };
-    controller = new ProjectTeamController(asMock(service), asMock(access));
+    nodes = { findById: jest.fn(async () => ({ id: 3, name: 'Alpha', ownerId: 1 })) };
+    events = { emit: jest.fn() };
+    controller = new ProjectTeamController(asMock(service), asMock(access), asMock(nodes), asMock(events));
+  });
+
+  const shareChanges = () => events.emit.mock.calls.map((c) => c[0].changes);
+
+  it('logs adding, changing and removing a team grant', async () => {
+    await controller.add(3, { teamId: 5 }, req);
+    await controller.update(3, 5, { permission: Permission.WRITE }, req);
+    await controller.remove(3, 5, req);
+    const target = { type: 'team', id: 5, name: 'Ops' };
+    expect(shareChanges()).toEqual([
+      { share: { from: null, to: Permission.READ }, target },
+      { share: { from: Permission.READ, to: Permission.WRITE }, target },
+      { share: { from: Permission.READ, to: null }, target },
+    ]);
+    for (const [e] of events.emit.mock.calls) {
+      expect(e).toEqual(
+        expect.objectContaining({ name: 'project.share_changed', nodeId: 3, owner: 1, actorId: 7, auditOnly: true }),
+      );
+    }
   });
 
   it('list requires ADMIN (readers do not see who else has access)', async () => {
@@ -96,7 +121,7 @@ describe('ProjectTeamController', () => {
     expect(service.add).toHaveBeenCalledWith(3, 5, Permission.WRITE);
   });
 
-  it('add refuses a team the caller neither owns nor belongs to', async () => {
+  it('add refuses a team the caller does not belong to', async () => {
     service.canUseTeam.mockResolvedValue(false);
     await expect(controller.add(3, { teamId: 5 }, req)).rejects.toBeInstanceOf(ForbiddenException);
     expect(service.add).not.toHaveBeenCalled();

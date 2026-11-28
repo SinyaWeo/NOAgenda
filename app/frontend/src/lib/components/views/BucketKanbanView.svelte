@@ -3,13 +3,16 @@
 	import type { KanbanBucket, NodeStatus, Task } from '#lib/types.js';
 	import { BUCKET_STATUSES, effectiveBucketId, isLastOfStatus } from '#lib/kanban.js';
 	import type { BucketMoveHandler } from '#lib/types-views.js';
-	import { Button, Input, Select } from 'flowbite-svelte';
+	import { Button, Dropdown, DropdownItem, Input, Select } from 'flowbite-svelte';
+	import { CheckOutline, DotsHorizontalOutline } from 'flowbite-svelte-icons';
 	import { t, fmt, type MessageKey } from '#lib/i18n/index.js';
 
 	interface Props {
 		tasks: Task[];
 		buckets: KanbanBucket[];
 		onMove: BucketMoveHandler;
+		/** Clear a task's status (dropped on / moved to the "No status" column); omit to make that column read-only. */
+		onClearStatus?: (taskId: number) => void | Promise<void>;
 		/** Bucket management: omit all of these for a read-only board. */
 		onCreate?: (title: string, status: NodeStatus) => void | Promise<void>;
 		onUpdate?: (
@@ -20,12 +23,21 @@
 		/** Move a bucket one place left (-1) or right (+1). */
 		onReorder?: (id: number, direction: -1 | 1) => void | Promise<void>;
 	}
-	let { tasks, buckets, onMove, onCreate, onUpdate, onDelete, onReorder }: Props = $props();
+	let { tasks, buckets, onMove, onClearStatus, onCreate, onUpdate, onDelete, onReorder }: Props = $props();
 
 	const manage = $derived(!!(onCreate || onUpdate || onDelete || onReorder));
 
-	// Every task shows in a column: the bucket it was placed in, or the first one of its status.
-	const columnOf = $derived(new Map(tasks.map((t) => [t.id, effectiveBucketId(t, buckets)])));
+	/** The column a card sits in: a bucket id, or NO_STATUS for the virtual column of tasks without a status. */
+	type ColumnId = number | typeof NO_STATUS;
+	const NO_STATUS = 'none';
+
+	// Every task shows in a column: the bucket it was placed in, the first one of its status, or "No status".
+	const columnOf = $derived(
+		new Map<number, ColumnId | null>(
+			tasks.map((t) => [t.id, t.status == null ? NO_STATUS : effectiveBucketId(t, buckets)])
+		)
+	);
+	const noStatusTasks = $derived(tasks.filter((t) => columnOf.get(t.id) === NO_STATUS));
 	const statusLabel = (s: NodeStatus) => t(`common.status.${s}` as MessageKey);
 
 	let newTitle = $state('');
@@ -36,7 +48,7 @@
 	let editStatus = $state<NodeStatus>('open');
 	let busy = $state(false);
 	let draggingId = $state<number | null>(null);
-	let overBucket = $state<number | null>(null);
+	let overBucket = $state<ColumnId | null>(null);
 
 	function onDragStart(e: DragEvent, task: Task) {
 		if (!e.dataTransfer) return;
@@ -50,18 +62,25 @@
 		overBucket = null;
 	}
 
-	function onDragOver(e: DragEvent, bucketId: number) {
-		if (draggingId == null) return;
+	function onDragOver(e: DragEvent, bucketId: ColumnId) {
+		if (draggingId == null || (bucketId === NO_STATUS && !onClearStatus)) return;
 		e.preventDefault();
 		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
 		overBucket = bucketId;
 	}
 
-	function onDrop(e: DragEvent, bucketId: number) {
+	function onDrop(e: DragEvent, bucketId: ColumnId) {
 		e.preventDefault();
 		const task = tasks.find((x) => x.id === draggingId);
 		onDragEnd();
-		if (task && columnOf.get(task.id) !== bucketId) onMove(task.id, bucketId);
+		if (task) moveTo(task.id, bucketId);
+	}
+
+	/** Move a card to another column (drag and drop or the card's menu). */
+	function moveTo(taskId: number, target: ColumnId) {
+		if (columnOf.get(taskId) === target) return;
+		if (target === NO_STATUS) void onClearStatus?.(taskId);
+		else void onMove(taskId, target);
 	}
 
 	async function run(fn: () => void | Promise<void>) {
@@ -108,8 +127,7 @@
 
 {#snippet card(task: Task)}
 	<div
-		class="board-card mb-2"
-		class:board-card-dragging={draggingId === task.id}
+		class={['board-card mb-2', { 'board-card-dragging': draggingId === task.id }]}
 		role="listitem"
 		draggable="true"
 		ondragstart={(e) => onDragStart(e, task)}
@@ -121,27 +139,68 @@
 		{#if task.dueDate}<div class="text-xs text-gray-500 dark:text-gray-400">
 				{fmt.date(task.dueDate)}
 			</div>{/if}
-		<Select
-			placeholder=""
-			value={columnOf.get(task.id) ?? ''}
-			onchange={(e) => onMove(task.id, Number((e.target as HTMLSelectElement).value))}
-			class="mt-2 text-xs"
-			aria-label={t('views.kanban.moveTo')}
-		>
-			{#each buckets as b (b.id)}<option value={b.id}>{b.title}</option>{/each}
-		</Select>
+		<div class="flex justify-end -mb-1">
+			<button
+				type="button"
+				id="kanban-move-{task.id}"
+				class="p-0.5 rounded text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+				title={t('views.kanban.moveTo')}
+				aria-label={t('views.kanban.moveTo')}
+			>
+				<DotsHorizontalOutline class="w-4 h-4" />
+			</button>
+		</div>
+		<Dropdown triggeredBy="#kanban-move-{task.id}" placement="bottom-end" class="w-48">
+			{#if onClearStatus}
+				{@render moveItem(task.id, NO_STATUS, t('views.kanban.noStatus'))}
+			{/if}
+			{#each buckets as b (b.id)}{@render moveItem(task.id, b.id, b.title)}{/each}
+		</Dropdown>
 	</div>
+{/snippet}
+
+{#snippet moveItem(taskId: number, target: ColumnId, label: string)}
+	{@const current = columnOf.get(taskId) === target}
+	<DropdownItem
+		class="flex items-center gap-2 text-sm {current ? 'font-semibold' : ''}"
+		aria-current={current ? 'true' : undefined}
+		onclick={() => moveTo(taskId, target)}
+	>
+		<CheckOutline class="w-3.5 h-3.5 shrink-0 {current ? '' : 'invisible'}" />{label}
+	</DropdownItem>
 {/snippet}
 
 {#if buckets.length}
 	<div class="board-cols">
+		<div
+			class={['board-col', { 'board-col-over': overBucket === NO_STATUS }]}
+			role="group"
+			aria-label={t('views.kanban.noStatus')}
+			ondragover={(e) => onDragOver(e, NO_STATUS)}
+			ondragleave={(e) => {
+				if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) overBucket = null;
+			}}
+			ondrop={(e) => onDrop(e, NO_STATUS)}
+		>
+			<div class="board-col-header">
+				<h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 m-0 flex-1">
+					{t('views.kanban.noStatus')}
+					<span class="font-normal text-xs text-gray-500 dark:text-gray-400">({noStatusTasks.length})</span>
+				</h3>
+			</div>
+			<div class="board-col-body">
+				{#each noStatusTasks as task (task.id)}{@render card(task)}{/each}
+				{#if !noStatusTasks.length}
+					<p class="text-xs text-gray-500 dark:text-gray-400 text-center m-0">{t('views.column.empty')}</p>
+				{/if}
+			</div>
+		</div>
 		{#each buckets as bucket, i (bucket.id)}
 			{@const bucketTasks = tasks.filter((t) => columnOf.get(t.id) === bucket.id)}
 			{@const lastOfStatus = isLastOfStatus(bucket, buckets)}
 			{@const overLimit = bucket.limit != null && bucketTasks.length > bucket.limit}
 			<div
-				class="board-col"
-				class:board-col-over={overBucket === bucket.id}
+				class={['board-col', { 'board-col-over': overBucket === bucket.id }]}
 				role="group"
 				aria-label={bucket.title}
 				ondragover={(e) => onDragOver(e, bucket.id)}

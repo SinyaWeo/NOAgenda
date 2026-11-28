@@ -113,6 +113,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'views.bulk.done': 'Upraveno úkolů: {count}',
 	'views.bulk.failed': 'Vybrané úkoly se nepodařilo upravit',
 	'views.kanban.noBuckets': 'Zatím žádné sloupce. Přidejte první níže.',
+	'views.kanban.noStatus': 'Bez stavu',
 	'views.kanban.moveTo': 'Přesunout do sloupce',
 	'views.kanban.status': 'Stav',
 	'views.kanban.lastOfStatus': 'Každý stav musí mít alespoň jeden sloupec',

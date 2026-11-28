@@ -76,6 +76,8 @@ const EXACT: Record<string, MessageKey> = {
 	'A project needs at least one bucket for each status': 'errors.server.lastBucketOfStatus',
 	'Unknown kanban bucket': 'errors.server.unknownBucket',
 	'The status does not match the kanban bucket': 'errors.server.bucketStatusMismatch',
+	"Only the project owner can share it with people outside the project's teams":
+		'errors.server.outsideTeamShare',
 	'Set a due date first': 'errors.server.noDueDate',
 	'Give either a reminder date or days before the due date': 'errors.server.reminderKind',
 	'Invalid code': 'errors.server.invalidCode',

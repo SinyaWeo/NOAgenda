@@ -227,6 +227,22 @@ export class NodeAccessService {
   }
 
   /**
+   * Whether the user is a member of a team the project, or any project above it, is shared with.
+   * Only the owner (`ownsProjectTree`) may give anyone else access to the project.
+   */
+  async inProjectTeams(userId: number, projectId: number): Promise<boolean> {
+    const q = sqlRunner(this.nodeRepository.manager);
+    const ids = [...new Set((await projectAncestors(q, [projectId])).map((r) => r.id))];
+    if (!ids.length) return false;
+    const rows = await q<{ one: number }>(
+      `SELECT 1 AS one FROM project_teams pt JOIN team_members tm ON tm.teamId = pt.teamId
+        WHERE tm.userId = ? AND pt.projectId IN (${ids.map(() => '?').join(',')}) LIMIT 1`,
+      [userId, ...ids],
+    );
+    return rows.length > 0;
+  }
+
+  /**
    * Needed access to delete a node (or purge it from the trash): for a project, owning it or a
    * project above it; for a task, the same as `assertCanModify` (call that, or `assertTrashed`, first).
    */

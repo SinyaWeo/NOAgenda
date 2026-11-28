@@ -78,6 +78,7 @@
 	];
 
 	const KANBAN_COLS = $derived<KanbanColumn[]>([
+		{ key: null, label: t('views.kanban.noStatus') },
 		{ key: 'open', label: t('common.status.open') },
 		{ key: 'in_progress', label: t('common.status.in_progress') },
 		{ key: 'done', label: t('common.status.done') }
@@ -307,7 +308,7 @@
 		tasks = tasks.map((t) => (byId.has(t.id) ? { ...t, ...byId.get(t.id) } : t));
 	}
 
-	async function updateTaskStatus(taskId: number, status: NodeStatus) {
+	async function updateTaskStatus(taskId: number, status: NodeStatus | null) {
 		try {
 			const before = tasks.find((t) => t.id === taskId)?.status;
 			const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, { status });

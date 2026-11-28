@@ -1,4 +1,5 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateTeamDto {
   @IsString()
@@ -28,4 +29,13 @@ export class UpdateTeamDto {
   @IsString()
   @MaxLength(255)
   description?: string;
+}
+
+export class AssignableUsersQueryDto {
+  /** Only people who can read this task or project (where being assigned would not give them access). */
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  nodeId?: number;
 }

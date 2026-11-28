@@ -23,26 +23,39 @@
 	let projects = $state<Project[]>([]);
 	let assigneeId = $state<number | undefined>(undefined);
 	let assignable = $state<UserSummary[]>([]);
+	let me = $state<UserSummary | null>(null);
+
+	// Members of the teams I manage; empty (so no picker) for everyone else. In a project only those
+	// who can already see it: assigning someone never opens a project to them.
+	$effect(() => {
+		const self = me;
+		const pid = projectId;
+		if (!self) return;
+		let stale = false;
+		void (async () => {
+			let members: UserSummary[] = [];
+			try {
+				members = await apiGetAuth<UserSummary[]>(`/teams/assignable-users${pid ? `?nodeId=${pid}` : ''}`);
+			} catch {
+				// no picker: the task is assigned to its creator
+			}
+			if (stale) return;
+			assignable = members.length ? [self, ...members.filter((m) => m.id !== self.id)] : [];
+			if (!assignable.some((u) => u.id === assigneeId)) assigneeId = self.id;
+		})();
+		return () => {
+			stale = true;
+		};
+	});
 
 	onMount(async () => {
-		const me = await getCurrentUser();
-		if (!me) {
+		const user = await getCurrentUser();
+		if (!user) {
 			goto('/user/login');
 			return;
 		}
-		assigneeId = me.id;
-		try {
-			// Members of the teams I own; empty (so no picker) for everyone else.
-			const members = await apiGetAuth<UserSummary[]>('/teams/assignable-users');
-			if (members.length) {
-				assignable = [
-					{ id: me.id, username: me.username, name: me.name },
-					...members.filter((m) => m.id !== me.id)
-				];
-			}
-		} catch {
-			// no picker: the task is assigned to its creator
-		}
+		assigneeId = user.id;
+		me = { id: user.id, username: user.username, name: user.name };
 		const pid = page.url.searchParams.get('projectId');
 		if (pid) projectId = Number(pid);
 		try {

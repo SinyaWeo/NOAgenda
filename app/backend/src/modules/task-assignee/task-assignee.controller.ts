@@ -71,12 +71,19 @@ export class TaskAssigneeController {
     await this.access.assertWrite(req.user.userId, Number(taskId));
     // Only real, active users who can already see the task: no notifying strangers.
     await this.users.assertActive(body.userId);
-    // Users who cannot see the task yet can still be assigned when the caller (ADMIN on it, e.g. its
-    // creator) manages a team they belong to; being assigned then grants them access (NodeAccessService).
+    // Users who cannot see the task yet can still be assigned a top-level personal task when the caller
+    // (ADMIN on it, i.e. its creator) manages a team they belong to: being assigned then grants them
+    // access (NodeAccessService). Assignment never opens a project (or a subtask) to anyone: they need
+    // access to the project first.
     const canSee = (await this.access.level(body.userId, Number(taskId))) >= Access.READ;
     if (!canSee) {
+      const personalTopLevel = task.parentId == null;
       const isAdmin = (await this.access.level(req.user.userId, Number(taskId))) >= Access.ADMIN;
-      if (!isAdmin || !(await this.teams.isSelfOrManagedTeamMember(req.user.userId, body.userId))) {
+      if (
+        !personalTopLevel ||
+        !isAdmin ||
+        !(await this.teams.isSelfOrManagedTeamMember(req.user.userId, body.userId))
+      ) {
         throw new BadRequestException('That user has no access to this task');
       }
     }

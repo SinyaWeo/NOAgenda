@@ -65,6 +65,16 @@ export function describeActivity(e: ActivityEntry, t: Translate): string {
 				to: text(c?.to) || t('common.unknown')
 			});
 		}
+		case 'project.share_changed': {
+			const c = change(e, 'share');
+			const target = e.changes?.target as { type?: string; name?: string | null; id?: number } | undefined;
+			const who = target?.name ?? `#${target?.id ?? ''}`;
+			const kind = target?.type === 'team' ? 'team' : 'user';
+			const perm = (v: unknown) => t(k(`common.permission.${text(v)}`));
+			if (!c?.from) return say(`share.${kind}.added`, { target: who, permission: perm(c?.to) });
+			if (!c.to) return say(`share.${kind}.removed`, { target: who });
+			return say(`share.${kind}.changed`, { target: who, from: perm(c.from), to: perm(c.to) });
+		}
 		case 'task.label_changed': {
 			const c = change(e, 'label');
 			return c?.to
@@ -127,6 +137,9 @@ export function changeLines(e: ActivityEntry, t: Translate, dateTime: (v: string
 	if (e.action === 'project.owner_changed') {
 		const reason = text(e.changes?.reason);
 		return reason ? [t('activity.reason', { reason })] : [];
+	}
+	if (e.action === 'project.share_changed') {
+		return e.changes?.outsideTeam ? [t('activity.share.outsideTeam')] : [];
 	}
 	if (!e.action.endsWith('.updated') || !e.changes) return [];
 	const keys = Object.keys(e.changes);

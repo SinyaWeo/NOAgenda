@@ -255,10 +255,11 @@ ok('...reopens it with the due date one day later', !!due0 && Date.parse(due1) -
 await page.waitForFunction(() => document.body.innerText.includes('Completed 1 time'));
 ok('...and the completed cycle shows in its history', /completed cycles/i.test(await text()));
 
-// Kanban: move a card to another bucket with its select, then drag it back.
+// Kanban: move a card to another bucket with its menu, then drag it back.
 await page.goto(`${BASE}/projects/${projectId}?view=kanban`);
 const card = page.getByRole('listitem').filter({ hasText: 'Daily standup' });
-await card.getByRole('combobox', { name: 'Move to bucket' }).selectOption({ label: 'In progress' });
+await card.getByRole('button', { name: 'Move to bucket' }).click();
+await card.getByRole('button', { name: 'In progress', exact: true }).click();
 const inColumn = (col) => page.getByRole('group', { name: col }).getByRole('link', { name: 'Daily standup' });
 await inColumn('In progress').waitFor();
 await page.reload();
@@ -267,6 +268,11 @@ ok('a Kanban card moves to another bucket and stays there after reload', (await 
 await page.getByRole('listitem').filter({ hasText: 'Daily standup' }).dragTo(page.getByRole('group', { name: 'To do' }));
 await inColumn('To do').waitFor();
 ok('a Kanban card can be dragged back to its first bucket', (await api(page, `/tasks/${repeatId}`)).body.status === 'open');
+await page.getByRole('listitem').filter({ hasText: 'Daily standup' }).dragTo(page.getByRole('group', { name: 'No status' }));
+await inColumn('No status').waitFor();
+ok('dropping a Kanban card on "No status" clears its status', (await api(page, `/tasks/${repeatId}`)).body.status === null);
+await page.getByRole('listitem').filter({ hasText: 'Daily standup' }).dragTo(page.getByRole('group', { name: 'To do' }));
+await inColumn('To do').waitFor();
 
 // Subproject: created from the parent's page, linked both ways.
 await page.goto(`${BASE}/projects/${projectId}`);
@@ -303,8 +309,10 @@ await page.waitForSelector('#project-member-picker');
 await page.fill('#project-member-picker', USER2);
 await page.locator('li[role=option]', { hasText: USER2 }).click();
 await page.selectOption('select[aria-label="Permission"]', 'read');
-await page.click('button:has-text("Add User")');
-await page.waitForSelector(`text=${USER2}`);
+await Promise.all([
+  page.waitForResponse((r) => r.request().method() === 'POST' && r.url().endsWith(`/api/projects/${projectId}/users`)),
+  page.click('button:has-text("Add User")'),
+]);
 const members = (await api(page, `/projects/${projectId}/users`)).body;
 ok('a project is shared read-only with another user from the Share page', JSON.stringify(members).includes(USER2) && JSON.stringify(members).includes('"read"'), JSON.stringify(members).slice(0, 200));
 const priv = (await api(page, '/projects', 'POST', { name: 'UI Private' })).body;

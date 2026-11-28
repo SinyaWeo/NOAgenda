@@ -99,6 +99,22 @@ describe('describeActivity', () => {
 		).toBe('alice removed attachment a.pdf from “Write docs”');
 	});
 
+	it('reads project sharing changes for people and teams, in both languages', () => {
+		const share = (changes: Record<string, unknown>) =>
+			entry({ action: 'project.share_changed', nodeType: 'project', nodeTitle: 'Home', changes });
+		const bob = { type: 'user', id: 9, name: 'bob' };
+		const added = share({ share: { from: null, to: 'write' }, target: bob, outsideTeam: true });
+		expect(describeActivity(added, en)).toBe('alice shared project “Home” with bob (Write)');
+		expect(describeActivity(added, cs)).toBe('alice: projekt „Home“ nasdílen uživateli bob (Zápis)');
+		expect(changeLines(added, en, date)).toEqual(['Not a member of the project’s teams']);
+		expect(describeActivity(share({ share: { from: 'read', to: 'admin' }, target: bob }), en)).toBe(
+			'alice changed the access of bob to project “Home” from Read to Manager'
+		);
+		const team = share({ share: { from: 'read', to: null }, target: { type: 'team', id: 4, name: 'Ops' } });
+		expect(describeActivity(team, en)).toBe('alice removed the access of team Ops to project “Home”');
+		expect(changeLines(team, en, date)).toEqual([]);
+	});
+
 	it('falls back to a generic sentence for an unknown action', () => {
 		expect(describeActivity(entry({ action: 'task.teleported' }), en)).toBe('alice changed “Write docs”');
 	});

@@ -66,7 +66,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'tasks.relations.title': 'Související úkoly',
 	'tasks.relations.empty': 'Žádné vazby.',
 	'tasks.relations.remove': 'Odebrat vazbu',
-	'tasks.relations.idPlaceholder': 'ID úkolu',
+	'tasks.relations.selectPlaceholder': 'Vyberte úkol',
 	'tasks.relations.taskFallback': 'Úkol č. {id}',
 	'tasks.relation.related': 'související s',
 	'tasks.relation.subtaskOf': 'podúkol úkolu',

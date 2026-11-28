@@ -22,6 +22,9 @@ docker/preflight.sh remote https://your.domain           # is the LIVE site corr
       **Release** workflow has published the images to GHCR (see "Prebuilt images" in [DEPLOYMENT.md](DEPLOYMENT.md)).
 - [ ] Decide **who can sign up**. Default is anyone. For a soft launch set `REGISTRATION_INVITE_CODE`
       (share the code with the people you invite) or `REGISTRATION_ENABLED=false`.
+- [ ] **Version 1.0.0**: set `APP_VERSION` (`app/backend/src/common/constants/version.ts`, now 0.9.1) and both
+      `package.json` versions (now 0.2.0) to `1.0.0`, and start the About timeline (`app/frontend/src/lib/timeline.ts`,
+      empty until then) with the release entry (en + cs texts).
 
 ## 1. Server (you)
 

@@ -263,6 +263,25 @@ s, tp = call('POST', '/projects', {'name': 'Team project', 'teamId': tm}, A); ch
 s, lst = call('GET', '/projects', None, Bt); check('a team member sees the team project', tp['id'] in [p['id'] for p in lst], True)
 s, tps = call('GET', f'/teams/{tm}/projects', None, Bt); check('a team member lists the team projects', (s, [p['permission'] for p in tps if p['id'] == tp['id']]), (200, ['write']))
 s, _ = call('GET', f'/teams/{tm}/projects', None, C); check('an outsider cannot list the team projects', s, 403)
+# sharing outside the project's teams is for the owner only, and every change is logged
+s, _ = call('POST', f"/projects/{tp['id']}/users", {'userId': bid, 'permission': 'admin'}, A); check('the owner makes a team member Manager', s, [200, 201])
+s, _ = call('POST', f"/projects/{tp['id']}/users", {'userId': cid, 'permission': 'read'}, Bt); check("a Manager cannot share with someone outside the project's teams", s, 403)
+s, _ = call('POST', f"/projects/{tp['id']}/users", {'userId': cid, 'permission': 'read'}, A); check('the owner can', s, [200, 201])
+s, _ = call('PUT', f"/projects/{tp['id']}/users/{cid}", {'permission': 'write'}, Bt); check("a Manager cannot raise an outsider's access", s, 403)
+s, _ = call('DELETE', f"/projects/{tp['id']}/users/{cid}", None, Bt); check('a Manager can take an outsider out', s, [200, 204])
+time.sleep(1)
+s, r = call('GET', f"/activity?projectId={tp['id']}", None, A)
+shares = [e['changes'] for e in r.get('items', []) if e['action'] == 'project.share_changed'] if s == 200 else []
+check('every share change is in the project activity (team at creation, manager, outsider in and out)', len(shares), 4)
+check('the outsider grant is flagged', all(c.get('outsideTeam') for c in shares if (c.get('target') or {}).get('id') == cid), True)
+s, _ = call('DELETE', f"/projects/{tp['id']}/users/{bid}", None, A)  # bob keeps only the team's access below
+# assignment never opens a project: a team member without access is neither offered nor accepted
+s, cl = call('POST', '/projects', {'name': 'Closed'}, A)
+s, ct = call('POST', '/tasks', {'title': 'closed task', 'projectId': cl['id']}, A)
+s, au = call('GET', f"/teams/assignable-users?nodeId={ct['id']}", None, A); check('the picker leaves out team members without access to the project', (s, au), (200, []))
+s, _ = call('POST', f"/tasks/{ct['id']}/assignees", {'userId': bid}, A); check('nor can they be assigned a task in it', s, 400)
+s, _ = call('GET', f"/tasks/{ct['id']}", None, Bt); check('and they still cannot open it', s, [403, 404])
+s, _ = call('DELETE', f"/projects/{cl['id']}", None, A)
 s, mine = call('POST', '/tasks', {'title': 'personal', 'assigneeId': bid}, A); check('alice creates a personal task for bob', s, 201)
 s, _ = call('PUT', f"/tasks/{mine['id']}", {'parentId': tp['id']}, Bt); check("an assignee cannot move the creator's personal task into a project", s, 403)
 s, _ = call('PATCH', f"/nodes/{mine['id']}/move", {'parentId': tp['id']}, Bt); check('nor through /nodes/:id/move', s, 403)

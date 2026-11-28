@@ -12,6 +12,7 @@ import { Permission } from '../project-user.entity';
 import { AddProjectUserDto } from '../dto/project-sharing.dto';
 import { ProjectUserController } from '../project-user.controller';
 import { ProjectUserService } from '../project-user.service';
+import { OUTSIDE_TEAM_SHARE } from '../share-audit';
 
 const req = authReq(7, { username: 'ann' });
 const flush = () => new Promise((r) => setImmediate(r));
@@ -65,26 +66,105 @@ describe('ProjectUserController', () => {
   let projects: Mocks;
   let notifications: Mocks;
   let users: Mocks;
+  let events: Mocks;
   let controller: ProjectUserController;
 
   beforeEach(() => {
-    access = { assertProject: jest.fn(async () => undefined) };
+    access = {
+      assertProject: jest.fn(async () => undefined),
+      inProjectTeams: jest.fn(async () => true),
+      ownsProjectTree: jest.fn(async () => false),
+    };
     service = {
       findByProject: jest.fn(async () => []),
+      findOne: jest.fn(async () => ({ id: 1, permission: Permission.READ, user: { id: 9, username: 'bob' } })),
       add: jest.fn(async () => ({ id: 1 })),
       update: jest.fn(),
       remove: jest.fn(),
     };
-    projects = { findById: jest.fn(async () => ({ id: 3, name: 'Alpha' })) };
+    projects = { findById: jest.fn(async () => ({ id: 3, name: 'Alpha', ownerId: 1 })) };
     notifications = { notify: jest.fn(async () => undefined) };
     users = { assertActive: jest.fn(async () => undefined) };
+    events = { emit: jest.fn() };
     controller = new ProjectUserController(
       asMock(service),
       asMock(projects),
       asMock(access),
       asMock(notifications),
       asMock(users),
+      asMock(events),
     );
+  });
+
+  const shareEvent = () => events.emit.mock.calls.map((c) => c[0]).find((e) => e.name === 'project.share_changed');
+
+  it('a Manager cannot share with someone outside the project teams', async () => {
+    access.inProjectTeams.mockResolvedValue(false);
+    await expect(controller.add(3, { userId: 9 }, req)).rejects.toThrow(OUTSIDE_TEAM_SHARE);
+    expect(access.inProjectTeams).toHaveBeenCalledWith(9, 3);
+    expect(access.ownsProjectTree).toHaveBeenCalledWith(7, 3);
+    expect(service.add).not.toHaveBeenCalled();
+    expect(events.emit).not.toHaveBeenCalled();
+  });
+
+  it('a Manager cannot raise the permission of someone outside the project teams', async () => {
+    access.inProjectTeams.mockResolvedValue(false);
+    await expect(controller.update(3, 9, { permission: Permission.ADMIN }, req)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(service.update).not.toHaveBeenCalled();
+  });
+
+  it('the owner shares with an outsider, and it is logged as outside the teams', async () => {
+    access.inProjectTeams.mockResolvedValue(false);
+    access.ownsProjectTree.mockResolvedValue(true);
+    await controller.add(3, { userId: 9, permission: Permission.WRITE }, req);
+    expect(service.add).toHaveBeenCalledWith(3, 9, Permission.WRITE);
+    expect(shareEvent()).toEqual({
+      name: 'project.share_changed',
+      data: { projectId: 3 },
+      nodeId: 3,
+      projectId: 3,
+      owner: 1,
+      actorId: 7,
+      title: 'Alpha',
+      changes: {
+        share: { from: null, to: Permission.READ },
+        target: { type: 'user', id: 9, name: 'bob' },
+        outsideTeam: true,
+      },
+      auditOnly: true,
+    });
+  });
+
+  it('a Manager shares with a team member, logged without the outside flag', async () => {
+    await controller.add(3, { userId: 9 }, req);
+    expect(access.ownsProjectTree).not.toHaveBeenCalled();
+    expect(shareEvent().changes).toEqual({
+      share: { from: null, to: Permission.READ },
+      target: { type: 'user', id: 9, name: 'bob' },
+    });
+  });
+
+  it('logs a permission change and a removal (a Manager may remove anyone)', async () => {
+    await controller.update(3, 9, { permission: Permission.WRITE }, req);
+    expect(shareEvent().changes.share).toEqual({ from: Permission.READ, to: Permission.WRITE });
+    events.emit.mockClear();
+    access.inProjectTeams.mockResolvedValue(false);
+    await controller.remove(3, 9, req);
+    expect(service.remove).toHaveBeenCalledWith(3, 9);
+    expect(shareEvent().changes).toEqual(
+      expect.objectContaining({ share: { from: Permission.READ, to: null }, outsideTeam: true }),
+    );
+  });
+
+  it('update and remove of a grant that does not exist change and log nothing', async () => {
+    service.findOne.mockResolvedValue(null);
+    await controller.update(3, 9, { permission: Permission.WRITE }, req);
+    await controller.remove(3, 9, req);
+    expect(service.update).not.toHaveBeenCalled();
+    expect(service.remove).not.toHaveBeenCalled();
+    expect(events.emit).not.toHaveBeenCalled();
   });
 
   it('list requires ADMIN (readers do not see who else has access)', async () => {

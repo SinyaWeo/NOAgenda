@@ -50,6 +50,15 @@ export const messages: Record<keyof typeof en, Message> = {
 	'activity.action.assignee.cleared': '{actor}: odebrán řešitel {from} z „{title}“',
 	'activity.action.owner.changed': '{actor}: projekt „{title}“ předán z {from} na {to}',
 	'activity.reason': 'Důvod: {reason}',
+	'activity.action.share.user.added': '{actor}: projekt „{title}“ nasdílen uživateli {target} ({permission})',
+	'activity.action.share.user.changed':
+		'{actor}: přístup uživatele {target} k projektu „{title}“ změněn z {from} na {to}',
+	'activity.action.share.user.removed': '{actor}: odebrán přístup uživatele {target} k projektu „{title}“',
+	'activity.action.share.team.added': '{actor}: projekt „{title}“ nasdílen týmu {target} ({permission})',
+	'activity.action.share.team.changed':
+		'{actor}: přístup týmu {target} k projektu „{title}“ změněn z {from} na {to}',
+	'activity.action.share.team.removed': '{actor}: odebrán přístup týmu {target} k projektu „{title}“',
+	'activity.share.outsideTeam': 'Není členem týmů projektu',
 	'activity.action.label.added': '{actor}: přidán štítek {label} k „{title}“',
 	'activity.action.label.removed': '{actor}: odebrán štítek {label} z „{title}“',
 	'activity.action.relation.added': '{actor}: přidán vztah u „{title}“: {kind} „{other}“',

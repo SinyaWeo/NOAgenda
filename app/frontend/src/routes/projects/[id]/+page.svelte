@@ -165,7 +165,7 @@
 		}
 	}
 
-	async function updateTaskStatus(taskId: number, status: string) {
+	async function updateTaskStatus(taskId: number, status: NodeStatus | null) {
 		try {
 			const before = tasks.find((t) => t.id === taskId)?.status;
 			const updated = await apiPutAuth<Task>(`/tasks/${taskId}`, { status });
@@ -307,6 +307,7 @@
 				tasks={filteredTasks}
 				{buckets}
 				onMove={moveTaskToBucket}
+				onClearStatus={canWrite ? (id) => updateTaskStatus(id, null) : undefined}
 				onCreate={canManageBuckets ? createBucket : undefined}
 				onUpdate={canManageBuckets ? updateBucket : undefined}
 				onDelete={canManageBuckets ? deleteBucket : undefined}
@@ -333,7 +334,7 @@
 		{:else if filteredTasks.length === 0}
 			<p class="text-gray-500 dark:text-gray-400">{t('views.project.noMatch')}</p>
 		{:else}
-			<Card class="p-0 overflow-hidden">
+			<Card class="p-0 overflow-hidden max-w-none">
 				{#each filteredTasks as task, i (task.id)}
 					<div
 						class="flex items-center gap-2.5 px-4 py-3 {i < filteredTasks.length - 1
@@ -366,10 +367,15 @@
 						<select
 							class="text-xs rounded-full ps-2 pe-8 py-0.5 font-semibold border-0 cursor-pointer bg-transparent shrink-0"
 							data-status={task.status}
-							value={task.status}
-							onchange={(e) => updateTaskStatus(task.id, (e.target as HTMLSelectElement).value)}
+							value={task.status ?? ''}
+							onchange={(e) =>
+								updateTaskStatus(
+									task.id,
+									((e.target as HTMLSelectElement).value || null) as NodeStatus | null
+								)}
 							aria-label={t('views.changeStatus')}
 						>
+							<option value="">{t('views.kanban.noStatus')}</option>
 							<option value="open">{t('common.status.open')}</option>
 							<option value="in_progress">{t('common.status.in_progress')}</option>
 							<option value="done">{t('common.status.done')}</option>

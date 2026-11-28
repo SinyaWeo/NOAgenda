@@ -85,6 +85,8 @@ export const messages = {
 	'projects.share.users': 'Users',
 	'projects.share.addUserLabel': 'Add a user',
 	'projects.share.permission': 'Permission',
+	'projects.share.teamMembersOnly':
+		'As a Manager you can add only members of the project’s teams. The owner can share with anyone, and every change is logged.',
 	'projects.share.addUser': 'Add User',
 	'projects.share.userFallback': 'User #{id}',
 	'projects.share.noUsers': 'No users added yet.',

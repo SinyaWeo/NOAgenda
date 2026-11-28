@@ -10,6 +10,7 @@ import {
   Body,
   Param,
   NotFoundException,
+  Query,
   Request,
 } from '@nestjs/common';
 import { MfaService } from '../mfa/mfa.service';
@@ -17,7 +18,8 @@ import { TeamService, UserSummary } from './team.service';
 import { TeamAccessService } from './team-access.service';
 import { Team } from './team.entity';
 import { orConflict } from '../../common/db-errors';
-import { CreateTeamDto, UpdateTeamDto } from './dto/team.dto';
+import { AssignableUsersQueryDto, CreateTeamDto, UpdateTeamDto } from './dto/team.dto';
+import { Access, NodeAccessService } from '../node/node-access.service';
 
 @MultiUserOnly()
 @Controller('teams')
@@ -26,6 +28,7 @@ export class TeamController {
     private readonly teamService: TeamService,
     private readonly teamAccess: TeamAccessService,
     private readonly mfa: MfaService,
+    private readonly access: NodeAccessService,
   ) {}
 
   @Get()
@@ -33,10 +36,19 @@ export class TeamController {
     return this.teamService.findAll(req.user.userId);
   }
 
-  /** Members of the teams the caller manages: who they can assign tasks to. Declared before ':id'. */
+  /**
+   * Members of the teams the caller manages: who they can assign tasks to. With `nodeId` (a project
+   * task, or the parent of a new one) only those who can already read it: assignment never opens a
+   * project to anyone. Declared before ':id'.
+   */
   @Get('assignable-users')
-  async assignableUsers(@Request() req: AuthRequest): Promise<UserSummary[]> {
-    return this.teamService.findAssignableUsers(req.user.userId);
+  async assignableUsers(@Query() q: AssignableUsersQueryDto, @Request() req: AuthRequest): Promise<UserSummary[]> {
+    const users = await this.teamService.findAssignableUsers(req.user.userId);
+    if (q.nodeId === undefined) return users;
+    await this.access.assertRead(req.user.userId, q.nodeId);
+    const nodeId = q.nodeId;
+    const levels = await Promise.all(users.map((u) => this.access.level(u.id, nodeId)));
+    return users.filter((_, i) => levels[i] >= Access.READ);
   }
 
   @Get(':id')

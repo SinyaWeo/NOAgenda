@@ -65,12 +65,21 @@ describe('TaskAssigneeController', () => {
     expect(service.findByTask).not.toHaveBeenCalled();
   });
 
-  it('add lets a task admin assign a member of a team they own who cannot see the task yet', async () => {
+  it('add lets a personal task admin assign a member of a team they manage who cannot see the task yet', async () => {
     access.level.mockImplementation(async (uid: number) => (uid === 5 ? 0 : 3));
     teams.isSelfOrManagedTeamMember.mockResolvedValue(true);
     await controller.add(7, { userId: 5 }, req);
     expect(teams.isSelfOrManagedTeamMember).toHaveBeenCalledWith(2, 5);
     expect(service.add).toHaveBeenCalledWith(7, 5);
+  });
+
+  it('add never assigns a project task to someone without access to the project, even a managed team member', async () => {
+    tasks.findById.mockResolvedValue({ id: 7, title: 'Ship it', parentId: 40 });
+    access.level.mockImplementation(async (uid: number) => (uid === 5 ? 0 : 3));
+    teams.isSelfOrManagedTeamMember.mockResolvedValue(true);
+    await expect(controller.add(7, { userId: 5 }, req)).rejects.toBeInstanceOf(BadRequestException);
+    expect(service.add).not.toHaveBeenCalled();
+    expect(notifications.notify).not.toHaveBeenCalled();
   });
 
   it('add rejects a user without access who is not in a team the caller owns', async () => {

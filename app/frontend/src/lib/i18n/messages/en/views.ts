@@ -108,6 +108,7 @@ export const messages = {
 	'views.bulk.done': '{count} tasks updated',
 	'views.bulk.failed': 'Could not update the selected tasks',
 	'views.kanban.noBuckets': 'No buckets yet. Add the first one below.',
+	'views.kanban.noStatus': 'No status',
 	'views.kanban.moveTo': 'Move to bucket',
 	'views.kanban.status': 'Status',
 	'views.kanban.lastOfStatus': 'Each status needs at least one bucket',

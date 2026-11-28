@@ -78,6 +78,7 @@ export const messages: Record<keyof typeof en, Message> = {
 	'errors.server.queryTooShort': 'K vyhledávání zadejte alespoň 3 znaky',
 	'errors.server.lastBucketOfStatus': 'Každý stav musí mít alespoň jeden sloupec',
 	'errors.server.unknownBucket': 'Neznámý sloupec Kanbanu',
+	'errors.server.outsideTeamShare': 'Lidem mimo týmy projektu ho může nasdílet jen vlastník projektu',
 	'errors.server.bucketStatusMismatch': 'Stav neodpovídá sloupci Kanbanu',
 	'errors.server.noDueDate': 'Nejdřív nastavte termín',
 	'errors.server.reminderKind': 'Zadejte buď datum, nebo počet dní před termínem',

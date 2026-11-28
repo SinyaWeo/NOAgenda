@@ -89,6 +89,8 @@ export const messages: Record<keyof typeof en, Message> = {
 	'projects.share.users': 'Uživatelé',
 	'projects.share.addUserLabel': 'Přidat uživatele',
 	'projects.share.permission': 'Oprávnění',
+	'projects.share.teamMembersOnly':
+		'Jako manažer můžete přidat jen členy týmů projektu. Vlastník může sdílet s kýmkoli a každá změna se zaznamenává.',
 	'projects.share.addUser': 'Přidat uživatele',
 	'projects.share.userFallback': 'Uživatel č. {id}',
 	'projects.share.noUsers': 'Zatím nejsou přidáni žádní uživatelé.',

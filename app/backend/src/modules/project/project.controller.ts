@@ -24,6 +24,8 @@ import { AppSettingsService } from '../app-settings/app-settings.service';
 import { NOT_IN_SINGLE_USER_MODE } from '../../common/guards/single-user-mode.guard';
 import { UserService } from '../user/user.service';
 import type { User } from '../user/user.entity';
+import { DomainEvents } from '../../common/domain-events';
+import { auditShareChange } from '../project-user/share-audit';
 
 /** Who owns a project, as shown to the people it is shared with. */
 type OwnerSummary = Pick<User, 'id' | 'username' | 'name' | 'avatarUrl'>;
@@ -38,6 +40,7 @@ export class ProjectController {
     private readonly projectTeams: ProjectTeamService,
     private readonly appSettings: AppSettingsService,
     private readonly users: UserService,
+    private readonly events: DomainEvents,
   ) {}
 
   /**
@@ -93,7 +96,18 @@ export class ProjectController {
       if (!(await this.projectTeams.canUseTeam(req.user.userId, teamId))) throw new ForbiddenException();
     }
     const project = await this.projectService.create({ ...data, ownerId: req.user.userId }, req.user.userId);
-    if (teamId !== undefined) await this.projectTeams.add(project.id, teamId, teamPermission ?? Permission.WRITE);
+    if (teamId !== undefined) {
+      const permission = teamPermission ?? Permission.WRITE;
+      await this.projectTeams.add(project.id, teamId, permission);
+      const grant = await this.projectTeams.findOne(project.id, teamId);
+      await auditShareChange(this.events, this.projectService, {
+        projectId: project.id,
+        actorId: req.user.userId,
+        target: { type: 'team', id: teamId, name: grant?.team?.name ?? null },
+        from: null,
+        to: permission,
+      });
+    }
     return project;
   }
 

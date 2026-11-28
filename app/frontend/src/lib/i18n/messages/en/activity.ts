@@ -43,6 +43,15 @@ export const messages = {
 	'activity.action.assignee.cleared': '{actor} unassigned {from} from “{title}”',
 	'activity.action.owner.changed': '{actor} transferred project “{title}” from {from} to {to}',
 	'activity.reason': 'Reason: {reason}',
+	'activity.action.share.user.added': '{actor} shared project “{title}” with {target} ({permission})',
+	'activity.action.share.user.changed':
+		'{actor} changed the access of {target} to project “{title}” from {from} to {to}',
+	'activity.action.share.user.removed': '{actor} removed the access of {target} to project “{title}”',
+	'activity.action.share.team.added': '{actor} shared project “{title}” with team {target} ({permission})',
+	'activity.action.share.team.changed':
+		'{actor} changed the access of team {target} to project “{title}” from {from} to {to}',
+	'activity.action.share.team.removed': '{actor} removed the access of team {target} to project “{title}”',
+	'activity.share.outsideTeam': 'Not a member of the project’s teams',
 	'activity.action.label.added': '{actor} added label {label} to “{title}”',
 	'activity.action.label.removed': '{actor} removed label {label} from “{title}”',
 	'activity.action.relation.added': '{actor} added to “{title}” the relation: {kind} “{other}”',

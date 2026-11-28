@@ -1,5 +1,9 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { apiGetAuth, MAX_PAGE_SIZE } from '#lib/api.js';
 	import { t, type MessageKey } from '#lib/i18n/index.js';
+	import { groupByProject } from '#lib/project-groups.js';
+	import { loadProjectNames } from '#lib/project-names.js';
 	import type { Task, TaskRelation } from '#lib/types.js';
 	import { relationLabel, relationKindKey, RELATION_KINDS } from '#lib/types-task.js';
 	import { Button, Input, Select } from 'flowbite-svelte';
@@ -21,8 +25,20 @@
 	} = $props();
 
 	let newSubtaskTitle = $state('');
-	let newRelatedTaskId = $state('');
+	let newRelatedTaskId = $state<number | ''>('');
 	let newRelationKind = $state('related');
+
+	// Tasks the user can link to, grouped like the Tasks view: personal first, then by project.
+	let allTasks = $state<Task[]>([]);
+	let projectNames = $state<Record<number, string>>({});
+	onMount(async () => {
+		const [list, names] = await Promise.all([
+			apiGetAuth<Task[]>(`/tasks?sort=title&order=asc&limit=${MAX_PAGE_SIZE}`).catch((): Task[] => []),
+			loadProjectNames()
+		]);
+		allTasks = list;
+		projectNames = names;
+	});
 
 	// Per-task input must not leak from the task we just left.
 	$effect(() => {
@@ -42,6 +58,20 @@
 		})
 	);
 
+	/** Not this task, and not one it already points to with the chosen kind. */
+	const candidateGroups = $derived.by(() => {
+		const linked = new Set(
+			rows.filter((r) => !r.incoming && r.rel.kind === newRelationKind).map((r) => r.other.id)
+		);
+		return groupByProject(
+			allTasks.filter((x) => x.id !== taskId && !linked.has(x.id)),
+			projectNames
+		);
+	});
+	const canAddRelation = $derived(
+		newRelatedTaskId !== '' && candidateGroups.some((g) => g.tasks.some((x) => x.id === newRelatedTaskId))
+	);
+
 	const LABEL = 'block text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1';
 	const SECTION = 'mt-4 pt-4 border-t border-gray-100 dark:border-gray-700';
 
@@ -51,8 +81,8 @@
 		if (await onAddSubtask(newSubtaskTitle)) newSubtaskTitle = '';
 	}
 	async function submitRelation() {
-		if (!newRelatedTaskId) return;
-		if (await onAddRelation(Number(newRelatedTaskId), newRelationKind)) newRelatedTaskId = '';
+		if (!canAddRelation || newRelatedTaskId === '') return;
+		if (await onAddRelation(newRelatedTaskId, newRelationKind)) newRelatedTaskId = '';
 	}
 </script>
 
@@ -134,16 +164,24 @@
 		<p class="text-sm text-gray-500 dark:text-gray-400 mb-2">{t('tasks.relations.empty')}</p>
 	{/if}
 	<div class="flex items-center gap-2 flex-wrap">
-		<Input
-			type="number"
+		<Select
 			size="sm"
 			bind:value={newRelatedTaskId}
-			placeholder={t('tasks.relations.idPlaceholder')}
-			class="w-28"
-		/>
+			placeholder={t('tasks.relations.selectPlaceholder')}
+			aria-label={t('tasks.relations.selectPlaceholder')}
+			class="flex-1 min-w-48"
+		>
+			{#each candidateGroups as group (group.projectId)}
+				<optgroup label={group.projectId != null ? group.name : t('views.tasks.noProject')}>
+					{#each group.tasks as task (task.id)}
+						<option value={task.id}>{task.title} (#{task.id})</option>
+					{/each}
+				</optgroup>
+			{/each}
+		</Select>
 		<Select placeholder="" size="sm" bind:value={newRelationKind} class="w-auto">
 			{#each RELATION_KINDS as k (k)}<option value={k}>{t(relationKindKey(k))}</option>{/each}
 		</Select>
-		<Button size="xs" onclick={submitRelation}>{t('common.add')}</Button>
+		<Button size="xs" onclick={submitRelation} disabled={!canAddRelation}>{t('common.add')}</Button>
 	</div>
 </section>

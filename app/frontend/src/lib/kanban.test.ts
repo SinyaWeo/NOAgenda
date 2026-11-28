@@ -21,8 +21,9 @@ describe('effectiveBucketId', () => {
 		expect(effectiveBucketId({ bucketId: 99, status: 'in_progress' }, buckets)).toBe(3);
 	});
 
-	it('treats a task without status as open, and returns null without a matching bucket', () => {
-		expect(effectiveBucketId({ status: null }, buckets)).toBe(2);
+	it('returns null for a task without status (even one left in a bucket) or without a matching bucket', () => {
+		expect(effectiveBucketId({ status: null }, buckets)).toBeNull();
+		expect(effectiveBucketId({ bucketId: 1, status: null }, buckets)).toBeNull();
 		expect(effectiveBucketId({ status: 'done' }, [b(1, 'open', 0)])).toBeNull();
 	});
 });

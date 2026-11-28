@@ -7,16 +7,23 @@ import { AppSettingsService } from '../../app-settings/app-settings.service';
 import { UserService } from '../../user/user.service';
 import { ForbiddenException } from '@nestjs/common';
 import type { AuthRequest } from '../../../common/auth-user';
+import { DomainEvents } from '../../../common/domain-events';
 
 describe('ProjectController', () => {
   let controller: ProjectController;
   let service: ProjectService;
-  let teams: { canUseTeam: jest.Mock; add: jest.Mock };
+  let teams: { canUseTeam: jest.Mock; add: jest.Mock; findOne: jest.Mock };
+  let events: { emit: jest.Mock };
   let settings: { singleUserMode: jest.Mock };
   const req = { user: { userId: 7 } } as AuthRequest;
 
   beforeEach(async () => {
-    teams = { canUseTeam: jest.fn(async () => true), add: jest.fn(async () => ({})) };
+    teams = {
+      canUseTeam: jest.fn(async () => true),
+      add: jest.fn(async () => ({})),
+      findOne: jest.fn(async () => ({ team: { id: 3, name: 'Ops' } })),
+    };
+    events = { emit: jest.fn() };
     settings = { singleUserMode: jest.fn(async () => false) };
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ProjectController],
@@ -44,6 +51,7 @@ describe('ProjectController', () => {
         },
         { provide: ProjectTeamService, useValue: teams },
         { provide: AppSettingsService, useValue: settings },
+        { provide: DomainEvents, useValue: events },
         {
           provide: UserService,
           useValue: {
@@ -102,6 +110,15 @@ describe('ProjectController', () => {
     await controller.create({ name: 'P', teamId: 3 }, req);
     expect(service.create).toHaveBeenCalledWith({ name: 'P', ownerId: 7 }, 7);
     expect(teams.add).toHaveBeenCalledWith(4, 3, 'write');
+    expect(events.emit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'project.share_changed',
+        nodeId: 4,
+        actorId: 7,
+        changes: { share: { from: null, to: 'write' }, target: { type: 'team', id: 3, name: 'Ops' } },
+        auditOnly: true,
+      }),
+    );
   });
 
   it('create refuses a team the caller does not belong to, before creating anything', async () => {

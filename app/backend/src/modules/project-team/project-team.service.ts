@@ -22,14 +22,21 @@ export class ProjectTeamService {
     return rows.filter((r) => r.project && !r.project.deletedAt);
   }
 
-  /** True when the user owns the team or is one of its members. */
+  /** True when the user is a member of the team (creating it grants nothing by itself, see TeamAccessService). */
   async canUseTeam(userId: number, teamId: number): Promise<boolean> {
     const rows: unknown[] = await this.repo.manager.query(
-      `SELECT 1 FROM teams t
-        WHERE t.id = ? AND (t.ownerId = ? OR EXISTS (SELECT 1 FROM team_members tm WHERE tm.teamId = t.id AND tm.userId = ?))`,
-      [teamId, userId, userId],
+      'SELECT 1 FROM team_members tm WHERE tm.teamId = ? AND tm.userId = ?',
+      [teamId, userId],
     );
     return rows.length > 0;
+  }
+
+  /** One team's grant on the project (with the team), or null. */
+  async findOne(projectId: number, teamId: number): Promise<ProjectTeam | null> {
+    return this.repo.findOne({
+      where: { project: { id: projectId }, team: { id: teamId } },
+      relations: { team: true },
+    });
   }
 
   async add(projectId: number, teamId: number, permission: Permission = Permission.READ): Promise<ProjectTeam> {

@@ -8,7 +8,7 @@
 	import { errMessage } from '#lib/errors.js';
 	import { t, type MessageKey } from '#lib/i18n/index.js';
 	import { showToast } from '#lib/toast.svelte.js';
-	import type { Permission, ProjectMember, Team, UserSummary } from '#lib/types.js';
+	import type { Permission, Project, ProjectMember, Team, UserSummary } from '#lib/types.js';
 	import type { ProjectTeamMember } from '#lib/types-misc.js';
 
 	const projectId = () => page.params.id;
@@ -20,6 +20,8 @@
 	let picker: ReturnType<typeof UserPicker> | undefined = $state();
 	let newTeamId = $state('');
 	let newPermission = $state<Permission>('read');
+	/** The owner (of this project or one above it) may share with anyone; a Manager only with the project's teams. */
+	let isOwner = $state(true);
 
 	const memberIds = $derived(users.map((m) => m.user?.id).filter((id): id is number => id != null));
 
@@ -33,15 +35,19 @@
 	}
 
 	async function load(id: string, isStale: () => boolean) {
-		const [u, t, at] = await Promise.all([
+		const [u, t, at, owner] = await Promise.all([
 			apiGetAuth<ProjectMember[]>(`/projects/${id}/users`),
 			apiGetAuth<ProjectTeamMember[]>(`/projects/${id}/teams`),
-			apiGetAuth<Team[]>('/teams').catch(() => [] as Team[])
+			apiGetAuth<Team[]>('/teams').catch(() => [] as Team[]),
+			apiGetAuth<Project>(`/projects/${id}`)
+				.then((p) => p.canRemove ?? false)
+				.catch(() => true)
 		]);
 		if (isStale()) return;
 		users = u;
 		teams = t;
 		allTeams = at;
+		isOwner = owner;
 	}
 
 	const pageLoad = loadOnParamChange(() => page.params.id ?? '', load);
@@ -126,6 +132,9 @@
 				{t('projects.share.addUser')}
 			</Button>
 		</form>
+		{#if !isOwner}
+			<p class="text-xs text-gray-500 dark:text-gray-400 -mt-2 mb-4">{t('projects.share.teamMembersOnly')}</p>
+		{/if}
 		{#if users.length}
 			{#each users as u, i (u.id)}
 				<div

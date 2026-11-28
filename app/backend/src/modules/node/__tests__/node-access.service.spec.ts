@@ -266,6 +266,14 @@ describe('NodeAccessService', () => {
     });
   });
 
+  it('inProjectTeams looks for team membership on the project and every project above it', async () => {
+    // The mock answers the team query like a grant query: [userId, ...projectIds].
+    const svc = build([project(20, OTHER), project(21, OTHER, 20), project(30, OTHER)], { [20 * 1000 + ME]: ['team'] });
+    expect(await svc.inProjectTeams(ME, 21)).toBe(true);
+    expect(await svc.inProjectTeams(ME, 30)).toBe(false);
+    expect(await svc.inProjectTeams(3, 21)).toBe(false);
+  });
+
   it('rejects a parent chain that already loops', async () => {
     const svc = build([task(11, 12, ME), task(12, 11, ME), task(13, null, ME)]);
     await expect(svc.assertNoCycle(13, 11)).rejects.toBeInstanceOf(BadRequestException);

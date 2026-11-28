@@ -6,9 +6,10 @@ import { TeamService } from './team.service';
 import { TeamAccessService } from './team-access.service';
 import { TeamController } from './team.controller';
 import { MfaModule } from '../mfa/mfa.module';
+import { NodeModule } from '../node/node.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Team, TeamMember]), MfaModule],
+  imports: [TypeOrmModule.forFeature([Team, TeamMember]), MfaModule, NodeModule],
   providers: [TeamService, TeamAccessService],
   controllers: [TeamController],
   exports: [TeamService, TeamAccessService],

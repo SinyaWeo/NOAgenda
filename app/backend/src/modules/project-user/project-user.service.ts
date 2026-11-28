@@ -15,6 +15,14 @@ export class ProjectUserService {
     return this.repo.find({ where: { project: { id: projectId } }, relations: { user: true, project: true } });
   }
 
+  /** One user's grant on the project (with the user), or null. */
+  async findOne(projectId: number, userId: number): Promise<ProjectUser | null> {
+    return this.repo.findOne({
+      where: { project: { id: projectId }, user: { id: userId } },
+      relations: { user: true },
+    });
+  }
+
   async add(projectId: number, userId: number, permission: Permission = Permission.READ): Promise<ProjectUser> {
     const entry = this.repo.create({
       project: { id: projectId },

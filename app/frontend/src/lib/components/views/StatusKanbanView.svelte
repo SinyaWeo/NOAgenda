@@ -28,27 +28,29 @@
 		overCol = null;
 	}
 
-	function onDragOver(e: DragEvent, key: string) {
+	/** A column's id for keys and drag state; the "No status" column (key null) is 'none'. */
+	const colId = (key: KanbanColumn['key']) => key ?? 'none';
+
+	function onDragOver(e: DragEvent, key: KanbanColumn['key']) {
 		if (draggingId == null) return;
 		e.preventDefault();
 		if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
-		overCol = key;
+		overCol = colId(key);
 	}
 
 	function onDrop(e: DragEvent, key: KanbanColumn['key']) {
 		e.preventDefault();
 		const task = tasks.find((x) => x.id === draggingId);
 		onDragEnd();
-		if (task && task.status !== key) onStatusChange?.(task.id, key);
+		if (task && (task.status ?? null) !== key) onStatusChange?.(task.id, key);
 	}
 </script>
 
 <div class="board-cols">
-	{#each columns as col (col.key)}
-		{@const colTasks = tasks.filter((t) => t.status === col.key)}
+	{#each columns as col (colId(col.key))}
+		{@const colTasks = tasks.filter((t) => (t.status ?? null) === col.key)}
 		<div
-			class="board-col"
-			class:board-col-over={overCol === col.key}
+			class={['board-col', { 'board-col-over': overCol === colId(col.key) }]}
 			role="group"
 			aria-label={col.label}
 			ondragover={(e) => onDragOver(e, col.key)}
@@ -67,8 +69,7 @@
 				{#each colTasks as task (task.id)}
 					{@const pid = taskProjectId(task, projectNames)}
 					<div
-						class="board-card mb-2"
-						class:board-card-dragging={draggingId === task.id}
+						class={['board-card mb-2', { 'board-card-dragging': draggingId === task.id }]}
 						role="listitem"
 						draggable={onStatusChange ? 'true' : undefined}
 						ondragstart={(e) => onDragStart(e, task)}
